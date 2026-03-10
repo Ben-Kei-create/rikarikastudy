@@ -9,7 +9,7 @@ export default function LoginPage({
   onDone: () => void
   onAdmin: () => void
 }) {
-  const { login, lockedStudentId } = useAuth()
+  const { login, lockedStudentId, notice } = useAuth()
   const [studentId, setStudentId] = useState(1)
   const [students, setStudents] = useState(DEFAULT_STUDENTS)
   const [pw, setPw] = useState('')
@@ -66,12 +66,21 @@ export default function LoginPage({
         <h2 className="text-xl font-bold mb-2 text-center">ログイン</h2>
         <p className="text-slate-500 text-sm text-center mb-6">ID を選んでパスワードを入力してね</p>
 
+        {notice && (
+          <div
+            className="rounded-2xl px-4 py-3 text-sm mb-4"
+            style={{ background: '#3f1d0f', border: '1px solid #c2410c', color: '#fdba74' }}
+          >
+            {notice}
+          </div>
+        )}
+
         {lockedStudentId && (
           <div
             className="rounded-2xl px-4 py-3 text-sm mb-4"
             style={{ background: '#082f49', border: '1px solid #0369a1', color: '#bae6fd' }}
           >
-            この端末は ID {lockedStudentId} 専用です。切り替えはもぎ先生ログインから解除できます。
+            この表示はログアウト忘れではなく端末固定です。この端末は ID {lockedStudentId} 専用で、切り替えはもぎ先生ログインから解除できます。
           </div>
         )}
 

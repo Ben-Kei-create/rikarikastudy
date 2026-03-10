@@ -1,9 +1,10 @@
 'use client'
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 
 const STORAGE_KEY = 'rika_auth_v3'
 const DEVICE_LOCK_KEY = 'rika_device_lock_v1'
+const SESSION_TIMEOUT_MS = 10 * 60 * 1000
 
 export interface StudentRecord {
   id: number
@@ -71,6 +72,7 @@ interface AuthState {
   nickname: string | null
   ready: boolean
   lockedStudentId: number | null
+  notice: string | null
 }
 
 interface UpdateProfileInput {
@@ -85,7 +87,7 @@ interface UpdateProfileResult {
 
 interface AuthContextType extends AuthState {
   login: (studentId: number, password: string) => Promise<UpdateProfileResult>
-  logout: () => void
+  logout: (reason?: 'manual' | 'expired') => void
   refreshProfile: () => Promise<void>
   updateProfile: (updates: UpdateProfileInput) => Promise<UpdateProfileResult>
   clearDeviceLock: () => void
@@ -93,12 +95,18 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+function persistSession(studentId: number, lastActivityAt: number) {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ studentId, lastActivityAt }))
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const lastActivityAtRef = useRef<number | null>(null)
   const [state, setState] = useState<AuthState>({
     studentId: null,
     nickname: null,
     ready: false,
     lockedStudentId: null,
+    notice: null,
   })
 
   useEffect(() => {
@@ -126,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        const parsed = JSON.parse(saved) as { studentId?: number }
+        const parsed = JSON.parse(saved) as { studentId?: number; lastActivityAt?: number }
         if (!parsed.studentId) {
           if (!cancelled) {
             setState(prev => ({ ...prev, lockedStudentId }))
@@ -134,14 +142,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
+        const lastActivityAt = parsed.lastActivityAt ?? 0
+        if (!lastActivityAt || Date.now() - lastActivityAt > SESSION_TIMEOUT_MS) {
+          sessionStorage.removeItem(STORAGE_KEY)
+          if (!cancelled) {
+            setState(prev => ({
+              ...prev,
+              studentId: null,
+              nickname: null,
+              lockedStudentId,
+              notice: '10分操作がなかったため、ログアウトしました。',
+            }))
+          }
+          return
+        }
+
         const student = await fetchStudentById(parsed.studentId)
         if (!student || cancelled) return
+
+        lastActivityAtRef.current = lastActivityAt
 
         setState({
           studentId: student.id,
           nickname: student.nickname,
           ready: true,
           lockedStudentId,
+          notice: null,
         })
         return
       } catch {}
@@ -184,19 +210,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(DEVICE_LOCK_KEY, String(student.id))
     }
 
+    const lastActivityAt = Date.now()
+    lastActivityAtRef.current = lastActivityAt
+
     const next = {
       studentId: student.id,
       nickname: student.nickname,
       ready: true,
       lockedStudentId: nextLockedStudentId,
+      notice: null,
     }
     setState(next)
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ studentId: student.id }))
+    persistSession(student.id, lastActivityAt)
     return { ok: true, message: '' }
   }
 
-  const logout = () => {
-    setState(prev => ({ ...prev, studentId: null, nickname: null, ready: true }))
+  const logout = (reason: 'manual' | 'expired' = 'manual') => {
+    lastActivityAtRef.current = null
+    setState(prev => ({
+      ...prev,
+      studentId: null,
+      nickname: null,
+      ready: true,
+      notice: reason === 'expired' ? '10分操作がなかったため、ログアウトしました。' : null,
+    }))
     sessionStorage.removeItem(STORAGE_KEY)
   }
 
@@ -247,13 +284,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (payload.nickname) {
       setState(prev => ({ ...prev, nickname: payload.nickname || prev.nickname }))
     }
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ studentId: state.studentId }))
+    persistSession(state.studentId, lastActivityAtRef.current ?? Date.now())
 
     return {
       ok: true,
       message: payload.password ? 'パスワードを変更しました。' : 'ニックネームを変更しました。',
     }
   }
+
+  useEffect(() => {
+    const studentId = state.studentId
+    if (!studentId) return
+
+    const touchSession = () => {
+      const now = Date.now()
+      lastActivityAtRef.current = now
+      persistSession(studentId, now)
+    }
+
+    const expireIfNeeded = () => {
+      const lastActivityAt = lastActivityAtRef.current
+      if (!lastActivityAt) return
+
+      const inactiveMs = Date.now() - lastActivityAt
+      if (inactiveMs >= SESSION_TIMEOUT_MS) {
+        logout('expired')
+      }
+    }
+
+    touchSession()
+    const timeoutId = window.setInterval(expireIfNeeded, 15 * 1000)
+    const activityEvents: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'touchstart', 'focus']
+
+    activityEvents.forEach(eventName => {
+      window.addEventListener(eventName, touchSession, { passive: true })
+    })
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') expireIfNeeded()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(timeoutId)
+      activityEvents.forEach(eventName => {
+        window.removeEventListener(eventName, touchSession)
+      })
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [state.studentId])
 
   return (
     <AuthContext.Provider value={{ ...state, login, logout, refreshProfile, updateProfile, clearDeviceLock }}>

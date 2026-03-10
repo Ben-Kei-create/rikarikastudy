@@ -64,7 +64,7 @@ export default function HomePage({
             📊 マイページ
           </button>
           <button
-            onClick={logout}
+            onClick={() => logout()}
             className="px-4 py-2 rounded-xl text-sm transition-all"
             style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
           >
