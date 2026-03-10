@@ -1,4 +1,4 @@
-# CODEX PROMPT — RikaQuiz Project
+# CODEX PROMPT — RikaQuiz Project (v2.1)
 # Full context, development philosophy, and implementation instructions
 
 ---
@@ -6,13 +6,13 @@
 ## 🧭 PROJECT OVERVIEW
 
 **RikaQuiz** is a science quiz web application for a small Japanese cram school (juku).
-It is designed for 4 middle school students (grade 9, preparing for high school entrance exams)
-who study all science topics from grades 7–9.
+It is designed for 5 middle school students (grades 7–9) preparing for entrance exams.
 
 The app runs in a browser on shared tablets at the cram school.
-No email addresses or personal info are used — only numeric IDs (1–4) with fixed nicknames.
+No email addresses or personal info are used — only numeric IDs (1–5) with passwords.
 
 **Live target**: Deploy on Vercel (serverless). Database on Supabase (PostgreSQL).
+**Current**: Deployed at `https://rikarikastudy.vercel.app`
 
 ---
 
@@ -36,10 +36,13 @@ No email addresses or personal info are used — only numeric IDs (1–4) with f
 ### Student Profiles
 | ID | Nickname | Password  |
 |----|----------|-----------|
-| 1  | ゆうき   | yuki2024  |
-| 2  | あおい   | aoi2024   |
-| 3  | りく     | riku2024  |
-| 4  | はな     | hana2024  |
+| 1  | S        | rikalove1 |
+| 2  | M        | rikalove2 |
+| 3  | T        | rikalove3 |
+| 4  | K        | rikalove4 |
+| 5  | 先生     | rikaadmin2026 |
+
+(Note: Student 5 is the teacher account with admin capabilities)
 
 ### Science Fields (4 domains)
 - 生物 (Biology) 🌿 — color: #22c55e
@@ -72,55 +75,137 @@ answer_logs       -- id, session_id, student_id, question_id, is_correct, studen
 | `supabase.ts` | Supabase client + TypeScript types |
 | `sampleQuestions.ts` | 24 sample questions across all 4 fields |
 
-### MyPage Features (v2)
-- 🔥 Streak counter (consecutive study days)
-- Summary cards: total questions, overall accuracy %, best streak
-- Per-field accuracy bars (Biology / Chemistry / Physics / Earth Science)
-- Bar chart: questions answered per day (last 7 days)
-- Heatmap: 30-day study activity grid (like GitHub contribution graph)
-- History tab: all past sessions with correct/wrong ratio bar
-- Weak units tab: units ranked by low accuracy (min 3 answers required)
+### MyPage Features (v2.1)
+**4 Tabs:**
+1. **概要 (Overview)** — 🔥 Streak counter, summary cards (total Q / accuracy % / max streak), per-field accuracy bars, 7-day bar chart, 30-day heatmap
+2. **履歴 (History)** — All past sessions with date/time, correct/wrong visualization
+3. **弱点 (Weak Units)** — Units ranked by low accuracy (min 3 answers required), 8 units shown
+4. **設定 (Account Settings)** — Nickname change, password change
 
-### Admin Panel
-- Password: `rika_admin_2024`
-- Tab 1 — Student overview: per-student total Q, accuracy, last activity, per-field breakdown
-- Tab 2 — Question list: all questions with delete button; "Add sample questions" button
-- Tab 3 — Add question form: field, unit, grade, type, choices, answer, explanation
+### Admin Panel (Teacher/ID 5)
+- Password: `rikaadmin2026` (locked to account ID 5)
+- **5 Tabs:**
+  1. **生徒データ (Student Overview)** — All 5 students: total Q, accuracy %, last activity, per-field breakdown
+  2. **問題一覧 (Question List)** — All questions with delete button; "Add sample questions" seeder
+  3. **問題追加 (Add Question)** — Form for single question (field, unit, grade, type, choices, answer, explanation)
+  4. **一括追加 (Bulk Add)** — JSON paste input for bulk question import
+  5. **質問箱 (Question Box)** — Student feedback/inquiry form (planned/TBD)
+
+### Question Import Tools (Already Implemented)
+- `scripts/generate_questions_sql.mjs` — Convert CSV/JSON to PostgreSQL INSERT statements
+- `examples/questions_bulk_example.json` — Example payload for bulk JSON import via Admin panel
 
 ---
 
-## 🔮 PLANNED FEATURES (next implementation)
+## 🔮 PLANNED FEATURES & IMPROVEMENT ROADMAP
 
-### Priority 1 — Image support in questions
-Questions should optionally include an image (diagram, graph, photo).
+### ⚠️ SECURITY CONCERNS (HIGH PRIORITY)
+**Current state**:
+- Client-side Supabase queries (no RLS enforcement)
+- Admin password hardcoded in source
+- No backend API layer
+- Suitable for closed network (塾内) but unsafe for public internet
+
+**Before public deployment:**
+1. Implement Supabase RLS (Row-Level Security) based on `student_id`
+2. Move question add/delete/bulk operations to Next.js API Routes (server-side)
+3. Move admin authentication to server-side session management
+4. Consider: Separate admin from student (different user/password tables)
+
+---
+
+### PRIORITY 1 — Text Answer Flexibility (工数: 小 / 3-5 hours)
+**Goal**: Improve learning experience by allowing flexible text matching
+
+**Tasks**:
+- Normalize student answer: trim whitespace, convert full→half-width kana, lowercase
+- Add `accept_answers TEXT[]` column to `questions` table for variant spellings
+- In `QuizPage.tsx`: improve `checkTextAnswer()` logic to support normalized & variant matching
+- Show "nearly correct" feedback when student answer is close (edit distance)
+
+**Expected impact**: Reduces false "wrong" answers, improves student morale
+
+---
+
+### PRIORITY 2 — Weak Unit Drill Navigation (工数: 小 / 2-3 hours)
+**Goal**: Direct navigation from weak units → focused revision quiz
+
+**Tasks**:
+- In `MyPage.tsx` weak units tab: add "復習する →" button per weak unit
+- Click button → navigate to `QuizPage` with that field + unit pre-selected
+- In `QuizPage.tsx`: if in "drill mode", show amber "復習モード" badge instead of field name
+- Ensure quiz loads only questions from that unit
+
+**Expected impact**: Streamlined review workflow, higher engagement
+
+---
+
+### PRIORITY 3 — Security & RLS (工数: 大 / 10-15 hours)
+**Goal**: Safe for public deployment
+
+**Tasks**:
+1. Create Next.js API Routes:
+   - `POST /api/admin/questions/add` — Validate admin password, add questions
+   - `POST /api/admin/questions/bulk` — Validate admin, bulk insert
+   - `DELETE /api/admin/questions/[id]` — Validate admin, delete
+   - `POST /api/auth/change-password` — Validate student session, update password
+
+2. Enable Supabase RLS:
+   - Policy: Students can only read their own `quiz_sessions` & `answer_logs`
+   - Policy: Admin (ID 5) can read all tables
+   - Policy: Prevent direct student table writes (password changes only via API)
+
+3. Move admin password to environment variable or Supabase admin table
+
+4. Remove `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for writes (read-only key)
+
+**Expected impact**: Safe for internet deployment, compliant with best practices
+
+---
+
+### PRIORITY 4 — Image Support in Questions (工数: 中 / 5-8 hours)
+**Goal**: Support diagrams, photos, graphs in science questions
+
+**Tasks**:
 - Add `image_url TEXT` column to `questions` table
-- Store images in **Supabase Storage** (bucket: `question-images`)
-- In `QuizPage.tsx`: render `<img>` if `image_url` is present, above the question text
-- In `AdminPage.tsx` add question form: add image upload input
-  - Upload to Supabase Storage, get public URL, store in DB
-- Keep image optional — text-only questions still work as-is
+- In `QuizPage.tsx`: display image above question if `image_url` is present
+- In `AdminPage.tsx` add question form: text input for image URL (or Supabase Storage upload later)
+- Validate image URL format
+- Keep backward-compatible — text-only questions still work
 
-### Priority 2 — Weak-unit drill mode
-- From the "weak units" tab in MyPage, tap a unit → launch QuizPage filtered to that unit
-- Label it "復習モード" (review mode) with distinct UI color (amber/yellow)
+**Note**: Requires content preparation (taking/uploading photos). Deferred until questions need images.
 
-### Priority 3 — Teacher dashboard (read-only, separate password)
-- A dedicated view (not mixed into admin) for the teacher to:
-  - See all 4 students' stats at a glance (grid layout)
-  - Compare accuracy by field across students
-  - See who studied today / this week
-  - Export data as CSV (optional)
-- Password: `teacher_2024` (separate from admin)
+**Expected impact**: Better visual engagement for complex topics
 
-### Priority 4 — Ranking / motivation
-- Anonymous ranking among the 4 students (show nicknames)
-- Weekly "most questions solved" leaderboard on HomePage
-- Badges / achievements (first 100 questions, 7-day streak, 90%+ accuracy, etc.)
+---
 
-### Priority 5 — Better text answer judgment
-- Currently: exact string match only
-- Add soft matching: trim whitespace, ignore full/half-width differences
-- Optional: show "close but wrong" feedback with hint
+### PRIORITY 5 — Teacher Comparison Dashboard (工数: 大 / 10-12 hours)
+**Goal**: Data-driven insights for pedagogy
+
+**Tasks**:
+1. Create new Admin tab: "先生向けレポート" (Teacher Report)
+   - Grid: 5 students × 4 fields showing accuracy % per student per field
+   - Filter: date range (today / this week / this month / all)
+   - Charts: using `recharts` (line/bar for trends)
+   - Export: CSV download of student stats
+
+2. Separate teacher role from student admin (optional):
+   - Currently ID 5 is teacher; consider separate `teacher_accounts` table
+
+**Expected impact**: Better understanding of student progress, data-driven feedback
+
+---
+
+## 📊 IMPLEMENTATION ROADMAP (Recommended Order)
+
+| Rank | Feature | Est. Hours | Impact | Est. Completion |
+|------|---------|-----------|--------|-----------------|
+| 1    | Text answer flexibility | 3–5h  | ⭐⭐⭐ High | Week 1 |
+| 2    | Weak unit drill | 2–3h  | ⭐⭐⭐ High | Week 1 |
+| 3    | Security & RLS | 10–15h | ⭐⭐⭐ Critical | Week 2-3 |
+| 4    | Image support | 5–8h  | ⭐⭐ Medium | Week 3 |
+| 5    | Teacher dashboard | 10–12h | ⭐⭐ Medium | Week 4 |
+| —    | Ranking/badges | TBD   | ⭐ Low | Later |
 
 ---
 
@@ -181,55 +266,73 @@ Set these in Vercel → Project Settings → Environment Variables before deploy
 
 ---
 
-## 🚀 DEPLOY CHECKLIST
+## 🚀 DEPLOY CHECKLIST (Initial Setup)
 
 1. Run `supabase_schema.sql` in Supabase SQL Editor
 2. Push code to GitHub (`git push origin main`)
 3. Import repo in Vercel → set env vars → Deploy
-4. After deploy: open site → click "管理者" button (bottom-right) → pw: `rika_admin_2024`
-5. Go to "問題一覧" tab → click "サンプル問題を追加" to seed 24 questions
+4. After deploy: open site → Login as ID 5 (先生) → pw: `rikaadmin2026`
+5. Go to "問題一覧" tab → click "サンプル問題を追加" to seed 24 sample questions
+
+## ✅ DEPLOYMENT STATUS
+
+- ✅ **v2.0** launched at `https://rikarikastudy.vercel.app`
+- ✅ 5 student accounts (IDs 1-5) + authentication working
+- ✅ 4 science fields, quiz engine, MyPage dashboard, admin panel
+- ✅ JSON bulk import + SQL generation scripts implemented
+- ⚠️ **Before public internet deployment**: Implement RLS + backend API (Priority 3)
 
 ---
 
-## 🛠️ INSTRUCTIONS FOR CODEX
+## 🛠️ NEXT DEVELOPER INSTRUCTIONS
 
-You are continuing development of **RikaQuiz**, a Next.js 14 + Supabase quiz app for a Japanese cram school.
+You are continuing development of **RikaQuiz** v2.1.
 
-The codebase is in the attached ZIP (`rika-quiz-v2.zip`). Extract it and work inside the `rika-quiz/` directory.
+### Work on this branch:
+- Branch: `claude/review-repo-improvements-0mHDz` (or feature branch name)
+- When complete: `git checkout main && git merge` + `git push origin main`
 
-### Immediate tasks:
+### Implementation Sequence (Recommended)
 
-**Task 1 — Image support**
-- Add `image_url TEXT` column to `questions` table (update `supabase_schema.sql` too)
-- Update `Database` type in `supabase.ts` to include `image_url: string | null`
-- In `QuizPage.tsx`: if `q.image_url` is present, render it above the question text
-  ```tsx
-  {q.image_url && (
-    <img src={q.image_url} alt="問題の図" className="w-full rounded-xl mb-4 object-contain max-h-48" />
-  )}
-  ```
-- In `AdminPage.tsx` add question form: add a text input for `image_url` (URL paste, not file upload yet)
-- Keep fully backward-compatible — existing questions without images must work unchanged
+**Phase 1 (Week 1) — High-impact, low-effort:**
+1. **Text answer normalization** (Priority 1, 3–5 hours)
+   - Normalize student input: whitespace, half/full-width kana, case
+   - Add `accept_answers TEXT[]` column for variant spellings
+   - Update question check logic in `QuizPage.tsx`
 
-**Task 2 — Weak unit drill mode**
-- In `MyPage.tsx` weak units tab: add a "復習する →" button on each weak unit card
-- Tapping it should call a new prop `onDrillUnit(field: string, unit: string)`
-- In `page.tsx`: handle this prop to navigate to `QuizPage` with that field+unit
-- In `QuizPage.tsx`: if coming from drill mode, show a amber "復習モード" badge instead of the normal field badge
+2. **Weak unit drill navigation** (Priority 2, 2–3 hours)
+   - Add "復習する →" button in MyPage weak units tab
+   - Navigate to QuizPage with that unit pre-selected
+   - Show "復習モード" badge in quiz
 
-**Task 3 — Code quality**
-- Ensure all components compile with `next build` without TypeScript errors
-- Remove any unused imports
-- Make sure `answer_logs` Supabase insert in `QuizPage.tsx` correctly references `questions` table foreign key
+**Phase 2 (Week 2-3) — Critical for public deployment:**
+3. **Security & RLS** (Priority 3, 10–15 hours)
+   - Create Next.js API routes for admin operations (add/delete questions, change password)
+   - Enable Supabase RLS policies
+   - Move admin password to environment variable
+   - Test with production constraints
 
-### Constraints:
-- Do NOT change the color scheme or dark theme
-- Do NOT add new npm packages unless absolutely necessary
-- Do NOT change the authentication logic
-- Keep all student-facing text in Japanese
-- Keep code comments and variable names in English
-- Each task should be completable independently — do not couple them
+**Phase 3 (Week 3-4) — Feature enhancements:**
+4. **Image support** (Priority 4, 5–8 hours)
+   - Add `image_url` column to questions table
+   - Display in QuizPage if present
+   - Add URL input in admin add-question form
 
-### When done:
-- Run `npm run build` to verify no errors
-- Output a summary of every file changed and what was changed
+5. **Teacher dashboard** (Priority 5, 10–12 hours)
+   - New "先生向けレポート" admin tab
+   - Student × field grid with accuracy data
+   - Date range filters
+   - CSV export (optional)
+
+### Constraints
+- Do NOT change color scheme or dark theme (#0f172a background, field colors)
+- Do NOT add npm packages without justification
+- Do NOT change core auth logic (session/password storage)
+- All student-facing text: Japanese | Code/comments: English
+- Each task should be independently completable
+
+### Testing & Delivery
+- Run `npm run build` to verify no TypeScript errors
+- Test on tablet / mobile viewport
+- For each completed task: summarize all file changes
+- Commit with clear message: `git commit -m "feat: [task name]"`
