@@ -1,30 +1,97 @@
 'use client'
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { supabase } from '@/lib/supabase'
 
-// 個人パスワード → studentId のマッピング
-// ここを変更すれば生徒のPWを自由に変えられる
-export const STUDENT_PASSWORDS: Record<string, number> = {
-  'yuki2024': 1,
-  'aoi2024':  2,
-  'riku2024': 3,
-  'hana2024': 4,
+export const DEFAULT_LOGIN_PASSWORD = 'rikarikalove'
+const STORAGE_KEY = 'rika_auth_v3'
+
+export interface StudentRecord {
+  id: number
+  nickname: string
+  password: string
 }
 
-export const STUDENTS: Record<number, string> = {
-  1: 'ゆうき',
-  2: 'あおい',
-  3: 'りく',
-  4: 'はな',
+export const DEFAULT_STUDENTS: StudentRecord[] = [
+  { id: 1, nickname: 'S', password: DEFAULT_LOGIN_PASSWORD },
+  { id: 2, nickname: 'M', password: DEFAULT_LOGIN_PASSWORD },
+  { id: 3, nickname: 'T', password: DEFAULT_LOGIN_PASSWORD },
+  { id: 4, nickname: 'K', password: DEFAULT_LOGIN_PASSWORD },
+]
+
+function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number }>) {
+  return DEFAULT_STUDENTS.map(defaultStudent => {
+    const current = students.find(student => student.id === defaultStudent.id)
+    return {
+      id: defaultStudent.id,
+      nickname: current?.nickname?.trim() || defaultStudent.nickname,
+      password: current?.password?.trim() || defaultStudent.password,
+    }
+  })
+}
+
+async function queryStudents(): Promise<StudentRecord[] | null> {
+  const { data, error } = await supabase
+    .from('students')
+    .select('id, nickname, password')
+    .order('id', { ascending: true })
+
+  if (!error && data) return mergeWithDefaults(data)
+
+  const { data: legacyData, error: legacyError } = await supabase
+    .from('students')
+    .select('id, nickname')
+    .order('id', { ascending: true })
+
+  if (!legacyError && legacyData) {
+    return mergeWithDefaults(
+      legacyData.map(student => ({
+        id: student.id,
+        nickname: student.nickname,
+        password: DEFAULT_LOGIN_PASSWORD,
+      }))
+    )
+  }
+
+  return null
+}
+
+export async function fetchStudents() {
+  return (await queryStudents()) ?? DEFAULT_STUDENTS
+}
+
+async function fetchStudentById(studentId: number) {
+  const students = await queryStudents()
+  return students?.find(student => student.id === studentId) ?? null
+}
+
+function getUpdateErrorMessage(message: string) {
+  if (message.includes('password')) {
+    return 'Supabase の students テーブルに password 列がありません。更新した supabase_schema.sql を SQL Editor で実行してください。'
+  }
+  return `保存に失敗しました: ${message}`
 }
 
 interface AuthState {
   studentId: number | null
   nickname: string | null
+  ready: boolean
+}
+
+interface UpdateProfileInput {
+  nickname?: string
+  password?: string
+}
+
+interface UpdateProfileResult {
+  ok: boolean
+  message: string
 }
 
 interface AuthContextType extends AuthState {
-  login: (password: string) => boolean
+  login: (studentId: number, password: string) => Promise<boolean>
   logout: () => void
+  refreshProfile: () => Promise<void>
+  updateProfile: (updates: UpdateProfileInput) => Promise<UpdateProfileResult>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -33,36 +100,120 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     studentId: null,
     nickname: null,
+    ready: false,
   })
 
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem('rika_auth_v2')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        setState(parsed)
+    let cancelled = false
+
+    const restore = async () => {
+      try {
+        const saved = sessionStorage.getItem(STORAGE_KEY)
+        if (!saved) return
+
+        const parsed = JSON.parse(saved) as { studentId?: number }
+        if (!parsed.studentId) return
+
+        const student = await fetchStudentById(parsed.studentId)
+        if (!student || cancelled) return
+
+        setState({
+          studentId: student.id,
+          nickname: student.nickname,
+          ready: true,
+        })
+        return
+      } catch {}
+
+      sessionStorage.removeItem(STORAGE_KEY)
+      if (!cancelled) {
+        setState(prev => ({ ...prev, studentId: null, nickname: null }))
       }
-    } catch {}
+    }
+
+    restore().finally(() => {
+      if (!cancelled) {
+        setState(prev => ({ ...prev, ready: true }))
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  const login = (password: string) => {
-    const id = STUDENT_PASSWORDS[password.trim()]
-    if (id !== undefined) {
-      const next = { studentId: id, nickname: STUDENTS[id] }
-      setState(next)
-      sessionStorage.setItem('rika_auth_v2', JSON.stringify(next))
-      return true
+  const login = async (studentId: number, password: string) => {
+    const student = await fetchStudentById(studentId)
+    if (!student) return false
+    if (student.password !== password.trim()) return false
+
+    const next = {
+      studentId: student.id,
+      nickname: student.nickname,
+      ready: true,
     }
-    return false
+    setState(next)
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ studentId: student.id }))
+    return true
   }
 
   const logout = () => {
-    setState({ studentId: null, nickname: null })
-    sessionStorage.removeItem('rika_auth_v2')
+    setState({ studentId: null, nickname: null, ready: true })
+    sessionStorage.removeItem(STORAGE_KEY)
+  }
+
+  const refreshProfile = async () => {
+    if (!state.studentId) return
+    const student = await fetchStudentById(state.studentId)
+    if (!student) return
+    setState(prev => ({ ...prev, nickname: student.nickname }))
+  }
+
+  const updateProfile = async (updates: UpdateProfileInput): Promise<UpdateProfileResult> => {
+    if (!state.studentId) {
+      return { ok: false, message: 'ログインしてから変更してください。' }
+    }
+
+    const payload: UpdateProfileInput = {}
+
+    if (updates.nickname !== undefined) {
+      const nickname = updates.nickname.trim()
+      if (!nickname) return { ok: false, message: 'ニックネームを入力してください。' }
+      payload.nickname = nickname
+    }
+
+    if (updates.password !== undefined) {
+      const password = updates.password.trim()
+      if (!password) return { ok: false, message: '新しいパスワードを入力してください。' }
+      payload.password = password
+    }
+
+    if (!payload.nickname && !payload.password) {
+      return { ok: false, message: '変更内容がありません。' }
+    }
+
+    const { error } = await supabase
+      .from('students')
+      .update(payload)
+      .eq('id', state.studentId)
+
+    if (error) {
+      return { ok: false, message: getUpdateErrorMessage(error.message) }
+    }
+
+    if (payload.nickname) {
+      setState(prev => ({ ...prev, nickname: payload.nickname || prev.nickname }))
+    }
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ studentId: state.studentId }))
+
+    return {
+      ok: true,
+      message: payload.password ? 'パスワードを変更しました。' : 'ニックネームを変更しました。',
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refreshProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

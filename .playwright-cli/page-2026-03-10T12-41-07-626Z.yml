@@ -1,0 +1,9 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]: RikaQuiz
+    - paragraph [ref=e5]: 理科一問一答 学習サイト
+  - generic [ref=e6]:
+    - heading "ログイン" [level=2] [ref=e7]
+    - paragraph [ref=e8]: 自分のパスワードを入力してね
+    - textbox "パスワード" [active] [ref=e10]
+    - button "ログイン" [ref=e11] [cursor=pointer]

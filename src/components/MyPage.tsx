@@ -21,14 +21,19 @@ interface AnswerLog {
   question_id: string; is_correct: boolean
   questions: { unit: string; field: string } | null
 }
-type Tab = 'overview' | 'history' | 'weak'
+type Tab = 'overview' | 'history' | 'weak' | 'account'
 
 export default function MyPage({ onBack }: { onBack: () => void }) {
-  const { studentId, nickname } = useAuth()
+  const { studentId, nickname, updateProfile } = useAuth()
   const [sessions, setSessions] = useState<Session[]>([])
   const [answerLogs, setAnswerLogs] = useState<AnswerLog[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('overview')
+  const [nicknameInput, setNicknameInput] = useState('')
+  const [passwordInput, setPasswordInput] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [accountMsg, setAccountMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [saving, setSaving] = useState<'nickname' | 'password' | null>(null)
 
   useEffect(() => {
     if (!studentId) return
@@ -43,6 +48,10 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
     }
     load()
   }, [studentId])
+
+  useEffect(() => {
+    setNicknameInput(nickname || '')
+  }, [nickname])
 
   const totalQ = sessions.reduce((a, s) => a + s.total_questions, 0)
   const totalC = sessions.reduce((a, s) => a + s.correct_count, 0)
@@ -130,6 +139,30 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
   const weekData = dailyData.slice(-7)
   const weekMax = Math.max(...weekData.map(d => d.count), 1)
 
+  const handleSaveNickname = async () => {
+    setSaving('nickname')
+    const result = await updateProfile({ nickname: nicknameInput })
+    setSaving(null)
+    setAccountMsg({ type: result.ok ? 'success' : 'error', text: result.message })
+  }
+
+  const handleSavePassword = async () => {
+    if (passwordInput.trim() !== passwordConfirm.trim()) {
+      setAccountMsg({ type: 'error', text: 'パスワードが一致していません。' })
+      return
+    }
+
+    setSaving('password')
+    const result = await updateProfile({ password: passwordInput })
+    setSaving(null)
+    setAccountMsg({ type: result.ok ? 'success' : 'error', text: result.message })
+
+    if (result.ok) {
+      setPasswordInput('')
+      setPasswordConfirm('')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -159,7 +192,7 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
           )}
         </div>
         <div className="flex gap-2 mt-4">
-          {([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点']] as const).map(([t, label]) => (
+          {([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['account', '⚙️ 設定']] as const).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
               className="px-3 py-1.5 rounded-lg text-sm font-bold transition-all"
               style={{
@@ -376,6 +409,79 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
                     </div>
                   )
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'account' && (
+          <div className="space-y-4 anim-fade">
+            <div className="card">
+              <h3 className="text-slate-300 font-bold mb-1">アカウント設定</h3>
+              <p className="text-slate-500 text-xs">ID は固定です。ニックネームとパスワードだけ変更できます。</p>
+              <div className="mt-3 text-slate-400 text-sm">ログインID: <span className="text-white font-bold">{studentId}</span></div>
+            </div>
+
+            <div className="card">
+              <h3 className="text-slate-300 font-bold mb-4">ニックネーム変更</h3>
+              <input
+                type="text"
+                value={nicknameInput}
+                onChange={e => setNicknameInput(e.target.value)}
+                placeholder="ニックネーム"
+                className="w-full px-4 py-3 rounded-xl outline-none"
+                style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+              />
+              <button
+                onClick={handleSaveNickname}
+                className="btn-primary w-full mt-3"
+                disabled={saving === 'nickname'}
+                style={{ opacity: saving === 'nickname' ? 0.7 : 1 }}
+              >
+                {saving === 'nickname' ? '保存中...' : 'ニックネームを保存'}
+              </button>
+            </div>
+
+            <div className="card">
+              <h3 className="text-slate-300 font-bold mb-4">パスワード変更</h3>
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={e => setPasswordInput(e.target.value)}
+                  placeholder="新しいパスワード"
+                  className="w-full px-4 py-3 rounded-xl outline-none"
+                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                />
+                <input
+                  type="password"
+                  value={passwordConfirm}
+                  onChange={e => setPasswordConfirm(e.target.value)}
+                  placeholder="新しいパスワード（確認）"
+                  className="w-full px-4 py-3 rounded-xl outline-none"
+                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                />
+              </div>
+              <button
+                onClick={handleSavePassword}
+                className="btn-primary w-full mt-3"
+                disabled={saving === 'password'}
+                style={{ opacity: saving === 'password' ? 0.7 : 1 }}
+              >
+                {saving === 'password' ? '保存中...' : 'パスワードを変更'}
+              </button>
+            </div>
+
+            {accountMsg && (
+              <div
+                className="rounded-2xl px-4 py-3 text-sm"
+                style={{
+                  background: accountMsg.type === 'success' ? '#052e16' : '#450a0a',
+                  border: `1px solid ${accountMsg.type === 'success' ? '#166534' : '#991b1b'}`,
+                  color: accountMsg.type === 'success' ? '#86efac' : '#fca5a5',
+                }}
+              >
+                {accountMsg.text}
               </div>
             )}
           </div>
