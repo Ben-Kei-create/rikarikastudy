@@ -105,32 +105,36 @@ function normalizeQuestion(item, index) {
     if (choices.length !== 2) fail(`${prefix}: choice 問題の choices は2件にしてください。`)
     if (!choices.includes(answer)) fail(`${prefix}: answer は choices のどちらかと一致させてください。`)
 
-    return {
+    const normalized = {
       field,
       unit,
       question,
       type,
       choices,
       answer,
-      accept_answers: acceptAnswers,
       explanation,
       grade,
-      created_by_student_id: null,
     }
+
+    if (acceptAnswers) normalized.accept_answers = acceptAnswers
+
+    return normalized
   }
 
-  return {
+  const normalized = {
     field,
     unit,
     question,
     type,
     choices: null,
     answer,
-    accept_answers: acceptAnswers,
     explanation,
     grade,
-    created_by_student_id: null,
   }
+
+  if (acceptAnswers) normalized.accept_answers = acceptAnswers
+
+  return normalized
 }
 
 async function fetchExistingQuestionKeys(supabase) {
