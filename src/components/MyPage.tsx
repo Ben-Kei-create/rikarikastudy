@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
-import { supabase } from '@/lib/supabase'
+import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { format, subDays, startOfDay, eachDayOfInterval, differenceInCalendarDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
@@ -15,29 +15,46 @@ const FIELDS = ['生物', '化学', '物理', '地学']
 
 interface Session {
   id: string; field: string; unit: string
-  total_questions: number; correct_count: number; created_at: string
+  total_questions: number; correct_count: number; duration_seconds: number; created_at: string
 }
 interface AnswerLog {
   question_id: string; is_correct: boolean
   questions: { unit: string; field: string } | null
 }
-interface StudentQuestionPost {
-  id: string
-  title: string
-  message: string
-  created_at: string
+type QuestionRow = Database['public']['Tables']['questions']['Row']
+
+const INITIAL_CUSTOM_QUESTION_FORM = {
+  field: '生物' as const,
+  unit: '',
+  question: '',
+  type: 'choice' as 'choice' | 'text',
+  choices: ['', ''],
+  answer: '',
+  explanation: '',
+  grade: '中3',
 }
 
-function getStudentQuestionErrorMessage(message: string) {
-  if (message.includes('student_questions')) {
-    return '質問機能を使うには、Supabase で更新した supabase_schema.sql を再実行してください。'
-  }
-  return `質問の保存に失敗しました: ${message}`
+function formatStudyTime(totalSeconds: number) {
+  if (totalSeconds <= 0) return '0分'
+
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (hours > 0) return `${hours}時間${minutes}分`
+  if (minutes > 0) return `${minutes}分`
+  return `${seconds}秒`
 }
 
 type Tab = 'overview' | 'history' | 'weak' | 'questions' | 'account'
 
-export default function MyPage({ onBack }: { onBack: () => void }) {
+export default function MyPage({
+  onBack,
+  onStartDrill,
+}: {
+  onBack: () => void
+  onStartDrill: (field: string, unit: string) => void
+}) {
   const { studentId, nickname, updateProfile, logout } = useAuth()
   const [sessions, setSessions] = useState<Session[]>([])
   const [answerLogs, setAnswerLogs] = useState<AnswerLog[]>([])
@@ -79,6 +96,7 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
 
   const totalQ = sessions.reduce((a, s) => a + s.total_questions, 0)
   const totalC = sessions.reduce((a, s) => a + s.correct_count, 0)
+  const totalStudySeconds = sessions.reduce((a, s) => a + (s.duration_seconds ?? 0), 0)
   const overallRate = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : 0
 
   const byField = useMemo(() => {
@@ -282,16 +300,16 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
         {/* ===== 概要タブ ===== */}
         {tab === 'overview' && (
           <div className="space-y-4 anim-fade">
-            {/* サマリー3カード */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {[
-                { label: '総問題数', value: totalQ, unit: '問', color: '#3b82f6' },
-                { label: '総合正答率', value: overallRate, unit: '%', color: overallRate >= 70 ? '#22c55e' : overallRate >= 50 ? '#f59e0b' : '#ef4444' },
-                { label: '最高連続', value: maxStreak, unit: '日', color: '#f97316' },
+                { label: '総問題数', display: `${totalQ}問`, color: '#3b82f6' },
+                { label: '総合正答率', display: `${overallRate}%`, color: overallRate >= 70 ? '#22c55e' : overallRate >= 50 ? '#f59e0b' : '#ef4444' },
+                { label: '総勉強時間', display: formatStudyTime(totalStudySeconds), color: '#38bdf8', compact: true },
+                { label: '最高連続', display: `${maxStreak}日`, color: '#f97316' },
               ].map(item => (
                 <div key={item.label} className="card text-center" style={{ padding: '16px 8px' }}>
-                  <div className="font-display text-2xl" style={{ color: item.color }}>
-                    {item.value}<span className="text-sm text-slate-400">{item.unit}</span>
+                  <div className={`font-display ${item.compact ? 'text-xl' : 'text-2xl'}`} style={{ color: item.color }}>
+                    {item.display}
                   </div>
                   <div className="text-slate-500 text-xs mt-1">{item.label}</div>
                 </div>
@@ -477,6 +495,13 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
                           <div className="text-slate-500 text-xs">{u.total}問</div>
                         </div>
                       </div>
+                      <button
+                        onClick={() => onStartDrill(u.field, u.unit)}
+                        className="mt-3 w-full rounded-xl px-4 py-2 text-sm font-bold transition-all"
+                        style={{ background: '#334155', color: '#f8fafc' }}
+                      >
+                        復習する →
+                      </button>
                     </div>
                   )
                 })}

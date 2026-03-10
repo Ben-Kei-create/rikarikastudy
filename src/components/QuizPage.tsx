@@ -1,7 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
+import { isAnswerMatch } from '@/lib/answerUtils'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
@@ -15,6 +16,7 @@ interface Question {
   type: 'choice' | 'text'
   choices: string[] | null
   answer: string
+  accept_answers: string[] | null
   explanation: string | null
 }
 
@@ -23,10 +25,12 @@ type Phase = 'answering' | 'result' | 'finished'
 export default function QuizPage({
   field,
   unit,
+  isDrill = false,
   onBack,
 }: {
   field: string
   unit: string
+  isDrill?: boolean
   onBack: () => void
 }) {
   const { studentId, logout } = useAuth()
@@ -39,24 +43,40 @@ export default function QuizPage({
   const [textInput, setTextInput] = useState('')
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
   const [score, setScore] = useState(0)
-  const [sessionId, setSessionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string }[]>([])
+  const startedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
+      setQuestions([])
+      setCurrent(0)
+      setPhase('answering')
+      setSelected(null)
+      setTextInput('')
+      setIsCorrect(null)
+      setScore(0)
+      setAnswerLogs([])
+      startedAtRef.current = null
+
       let query = supabase.from('questions').select('*').eq('field', field)
       if (unit !== 'all') query = query.eq('unit', unit)
+      query = query.or(
+        studentId
+          ? `created_by_student_id.is.null,created_by_student_id.eq.${studentId}`
+          : 'created_by_student_id.is.null'
+      )
       const { data } = await query
       if (data && data.length > 0) {
         const shuffled = [...data].sort(() => Math.random() - 0.5).slice(0, 10)
         setQuestions(shuffled)
+        startedAtRef.current = Date.now()
       }
       setLoading(false)
     }
     load()
-  }, [field, unit])
+  }, [field, unit, studentId])
 
   const q = questions[current]
   const progress = questions.length > 0 ? ((current) / questions.length) * 100 : 0
@@ -72,16 +92,21 @@ export default function QuizPage({
   }
 
   const handleTextSubmit = () => {
-    if (!textInput.trim()) return
-    const correct = textInput.trim() === q.answer.trim()
+    const answer = textInput.trim()
+    if (!answer) return
+    const correct = isAnswerMatch(answer, q.answer, q.accept_answers)
     setIsCorrect(correct)
     if (correct) setScore(s => s + 1)
-    setAnswerLogs(logs => [...logs, { qId: q.id, correct, answer: textInput.trim() }])
+    setAnswerLogs(logs => [...logs, { qId: q.id, correct, answer }])
     setPhase('result')
   }
 
   const handleNext = async () => {
     if (current + 1 >= questions.length) {
+      const durationSeconds = startedAtRef.current
+        ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
+        : 0
+
       // セッション保存
       const { data: sessionData } = await supabase
         .from('quiz_sessions')
@@ -91,13 +116,13 @@ export default function QuizPage({
           unit: unit === 'all' ? '全単元' : unit,
           total_questions: questions.length,
           correct_count: score + (isCorrect ? 0 : 0), // すでに加算済み
+          duration_seconds: durationSeconds,
         })
         .select()
         .single()
 
       if (sessionData) {
         const sid = sessionData.id
-        setSessionId(sid)
         // 回答ログ保存
         const logs = answerLogs.map(l => ({
           session_id: sid,
@@ -148,6 +173,7 @@ export default function QuizPage({
   if (phase === 'finished') {
     const rate = Math.round((score / questions.length) * 100)
     const msg = rate >= 90 ? '🎉 すごい！完璧に近い！' : rate >= 70 ? '👍 よくできました！' : rate >= 50 ? '😊 もう少しがんばろう！' : '💪 復習してみよう！'
+    const backLabel = isDrill ? 'マイページへ' : '分野選択へ'
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 anim-fade">
         <div className="card w-full max-w-sm text-center">
@@ -172,14 +198,23 @@ export default function QuizPage({
 
           <div className="grid grid-cols-3 gap-3">
             <button
-              onClick={() => { setCurrent(0); setPhase('answering'); setScore(0); setSelected(null); setTextInput(''); setIsCorrect(null); setAnswerLogs([]) }}
+              onClick={() => {
+                startedAtRef.current = Date.now()
+                setCurrent(0)
+                setPhase('answering')
+                setScore(0)
+                setSelected(null)
+                setTextInput('')
+                setIsCorrect(null)
+                setAnswerLogs([])
+              }}
               className="py-3 rounded-xl font-bold transition-all"
               style={{ background: '#334155', color: '#cbd5e1' }}
             >
               もう一度
             </button>
             <button onClick={onBack} className="btn-primary py-3">
-              分野選択へ
+              {backLabel}
             </button>
             <button
               onClick={() => logout()}
@@ -204,7 +239,7 @@ export default function QuizPage({
         </button>
         <div className="flex-1">
           <div className="flex justify-between text-xs text-slate-400 mb-1">
-            <span>{unit === 'all' ? '全単元' : unit}</span>
+            <span>{isDrill ? `復習: ${field} / ${unit}` : unit === 'all' ? '全単元' : unit}</span>
             <span>{current + 1} / {questions.length}</span>
           </div>
           <div style={{ background: '#1e293b', borderRadius: 8, height: 6 }}>
@@ -231,9 +266,18 @@ export default function QuizPage({
       {/* 問題カード */}
       <div key={current} className="card anim-fade-up mb-4">
         <div className="flex items-center gap-2 mb-3">
-          <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: `${color}20`, color }}>
-            {q.field} · {q.unit}
-          </span>
+          {isDrill ? (
+            <span
+              className="px-2 py-0.5 rounded-full text-xs font-bold"
+              style={{ background: '#f59e0b20', color: '#fbbf24' }}
+            >
+              復習モード
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: `${color}20`, color }}>
+              {q.field} · {q.unit}
+            </span>
+          )}
           <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: '#334155', color: '#94a3b8' }}>
             {q.type === 'choice' ? `${q.choices?.length ?? 0}択` : '記述'}
           </span>

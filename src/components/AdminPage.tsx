@@ -72,22 +72,7 @@ interface BulkQuestionPayload {
   grade: string
 }
 
-interface StudentQuestionPost {
-  id: string
-  student_id: number
-  title: string
-  message: string
-  created_at: string
-}
-
-function getStudentQuestionErrorMessage(message: string) {
-  if (message.includes('student_questions')) {
-    return '質問機能を使うには、Supabase で更新した supabase_schema.sql を再実行してください。'
-  }
-  return `質問データの読み込みに失敗しました: ${message}`
-}
-
-type AdminTab = 'overview' | 'questions' | 'add' | 'bulk' | 'messages'
+type AdminTab = 'overview' | 'questions' | 'add' | 'bulk'
 
 function buildStudentStats(
   students: Array<{ id: number; nickname: string; password: string }>,
@@ -220,15 +205,13 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [tab, setTab] = useState<AdminTab>('overview')
   const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string }>>([])
   const [stats, setStats] = useState<StudentStats[]>([])
-  const [questions, setQuestions] = useState<any[]>([])
-  const [studentQuestions, setStudentQuestions] = useState<StudentQuestionPost[]>([])
+  const [questions, setQuestions] = useState<QuestionRow[]>([])
   const [loading, setLoading] = useState(false)
   const [bulkInput, setBulkInput] = useState(BULK_JSON_EXAMPLE)
   const [bulkMsg, setBulkMsg] = useState('')
   const [bulkLoading, setBulkLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
   const [exportMsg, setExportMsg] = useState('')
-  const [questionBoxMsg, setQuestionBoxMsg] = useState('')
 
   const [form, setForm] = useState({
     field: '生物' as typeof FIELDS[number],
@@ -269,20 +252,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       setStats(buildStudentStats(students, (sessions || []) as QuizSessionRow[]))
     } else if (tab === 'questions') {
       const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false })
-      setQuestions(data || [])
-    } else if (tab === 'messages') {
-      const [students, { data, error }] = await Promise.all([
-        fetchStudents(),
-        supabase.from('student_questions').select('*').order('created_at', { ascending: false }),
-      ])
-      setStudentsList(students)
-      if (error) {
-        setStudentQuestions([])
-        setQuestionBoxMsg(getStudentQuestionErrorMessage(error.message))
-      } else {
-        setStudentQuestions((data || []) as StudentQuestionPost[])
-        setQuestionBoxMsg('')
-      }
+      setQuestions((data || []) as QuestionRow[])
     }
 
     setLoading(false)
@@ -482,7 +452,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
-        {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括追加'], ['messages', '💬 質問箱']] as const).map(([currentTab, label]) => (
+        {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括追加']] as const).map(([currentTab, label]) => (
           <button
             key={currentTab}
             onClick={() => setTab(currentTab)}
@@ -606,52 +576,17 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         </div>
       )}
 
-      {tab === 'messages' && (
-        <div>
-          {loading ? (
-            <div className="text-slate-400 text-center py-12">読み込み中...</div>
-          ) : questionBoxMsg ? (
-            <div className="card text-red-300">{questionBoxMsg}</div>
-          ) : studentQuestions.length === 0 ? (
-            <div className="card text-slate-500 text-center py-12">
-              まだ生徒からの質問はありません。
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {studentQuestions.map(post => {
-                const student = studentsList.find(current => current.id === post.student_id)
-                return (
-                  <div key={post.id} className="card">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span
-                            className="px-2 py-0.5 rounded-full text-xs font-bold"
-                            style={{ background: '#1d4ed820', color: '#60a5fa' }}
-                          >
-                            ID {post.student_id}
-                          </span>
-                          <span className="text-white font-bold">{student?.nickname ?? `生徒${post.student_id}`}</span>
-                          <span className="text-slate-500 text-xs">
-                            {format(new Date(post.created_at), 'M/d HH:mm', { locale: ja })}
-                          </span>
-                        </div>
-                        <div className="text-white font-bold mt-3">{post.title}</div>
-                        <p className="text-slate-300 text-sm leading-7 mt-2 whitespace-pre-wrap">{post.message}</p>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
       {tab === 'questions' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <p className="text-slate-400">{questions.length}問登録済み</p>
+            <p className="text-slate-400">
+              {questions.length}問登録済み
+              {questions.length > 0 && (
+                <span className="ml-2 text-slate-500 text-sm">
+                  生徒作成 {questions.filter(question => question.created_by_student_id !== null).length}問
+                </span>
+              )}
+            </p>
             <button
               onClick={handleSeedQuestions}
               className="px-4 py-2 rounded-xl text-sm font-bold"
@@ -674,6 +609,15 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       {question.field}
                     </span>
                     <span className="text-slate-400 text-xs flex-shrink-0">{question.unit}</span>
+                    <span
+                      className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                      style={{
+                        background: question.created_by_student_id ? '#f59e0b20' : '#334155',
+                        color: question.created_by_student_id ? '#fbbf24' : '#94a3b8',
+                      }}
+                    >
+                      {question.created_by_student_id ? `ID ${question.created_by_student_id} 作成` : '共有問題'}
+                    </span>
                     <p className="text-white text-sm flex-1 line-clamp-2">{question.question}</p>
                     <button
                       onClick={() => handleDeleteQuestion(question.id)}

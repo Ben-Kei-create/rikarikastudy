@@ -12,7 +12,7 @@ type Screen =
   | 'home'
   | 'mypage'
   | { type: 'unit'; field: string }
-  | { type: 'quiz'; field: string; unit: string }
+  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean }
 
 function App() {
   const { studentId, ready } = useAuth()
@@ -32,7 +32,7 @@ function App() {
   if (!studentId) {
     content = <LoginPage onDone={() => setScreen('home')} onAdmin={() => setAdminOpen(true)} />
   } else if (screen === 'mypage') {
-    content = <MyPage onBack={() => setScreen('home')} />
+    content = <MyPage onBack={() => setScreen('home')} onStartDrill={(field, unit) => setScreen({ type: 'quiz', field, unit, isDrill: true })} />
   } else if (typeof screen === 'object' && screen.type === 'unit') {
     content = (
       <UnitSelectPage
@@ -46,7 +46,8 @@ function App() {
       <QuizPage
         field={screen.field}
         unit={screen.unit}
-        onBack={() => setScreen({ type: 'unit', field: screen.field })}
+        isDrill={screen.isDrill}
+        onBack={() => setScreen(screen.isDrill ? 'mypage' : { type: 'unit', field: screen.field })}
       />
     )
   } else {

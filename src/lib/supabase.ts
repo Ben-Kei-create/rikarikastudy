@@ -42,6 +42,8 @@ export type Database = {
           type: 'choice' | 'text'
           choices: string[] | null
           answer: string
+          accept_answers: string[] | null
+          created_by_student_id: number | null
           explanation: string | null
           grade: string
           created_at: string
@@ -54,6 +56,8 @@ export type Database = {
           type: 'choice' | 'text'
           choices?: string[] | null
           answer: string
+          accept_answers?: string[] | null
+          created_by_student_id?: number | null
           explanation?: string | null
           grade?: string
         }
@@ -66,6 +70,7 @@ export type Database = {
           unit: string
           total_questions: number
           correct_count: number
+          duration_seconds: number
           created_at: string
         }
         Insert: {
@@ -74,6 +79,7 @@ export type Database = {
           unit: string
           total_questions: number
           correct_count: number
+          duration_seconds?: number
         }
       }
       answer_logs: {
@@ -92,24 +98,6 @@ export type Database = {
           question_id: string
           is_correct: boolean
           student_answer: string
-        }
-      }
-      student_questions: {
-        Row: {
-          id: string
-          student_id: number
-          title: string
-          message: string
-          created_at: string
-        }
-        Insert: {
-          student_id: number
-          title: string
-          message: string
-        }
-        Update: {
-          title?: string
-          message?: string
         }
       }
     }
