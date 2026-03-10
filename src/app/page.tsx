@@ -27,7 +27,7 @@ function App() {
     )
   }
 
-  let content: JSX.Element
+  let content
 
   if (!studentId) {
     content = <LoginPage onDone={() => setScreen('home')} onAdmin={() => setAdminOpen(true)} />

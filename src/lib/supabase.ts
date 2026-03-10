@@ -20,7 +20,17 @@ export type Database = {
         Row: {
           id: number
           nickname: string
+          password: string
           created_at: string
+        }
+        Insert: {
+          id: number
+          nickname: string
+          password?: string
+        }
+        Update: {
+          nickname?: string
+          password?: string
         }
       }
       questions: {
