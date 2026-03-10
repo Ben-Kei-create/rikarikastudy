@@ -23,11 +23,22 @@ interface AnswerLog {
 }
 type QuestionRow = Database['public']['Tables']['questions']['Row']
 
-const INITIAL_CUSTOM_QUESTION_FORM = {
-  field: '生物' as const,
+interface CustomQuestionForm {
+  field: string
+  unit: string
+  question: string
+  type: 'choice' | 'text'
+  choices: [string, string]
+  answer: string
+  explanation: string
+  grade: string
+}
+
+const INITIAL_CUSTOM_QUESTION_FORM: CustomQuestionForm = {
+  field: '生物',
   unit: '',
   question: '',
-  type: 'choice' as 'choice' | 'text',
+  type: 'choice',
   choices: ['', ''],
   answer: '',
   explanation: '',
@@ -58,7 +69,7 @@ export default function MyPage({
   const { studentId, nickname, updateProfile, logout } = useAuth()
   const [sessions, setSessions] = useState<Session[]>([])
   const [answerLogs, setAnswerLogs] = useState<AnswerLog[]>([])
-  const [teacherPosts, setTeacherPosts] = useState<StudentQuestionPost[]>([])
+  const [myQuestions, setMyQuestions] = useState<QuestionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('overview')
   const [nicknameInput, setNicknameInput] = useState('')
@@ -66,25 +77,21 @@ export default function MyPage({
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [accountMsg, setAccountMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [saving, setSaving] = useState<'nickname' | 'password' | null>(null)
-  const [questionTitle, setQuestionTitle] = useState('')
-  const [questionBody, setQuestionBody] = useState('')
+  const [questionForm, setQuestionForm] = useState<CustomQuestionForm>(INITIAL_CUSTOM_QUESTION_FORM)
   const [questionMsg, setQuestionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [postingQuestion, setPostingQuestion] = useState(false)
+  const [savingQuestion, setSavingQuestion] = useState(false)
 
   useEffect(() => {
     if (!studentId) return
     const load = async () => {
-      const [{ data: sData }, { data: aData }, { data: qData, error: qError }] = await Promise.all([
+      const [{ data: sData }, { data: aData }, { data: qData }] = await Promise.all([
         supabase.from('quiz_sessions').select('*').eq('student_id', studentId).order('created_at', { ascending: false }),
         supabase.from('answer_logs').select('question_id, is_correct, questions(unit, field)').eq('student_id', studentId),
-        supabase.from('student_questions').select('*').eq('student_id', studentId).order('created_at', { ascending: false }),
+        supabase.from('questions').select('*').eq('created_by_student_id', studentId).order('created_at', { ascending: false }),
       ])
       setSessions(sData || [])
       setAnswerLogs((aData as any) || [])
-      setTeacherPosts((qData as StudentQuestionPost[]) || [])
-      if (qError) {
-        setQuestionMsg({ type: 'error', text: getStudentQuestionErrorMessage(qError.message) })
-      }
+      setMyQuestions((qData as QuestionRow[]) || [])
       setLoading(false)
     }
     load()
@@ -205,22 +212,40 @@ export default function MyPage({
     }
   }
 
-  const handlePostQuestion = async () => {
+  const handleAddQuestion = async () => {
     if (!studentId) return
-    if (!questionTitle.trim() || !questionBody.trim()) {
-      setQuestionMsg({ type: 'error', text: '件名と内容を入力してください。' })
+    if (!questionForm.unit.trim() || !questionForm.question.trim() || !questionForm.answer.trim()) {
+      setQuestionMsg({ type: 'error', text: '分野・単元・問題・答えを入力してください。' })
       return
     }
 
+    if (questionForm.type === 'choice') {
+      const filledChoices = questionForm.choices.map(choice => choice.trim()).filter(Boolean)
+      if (filledChoices.length !== 2) {
+        setQuestionMsg({ type: 'error', text: '2択問題は選択肢を2つ入力してください。' })
+        return
+      }
+      if (!filledChoices.includes(questionForm.answer.trim())) {
+        setQuestionMsg({ type: 'error', text: '答えは選択肢AかBと同じ内容にしてください。' })
+        return
+      }
+    }
+
     try {
-      setPostingQuestion(true)
+      setSavingQuestion(true)
       setQuestionMsg(null)
       const { data, error } = await supabase
-        .from('student_questions')
+        .from('questions')
         .insert({
-          student_id: studentId,
-          title: questionTitle.trim(),
-          message: questionBody.trim(),
+          created_by_student_id: studentId,
+          field: questionForm.field,
+          unit: questionForm.unit.trim(),
+          question: questionForm.question.trim(),
+          type: questionForm.type,
+          choices: questionForm.type === 'choice' ? questionForm.choices.map(choice => choice.trim()) : null,
+          answer: questionForm.answer.trim(),
+          explanation: questionForm.explanation.trim() || null,
+          grade: questionForm.grade,
         })
         .select()
         .single()
@@ -228,18 +253,17 @@ export default function MyPage({
       if (error) throw new Error(error.message)
 
       if (data) {
-        setTeacherPosts(current => [data as StudentQuestionPost, ...current])
+        setMyQuestions(current => [data as QuestionRow, ...current])
       }
-      setQuestionTitle('')
-      setQuestionBody('')
-      setQuestionMsg({ type: 'success', text: '先生に質問を送信しました。' })
+      setQuestionForm(INITIAL_CUSTOM_QUESTION_FORM)
+      setQuestionMsg({ type: 'success', text: '自分用の問題を追加しました。' })
     } catch (error) {
       setQuestionMsg({
         type: 'error',
-        text: getStudentQuestionErrorMessage(error instanceof Error ? error.message : '不明なエラーです。'),
+        text: error instanceof Error ? `問題の保存に失敗しました: ${error.message}` : '問題の保存に失敗しました。',
       })
     } finally {
-      setPostingQuestion(false)
+      setSavingQuestion(false)
     }
   }
 
@@ -281,7 +305,7 @@ export default function MyPage({
           )}
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
-          {([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['questions', '💬 質問'], ['account', '⚙️ 設定']] as const).map(([t, label]) => (
+          {([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
               className="px-3 py-1.5 rounded-lg text-sm font-bold transition-all"
               style={{
@@ -513,35 +537,100 @@ export default function MyPage({
         {tab === 'questions' && (
           <div className="space-y-4 anim-fade">
             <div className="card">
-              <h3 className="text-slate-300 font-bold mb-1">先生への質問</h3>
+              <h3 className="text-slate-300 font-bold mb-1">自分の問題を追加</h3>
               <p className="text-slate-500 text-xs leading-6">
-                ここに書いた内容は、自分と先生だけが見られます。
+                ここで作った問題は、自分だけが解けます。先生は管理画面の問題一覧で確認できます。
               </p>
-              <div className="space-y-3 mt-4">
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <select
+                  value={questionForm.field}
+                  onChange={e => setQuestionForm(current => ({ ...current, field: e.target.value as typeof FIELDS[number] }))}
+                  className="w-full px-4 py-3 rounded-xl outline-none"
+                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                >
+                  {FIELDS.map(field => <option key={field}>{field}</option>)}
+                </select>
+                <select
+                  value={questionForm.type}
+                  onChange={e => setQuestionForm(current => ({ ...current, type: e.target.value as 'choice' | 'text' }))}
+                  className="w-full px-4 py-3 rounded-xl outline-none"
+                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                >
+                  <option value="choice">2択</option>
+                  <option value="text">記述</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-3">
                 <input
                   type="text"
-                  value={questionTitle}
-                  onChange={e => setQuestionTitle(e.target.value)}
-                  placeholder="件名"
+                  value={questionForm.unit}
+                  onChange={e => setQuestionForm(current => ({ ...current, unit: e.target.value }))}
+                  placeholder="単元"
+                  className="w-full px-4 py-3 rounded-xl outline-none"
+                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                />
+                <select
+                  value={questionForm.grade}
+                  onChange={e => setQuestionForm(current => ({ ...current, grade: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl outline-none"
+                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                >
+                  {['中1', '中2', '中3', '高校'].map(grade => <option key={grade}>{grade}</option>)}
+                </select>
+              </div>
+              <div className="space-y-3 mt-3">
+                <textarea
+                  value={questionForm.question}
+                  onChange={e => setQuestionForm(current => ({ ...current, question: e.target.value }))}
+                  placeholder="問題文"
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-2xl outline-none resize-y"
+                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                />
+                {questionForm.type === 'choice' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={questionForm.choices[0]}
+                      onChange={e => setQuestionForm(current => ({ ...current, choices: [e.target.value, current.choices[1]] as [string, string] }))}
+                      placeholder="選択肢A"
+                      className="w-full px-4 py-3 rounded-xl outline-none"
+                      style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                    />
+                    <input
+                      type="text"
+                      value={questionForm.choices[1]}
+                      onChange={e => setQuestionForm(current => ({ ...current, choices: [current.choices[0], e.target.value] as [string, string] }))}
+                      placeholder="選択肢B"
+                      className="w-full px-4 py-3 rounded-xl outline-none"
+                      style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                    />
+                  </div>
+                )}
+                <input
+                  type="text"
+                  value={questionForm.answer}
+                  onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+                  placeholder={questionForm.type === 'choice' ? '答え（AかBと同じ内容）' : '答え'}
                   className="w-full px-4 py-3 rounded-xl outline-none"
                   style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
                 />
                 <textarea
-                  value={questionBody}
-                  onChange={e => setQuestionBody(e.target.value)}
-                  placeholder="先生に聞きたいことを書いてください"
-                  rows={5}
+                  value={questionForm.explanation}
+                  onChange={e => setQuestionForm(current => ({ ...current, explanation: e.target.value }))}
+                  placeholder="解説（任意）"
+                  rows={3}
                   className="w-full px-4 py-3 rounded-2xl outline-none resize-y"
                   style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
                 />
               </div>
               <button
-                onClick={handlePostQuestion}
+                onClick={handleAddQuestion}
                 className="btn-primary w-full mt-3"
-                disabled={postingQuestion}
-                style={{ opacity: postingQuestion ? 0.7 : 1 }}
+                disabled={savingQuestion}
+                style={{ opacity: savingQuestion ? 0.7 : 1 }}
               >
-                {postingQuestion ? '送信中...' : '質問を送信'}
+                {savingQuestion ? '追加中...' : 'この問題を追加'}
               </button>
               {questionMsg && (
                 <div
@@ -558,28 +647,40 @@ export default function MyPage({
             </div>
 
             <div className="space-y-3">
-              {teacherPosts.length === 0 ? (
+              {myQuestions.length === 0 ? (
                 <div className="card text-center text-slate-500 py-10">
-                  まだ質問はありません。必要なときにここから先生へ送れます。
+                  まだ自分で作った問題はありません。
                 </div>
               ) : (
-                teacherPosts.map(post => (
-                  <div key={post.id} className="card">
+                myQuestions.map(question => (
+                  <div key={question.id} className="card">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="font-bold text-white">{post.title}</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className="px-2 py-1 rounded-full text-xs font-bold"
+                            style={{ background: `${FIELD_COLORS[question.field]}20`, color: FIELD_COLORS[question.field] }}
+                          >
+                            {question.field}
+                          </span>
+                          <span className="text-white font-bold">{question.unit}</span>
+                        </div>
                         <div className="text-slate-500 text-xs mt-1">
-                          {format(new Date(post.created_at), 'M月d日(E) HH:mm', { locale: ja })}
+                          {format(new Date(question.created_at), 'M月d日(E) HH:mm', { locale: ja })}
                         </div>
                       </div>
                       <span
                         className="px-2 py-1 rounded-full text-xs font-bold"
-                        style={{ background: '#1d4ed820', color: '#60a5fa' }}
+                        style={{ background: '#f59e0b20', color: '#fbbf24' }}
                       >
-                        先生共有
+                        自分専用
                       </span>
                     </div>
-                    <p className="text-slate-200 text-sm leading-7 mt-3 whitespace-pre-wrap">{post.message}</p>
+                    <p className="text-white text-sm leading-7 mt-3 whitespace-pre-wrap">{question.question}</p>
+                    <div className="text-slate-400 text-sm mt-3">答え: {question.answer}</div>
+                    {question.explanation && (
+                      <p className="text-slate-300 text-sm leading-7 mt-2 whitespace-pre-wrap">{question.explanation}</p>
+                    )}
                   </div>
                 ))
               )}
