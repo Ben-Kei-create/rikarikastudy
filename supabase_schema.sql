@@ -3,24 +3,26 @@
 -- Run this in Supabase SQL Editor
 -- ========================================
 
--- 生徒テーブル（ID 1-4固定）
+-- 生徒テーブル（ID 1-5固定）
 CREATE TABLE IF NOT EXISTS students (
-  id INTEGER PRIMARY KEY CHECK (id BETWEEN 1 AND 4),
+  id INTEGER PRIMARY KEY CHECK (id BETWEEN 1 AND 5),
   nickname TEXT NOT NULL,
-  password TEXT NOT NULL DEFAULT 'rikarikalove',
+  password TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 既存環境向けの移行
 ALTER TABLE students ADD COLUMN IF NOT EXISTS password TEXT;
-ALTER TABLE students ALTER COLUMN password SET DEFAULT 'rikarikalove';
+ALTER TABLE students DROP CONSTRAINT IF EXISTS students_id_check;
+ALTER TABLE students ADD CONSTRAINT students_id_check CHECK (id BETWEEN 1 AND 5);
 
 -- 初期データ挿入
 INSERT INTO students (id, nickname, password) VALUES
-  (1, 'S', 'rikarikalove'),
-  (2, 'M', 'rikarikalove'),
-  (3, 'T', 'rikarikalove'),
-  (4, 'K', 'rikarikalove')
+  (1, 'S', 'rikalove1'),
+  (2, 'M', 'rikalove2'),
+  (3, 'T', 'rikalove3'),
+  (4, 'K', 'rikalove4'),
+  (5, '先生', 'rikaadmin2026')
 ON CONFLICT (id) DO NOTHING;
 
 -- 既存の旧デフォルト名だけ新デフォルトへ置換
@@ -28,9 +30,14 @@ UPDATE students SET nickname = 'S' WHERE id = 1 AND nickname = 'ゆうき';
 UPDATE students SET nickname = 'M' WHERE id = 2 AND nickname = 'あおい';
 UPDATE students SET nickname = 'T' WHERE id = 3 AND nickname = 'りく';
 UPDATE students SET nickname = 'K' WHERE id = 4 AND nickname = 'はな';
+UPDATE students SET nickname = '先生' WHERE id = 5 AND (nickname IS NULL OR BTRIM(nickname) = '');
 
 -- パスワード未設定の既存行に初期PWを投入
-UPDATE students SET password = 'rikarikalove' WHERE password IS NULL OR BTRIM(password) = '';
+UPDATE students SET password = 'rikalove1' WHERE id = 1 AND (password IS NULL OR BTRIM(password) = '' OR password = 'rikarikalove');
+UPDATE students SET password = 'rikalove2' WHERE id = 2 AND (password IS NULL OR BTRIM(password) = '' OR password = 'rikarikalove');
+UPDATE students SET password = 'rikalove3' WHERE id = 3 AND (password IS NULL OR BTRIM(password) = '' OR password = 'rikarikalove');
+UPDATE students SET password = 'rikalove4' WHERE id = 4 AND (password IS NULL OR BTRIM(password) = '' OR password = 'rikarikalove');
+UPDATE students SET password = 'rikaadmin2026' WHERE id = 5 AND (password IS NULL OR BTRIM(password) = '');
 ALTER TABLE students ALTER COLUMN password SET NOT NULL;
 
 -- 問題テーブル

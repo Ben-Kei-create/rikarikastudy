@@ -1,18 +1,28 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { fetchStudents } from '@/lib/auth'
+import { fetchStudents, useAuth } from '@/lib/auth'
 import { sampleQuestions } from '@/lib/sampleQuestions'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 
-const ADMIN_PW = 'rika_admin_2024'
+const ADMIN_PW = 'rikaadmin2026'
 const FIELDS = ['生物', '化学', '物理', '地学'] as const
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e',
   '化学': '#f97316',
   '物理': '#3b82f6',
   '地学': '#a855f7',
+}
+
+function buildBinaryChoices(choices: string[] | null, answer: string, seed: string) {
+  if (!choices || choices.length === 0) return null
+
+  const correct = choices.find(choice => choice === answer) ?? answer
+  const distractor = choices.find(choice => choice !== answer)
+  if (!distractor) return [correct]
+
+  return seed.length % 2 === 0 ? [correct, distractor] : [distractor, correct]
 }
 
 interface StudentStats {
@@ -28,6 +38,7 @@ interface StudentStats {
 type AdminTab = 'overview' | 'questions' | 'add'
 
 export default function AdminPage({ onBack }: { onBack: () => void }) {
+  const { lockedStudentId, clearDeviceLock } = useAuth()
   const [authed, setAuthed] = useState(false)
   const [pw, setPw] = useState('')
   const [pwError, setPwError] = useState(false)
@@ -41,7 +52,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     unit: '',
     question: '',
     type: 'choice' as 'choice' | 'text',
-    choices: ['', '', '', ''],
+    choices: ['', ''],
     answer: '',
     explanation: '',
     grade: '中3',
@@ -111,7 +122,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     if (!confirm(`サンプル問題（${sampleQuestions.length}問）を追加しますか？`)) return
     const toInsert = sampleQuestions.map(question => ({
       ...question,
-      choices: question.choices ? JSON.stringify(question.choices) : null,
+      choices: question.type === 'choice'
+        ? buildBinaryChoices(question.choices, question.answer, question.question)
+        : null,
     }))
     const { error } = await supabase.from('questions').insert(toInsert)
     if (error) alert('エラー: ' + error.message)
@@ -139,8 +152,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
     if (form.type === 'choice') {
       const filled = form.choices.filter(choice => choice.trim())
-      if (filled.length < 2) {
-        setAddMsg('選択肢を2つ以上入力してください')
+      if (filled.length !== 2) {
+        setAddMsg('選択肢を2つ入力してください')
+        return
+      }
+      if (!filled.includes(form.answer.trim())) {
+        setAddMsg('正解は選択肢AかBのどちらかと同じ内容にしてください')
         return
       }
       payload.choices = filled
@@ -158,7 +175,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       unit: '',
       question: '',
       type: 'choice',
-      choices: ['', '', '', ''],
+      choices: ['', ''],
       answer: '',
       explanation: '',
       grade: '中3',
@@ -218,6 +235,29 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             {label}
           </button>
         ))}
+      </div>
+
+      <div className="card mb-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-white font-bold">この端末のログイン固定</div>
+            <div className="text-slate-400 text-sm mt-1">
+              {lockedStudentId
+                ? `現在は ID ${lockedStudentId} に固定されています。`
+                : '現在は固定されていません。'}
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              clearDeviceLock()
+              alert('この端末の固定を解除しました。次回ログイン時にIDを選び直せます。')
+            }}
+            className="px-4 py-2 rounded-xl text-sm font-bold"
+            style={{ background: '#334155', color: '#e2e8f0' }}
+          >
+            固定を解除
+          </button>
+        </div>
       </div>
 
       {tab === 'overview' && (
@@ -347,7 +387,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 className="w-full px-3 py-2 rounded-xl outline-none"
                 style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
               >
-                <option value="choice">4択</option>
+                <option value="choice">2択</option>
                 <option value="text">記述</option>
               </select>
             </div>
@@ -391,8 +431,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
           {form.type === 'choice' && (
             <div>
-              <label className="text-slate-400 text-xs mb-1 block">選択肢（A〜D）</label>
-              <div className="grid grid-cols-2 gap-2">
+              <label className="text-slate-400 text-xs mb-1 block">選択肢（A・B）</label>
+              <div className="grid grid-cols-1 gap-2">
                 {form.choices.map((choice, index) => (
                   <input
                     key={index}
@@ -401,7 +441,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       ...current,
                       choices: current.choices.map((currentChoice, currentIndex) => currentIndex === index ? e.target.value : currentChoice),
                     }))}
-                    placeholder={`${'ABCD'[index]}. 選択肢`}
+                    placeholder={`${'AB'[index]}. 選択肢`}
                     className="px-3 py-2 rounded-xl outline-none"
                     style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
                   />
@@ -415,7 +455,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <input
               value={form.answer}
               onChange={e => setForm(current => ({ ...current, answer: e.target.value }))}
-              placeholder="正解をそのまま入力（選択肢の文字と完全一致）"
+              placeholder="正解をそのまま入力（AかBと同じ文）"
               className="w-full px-3 py-2 rounded-xl outline-none"
               style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
             />

@@ -9,7 +9,7 @@ export default function LoginPage({
   onDone: () => void
   onAdmin: () => void
 }) {
-  const { login } = useAuth()
+  const { login, lockedStudentId } = useAuth()
   const [studentId, setStudentId] = useState(1)
   const [students, setStudents] = useState(DEFAULT_STUDENTS)
   const [pw, setPw] = useState('')
@@ -27,18 +27,22 @@ export default function LoginPage({
     }
   }, [])
 
+  useEffect(() => {
+    if (lockedStudentId) setStudentId(lockedStudentId)
+  }, [lockedStudentId])
+
   const handleLogin = async () => {
     setSubmitting(true)
-    const ok = await login(studentId, pw)
+    const result = await login(studentId, pw)
     setSubmitting(false)
 
-    if (ok) {
+    if (result.ok) {
       setError('')
       onDone()
       return
     }
 
-    setError('ID またはパスワードが違います')
+    setError(result.message)
     setShakeKey(k => k + 1)
     setPw('')
   }
@@ -62,16 +66,28 @@ export default function LoginPage({
         <h2 className="text-xl font-bold mb-2 text-center">ログイン</h2>
         <p className="text-slate-500 text-sm text-center mb-6">ID を選んでパスワードを入力してね</p>
 
+        {lockedStudentId && (
+          <div
+            className="rounded-2xl px-4 py-3 text-sm mb-4"
+            style={{ background: '#082f49', border: '1px solid #0369a1', color: '#bae6fd' }}
+          >
+            この端末は ID {lockedStudentId} 専用です。切り替えはもぎ先生ログインから解除できます。
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3 mb-4">
           {students.map(student => {
             const checked = studentId === student.id
+            const disabled = !!lockedStudentId && lockedStudentId !== student.id
             return (
               <label
                 key={student.id}
-                className="rounded-2xl p-3 cursor-pointer transition-all"
+                className="rounded-2xl p-3 transition-all"
                 style={{
                   border: `2px solid ${checked ? '#3b82f6' : '#334155'}`,
                   background: checked ? '#1d4ed8' : '#0f172a',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? 0.35 : 1,
                 }}
               >
                 <input
@@ -79,7 +95,8 @@ export default function LoginPage({
                   name="studentId"
                   value={student.id}
                   checked={checked}
-                  onChange={() => setStudentId(student.id)}
+                  onChange={() => !disabled && setStudentId(student.id)}
+                  disabled={disabled}
                   className="sr-only"
                 />
                 <div className="text-xs text-slate-400">ID {student.id}</div>

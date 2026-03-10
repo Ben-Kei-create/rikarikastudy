@@ -2,8 +2,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 
-export const DEFAULT_LOGIN_PASSWORD = 'rikarikalove'
 const STORAGE_KEY = 'rika_auth_v3'
+const DEVICE_LOCK_KEY = 'rika_device_lock_v1'
 
 export interface StudentRecord {
   id: number
@@ -12,10 +12,11 @@ export interface StudentRecord {
 }
 
 export const DEFAULT_STUDENTS: StudentRecord[] = [
-  { id: 1, nickname: 'S', password: DEFAULT_LOGIN_PASSWORD },
-  { id: 2, nickname: 'M', password: DEFAULT_LOGIN_PASSWORD },
-  { id: 3, nickname: 'T', password: DEFAULT_LOGIN_PASSWORD },
-  { id: 4, nickname: 'K', password: DEFAULT_LOGIN_PASSWORD },
+  { id: 1, nickname: 'S', password: 'rikalove1' },
+  { id: 2, nickname: 'M', password: 'rikalove2' },
+  { id: 3, nickname: 'T', password: 'rikalove3' },
+  { id: 4, nickname: 'K', password: 'rikalove4' },
+  { id: 5, nickname: '先生', password: 'rikaadmin2026' },
 ]
 
 function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number }>) {
@@ -43,13 +44,7 @@ async function queryStudents(): Promise<StudentRecord[] | null> {
     .order('id', { ascending: true })
 
   if (!legacyError && legacyData) {
-    return mergeWithDefaults(
-      legacyData.map(student => ({
-        id: student.id,
-        nickname: student.nickname,
-        password: DEFAULT_LOGIN_PASSWORD,
-      }))
-    )
+    return mergeWithDefaults(legacyData)
   }
 
   return null
@@ -60,8 +55,8 @@ export async function fetchStudents() {
 }
 
 async function fetchStudentById(studentId: number) {
-  const students = await queryStudents()
-  return students?.find(student => student.id === studentId) ?? null
+  const students = (await queryStudents()) ?? DEFAULT_STUDENTS
+  return students.find(student => student.id === studentId) ?? null
 }
 
 function getUpdateErrorMessage(message: string) {
@@ -75,6 +70,7 @@ interface AuthState {
   studentId: number | null
   nickname: string | null
   ready: boolean
+  lockedStudentId: number | null
 }
 
 interface UpdateProfileInput {
@@ -88,10 +84,11 @@ interface UpdateProfileResult {
 }
 
 interface AuthContextType extends AuthState {
-  login: (studentId: number, password: string) => Promise<boolean>
+  login: (studentId: number, password: string) => Promise<UpdateProfileResult>
   logout: () => void
   refreshProfile: () => Promise<void>
   updateProfile: (updates: UpdateProfileInput) => Promise<UpdateProfileResult>
+  clearDeviceLock: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -101,18 +98,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     studentId: null,
     nickname: null,
     ready: false,
+    lockedStudentId: null,
   })
 
   useEffect(() => {
     let cancelled = false
 
     const restore = async () => {
+      let lockedStudentId: number | null = null
+
       try {
+        const lockRaw = localStorage.getItem(DEVICE_LOCK_KEY)
+        if (lockRaw) {
+          const parsedLock = Number(lockRaw)
+          if (Number.isInteger(parsedLock) && parsedLock >= 1 && parsedLock <= 5) {
+            lockedStudentId = parsedLock
+          } else {
+            localStorage.removeItem(DEVICE_LOCK_KEY)
+          }
+        }
+
         const saved = sessionStorage.getItem(STORAGE_KEY)
-        if (!saved) return
+        if (!saved) {
+          if (!cancelled) {
+            setState(prev => ({ ...prev, lockedStudentId }))
+          }
+          return
+        }
 
         const parsed = JSON.parse(saved) as { studentId?: number }
-        if (!parsed.studentId) return
+        if (!parsed.studentId) {
+          if (!cancelled) {
+            setState(prev => ({ ...prev, lockedStudentId }))
+          }
+          return
+        }
 
         const student = await fetchStudentById(parsed.studentId)
         if (!student || cancelled) return
@@ -121,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           studentId: student.id,
           nickname: student.nickname,
           ready: true,
+          lockedStudentId,
         })
         return
       } catch {}
@@ -143,22 +164,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (studentId: number, password: string) => {
+    if (state.lockedStudentId && state.lockedStudentId !== studentId) {
+      return {
+        ok: false,
+        message: `この端末は ID ${state.lockedStudentId} 用に固定されています。切り替えはもぎ先生ログインから解除してください。`,
+      }
+    }
+
     const student = await fetchStudentById(studentId)
-    if (!student) return false
-    if (student.password !== password.trim()) return false
+    if (!student || student.password !== password.trim()) {
+      return {
+        ok: false,
+        message: 'ID またはパスワードが違います',
+      }
+    }
+
+    const nextLockedStudentId = state.lockedStudentId ?? student.id
+    if (!state.lockedStudentId) {
+      localStorage.setItem(DEVICE_LOCK_KEY, String(student.id))
+    }
 
     const next = {
       studentId: student.id,
       nickname: student.nickname,
       ready: true,
+      lockedStudentId: nextLockedStudentId,
     }
     setState(next)
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ studentId: student.id }))
-    return true
+    return { ok: true, message: '' }
   }
 
   const logout = () => {
-    setState({ studentId: null, nickname: null, ready: true })
+    setState(prev => ({ ...prev, studentId: null, nickname: null, ready: true }))
     sessionStorage.removeItem(STORAGE_KEY)
   }
 
@@ -167,6 +205,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const student = await fetchStudentById(state.studentId)
     if (!student) return
     setState(prev => ({ ...prev, nickname: student.nickname }))
+  }
+
+  const clearDeviceLock = () => {
+    localStorage.removeItem(DEVICE_LOCK_KEY)
+    setState(prev => ({ ...prev, lockedStudentId: null }))
   }
 
   const updateProfile = async (updates: UpdateProfileInput): Promise<UpdateProfileResult> => {
@@ -213,7 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshProfile, updateProfile }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refreshProfile, updateProfile, clearDeviceLock }}>
       {children}
     </AuthContext.Provider>
   )

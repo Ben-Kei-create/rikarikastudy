@@ -212,7 +212,7 @@ export default function QuizPage({
             {q.field} · {q.unit}
           </span>
           <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: '#334155', color: '#94a3b8' }}>
-            {q.type === 'choice' ? '4択' : '記述'}
+            {q.type === 'choice' ? `${q.choices?.length ?? 0}択` : '記述'}
           </span>
         </div>
         <p className="text-lg font-bold leading-relaxed text-white">{q.question}</p>
@@ -237,7 +237,7 @@ export default function QuizPage({
                 className="p-4 rounded-xl text-left font-bold transition-all anim-fade-up"
                 style={{ animationDelay: `${i * 0.06}s`, background: bg, border, color: textColor }}
               >
-                <span className="mr-3 opacity-50">{'ABCD'[i]}.</span>{c}
+                <span className="mr-3 opacity-50">{'ABCD'[i] ?? `${i + 1}` }.</span>{c}
               </button>
             )
           })}
