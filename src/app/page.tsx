@@ -61,7 +61,6 @@ function App() {
   return (
     <>
       {content}
-      {studentId && !adminOpen && <AdminFloatButton onOpen={() => setAdminOpen(true)} />}
       {adminOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#0f172a', overflowY: 'auto' }}>
           <AdminPage onBack={() => setAdminOpen(false)} />
@@ -76,32 +75,5 @@ export default function Page() {
     <AuthProvider>
       <App />
     </AuthProvider>
-  )
-}
-
-function AdminFloatButton({ onOpen }: { onOpen: () => void }) {
-  return (
-    <button
-      onClick={onOpen}
-      style={{
-        position: 'fixed',
-        bottom: 16,
-        right: 16,
-        zIndex: 999,
-        background: '#1e293b',
-        border: '1px solid #334155',
-        color: '#cbd5e1',
-        borderRadius: 10,
-        padding: '8px 14px',
-        fontSize: 12,
-        cursor: 'pointer',
-        opacity: 0.65,
-        transition: 'opacity 0.2s',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-      onMouseLeave={e => (e.currentTarget.style.opacity = '0.65')}
-    >
-      もぎ先生ログイン
-    </button>
   )
 }
