@@ -29,7 +29,7 @@ export default function QuizPage({
   unit: string
   onBack: () => void
 }) {
-  const { studentId } = useAuth()
+  const { studentId, logout } = useAuth()
   const color = FIELD_COLORS[field]
 
   const [questions, setQuestions] = useState<Question[]>([])
@@ -130,7 +130,16 @@ export default function QuizPage({
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
         <p className="text-slate-400 mb-4">問題がまだ登録されていません。</p>
-        <button onClick={onBack} className="btn-primary">もどる</button>
+        <div className="flex gap-3">
+          <button onClick={onBack} className="btn-primary">もどる</button>
+          <button
+            onClick={() => logout()}
+            className="px-4 py-3 rounded-xl text-sm transition-all"
+            style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+          >
+            ログアウト
+          </button>
+        </div>
       </div>
     )
   }
@@ -161,7 +170,7 @@ export default function QuizPage({
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => { setCurrent(0); setPhase('answering'); setScore(0); setSelected(null); setTextInput(''); setIsCorrect(null); setAnswerLogs([]) }}
               className="py-3 rounded-xl font-bold transition-all"
@@ -171,6 +180,13 @@ export default function QuizPage({
             </button>
             <button onClick={onBack} className="btn-primary py-3">
               分野選択へ
+            </button>
+            <button
+              onClick={() => logout()}
+              className="py-3 rounded-xl text-sm transition-all"
+              style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+            >
+              ログアウト
             </button>
           </div>
         </div>
@@ -203,6 +219,13 @@ export default function QuizPage({
         <div className="text-sm font-bold" style={{ color }}>
           {score}正解
         </div>
+        <button
+          onClick={() => logout()}
+          className="px-3 py-2 rounded-xl text-sm transition-all"
+          style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+        >
+          ログアウト
+        </button>
       </div>
 
       {/* 問題カード */}

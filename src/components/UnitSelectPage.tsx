@@ -26,7 +26,7 @@ export default function UnitSelectPage({
   onSelect: (unit: string) => void
   onBack: () => void
 }) {
-  const { studentId } = useAuth()
+  const { studentId, logout } = useAuth()
   const [units, setUnits] = useState<UnitStat[]>([])
   const [loading, setLoading] = useState(true)
   const color = FIELD_COLORS[field]
@@ -72,9 +72,18 @@ export default function UnitSelectPage({
 
   return (
     <div className="min-h-screen p-6 max-w-lg mx-auto">
-      <button onClick={onBack} className="flex items-center gap-2 text-slate-400 mb-6 hover:text-white transition-colors">
-        ← もどる
-      </button>
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+          ← もどる
+        </button>
+        <button
+          onClick={() => logout()}
+          className="px-4 py-2 rounded-xl text-sm transition-all"
+          style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+        >
+          ログアウト
+        </button>
+      </div>
 
       <div className="flex items-center gap-3 mb-2 anim-fade-up">
         <span style={{ fontSize: 40 }}>{FIELD_EMOJI[field]}</span>

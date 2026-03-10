@@ -12,6 +12,7 @@
 2. 「SQL Editor」を開き、`supabase_schema.sql` の内容を全てコピー＆実行
    - 既存プロジェクトでも再実行OK
    - `students.password` 列と初期データ（ID 1〜5 / S, M, T, K, 先生 / `rikalove1〜4`, `rikaadmin2026`）を揃えます
+   - `student_questions` テーブルもここで作成されます
 3. 「Project Settings → API」から以下をコピー：
    - `Project URL`
    - `Publishable Key`（推奨）または `Anon Key (Legacy)`
@@ -109,6 +110,7 @@ npm run questions:sql -- examples/questions_bulk_example.json > questions_bulk.s
 - ✅ 解説表示
 - ✅ セッション・回答ログをSupabaseに保存
 - ✅ マイページ（正答率・学習履歴）
+- ✅ 生徒から先生への質問投稿（本人と先生のみ表示する運用）
 - ✅ 管理画面（生徒データ閲覧・問題追加・削除）
 
 ---

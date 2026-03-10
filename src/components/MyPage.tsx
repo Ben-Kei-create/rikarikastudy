@@ -21,12 +21,27 @@ interface AnswerLog {
   question_id: string; is_correct: boolean
   questions: { unit: string; field: string } | null
 }
-type Tab = 'overview' | 'history' | 'weak' | 'account'
+interface StudentQuestionPost {
+  id: string
+  title: string
+  message: string
+  created_at: string
+}
+
+function getStudentQuestionErrorMessage(message: string) {
+  if (message.includes('student_questions')) {
+    return '質問機能を使うには、Supabase で更新した supabase_schema.sql を再実行してください。'
+  }
+  return `質問の保存に失敗しました: ${message}`
+}
+
+type Tab = 'overview' | 'history' | 'weak' | 'questions' | 'account'
 
 export default function MyPage({ onBack }: { onBack: () => void }) {
-  const { studentId, nickname, updateProfile } = useAuth()
+  const { studentId, nickname, updateProfile, logout } = useAuth()
   const [sessions, setSessions] = useState<Session[]>([])
   const [answerLogs, setAnswerLogs] = useState<AnswerLog[]>([])
+  const [teacherPosts, setTeacherPosts] = useState<StudentQuestionPost[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('overview')
   const [nicknameInput, setNicknameInput] = useState('')
@@ -34,16 +49,25 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [accountMsg, setAccountMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [saving, setSaving] = useState<'nickname' | 'password' | null>(null)
+  const [questionTitle, setQuestionTitle] = useState('')
+  const [questionBody, setQuestionBody] = useState('')
+  const [questionMsg, setQuestionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [postingQuestion, setPostingQuestion] = useState(false)
 
   useEffect(() => {
     if (!studentId) return
     const load = async () => {
-      const [{ data: sData }, { data: aData }] = await Promise.all([
+      const [{ data: sData }, { data: aData }, { data: qData, error: qError }] = await Promise.all([
         supabase.from('quiz_sessions').select('*').eq('student_id', studentId).order('created_at', { ascending: false }),
         supabase.from('answer_logs').select('question_id, is_correct, questions(unit, field)').eq('student_id', studentId),
+        supabase.from('student_questions').select('*').eq('student_id', studentId).order('created_at', { ascending: false }),
       ])
       setSessions(sData || [])
       setAnswerLogs((aData as any) || [])
+      setTeacherPosts((qData as StudentQuestionPost[]) || [])
+      if (qError) {
+        setQuestionMsg({ type: 'error', text: getStudentQuestionErrorMessage(qError.message) })
+      }
       setLoading(false)
     }
     load()
@@ -163,6 +187,44 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
     }
   }
 
+  const handlePostQuestion = async () => {
+    if (!studentId) return
+    if (!questionTitle.trim() || !questionBody.trim()) {
+      setQuestionMsg({ type: 'error', text: '件名と内容を入力してください。' })
+      return
+    }
+
+    try {
+      setPostingQuestion(true)
+      setQuestionMsg(null)
+      const { data, error } = await supabase
+        .from('student_questions')
+        .insert({
+          student_id: studentId,
+          title: questionTitle.trim(),
+          message: questionBody.trim(),
+        })
+        .select()
+        .single()
+
+      if (error) throw new Error(error.message)
+
+      if (data) {
+        setTeacherPosts(current => [data as StudentQuestionPost, ...current])
+      }
+      setQuestionTitle('')
+      setQuestionBody('')
+      setQuestionMsg({ type: 'success', text: '先生に質問を送信しました。' })
+    } catch (error) {
+      setQuestionMsg({
+        type: 'error',
+        text: getStudentQuestionErrorMessage(error instanceof Error ? error.message : '不明なエラーです。'),
+      })
+    } finally {
+      setPostingQuestion(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -175,9 +237,18 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
     <div className="min-h-screen pb-16 max-w-lg mx-auto">
       {/* ヘッダー */}
       <div className="sticky top-0 z-10 px-6 pt-6 pb-4" style={{ background: '#0f172a' }}>
-        <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors text-sm mb-3 flex items-center gap-1">
-          ← もどる
-        </button>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1">
+            ← もどる
+          </button>
+          <button
+            onClick={() => logout()}
+            className="px-4 py-2 rounded-xl text-sm transition-all"
+            style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+          >
+            ログアウト
+          </button>
+        </div>
         <div className="flex items-end justify-between">
           <div>
             <h1 className="font-display text-3xl text-white">マイページ</h1>
@@ -191,8 +262,8 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
             </div>
           )}
         </div>
-        <div className="flex gap-2 mt-4">
-          {([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['account', '⚙️ 設定']] as const).map(([t, label]) => (
+        <div className="flex flex-wrap gap-2 mt-4">
+          {([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['questions', '💬 質問'], ['account', '⚙️ 設定']] as const).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
               className="px-3 py-1.5 rounded-lg text-sm font-bold transition-all"
               style={{
@@ -411,6 +482,83 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'questions' && (
+          <div className="space-y-4 anim-fade">
+            <div className="card">
+              <h3 className="text-slate-300 font-bold mb-1">先生への質問</h3>
+              <p className="text-slate-500 text-xs leading-6">
+                ここに書いた内容は、自分と先生だけが見られます。
+              </p>
+              <div className="space-y-3 mt-4">
+                <input
+                  type="text"
+                  value={questionTitle}
+                  onChange={e => setQuestionTitle(e.target.value)}
+                  placeholder="件名"
+                  className="w-full px-4 py-3 rounded-xl outline-none"
+                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                />
+                <textarea
+                  value={questionBody}
+                  onChange={e => setQuestionBody(e.target.value)}
+                  placeholder="先生に聞きたいことを書いてください"
+                  rows={5}
+                  className="w-full px-4 py-3 rounded-2xl outline-none resize-y"
+                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                />
+              </div>
+              <button
+                onClick={handlePostQuestion}
+                className="btn-primary w-full mt-3"
+                disabled={postingQuestion}
+                style={{ opacity: postingQuestion ? 0.7 : 1 }}
+              >
+                {postingQuestion ? '送信中...' : '質問を送信'}
+              </button>
+              {questionMsg && (
+                <div
+                  className="rounded-2xl px-4 py-3 text-sm mt-3"
+                  style={{
+                    background: questionMsg.type === 'success' ? '#052e16' : '#450a0a',
+                    border: `1px solid ${questionMsg.type === 'success' ? '#166534' : '#991b1b'}`,
+                    color: questionMsg.type === 'success' ? '#86efac' : '#fca5a5',
+                  }}
+                >
+                  {questionMsg.text}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {teacherPosts.length === 0 ? (
+                <div className="card text-center text-slate-500 py-10">
+                  まだ質問はありません。必要なときにここから先生へ送れます。
+                </div>
+              ) : (
+                teacherPosts.map(post => (
+                  <div key={post.id} className="card">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-bold text-white">{post.title}</div>
+                        <div className="text-slate-500 text-xs mt-1">
+                          {format(new Date(post.created_at), 'M月d日(E) HH:mm', { locale: ja })}
+                        </div>
+                      </div>
+                      <span
+                        className="px-2 py-1 rounded-full text-xs font-bold"
+                        style={{ background: '#1d4ed820', color: '#60a5fa' }}
+                      >
+                        先生共有
+                      </span>
+                    </div>
+                    <p className="text-slate-200 text-sm leading-7 mt-3 whitespace-pre-wrap">{post.message}</p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
 

@@ -94,6 +94,24 @@ export type Database = {
           student_answer: string
         }
       }
+      student_questions: {
+        Row: {
+          id: string
+          student_id: number
+          title: string
+          message: string
+          created_at: string
+        }
+        Insert: {
+          student_id: number
+          title: string
+          message: string
+        }
+        Update: {
+          title?: string
+          message?: string
+        }
+      }
     }
   }
 }

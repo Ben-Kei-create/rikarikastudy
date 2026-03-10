@@ -76,14 +76,25 @@ CREATE TABLE IF NOT EXISTS answer_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 生徒から先生への質問テーブル
+CREATE TABLE IF NOT EXISTS student_questions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- インデックス
 CREATE INDEX IF NOT EXISTS idx_quiz_sessions_student ON quiz_sessions(student_id);
 CREATE INDEX IF NOT EXISTS idx_answer_logs_student ON answer_logs(student_id);
 CREATE INDEX IF NOT EXISTS idx_answer_logs_question ON answer_logs(question_id);
 CREATE INDEX IF NOT EXISTS idx_questions_field ON questions(field);
+CREATE INDEX IF NOT EXISTS idx_student_questions_student ON student_questions(student_id);
 
 -- RLS（Row Level Security）を無効に（塾内利用のため簡略化）
 ALTER TABLE students DISABLE ROW LEVEL SECURITY;
 ALTER TABLE questions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz_sessions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE answer_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE student_questions DISABLE ROW LEVEL SECURITY;
