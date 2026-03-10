@@ -1,0 +1,18 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e4]
+  - generic [ref=e153]:
+    - generic [ref=e155]:
+      - button "やめる" [ref=e156] [cursor=pointer]
+      - generic [ref=e158]:
+        - generic [ref=e159]: 全単元
+        - generic [ref=e160]: 2 / 10
+      - generic [ref=e162]: 0正解
+      - button "ログアウト" [ref=e163] [cursor=pointer]
+    - generic [ref=e179]:
+      - generic [ref=e180]:
+        - generic [ref=e181]: 生物 · 生命の連続性
+        - generic [ref=e182]: 記述
+      - paragraph [ref=e183]: 丸としわの種子の遺伝で、孫の代に丸の種子が600個できたとき、しわの種子はおよそ何個できると考えられるか。
+    - generic [ref=e169]:
+      - textbox "ここに答えを書いてください" [ref=e170]
+      - button "答えを提出" [disabled] [ref=e184] [cursor=pointer]

@@ -1,0 +1,47 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e4]
+  - generic [ref=e39]:
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]: Home
+        - generic [ref=e44]: こんにちは、Sさん
+        - paragraph [ref=e45]: 今日の理科を、分野からすぐ始められます。
+      - generic [ref=e46]:
+        - button "マイページ" [ref=e47] [cursor=pointer]
+        - button "ログアウト" [ref=e48] [cursor=pointer]
+    - generic [ref=e49]:
+      - heading "分野を選ぶ" [level=2] [ref=e50]
+      - generic [ref=e51]: 4 categories
+    - generic [ref=e52]:
+      - button "🌿 生物 start 細胞・遺伝・消化" [ref=e53] [cursor=pointer]:
+        - generic [ref=e55]:
+          - generic [ref=e56]: 🌿
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - generic [ref=e59]: 生物
+              - generic [ref=e60]: start
+            - generic [ref=e61]: 細胞・遺伝・消化
+      - button "⚗️ 化学 start 原子・イオン・化学変化" [ref=e62] [cursor=pointer]:
+        - generic [ref=e64]:
+          - generic [ref=e65]: ⚗️
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e68]: 化学
+              - generic [ref=e69]: start
+            - generic [ref=e70]: 原子・イオン・化学変化
+      - button "⚡ 物理 start 力・電気・エネルギー" [ref=e71] [cursor=pointer]:
+        - generic [ref=e73]:
+          - generic [ref=e74]: ⚡
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - generic [ref=e77]: 物理
+              - generic [ref=e78]: start
+            - generic [ref=e79]: 力・電気・エネルギー
+      - button "🌏 地学 start 地震・天気・宇宙" [ref=e80] [cursor=pointer]:
+        - generic [ref=e82]:
+          - generic [ref=e83]: 🌏
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - generic [ref=e86]: 地学
+              - generic [ref=e87]: start
+            - generic [ref=e88]: 地震・天気・宇宙

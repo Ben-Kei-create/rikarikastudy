@@ -4,6 +4,12 @@ import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { format, subDays, startOfDay, eachDayOfInterval, differenceInCalendarDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import {
+  getCachedColumnSupport,
+  isMissingColumnError,
+  markColumnMissing,
+  markColumnSupported,
+} from '@/lib/schemaCompat'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
@@ -84,11 +90,26 @@ export default function MyPage({
   useEffect(() => {
     if (!studentId) return
     const load = async () => {
-      const [{ data: sData }, { data: aData }, { data: qData }] = await Promise.all([
+      const shouldLoadMyQuestions = getCachedColumnSupport('created_by_student_id') !== false
+      const [sessionsResponse, answerLogsResponse, questionResponse] = await Promise.all([
         supabase.from('quiz_sessions').select('*').eq('student_id', studentId).order('created_at', { ascending: false }),
         supabase.from('answer_logs').select('question_id, is_correct, questions(unit, field)').eq('student_id', studentId),
-        supabase.from('questions').select('*').eq('created_by_student_id', studentId).order('created_at', { ascending: false }),
+        shouldLoadMyQuestions
+          ? supabase.from('questions').select('*').eq('created_by_student_id', studentId).order('created_at', { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
       ])
+
+      const sData = sessionsResponse.data
+      const aData = answerLogsResponse.data
+      let qData = questionResponse.data
+
+      if (questionResponse.error && isMissingColumnError(questionResponse.error, 'created_by_student_id')) {
+        markColumnMissing('created_by_student_id')
+        qData = []
+      } else if (!questionResponse.error && shouldLoadMyQuestions) {
+        markColumnSupported('created_by_student_id')
+      }
+
       setSessions(sData || [])
       setAnswerLogs((aData as any) || [])
       setMyQuestions((qData as QuestionRow[]) || [])
@@ -178,7 +199,7 @@ export default function MyPage({
   }, [sessions])
 
   const heatColor = (count: number) => {
-    if (count === 0) return '#1e293b'
+    if (count === 0) return 'var(--surface-elevated)'
     if (count < 5) return '#1d4ed8'
     if (count < 15) return '#3b82f6'
     if (count < 30) return '#60a5fa'
@@ -250,6 +271,15 @@ export default function MyPage({
         .select()
         .single()
 
+      if (error && isMissingColumnError(error, 'created_by_student_id')) {
+        markColumnMissing('created_by_student_id')
+        throw new Error('Supabase の questions テーブルに created_by_student_id 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      }
+
+      if (!error) {
+        markColumnSupported('created_by_student_id')
+      }
+
       if (error) throw new Error(error.message)
 
       if (data) {
@@ -269,7 +299,7 @@ export default function MyPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="page-shell flex items-center justify-center">
         <div className="text-slate-400">読み込み中...</div>
       </div>
     )
@@ -362,7 +392,7 @@ export default function MyPage({
                           {rate === null ? '—' : `${rate}%`}
                         </span>
                       </div>
-                      <div style={{ background: '#0f172a', borderRadius: 8, height: 8 }}>
+                      <div className="soft-track" style={{ height: 8 }}>
                         <div style={{
                           width: `${rate ?? 0}%`, height: '100%',
                           background: `linear-gradient(90deg, ${color}, ${color}80)`,
@@ -392,7 +422,7 @@ export default function MyPage({
                           width: '100%', height: h,
                           background: isToday
                             ? 'linear-gradient(180deg, #60a5fa, #3b82f6)'
-                            : d.count > 0 ? 'linear-gradient(180deg, #475569, #334155)' : '#1e293b',
+                            : d.count > 0 ? 'linear-gradient(180deg, #475569, #334155)' : 'var(--surface-elevated)',
                           borderRadius: '6px 6px 2px 2px',
                           transition: 'height 1s ease',
                         }} />
@@ -428,7 +458,7 @@ export default function MyPage({
               </div>
               <div className="flex items-center gap-2 mt-3">
                 <span className="text-slate-600 text-xs">0問</span>
-                {['#1e293b', '#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd'].map(c => (
+                {['var(--surface-elevated)', '#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd'].map(c => (
                   <div key={c} style={{ width: 14, height: 14, borderRadius: 3, background: c }} />
                 ))}
                 <span className="text-slate-600 text-xs">30問+</span>
@@ -441,16 +471,15 @@ export default function MyPage({
         {tab === 'history' && (
           <div className="space-y-2 anim-fade">
             {sessions.length === 0 ? (
-              <div className="card text-center text-slate-500 py-12">
-                まだ問題を解いていないよ！<br />さっそく挑戦してみよう 🚀
-              </div>
-            ) : sessions.slice(0, 50).map(s => {
+                <div className="card text-center text-slate-500 py-12">
+                  まだ問題を解いていないよ！<br />さっそく挑戦してみよう 🚀
+                </div>
+              ) : sessions.slice(0, 50).map(s => {
               const rate = Math.round((s.correct_count / s.total_questions) * 100)
               const color = FIELD_COLORS[s.field]
               const dateStr = format(new Date(s.created_at), 'M月d日(E) HH:mm', { locale: ja })
               return (
-                <div key={s.id} className="p-4 rounded-2xl"
-                  style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                <div key={s.id} className="subcard p-4">
                   <div className="flex items-start gap-3">
                     <span style={{ fontSize: 24, flexShrink: 0 }}>{FIELD_EMOJI[s.field]}</span>
                     <div className="flex-1 min-w-0">
@@ -494,8 +523,8 @@ export default function MyPage({
                   const color = FIELD_COLORS[u.field]
                   const medal = i === 0 ? '🚨' : i === 1 ? '⚠️' : i === 2 ? '📌' : '📍'
                   return (
-                    <div key={`${u.field}-${u.unit}`} className="p-4 rounded-2xl"
-                      style={{ background: '#1e293b', border: `1px solid ${u.rate < 50 ? '#ef444430' : '#334155'}` }}>
+                    <div key={`${u.field}-${u.unit}`} className="subcard p-4"
+                      style={{ borderColor: u.rate < 50 ? '#ef444430' : 'var(--surface-elevated-border)' }}>
                       <div className="flex items-center gap-3">
                         <span style={{ fontSize: 24 }}>{medal}</span>
                         <div className="flex-1">
@@ -504,7 +533,7 @@ export default function MyPage({
                               style={{ background: `${color}20`, color }}>{u.field}</span>
                             <span className="font-bold text-white text-sm">{u.unit}</span>
                           </div>
-                          <div style={{ background: '#0f172a', borderRadius: 6, height: 6 }}>
+                          <div className="soft-track" style={{ height: 6, borderRadius: 6 }}>
                             <div style={{
                               width: `${u.rate}%`, height: '100%',
                               background: u.rate < 50 ? '#ef4444' : '#f59e0b',
@@ -521,8 +550,7 @@ export default function MyPage({
                       </div>
                       <button
                         onClick={() => onStartDrill(u.field, u.unit)}
-                        className="mt-3 w-full rounded-xl px-4 py-2 text-sm font-bold transition-all"
-                        style={{ background: '#334155', color: '#f8fafc' }}
+                        className="btn-secondary mt-3 w-full !py-2.5 text-sm"
                       >
                         復習する →
                       </button>
@@ -545,16 +573,14 @@ export default function MyPage({
                 <select
                   value={questionForm.field}
                   onChange={e => setQuestionForm(current => ({ ...current, field: e.target.value as typeof FIELDS[number] }))}
-                  className="w-full px-4 py-3 rounded-xl outline-none"
-                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                  className="input-surface"
                 >
                   {FIELDS.map(field => <option key={field}>{field}</option>)}
                 </select>
                 <select
                   value={questionForm.type}
                   onChange={e => setQuestionForm(current => ({ ...current, type: e.target.value as 'choice' | 'text' }))}
-                  className="w-full px-4 py-3 rounded-xl outline-none"
-                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                  className="input-surface"
                 >
                   <option value="choice">2択</option>
                   <option value="text">記述</option>
@@ -566,14 +592,12 @@ export default function MyPage({
                   value={questionForm.unit}
                   onChange={e => setQuestionForm(current => ({ ...current, unit: e.target.value }))}
                   placeholder="単元"
-                  className="w-full px-4 py-3 rounded-xl outline-none"
-                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                  className="input-surface"
                 />
                 <select
                   value={questionForm.grade}
                   onChange={e => setQuestionForm(current => ({ ...current, grade: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl outline-none"
-                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                  className="input-surface"
                 >
                   {['中1', '中2', '中3', '高校'].map(grade => <option key={grade}>{grade}</option>)}
                 </select>
@@ -584,8 +608,7 @@ export default function MyPage({
                   onChange={e => setQuestionForm(current => ({ ...current, question: e.target.value }))}
                   placeholder="問題文"
                   rows={4}
-                  className="w-full px-4 py-3 rounded-2xl outline-none resize-y"
-                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                  className="input-surface resize-y"
                 />
                 {questionForm.type === 'choice' && (
                   <div className="grid grid-cols-2 gap-3">
@@ -594,16 +617,14 @@ export default function MyPage({
                       value={questionForm.choices[0]}
                       onChange={e => setQuestionForm(current => ({ ...current, choices: [e.target.value, current.choices[1]] as [string, string] }))}
                       placeholder="選択肢A"
-                      className="w-full px-4 py-3 rounded-xl outline-none"
-                      style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                      className="input-surface"
                     />
                     <input
                       type="text"
                       value={questionForm.choices[1]}
                       onChange={e => setQuestionForm(current => ({ ...current, choices: [current.choices[0], e.target.value] as [string, string] }))}
                       placeholder="選択肢B"
-                      className="w-full px-4 py-3 rounded-xl outline-none"
-                      style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                      className="input-surface"
                     />
                   </div>
                 )}
@@ -612,16 +633,14 @@ export default function MyPage({
                   value={questionForm.answer}
                   onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
                   placeholder={questionForm.type === 'choice' ? '答え（AかBと同じ内容）' : '答え'}
-                  className="w-full px-4 py-3 rounded-xl outline-none"
-                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                  className="input-surface"
                 />
                 <textarea
                   value={questionForm.explanation}
                   onChange={e => setQuestionForm(current => ({ ...current, explanation: e.target.value }))}
                   placeholder="解説（任意）"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-2xl outline-none resize-y"
-                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                  className="input-surface resize-y"
                 />
               </div>
               <button
@@ -703,8 +722,7 @@ export default function MyPage({
                 value={nicknameInput}
                 onChange={e => setNicknameInput(e.target.value)}
                 placeholder="ニックネーム"
-                className="w-full px-4 py-3 rounded-xl outline-none"
-                style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                className="input-surface"
               />
               <button
                 onClick={handleSaveNickname}
@@ -724,16 +742,14 @@ export default function MyPage({
                   value={passwordInput}
                   onChange={e => setPasswordInput(e.target.value)}
                   placeholder="新しいパスワード"
-                  className="w-full px-4 py-3 rounded-xl outline-none"
-                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                  className="input-surface"
                 />
                 <input
                   type="password"
                   value={passwordConfirm}
                   onChange={e => setPasswordConfirm(e.target.value)}
                   placeholder="新しいパスワード（確認）"
-                  className="w-full px-4 py-3 rounded-xl outline-none"
-                  style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+                  className="input-surface"
                 />
               </div>
               <button

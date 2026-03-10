@@ -1,0 +1,9 @@
+[    2868ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/favicon.ico:0
+[  124783ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://rmymhagbeixjljelzwfn.supabase.co/rest/v1/questions?select=*&field=eq.%E7%94%9F%E7%89%A9&or=%28created_by_student_id.is.null%2Ccreated_by_student_id.eq.1%29:0
+[  124974ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://rmymhagbeixjljelzwfn.supabase.co/rest/v1/questions?select=*&field=eq.%E7%94%9F%E7%89%A9&or=%28created_by_student_id.is.null%2Ccreated_by_student_id.eq.1%29:0
+[  328370ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/css/app/layout.css?v=1773183135273:0
+[  328611ms] Event
+[  375351ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/css/app/layout.css?v=1773183183382:0
+[  375458ms] Event
+[  402036ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/css/app/layout.css?v=1773183209760:0
+[  402095ms] Event

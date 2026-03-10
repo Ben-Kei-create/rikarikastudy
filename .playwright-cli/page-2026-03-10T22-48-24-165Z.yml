@@ -1,0 +1,56 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e4]
+  - generic [ref=e89]:
+    - generic [ref=e91]:
+      - generic [ref=e92]:
+        - generic [ref=e93]: 🌿
+        - generic [ref=e94]:
+          - generic [ref=e95]: Unit Select
+          - generic [ref=e96]: 生物
+          - paragraph [ref=e97]: 単元を選んで、そのまま解き始められます。
+      - generic [ref=e98]:
+        - button "もどる" [ref=e99] [cursor=pointer]
+        - button "ログアウト" [ref=e100] [cursor=pointer]
+    - button "全単元ランダム この分野の問題をまとめて解きます quick start" [ref=e101] [cursor=pointer]:
+      - generic [ref=e102]:
+        - generic [ref=e103]:
+          - generic [ref=e104]: 全単元ランダム
+          - generic [ref=e105]: この分野の問題をまとめて解きます
+        - generic [ref=e106]: quick start
+    - generic [ref=e107]:
+      - button "植物のつくり 13問" [ref=e108] [cursor=pointer]:
+        - generic [ref=e110]:
+          - generic [ref=e111]: 植物のつくり
+          - generic [ref=e112]: 13問
+      - button "動物の分類 9問" [ref=e113] [cursor=pointer]:
+        - generic [ref=e115]:
+          - generic [ref=e116]: 動物の分類
+          - generic [ref=e117]: 9問
+      - button "生物のからだのつくりとはたらき 31問" [ref=e118] [cursor=pointer]:
+        - generic [ref=e120]:
+          - generic [ref=e121]: 生物のからだのつくりとはたらき
+          - generic [ref=e122]: 31問
+      - button "生命の連続性 22問" [ref=e123] [cursor=pointer]:
+        - generic [ref=e125]:
+          - generic [ref=e126]: 生命の連続性
+          - generic [ref=e127]: 22問
+      - button "自然のなかの生物 11問" [ref=e128] [cursor=pointer]:
+        - generic [ref=e130]:
+          - generic [ref=e131]: 自然のなかの生物
+          - generic [ref=e132]: 11問
+      - button "身近な生物の観察 9問" [ref=e133] [cursor=pointer]:
+        - generic [ref=e135]:
+          - generic [ref=e136]: 身近な生物の観察
+          - generic [ref=e137]: 9問
+      - button "植物の分類 5問" [ref=e138] [cursor=pointer]:
+        - generic [ref=e140]:
+          - generic [ref=e141]: 植物の分類
+          - generic [ref=e142]: 5問
+      - button "動物の体のつくりとはたらき 50問" [ref=e143] [cursor=pointer]:
+        - generic [ref=e145]:
+          - generic [ref=e146]: 動物の体のつくりとはたらき
+          - generic [ref=e147]: 50問
+      - button "生物の体のつくりとはたらき 1問" [ref=e148] [cursor=pointer]:
+        - generic [ref=e150]:
+          - generic [ref=e151]: 生物の体のつくりとはたらき
+          - generic [ref=e152]: 1問

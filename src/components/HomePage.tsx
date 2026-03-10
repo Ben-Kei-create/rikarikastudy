@@ -142,7 +142,7 @@ export default function HomePage({
                 )}
               </div>
               {rate !== null && (
-                <div className="mt-4 relative z-[1]" style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 999, height: 7 }}>
+                <div className="mt-4 relative z-[1] soft-track" style={{ height: 7 }}>
                   <div
                     style={{
                       width: `${rate}%`,

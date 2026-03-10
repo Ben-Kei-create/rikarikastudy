@@ -3,6 +3,12 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isAnswerMatch } from '@/lib/answerUtils'
+import {
+  getCachedColumnSupport,
+  isMissingColumnError,
+  markColumnMissing,
+  markColumnSupported,
+} from '@/lib/schemaCompat'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
@@ -62,12 +68,36 @@ export default function QuizPage({
 
       let query = supabase.from('questions').select('*').eq('field', field)
       if (unit !== 'all') query = query.eq('unit', unit)
-      query = query.or(
-        studentId
-          ? `created_by_student_id.is.null,created_by_student_id.eq.${studentId}`
-          : 'created_by_student_id.is.null'
-      )
-      const { data } = await query
+      const supportsStudentQuestionFilter = getCachedColumnSupport('created_by_student_id') !== false
+
+      if (supportsStudentQuestionFilter) {
+        query = query.or(
+          studentId
+            ? `created_by_student_id.is.null,created_by_student_id.eq.${studentId}`
+            : 'created_by_student_id.is.null'
+        )
+      }
+
+      let { data, error } = await query
+
+      // Backward compatibility for deployments where created_by_student_id is not migrated yet.
+      if (error && isMissingColumnError(error, 'created_by_student_id')) {
+        markColumnMissing('created_by_student_id')
+        let fallbackQuery = supabase.from('questions').select('*').eq('field', field)
+        if (unit !== 'all') fallbackQuery = fallbackQuery.eq('unit', unit)
+        const fallbackResponse = await fallbackQuery
+        data = fallbackResponse.data
+        error = fallbackResponse.error
+      } else if (!error && supportsStudentQuestionFilter) {
+        markColumnSupported('created_by_student_id')
+      }
+
+      if (error) {
+        console.error('[quiz] failed to load questions', error)
+        setLoading(false)
+        return
+      }
+
       if (data && data.length > 0) {
         const shuffled = [...data].sort(() => Math.random() - 0.5).slice(0, 10)
         setQuestions(shuffled)
@@ -108,7 +138,7 @@ export default function QuizPage({
         : 0
 
       // セッション保存
-      const { data: sessionData } = await supabase
+      let sessionResponse = await supabase
         .from('quiz_sessions')
         .insert({
           student_id: studentId!,
@@ -120,6 +150,29 @@ export default function QuizPage({
         })
         .select()
         .single()
+
+      if (sessionResponse.error && isMissingColumnError(sessionResponse.error, 'duration_seconds')) {
+        markColumnMissing('duration_seconds')
+        sessionResponse = await supabase
+          .from('quiz_sessions')
+          .insert({
+            student_id: studentId!,
+            field,
+            unit: unit === 'all' ? '全単元' : unit,
+            total_questions: questions.length,
+            correct_count: score + (isCorrect ? 0 : 0),
+          })
+          .select()
+          .single()
+      } else if (!sessionResponse.error) {
+        markColumnSupported('duration_seconds')
+      }
+
+      const sessionData = sessionResponse.data
+
+      if (sessionResponse.error) {
+        console.error('[quiz] failed to save session', sessionResponse.error)
+      }
 
       if (sessionData) {
         const sid = sessionData.id
@@ -241,7 +294,7 @@ export default function QuizPage({
               <span>{isDrill ? `復習: ${field} / ${unit}` : unit === 'all' ? '全単元' : unit}</span>
               <span>{current + 1} / {questions.length}</span>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 999, height: 8 }}>
+            <div className="soft-track" style={{ height: 8 }}>
               <div style={{
                 width: `${progress}%`, height: '100%',
                 background: `linear-gradient(90deg, ${color}, ${color}80)`,
@@ -287,8 +340,8 @@ export default function QuizPage({
       {q.type === 'choice' ? (
         <div className="grid gap-3">
           {q.choices?.map((c, i) => {
-            let bg = 'rgba(15, 23, 42, 0.82)'
-            let border = '1px solid rgba(255,255,255,0.08)'
+            let bg = 'var(--surface-elevated)'
+            let border = '1px solid var(--surface-elevated-border)'
             let textColor = '#e2e8f0'
             if (phase === 'result') {
               if (c === q.answer) { bg = '#14532d'; border = '2px solid #22c55e'; textColor = '#86efac' }
