@@ -48,28 +48,30 @@ export default function LoginPage({
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6"
-      style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)' }}>
-
-      <div className="mb-10 text-center anim-fade-up">
-        <div className="font-display text-5xl mb-2" style={{
-          background: 'linear-gradient(90deg, #22c55e, #3b82f6, #a855f7)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-        }}>
+    <div className="page-shell flex flex-col items-center justify-center">
+      <div className="mb-8 text-center anim-fade-up">
+        <div
+          className="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.18em] uppercase"
+          style={{ background: 'rgba(86, 168, 255, 0.12)', color: '#8cc7ff', border: '1px solid rgba(86, 168, 255, 0.16)' }}
+        >
+          Science Study App
+        </div>
+        <div className="font-display text-5xl mt-5 mb-2 text-white">
           RikaQuiz
         </div>
-        <p className="text-slate-400 text-sm">理科一問一答 学習サイト</p>
+        <p className="text-slate-400 text-sm">理科一問一答を、迷わずすぐ始められる形に整理しました。</p>
       </div>
 
-      <div className="card w-full max-w-sm anim-fade-up" style={{ animationDelay: '0.1s' }}>
-        <h2 className="text-xl font-bold mb-2 text-center">ログイン</h2>
-        <p className="text-slate-500 text-sm text-center mb-6">ID を選んでパスワードを入力してね</p>
+      <div className="hero-card w-full max-w-md anim-fade-up px-5 py-6 sm:px-7" style={{ animationDelay: '0.1s' }}>
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-center text-white">ログイン</h2>
+          <p className="text-slate-400 text-sm text-center mt-2">ID を選んでパスワードを入力してください</p>
+        </div>
 
         {notice && (
           <div
-            className="rounded-2xl px-4 py-3 text-sm mb-4"
-            style={{ background: '#3f1d0f', border: '1px solid #c2410c', color: '#fdba74' }}
+            className="info-banner text-sm mb-4"
+            style={{ background: 'rgba(245, 158, 11, 0.14)', borderColor: 'rgba(245, 158, 11, 0.28)', color: '#fcd34d' }}
           >
             {notice}
           </div>
@@ -77,24 +79,27 @@ export default function LoginPage({
 
         {lockedStudentId && (
           <div
-            className="rounded-2xl px-4 py-3 text-sm mb-4"
-            style={{ background: '#082f49', border: '1px solid #0369a1', color: '#bae6fd' }}
+            className="info-banner text-sm mb-4"
+            style={{ background: 'rgba(10, 132, 255, 0.14)', borderColor: 'rgba(10, 132, 255, 0.22)', color: '#b9e1ff' }}
           >
             この表示はログアウト忘れではなく端末固定です。この端末は ID {lockedStudentId} 専用で、切り替えはもぎ先生ログインから解除できます。
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-5">
           {students.map(student => {
             const checked = studentId === student.id
             const disabled = !!lockedStudentId && lockedStudentId !== student.id
             return (
               <label
                 key={student.id}
-                className="rounded-2xl p-3 transition-all"
+                className="rounded-[22px] p-4 transition-all"
                 style={{
-                  border: `2px solid ${checked ? '#3b82f6' : '#334155'}`,
-                  background: checked ? '#1d4ed8' : '#0f172a',
+                  border: `1px solid ${checked ? 'rgba(86, 168, 255, 0.5)' : 'rgba(255, 255, 255, 0.08)'}`,
+                  background: checked
+                    ? 'linear-gradient(180deg, rgba(10, 132, 255, 0.22), rgba(10, 132, 255, 0.14))'
+                    : 'rgba(10, 16, 30, 0.68)',
+                  boxShadow: checked ? '0 14px 28px rgba(10, 132, 255, 0.18)' : 'none',
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   opacity: disabled ? 0.35 : 1,
                 }}
@@ -109,7 +114,7 @@ export default function LoginPage({
                   className="sr-only"
                 />
                 <div className="text-xs text-slate-400">ID {student.id}</div>
-                <div className="font-display text-2xl text-white mt-1">{student.nickname}</div>
+                <div className="font-display text-[1.8rem] text-white mt-2">{student.nickname}</div>
               </label>
             )
           })}
@@ -122,11 +127,9 @@ export default function LoginPage({
             onChange={e => setPw(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
             placeholder="Password"
-            className="w-full px-4 py-3 rounded-xl text-center text-xl tracking-widest mb-3 outline-none transition-all"
+            className="input-surface text-center text-xl tracking-[0.22em] mb-3"
             style={{
-              background: '#0f172a',
-              border: `2px solid ${error ? '#ef4444' : '#334155'}`,
-              color: '#f1f5f9',
+              borderColor: error ? '#ef4444' : undefined,
             }}
             autoFocus
           />
@@ -144,8 +147,7 @@ export default function LoginPage({
 
         <button
           onClick={onAdmin}
-          className="w-full mt-3 px-4 py-3 rounded-xl text-sm font-bold transition-all"
-          style={{ background: '#1e293b', color: '#cbd5e1', border: '1px solid #334155' }}
+          className="btn-secondary w-full mt-3"
         >
           もぎ先生ログイン
         </button>

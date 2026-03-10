@@ -276,50 +276,50 @@ export default function MyPage({
   }
 
   return (
-    <div className="min-h-screen pb-16 max-w-lg mx-auto">
+    <div className="page-shell">
       {/* ヘッダー */}
-      <div className="sticky top-0 z-10 px-6 pt-6 pb-4" style={{ background: '#0f172a' }}>
+      <div className="sticky top-0 z-10 px-1 pt-2 pb-4 floating-header">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1">
-            ← もどる
+          <button onClick={onBack} className="btn-secondary text-sm !px-4 !py-2.5">
+            もどる
           </button>
           <button
             onClick={() => logout()}
-            className="px-4 py-2 rounded-xl text-sm transition-all"
-            style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+            className="btn-ghost text-sm !px-4 !py-2.5"
           >
             ログアウト
           </button>
         </div>
-        <div className="flex items-end justify-between">
-          <div>
-            <h1 className="font-display text-3xl text-white">マイページ</h1>
-            <p className="text-slate-400 text-sm mt-0.5">{nickname}さんの成績</p>
-          </div>
-          {streak > 0 && (
-            <div className="flex items-center gap-1">
-              <span className="text-2xl">🔥</span>
-              <span className="font-display text-2xl text-orange-400">{streak}</span>
-              <span className="text-slate-400 text-xs">日連続</span>
+        <div className="hero-card px-5 py-5 sm:px-6">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">My Page</div>
+              <h1 className="font-display text-3xl text-white">マイページ</h1>
+              <p className="text-slate-400 text-sm mt-1">{nickname}さんの成績</p>
             </div>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2 mt-4">
-          {([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const).map(([t, label]) => (
-            <button key={t} onClick={() => setTab(t)}
-              className="px-3 py-1.5 rounded-lg text-sm font-bold transition-all"
-              style={{
-                background: tab === t ? '#3b82f6' : '#1e293b',
-                color: tab === t ? 'white' : '#64748b',
-                border: tab === t ? 'none' : '1px solid #334155',
-              }}>
-              {label}
-            </button>
-          ))}
+            {streak > 0 && (
+              <div className="flex items-center gap-2 rounded-[20px] px-4 py-3" style={{ background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
+                <span className="text-2xl">🔥</span>
+                <span className="font-display text-2xl text-orange-300">{streak}</span>
+                <span className="text-slate-400 text-xs">日連続</span>
+              </div>
+            )}
+          </div>
+          <div className="segment-bar mt-5">
+            {([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const).map(([t, label]) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`segment-button ${tab === t ? 'is-active' : ''}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="px-6">
+      <div className="px-1">
 
         {/* ===== 概要タブ ===== */}
         {tab === 'overview' && (

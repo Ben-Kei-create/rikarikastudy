@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
 const FIELDS = [
-  { name: '生物', emoji: '🌿', color: '#22c55e', dark: '#15803d', light: '#dcfce7', desc: '細胞・遺伝・消化' },
-  { name: '化学', emoji: '⚗️', color: '#f97316', dark: '#c2410c', light: '#ffedd5', desc: '原子・イオン・化学変化' },
-  { name: '物理', emoji: '⚡', color: '#3b82f6', dark: '#1d4ed8', light: '#dbeafe', desc: '力・電気・エネルギー' },
-  { name: '地学', emoji: '🌏', color: '#a855f7', dark: '#7e22ce', light: '#f3e8ff', desc: '地震・天気・宇宙' },
+  { name: '生物', emoji: '🌿', color: '#22c55e', desc: '細胞・遺伝・消化' },
+  { name: '化学', emoji: '⚗️', color: '#f97316', desc: '原子・イオン・化学変化' },
+  { name: '物理', emoji: '⚡', color: '#4da2ff', desc: '力・電気・エネルギー' },
+  { name: '地学', emoji: '🌏', color: '#8b7cff', desc: '地震・天気・宇宙' },
 ]
 
 interface FieldStats {
@@ -44,103 +44,114 @@ export default function HomePage({
   }, [studentId])
 
   return (
-    <div className="min-h-screen p-6 max-w-lg mx-auto">
-      {/* ヘッダー */}
-      <div className="flex items-center justify-between mb-8 anim-fade-up">
-        <div>
-          <div className="font-display text-2xl" style={{
-            background: 'linear-gradient(90deg, #22c55e, #3b82f6)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>RikaQuiz</div>
-          <p className="text-slate-400 text-sm">こんにちは、<span className="text-white font-bold">{nickname}</span>さん！</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={onMyPage}
-            className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
-            style={{ background: '#334155', color: '#cbd5e1' }}
-          >
-            📊 マイページ
-          </button>
-          <button
-            onClick={() => logout()}
-            className="px-4 py-2 rounded-xl text-sm transition-all"
-            style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
-          >
-            ログアウト
-          </button>
+    <div className="page-shell">
+      <div className="hero-card p-5 sm:p-6 mb-6 anim-fade-up">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-3">
+              Home
+            </div>
+            <div className="font-display text-3xl text-white">こんにちは、{nickname}さん</div>
+            <p className="text-slate-400 text-sm mt-2">今日の理科を、分野からすぐ始められます。</p>
+          </div>
+          <div className="flex gap-2 sm:flex-col sm:w-[160px]">
+            <button
+              onClick={onMyPage}
+              className="btn-secondary flex-1 sm:flex-none"
+            >
+              マイページ
+            </button>
+            <button
+              onClick={() => logout()}
+              className="btn-ghost flex-1 sm:flex-none"
+            >
+              ログアウト
+            </button>
+          </div>
         </div>
       </div>
 
-      <h2 className="text-lg font-bold mb-4 text-slate-300">分野を選ぼう</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-slate-100">分野を選ぶ</h2>
+        <span className="text-xs text-slate-500">4 categories</span>
+      </div>
 
-      {/* 4分野カード */}
       <div className="grid grid-cols-1 gap-4">
-        {FIELDS.map((f, i) => {
-          const s = stats[f.name]
-          const rate = s && s.total > 0 ? Math.round((s.correct / s.total) * 100) : null
+        {FIELDS.map((field, index) => {
+          const stat = stats[field.name]
+          const rate = stat && stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : null
+
           return (
             <button
-              key={f.name}
-              onClick={() => onSelectField(f.name)}
-              className="anim-fade-up text-left"
+              key={field.name}
+              onClick={() => onSelectField(field.name)}
+              className="card anim-fade-up text-left"
               style={{
-                animationDelay: `${i * 0.08}s`,
-                background: '#1e293b',
-                border: `2px solid ${f.color}30`,
-                borderRadius: '20px',
-                padding: '20px 24px',
+                animationDelay: `${index * 0.08}s`,
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                 position: 'relative',
                 overflow: 'hidden',
+                borderColor: `${field.color}30`,
               }}
-              onMouseEnter={e => {
-                const el = e.currentTarget
-                el.style.border = `2px solid ${f.color}`
-                el.style.transform = 'translateY(-3px)'
-                el.style.boxShadow = `0 12px 32px ${f.color}30`
+              onMouseEnter={event => {
+                const element = event.currentTarget
+                element.style.borderColor = `${field.color}70`
+                element.style.transform = 'translateY(-2px)'
+                element.style.boxShadow = `0 20px 34px ${field.color}20`
               }}
-              onMouseLeave={e => {
-                const el = e.currentTarget
-                el.style.border = `2px solid ${f.color}30`
-                el.style.transform = ''
-                el.style.boxShadow = ''
+              onMouseLeave={event => {
+                const element = event.currentTarget
+                element.style.borderColor = `${field.color}30`
+                element.style.transform = ''
+                element.style.boxShadow = ''
               }}
             >
-              {/* 背景デコ */}
-              <div style={{
-                position: 'absolute', right: -20, top: -20,
-                width: 100, height: 100,
-                background: `radial-gradient(circle, ${f.color}15, transparent)`,
-                borderRadius: '50%',
-              }} />
-              <div className="flex items-center gap-4">
-                <span style={{ fontSize: 40 }}>{f.emoji}</span>
+              <div
+                style={{
+                  position: 'absolute',
+                  right: -30,
+                  top: -30,
+                  width: 120,
+                  height: 120,
+                  background: `radial-gradient(circle, ${field.color}18, transparent 66%)`,
+                  borderRadius: '50%',
+                }}
+              />
+              <div className="relative z-[1] flex items-center gap-4">
+                <div
+                  className="flex h-14 w-14 items-center justify-center rounded-[18px] text-2xl"
+                  style={{ background: `${field.color}18`, border: `1px solid ${field.color}26` }}
+                >
+                  {field.emoji}
+                </div>
                 <div className="flex-1">
-                  <div className="font-display text-xl" style={{ color: f.color }}>{f.name}</div>
-                  <div className="text-slate-400 text-sm">{f.desc}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="font-display text-[1.45rem]" style={{ color: field.color }}>{field.name}</div>
+                    <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">start</span>
+                  </div>
+                  <div className="text-slate-400 text-sm mt-1">{field.desc}</div>
                 </div>
                 {rate !== null && (
                   <div className="text-right">
-                    <div className="font-bold text-xl" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
+                    <div className="font-semibold text-xl" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
                       {rate}%
                     </div>
-                    <div className="text-slate-500 text-xs">{s?.total}問</div>
+                    <div className="text-slate-500 text-xs mt-1">{stat?.total}問</div>
                   </div>
                 )}
               </div>
-              {/* 正答率バー */}
               {rate !== null && (
-                <div className="mt-3" style={{ background: '#0f172a', borderRadius: 8, height: 6 }}>
-                  <div style={{
-                    width: `${rate}%`,
-                    height: '100%',
-                    background: `linear-gradient(90deg, ${f.color}, ${f.color}80)`,
-                    borderRadius: 8,
-                    transition: 'width 1s ease',
-                  }} />
+                <div className="mt-4 relative z-[1]" style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 999, height: 7 }}>
+                  <div
+                    style={{
+                      width: `${rate}%`,
+                      height: '100%',
+                      background: `linear-gradient(90deg, ${field.color}, ${field.color}80)`,
+                      borderRadius: 999,
+                      transition: 'width 1s ease',
+                    }}
+                  />
                 </div>
               )}
             </button>

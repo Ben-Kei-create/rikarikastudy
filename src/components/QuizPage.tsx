@@ -145,25 +145,26 @@ export default function QuizPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-slate-400">問題を読み込み中...</div>
+      <div className="page-shell flex items-center justify-center">
+        <div className="card text-slate-400">問題を読み込み中...</div>
       </div>
     )
   }
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6">
-        <p className="text-slate-400 mb-4">問題がまだ登録されていません。</p>
-        <div className="flex gap-3">
-          <button onClick={onBack} className="btn-primary">もどる</button>
-          <button
-            onClick={() => logout()}
-            className="px-4 py-3 rounded-xl text-sm transition-all"
-            style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
-          >
-            ログアウト
-          </button>
+      <div className="page-shell flex flex-col items-center justify-center">
+        <div className="card w-full max-w-md text-center">
+          <p className="text-slate-400 mb-4">問題がまだ登録されていません。</p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={onBack} className="btn-secondary">もどる</button>
+            <button
+              onClick={() => logout()}
+              className="btn-ghost"
+            >
+              ログアウト
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -175,8 +176,8 @@ export default function QuizPage({
     const msg = rate >= 90 ? '🎉 すごい！完璧に近い！' : rate >= 70 ? '👍 よくできました！' : rate >= 50 ? '😊 もう少しがんばろう！' : '💪 復習してみよう！'
     const backLabel = isDrill ? 'マイページへ' : '分野選択へ'
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 anim-fade">
-        <div className="card w-full max-w-sm text-center">
+      <div className="page-shell flex flex-col items-center justify-center anim-fade">
+        <div className="hero-card w-full max-w-md text-center p-6 sm:p-7">
           <div className="text-5xl mb-4">{rate >= 70 ? '🏆' : '📚'}</div>
           <div className="font-display text-4xl mb-2" style={{ color }}>
             {score} / {questions.length}
@@ -208,8 +209,7 @@ export default function QuizPage({
                 setIsCorrect(null)
                 setAnswerLogs([])
               }}
-              className="py-3 rounded-xl font-bold transition-all"
-              style={{ background: '#334155', color: '#cbd5e1' }}
+              className="btn-secondary !px-0 !py-3"
             >
               もう一度
             </button>
@@ -218,8 +218,7 @@ export default function QuizPage({
             </button>
             <button
               onClick={() => logout()}
-              className="py-3 rounded-xl text-sm transition-all"
-              style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+              className="btn-ghost !px-0 !py-3"
             >
               ログアウト
             </button>
@@ -231,39 +230,38 @@ export default function QuizPage({
 
   // クイズ画面
   return (
-    <div className="min-h-screen p-6 max-w-lg mx-auto">
-      {/* プログレス */}
-      <div className="flex items-center gap-3 mb-6 anim-fade-up">
-        <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors text-sm">
-          ← やめる
-        </button>
-        <div className="flex-1">
-          <div className="flex justify-between text-xs text-slate-400 mb-1">
-            <span>{isDrill ? `復習: ${field} / ${unit}` : unit === 'all' ? '全単元' : unit}</span>
-            <span>{current + 1} / {questions.length}</span>
+    <div className="page-shell">
+      <div className="card mb-4 anim-fade-up">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="btn-secondary text-sm !px-4 !py-2.5">
+            やめる
+          </button>
+          <div className="flex-1">
+            <div className="flex justify-between text-xs text-slate-400 mb-2">
+              <span>{isDrill ? `復習: ${field} / ${unit}` : unit === 'all' ? '全単元' : unit}</span>
+              <span>{current + 1} / {questions.length}</span>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 999, height: 8 }}>
+              <div style={{
+                width: `${progress}%`, height: '100%',
+                background: `linear-gradient(90deg, ${color}, ${color}80)`,
+                borderRadius: 999,
+                transition: 'width 0.4s ease',
+              }} />
+            </div>
           </div>
-          <div style={{ background: '#1e293b', borderRadius: 8, height: 6 }}>
-            <div style={{
-              width: `${progress}%`, height: '100%',
-              background: `linear-gradient(90deg, ${color}, ${color}80)`,
-              borderRadius: 8,
-              transition: 'width 0.4s ease',
-            }} />
+          <div className="text-sm font-semibold" style={{ color }}>
+            {score}正解
           </div>
+          <button
+            onClick={() => logout()}
+            className="btn-ghost text-sm !px-4 !py-2.5"
+          >
+            ログアウト
+          </button>
         </div>
-        <div className="text-sm font-bold" style={{ color }}>
-          {score}正解
-        </div>
-        <button
-          onClick={() => logout()}
-          className="px-3 py-2 rounded-xl text-sm transition-all"
-          style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
-        >
-          ログアウト
-        </button>
       </div>
 
-      {/* 問題カード */}
       <div key={current} className="card anim-fade-up mb-4">
         <div className="flex items-center gap-2 mb-3">
           {isDrill ? (
@@ -278,7 +276,7 @@ export default function QuizPage({
               {q.field} · {q.unit}
             </span>
           )}
-          <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: '#334155', color: '#94a3b8' }}>
+          <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(148, 163, 184, 0.14)', color: '#b6c2d2' }}>
             {q.type === 'choice' ? `${q.choices?.length ?? 0}択` : '記述'}
           </span>
         </div>
@@ -289,8 +287,8 @@ export default function QuizPage({
       {q.type === 'choice' ? (
         <div className="grid gap-3">
           {q.choices?.map((c, i) => {
-            let bg = '#1e293b'
-            let border = '1px solid #334155'
+            let bg = 'rgba(15, 23, 42, 0.82)'
+            let border = '1px solid rgba(255,255,255,0.08)'
             let textColor = '#e2e8f0'
             if (phase === 'result') {
               if (c === q.answer) { bg = '#14532d'; border = '2px solid #22c55e'; textColor = '#86efac' }
@@ -317,13 +315,11 @@ export default function QuizPage({
             disabled={phase === 'result'}
             placeholder="ここに答えを書いてください"
             rows={3}
-            className="w-full p-4 rounded-xl outline-none resize-none mb-3"
+            className="input-surface resize-none mb-3"
             style={{
-              background: '#1e293b',
               border: phase === 'result'
                 ? `2px solid ${isCorrect ? '#22c55e' : '#ef4444'}`
-                : '2px solid #334155',
-              color: '#f1f5f9',
+                : undefined,
               fontSize: '1rem',
             }}
           />
@@ -339,7 +335,7 @@ export default function QuizPage({
       {phase === 'result' && (
         <div className={`card mt-4 anim-pop`} style={{
           borderColor: isCorrect ? '#22c55e50' : '#ef444450',
-          background: isCorrect ? '#052e1620' : '#450a0a20',
+          background: isCorrect ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
         }}>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-2xl">{isCorrect ? '✅' : '❌'}</span>

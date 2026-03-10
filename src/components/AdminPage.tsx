@@ -422,10 +422,10 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
   if (!authed) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6">
-        <button onClick={onBack} className="self-start text-slate-400 hover:text-white mb-8">← もどる</button>
-        <div className="card w-full max-w-sm">
-          <h2 className="text-xl font-bold mb-2 text-center">🔒 もぎ先生ログイン</h2>
+      <div className="page-shell flex flex-col items-center justify-center">
+        <button onClick={onBack} className="btn-secondary self-start mb-8">もどる</button>
+        <div className="hero-card w-full max-w-sm p-6">
+          <h2 className="text-2xl font-semibold mb-2 text-center text-white">もぎ先生ログイン</h2>
           <p className="text-slate-500 text-sm text-center mb-6">管理者パスワードを入力</p>
           <input
             type="password"
@@ -433,8 +433,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             onChange={e => setPw(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && checkPw()}
             placeholder="管理者パスワード"
-            className="w-full px-4 py-3 rounded-xl text-center mb-3 outline-none"
-            style={{ background: '#0f172a', border: `2px solid ${pwError ? '#ef4444' : '#334155'}`, color: '#f1f5f9' }}
+            className="input-surface text-center mb-3"
+            style={{ borderColor: pwError ? '#ef4444' : undefined }}
             autoFocus
           />
           {pwError && <p className="text-red-400 text-sm text-center mb-3">パスワードが違います</p>}
@@ -445,27 +445,28 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="min-h-screen p-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={onBack} className="text-slate-400 hover:text-white">← もどる</button>
-        <h1 className="font-display text-2xl text-white">🛠 管理画面</h1>
-      </div>
-
-      <div className="flex flex-wrap gap-2 mb-6">
-        {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括追加']] as const).map(([currentTab, label]) => (
-          <button
-            key={currentTab}
-            onClick={() => setTab(currentTab)}
-            className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
-            style={{
-              background: tab === currentTab ? '#3b82f6' : '#1e293b',
-              color: tab === currentTab ? 'white' : '#94a3b8',
-              border: tab === currentTab ? 'none' : '1px solid #334155',
-            }}
-          >
-            {label}
-          </button>
-        ))}
+    <div className="page-shell-wide">
+      <div className="hero-card p-5 sm:p-6 mb-6">
+        <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="btn-secondary">もどる</button>
+            <div>
+              <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">Admin</div>
+              <h1 className="font-display text-3xl text-white">管理画面</h1>
+            </div>
+          </div>
+          <div className="segment-bar">
+            {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括追加']] as const).map(([currentTab, label]) => (
+              <button
+                key={currentTab}
+                onClick={() => setTab(currentTab)}
+                className={`segment-button ${tab === currentTab ? 'is-active' : ''}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="card mb-6">
@@ -483,8 +484,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               clearDeviceLock()
               alert('この端末の固定を解除しました。次回ログイン時にIDを選び直せます。')
             }}
-            className="px-4 py-2 rounded-xl text-sm font-bold"
-            style={{ background: '#334155', color: '#e2e8f0' }}
+            className="btn-secondary"
           >
             固定を解除
           </button>
