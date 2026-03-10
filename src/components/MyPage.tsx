@@ -106,7 +106,9 @@ export default function MyPage({ onBack }: { onBack: () => void }) {
   }, [sessions])
 
   const maxStreak = useMemo(() => {
-    const activeDays = [...new Set(sessions.map(s => format(new Date(s.created_at), 'yyyy-MM-dd')))].sort()
+    const activeDays = Array.from(
+      new Set(sessions.map(s => format(new Date(s.created_at), 'yyyy-MM-dd')))
+    ).sort()
     let max = 0, cur = 0, prev: string | null = null
     for (const day of activeDays) {
       if (prev && differenceInCalendarDays(new Date(day), new Date(prev)) === 1) cur++

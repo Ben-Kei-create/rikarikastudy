@@ -12,7 +12,7 @@
 2. 「SQL Editor」を開き、`supabase_schema.sql` の内容を全てコピー＆実行
 3. 「Project Settings → API」から以下をコピー：
    - `Project URL`
-   - `anon/public` キー
+   - `Publishable Key`（推奨）または `Anon Key (Legacy)`
 
 ### 2. GitHubにプッシュ
 
@@ -30,7 +30,8 @@ git push -u origin main
 2. 「Environment Variables」に以下を追加：
    ```
    NEXT_PUBLIC_SUPABASE_URL = https://xxxxx.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY = eyJxxxxx...
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = sb_publishable_xxxxx...
+   # または NEXT_PUBLIC_SUPABASE_ANON_KEY = eyJxxxxx...
    ```
 3. 「Deploy」を押す → 完了！
 
