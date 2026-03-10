@@ -12,7 +12,7 @@
 2. 「SQL Editor」を開き、`supabase_schema.sql` の内容を全てコピー＆実行
    - 既存プロジェクトでも再実行OK
    - `students.password` 列と初期データ（ID 1〜5 / S, M, T, K, 先生 / `rikalove1〜4`, `rikaadmin2026`）を揃えます
-   - `student_questions` テーブルもここで作成されます
+   - `questions.created_by_student_id` や `quiz_sessions.duration_seconds` などの追加列もここで揃います
 3. 「Project Settings → API」から以下をコピー：
    - `Project URL`
    - `Publishable Key`（推奨）または `Anon Key (Legacy)`
@@ -75,6 +75,22 @@ npm run questions:sql -- examples/questions_bulk_example.json > questions_bulk.s
 
 生成された `questions_bulk.sql` を Supabase の SQL Editor に貼って実行します。
 
+#### JSON ファイルをそのまま Supabase に入れる
+
+ローカルで `.json` を直接投入:
+
+```bash
+npm run questions:import -- path/to/questions.json
+```
+
+標準入力からも投入できます:
+
+```bash
+npm run questions:import -- - < path/to/questions.json
+```
+
+同じ `field / unit / question` の問題が既にある場合は自動でスキップします。
+
 ---
 
 ## 🔐 ログイン情報
@@ -110,7 +126,7 @@ npm run questions:sql -- examples/questions_bulk_example.json > questions_bulk.s
 - ✅ 解説表示
 - ✅ セッション・回答ログをSupabaseに保存
 - ✅ マイページ（正答率・学習履歴）
-- ✅ 生徒から先生への質問投稿（本人と先生のみ表示する運用）
+- ✅ 生徒が自分専用の問題を追加
 - ✅ 管理画面（生徒データ閲覧・問題追加・削除）
 
 ---
@@ -225,3 +241,4 @@ Vercel にデプロイしてURLを配るのがいちばん簡単です。
 - 📊 **概要タブ**: 総問題数・正答率・最高連続日数、分野別バー、今週棒グラフ、30日ヒートマップ
 - 📅 **履歴タブ**: セッション別の正誤バー付き一覧
 - 🎯 **弱点タブ**: 正答率が低い単元ランキング（3問以上解いた単元のみ）
+- ✍️ **問題作成タブ**: 生徒が自分専用の問題を追加可能

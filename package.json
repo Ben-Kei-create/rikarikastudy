@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "questions:import": "node scripts/import_questions_supabase.mjs",
     "questions:sql": "node scripts/generate_questions_sql.mjs"
   },
   "dependencies": {
