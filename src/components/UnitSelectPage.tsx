@@ -4,33 +4,18 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 
 const FIELD_COLORS: Record<string, string> = {
-  '生物': '#22c55e',
-  '化学': '#f97316',
-  '物理': '#4da2ff',
-  '地学': '#8b7cff',
+  '生物': 'var(--bio)', '化学': 'var(--chem)', '物理': 'var(--phys)', '地学': 'var(--earth)',
 }
 const FIELD_EMOJI: Record<string, string> = {
-  '生物': '🌿',
-  '化学': '⚗️',
-  '物理': '⚡',
-  '地学': '🌏',
+  '生物': '🌿', '化学': '⚗️', '物理': '⚡', '地学': '🌏',
 }
 
-interface UnitStat {
-  unit: string
-  total: number
-  correct: number
-  questionCount: number
-}
+interface UnitStat { unit: string; total: number; correct: number; questionCount: number }
 
 export default function UnitSelectPage({
-  field,
-  onSelect,
-  onBack,
+  field, onSelect, onBack,
 }: {
-  field: string
-  onSelect: (unit: string) => void
-  onBack: () => void
+  field: string; onSelect: (unit: string) => void; onBack: () => void
 }) {
   const { studentId, logout } = useAuth()
   const [units, setUnits] = useState<UnitStat[]>([])
@@ -38,150 +23,100 @@ export default function UnitSelectPage({
   const color = FIELD_COLORS[field]
 
   useEffect(() => {
-    const load = async () => {
+    ;(async () => {
       setLoading(true)
-      const { data: qData } = await supabase
-        .from('questions')
-        .select('unit')
-        .eq('field', field)
-
+      const { data: qData } = await supabase.from('questions').select('unit').eq('field', field)
       const unitCounts: Record<string, number> = {}
-      qData?.forEach(question => {
-        unitCounts[question.unit] = (unitCounts[question.unit] || 0) + 1
-      })
+      qData?.forEach(q => { unitCounts[q.unit] = (unitCounts[q.unit] || 0) + 1 })
 
       const { data: sData } = await supabase
-        .from('quiz_sessions')
-        .select('unit, total_questions, correct_count')
-        .eq('field', field)
-        .eq('student_id', studentId!)
-
+        .from('quiz_sessions').select('unit, total_questions, correct_count')
+        .eq('field', field).eq('student_id', studentId!)
       const sessionStats: Record<string, { total: number; correct: number }> = {}
-      sData?.forEach(session => {
-        if (!sessionStats[session.unit]) sessionStats[session.unit] = { total: 0, correct: 0 }
-        sessionStats[session.unit].total += session.total_questions
-        sessionStats[session.unit].correct += session.correct_count
+      sData?.forEach(s => {
+        if (!sessionStats[s.unit]) sessionStats[s.unit] = { total: 0, correct: 0 }
+        sessionStats[s.unit].total += s.total_questions
+        sessionStats[s.unit].correct += s.correct_count
       })
 
-      const unitList = Object.keys(unitCounts).map(unitName => ({
-        unit: unitName,
-        questionCount: unitCounts[unitName],
-        total: sessionStats[unitName]?.total || 0,
-        correct: sessionStats[unitName]?.correct || 0,
-      }))
-
-      setUnits(unitList)
+      setUnits(Object.keys(unitCounts).map(u => ({
+        unit: u, questionCount: unitCounts[u],
+        total: sessionStats[u]?.total || 0, correct: sessionStats[u]?.correct || 0,
+      })))
       setLoading(false)
-    }
-    load()
+    })()
   }, [field, studentId])
 
   return (
     <div className="page-shell">
-      <div className="hero-card p-5 sm:p-6 mb-5 anim-fade-up">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div
-              className="flex h-16 w-16 items-center justify-center rounded-[22px] text-3xl"
-              style={{ background: `${color}18`, border: `1px solid ${color}26` }}
-            >
-              {FIELD_EMOJI[field]}
-            </div>
-            <div>
-              <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">
-                Unit Select
-              </div>
-              <div className="font-display text-3xl" style={{ color }}>{field}</div>
-              <p className="text-slate-400 text-sm mt-1">単元を選んで、そのまま解き始められます。</p>
-            </div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5 anim-fade-up">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl text-xl" style={{ background: 'var(--input-bg)' }}>
+            {FIELD_EMOJI[field]}
           </div>
-          <div className="flex gap-2">
-            <button onClick={onBack} className="btn-secondary">もどる</button>
-            <button onClick={() => logout()} className="btn-ghost">ログアウト</button>
+          <div>
+            <div className="font-bold text-xl" style={{ color }}>{field}</div>
+            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>単元を選んで始めよう</div>
           </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onBack} className="btn-secondary text-sm !px-3 !py-2">もどる</button>
+          <button onClick={() => logout()} className="btn-ghost text-sm !px-3 !py-2">ログアウト</button>
         </div>
       </div>
 
+      {/* Quick start */}
       <button
         onClick={() => onSelect('all')}
-        className="card w-full anim-fade-up mb-4 text-left"
-        style={{
-          borderColor: `${color}40`,
-          background: `linear-gradient(180deg, ${color}18, var(--surface-elevated))`,
-          animationDelay: '0.05s',
-          transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-        }}
-        onMouseEnter={event => {
-          event.currentTarget.style.transform = 'translateY(-2px)'
-          event.currentTarget.style.boxShadow = `0 18px 34px ${color}20`
-        }}
-        onMouseLeave={event => {
-          event.currentTarget.style.transform = ''
-          event.currentTarget.style.boxShadow = ''
-        }}
+        className="card w-full anim-fade-up mb-4 text-left transition-transform active:scale-[0.98]"
+        style={{ animationDelay: '0.04s' }}
       >
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="font-semibold text-lg" style={{ color }}>全単元ランダム</div>
-            <div className="text-slate-400 text-sm mt-1">この分野の問題をまとめて解きます</div>
+            <div className="font-semibold" style={{ color }}>全単元ランダム</div>
+            <div className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>この分野をまとめて解く</div>
           </div>
-          <div
-            className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]"
-            style={{ background: `${color}18`, color }}
-          >
-            quick start
+          <div className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: 'var(--tint-bg)', color: 'var(--tint)' }}>
+            Quick Start
           </div>
         </div>
       </button>
 
+      {/* Unit list */}
       {loading ? (
-        <div className="text-center text-slate-400 py-12">読み込み中...</div>
+        <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>読み込み中...</div>
       ) : (
-        <div className="grid gap-3">
-          {units.map((unitItem, index) => {
-            const rate = unitItem.total > 0 ? Math.round((unitItem.correct / unitItem.total) * 100) : null
+        <div className="grid gap-2">
+          {units.map((u, i) => {
+            const rate = u.total > 0 ? Math.round((u.correct / u.total) * 100) : null
             return (
               <button
-                key={unitItem.unit}
-                onClick={() => onSelect(unitItem.unit)}
-                className="card anim-fade-up text-left"
-                style={{
-                  animationDelay: `${(index + 1) * 0.07}s`,
-                  transition: 'transform 0.18s ease, border-color 0.18s ease',
-                }}
-                onMouseEnter={event => {
-                  event.currentTarget.style.transform = 'translateY(-2px)'
-                  event.currentTarget.style.borderColor = `${color}45`
-                }}
-                onMouseLeave={event => {
-                  event.currentTarget.style.transform = ''
-                  event.currentTarget.style.borderColor = ''
-                }}
+                key={u.unit}
+                onClick={() => onSelect(u.unit)}
+                className="card anim-fade-up text-left transition-transform active:scale-[0.98]"
+                style={{ animationDelay: `${(i + 1) * 0.05}s` }}
               >
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-white">{unitItem.unit}</div>
-                    <div className="text-slate-500 text-xs mt-1">{unitItem.questionCount}問</div>
+                    <div className="font-semibold">{u.unit}</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{u.questionCount}問</div>
                   </div>
                   {rate !== null && (
                     <div className="text-right">
-                      <div className="font-semibold" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
+                      <div className="font-bold" style={{ color: rate >= 70 ? 'var(--success)' : rate >= 50 ? 'var(--warning)' : 'var(--danger)' }}>
                         {rate}%
                       </div>
-                      <div className="text-slate-500 text-xs mt-1">{unitItem.total}問解答</div>
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{u.total}問解答</div>
                     </div>
                   )}
                 </div>
                 {rate !== null && (
-                <div className="mt-3 soft-track" style={{ height: 6 }}>
-                  <div
-                    style={{
-                      width: `${rate}%`,
-                        height: '100%',
-                        background: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444',
-                        borderRadius: 999,
-                      }}
-                    />
+                  <div className="mt-2 soft-track" style={{ height: 4 }}>
+                    <div style={{
+                      width: `${rate}%`, height: '100%', borderRadius: 999,
+                      background: rate >= 70 ? 'var(--success)' : rate >= 50 ? 'var(--warning)' : 'var(--danger)',
+                    }} />
                   </div>
                 )}
               </button>

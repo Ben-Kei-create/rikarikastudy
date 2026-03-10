@@ -17,7 +17,6 @@ type Screen =
 
 function ThemeToggle() {
   const { theme, setTheme, ready } = useTheme()
-
   if (!ready) return null
 
   return (
@@ -46,7 +45,7 @@ function App() {
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-slate-400">読み込み中...</div>
+        <div style={{ color: 'var(--text-secondary)' }}>読み込み中...</div>
       </div>
     )
   }
@@ -88,7 +87,7 @@ function App() {
       <ThemeToggle />
       {content}
       {adminOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--overlay-bg)', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--bg)', overflowY: 'auto' }}>
           <AdminPage onBack={() => setAdminOpen(false)} />
         </div>
       )}

@@ -13,18 +13,21 @@ export default function RootLayout({
 }) {
   const themeInitScript = `
     try {
-      const storedTheme = window.localStorage.getItem('rikaquiz-theme');
-      const theme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'dark';
+      var t = window.localStorage.getItem('rikaquiz-theme');
+      var theme = t === 'light' || t === 'dark' ? t : 'light';
       document.documentElement.dataset.theme = theme;
       document.documentElement.style.colorScheme = theme;
-    } catch (error) {
-      document.documentElement.dataset.theme = 'dark';
-      document.documentElement.style.colorScheme = 'dark';
+    } catch (e) {
+      document.documentElement.dataset.theme = 'light';
+      document.documentElement.style.colorScheme = 'light';
     }
   `;
 
   return (
     <html lang="ja" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+      </head>
       <body suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
