@@ -1,235 +1,543 @@
 # CODEX PROMPT — RikaQuiz Project
-# Full context, development philosophy, and implementation instructions
+# Current repository state, constraints, and recommended roadmap
 
 ---
 
-## 🧭 PROJECT OVERVIEW
+## Project Overview
 
-**RikaQuiz** is a science quiz web application for a small Japanese cram school (juku).
-It is designed for 4 middle school students (grade 9, preparing for high school entrance exams)
-who study all science topics from grades 7–9.
+**RikaQuiz** is a Japanese science quiz web app for a small cram school.
 
-The app runs in a browser on shared tablets at the cram school.
-No email addresses or personal info are used — only numeric IDs (1–4) with fixed nicknames.
+Current usage model:
+- Shared browser / tablet access
+- No email accounts
+- Login by numeric ID + password
+- 4 student IDs plus 1 teacher test ID
+- Deployed with Vercel
+- Database on Supabase
 
-**Live target**: Deploy on Vercel (serverless). Database on Supabase (PostgreSQL).
+This document reflects the **actual current repository state** as of March 10, 2026.
 
 ---
 
-## ✅ WHAT HAS BEEN BUILT (v2 — current state)
+## Current Stack
 
-### Tech Stack
-- **Framework**: Next.js 14 (App Router, TypeScript)
-- **Styling**: Tailwind CSS + inline styles (dark theme, custom CSS vars)
-- **Database**: Supabase (PostgreSQL via supabase-js)
-- **Fonts**: Dela Gothic One (display) + Zen Kaku Gothic New (body)
-- **Hosting**: Vercel
-- **Dependencies**: `date-fns`, `lucide-react`, `recharts`
+- Framework: Next.js 14 (App Router, TypeScript)
+- Styling: Tailwind CSS + inline styles
+- Database: Supabase via `@supabase/supabase-js`
+- Hosting: Vercel
+- Date utilities: `date-fns`
+- Chart library installed: `recharts`
+- Icons library installed: `lucide-react`
 
-### Authentication
-- Each student has their own password (no email, no OAuth)
-- Password → studentId mapping is hardcoded in `src/lib/auth.tsx`
-- Session stored in `sessionStorage` (survives page refresh, cleared on tab close)
-- Passwords: yuki2024 / aoi2024 / riku2024 / hana2024
-- Logging in as one student gives NO access to another student's data
+Scripts:
+- `npm run dev`
+- `npm run build`
+- `npm run start`
+- `npm run lint`
+- `npm run questions:sql`
 
-### Student Profiles
-| ID | Nickname | Password  |
-|----|----------|-----------|
-| 1  | ゆうき   | yuki2024  |
-| 2  | あおい   | aoi2024   |
-| 3  | りく     | riku2024  |
-| 4  | はな     | hana2024  |
+`questions:sql` generates SQL from question JSON:
+- `node scripts/generate_questions_sql.mjs`
 
-### Science Fields (4 domains)
-- 生物 (Biology) 🌿 — color: #22c55e
-- 化学 (Chemistry) ⚗️ — color: #f97316
-- 物理 (Physics) ⚡ — color: #3b82f6
-- 地学 (Earth Science) 🌏 — color: #a855f7
+---
 
-### Question Types
-- `choice`: 4-option multiple choice
-- `text`: short written answer (exact string match)
+## Authentication and Roles
 
-### Database Schema (Supabase)
-```sql
-students          -- id(1-4), nickname
-questions         -- id, field, unit, question, type, choices(jsonb), answer, explanation, grade
-quiz_sessions     -- id, student_id, field, unit, total_questions, correct_count, created_at
-answer_logs       -- id, session_id, student_id, question_id, is_correct, student_answer, created_at
+### Student IDs
+
+There are 5 selectable IDs in the app:
+
+| ID | Default nickname | Default password |
+|----|------------------|------------------|
+| 1  | S                | `rikalove1`      |
+| 2  | M                | `rikalove2`      |
+| 3  | T                | `rikalove3`      |
+| 4  | K                | `rikalove4`      |
+| 5  | 先生             | `rikaadmin2026`  |
+
+Source of truth in code:
+- [`src/lib/auth.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/lib/auth.tsx)
+
+### Admin Login
+
+- Admin password: `rikaadmin2026`
+- Current implementation is in:
+  - [`src/components/AdminPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/AdminPage.tsx)
+
+Important:
+- Admin login button is shown only on the **initial login screen**
+- It is **not** shown after student login
+
+### Session Behavior
+
+- Logged-in session is stored in `sessionStorage`
+- Device lock is stored in `localStorage`
+- Device lock persists across browser restarts
+- Session auto-logout triggers after 10 minutes of inactivity
+- Auto-logout does **not** clear device lock
+
+### Device Lock
+
+- First student login on a browser locks that browser to that ID
+- Another ID cannot log in on that browser unless admin clears the lock
+- Admin can clear the lock from the admin panel
+
+### Current Security Reality
+
+The app behaves as if student data is separated in the UI, but this is **not strict security** yet.
+
+Current DB setup:
+- Supabase RLS is disabled
+- Supabase is accessed directly from the client
+- Privacy is enforced mainly by UI filtering and device lock
+
+This is acceptable for limited private use, but **not sufficient for strict public security**.
+
+---
+
+## Current User-Facing Features
+
+### Login
+
+- ID selection UI
+- Password input
+- Device lock notice
+- Session-expiry notice
+- Admin login entry point
+
+Component:
+- [`src/components/LoginPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/LoginPage.tsx)
+
+### Home Screen
+
+- Greeting with nickname
+- 4 science field cards
+- Per-field accuracy summaries
+- Logout button
+
+Component:
+- [`src/components/HomePage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/HomePage.tsx)
+
+### Unit Selection
+
+- Unit list for the chosen field
+- "All units random" option
+- Per-unit progress view
+- Logout button
+
+Component:
+- [`src/components/UnitSelectPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/UnitSelectPage.tsx)
+
+### Quiz
+
+- Random question selection
+- `choice` and `text` question support
+- Choice questions are currently **2-choice**
+- Explanation display after answer
+- Session saving to Supabase
+- Answer log saving to Supabase
+- Logout button on quiz screens
+
+Component:
+- [`src/components/QuizPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/QuizPage.tsx)
+
+### My Page
+
+Current tabs:
+1. `概要`
+2. `履歴`
+3. `弱点`
+4. `質問`
+5. `設定`
+
+Features:
+- Summary cards
+- Per-field accuracy bars
+- 7-day activity chart
+- 30-day heatmap
+- Session history
+- Weak-unit ranking
+- Student-to-teacher question posting
+- Student-only question history view
+- Nickname change
+- Password change
+- Logout button
+
+Component:
+- [`src/components/MyPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/MyPage.tsx)
+
+### Student Questions
+
+Implemented:
+- Students can submit questions to the teacher
+- Students can see only their own submitted questions in the app
+- Admin can see all submitted questions in the admin panel
+
+Important note:
+- This is currently **UI-level separation**, not strict RLS-backed privacy
+
+---
+
+## Current Admin Features
+
+Current admin tabs:
+1. `生徒データ`
+2. `問題一覧`
+3. `問題追加`
+4. `一括追加`
+5. `質問箱`
+
+Component:
+- [`src/components/AdminPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/AdminPage.tsx)
+
+### 生徒データ
+
+- Per-student total answered count
+- Per-student accuracy
+- Per-field breakdown
+- Last activity
+- Current password visibility
+- Device lock clear action
+- Full performance JSON export
+
+### 問題一覧
+
+- View all questions
+- Delete questions
+- Seed sample questions
+
+### 問題追加
+
+- Manual question creation
+- Supports:
+  - `choice`
+  - `text`
+- Choice questions are currently 2-choice only
+
+### 一括追加
+
+- Paste JSON directly
+- Load `.json` file
+- Validate format
+- Bulk insert into Supabase
+
+### 質問箱
+
+- View all student questions
+- Display student ID and nickname
+- Read-only teacher-side inbox
+
+---
+
+## Current Database Schema
+
+Defined in:
+- [`supabase_schema.sql`](/Users/fumiaki/Desktop/rikarikalove/supabase_schema.sql)
+
+Current tables:
+- `students`
+- `questions`
+- `quiz_sessions`
+- `answer_logs`
+- `student_questions`
+
+### students
+
+- `id`
+- `nickname`
+- `password`
+- `created_at`
+
+### questions
+
+- `id`
+- `field`
+- `unit`
+- `question`
+- `type`
+- `choices`
+- `answer`
+- `explanation`
+- `grade`
+- `created_at`
+
+### quiz_sessions
+
+- `id`
+- `student_id`
+- `field`
+- `unit`
+- `total_questions`
+- `correct_count`
+- `created_at`
+
+### answer_logs
+
+- `id`
+- `session_id`
+- `student_id`
+- `question_id`
+- `is_correct`
+- `student_answer`
+- `created_at`
+
+### student_questions
+
+- `id`
+- `student_id`
+- `title`
+- `message`
+- `created_at`
+
+### RLS Status
+
+Currently disabled on all tables.
+
+That is intentional for the current simplified setup, but it is a known security limitation.
+
+---
+
+## Current Question Content Workflow
+
+### Manual Input
+
+Teacher can add questions from the admin panel.
+
+### Bulk JSON Import
+
+Teacher can bulk import question JSON from the admin panel.
+
+### SQL Generation from JSON
+
+Script:
+- [`scripts/generate_questions_sql.mjs`](/Users/fumiaki/Desktop/rikarikalove/scripts/generate_questions_sql.mjs)
+
+Example input:
+- [`examples/questions_bulk_example.json`](/Users/fumiaki/Desktop/rikarikalove/examples/questions_bulk_example.json)
+
+Command:
+
+```bash
+npm run questions:sql -- examples/questions_bulk_example.json > questions_bulk.sql
 ```
 
-### Screens / Components
-| File | Role |
-|------|------|
-| `LoginPage.tsx` | Password input → auto-login to matched studentId |
-| `HomePage.tsx` | 4-field selection cards with per-field accuracy bars |
-| `UnitSelectPage.tsx` | Unit list for a field + "all units random" option |
-| `QuizPage.tsx` | Quiz engine: choice/text answering, explanation, score, save session |
-| `MyPage.tsx` | Student dashboard (3 tabs: overview, history, weak units) |
-| `AdminPage.tsx` | Admin panel: student stats, question list, question add form |
-| `auth.tsx` | Auth context (login, logout, sessionStorage persistence) |
-| `supabase.ts` | Supabase client + TypeScript types |
-| `sampleQuestions.ts` | 24 sample questions across all 4 fields |
-
-### MyPage Features (v2)
-- 🔥 Streak counter (consecutive study days)
-- Summary cards: total questions, overall accuracy %, best streak
-- Per-field accuracy bars (Biology / Chemistry / Physics / Earth Science)
-- Bar chart: questions answered per day (last 7 days)
-- Heatmap: 30-day study activity grid (like GitHub contribution graph)
-- History tab: all past sessions with correct/wrong ratio bar
-- Weak units tab: units ranked by low accuracy (min 3 answers required)
-
-### Admin Panel
-- Password: `rika_admin_2024`
-- Tab 1 — Student overview: per-student total Q, accuracy, last activity, per-field breakdown
-- Tab 2 — Question list: all questions with delete button; "Add sample questions" button
-- Tab 3 — Add question form: field, unit, grade, type, choices, answer, explanation
+Then paste `questions_bulk.sql` into Supabase SQL Editor.
 
 ---
 
-## 🔮 PLANNED FEATURES (next implementation)
+## File Map
 
-### Priority 1 — Image support in questions
-Questions should optionally include an image (diagram, graph, photo).
-- Add `image_url TEXT` column to `questions` table
-- Store images in **Supabase Storage** (bucket: `question-images`)
-- In `QuizPage.tsx`: render `<img>` if `image_url` is present, above the question text
-- In `AdminPage.tsx` add question form: add image upload input
-  - Upload to Supabase Storage, get public URL, store in DB
-- Keep image optional — text-only questions still work as-is
+### App Shell
 
-### Priority 2 — Weak-unit drill mode
-- From the "weak units" tab in MyPage, tap a unit → launch QuizPage filtered to that unit
-- Label it "復習モード" (review mode) with distinct UI color (amber/yellow)
+- [`src/app/page.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/app/page.tsx)
+- [`src/app/layout.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/app/layout.tsx)
+- [`src/app/globals.css`](/Users/fumiaki/Desktop/rikarikalove/src/app/globals.css)
 
-### Priority 3 — Teacher dashboard (read-only, separate password)
-- A dedicated view (not mixed into admin) for the teacher to:
-  - See all 4 students' stats at a glance (grid layout)
-  - Compare accuracy by field across students
-  - See who studied today / this week
-  - Export data as CSV (optional)
-- Password: `teacher_2024` (separate from admin)
+### Components
 
-### Priority 4 — Ranking / motivation
-- Anonymous ranking among the 4 students (show nicknames)
-- Weekly "most questions solved" leaderboard on HomePage
-- Badges / achievements (first 100 questions, 7-day streak, 90%+ accuracy, etc.)
+- [`src/components/LoginPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/LoginPage.tsx)
+- [`src/components/HomePage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/HomePage.tsx)
+- [`src/components/UnitSelectPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/UnitSelectPage.tsx)
+- [`src/components/QuizPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/QuizPage.tsx)
+- [`src/components/MyPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/MyPage.tsx)
+- [`src/components/AdminPage.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/components/AdminPage.tsx)
 
-### Priority 5 — Better text answer judgment
-- Currently: exact string match only
-- Add soft matching: trim whitespace, ignore full/half-width differences
-- Optional: show "close but wrong" feedback with hint
+### Library Files
+
+- [`src/lib/auth.tsx`](/Users/fumiaki/Desktop/rikarikalove/src/lib/auth.tsx)
+- [`src/lib/supabase.ts`](/Users/fumiaki/Desktop/rikarikalove/src/lib/supabase.ts)
+- [`src/lib/sampleQuestions.ts`](/Users/fumiaki/Desktop/rikarikalove/src/lib/sampleQuestions.ts)
+
+### Support Files
+
+- [`supabase_schema.sql`](/Users/fumiaki/Desktop/rikarikalove/supabase_schema.sql)
+- [`README.md`](/Users/fumiaki/Desktop/rikarikalove/README.md)
+- [`package.json`](/Users/fumiaki/Desktop/rikarikalove/package.json)
+- [`examples/questions_bulk_example.json`](/Users/fumiaki/Desktop/rikarikalove/examples/questions_bulk_example.json)
+- [`scripts/generate_questions_sql.mjs`](/Users/fumiaki/Desktop/rikarikalove/scripts/generate_questions_sql.mjs)
 
 ---
 
-## 🏗️ DEVELOPMENT PHILOSOPHY
+## Current Constraints
 
-1. **Simplicity first** — No complex auth, no email, no accounts. Tablets at the cram school just need a URL and a password.
-
-2. **Data ownership** — All student data stays in Supabase under the teacher's account. Nothing is shared externally.
-
-3. **Mobile-first** — UI must work well on tablets and smartphones. Touch targets are large, fonts are readable.
-
-4. **Dark theme always** — The app uses a consistent dark color scheme (#0f172a background). This reduces eye strain during study sessions.
-
-5. **Modular and extensible** — Each screen is a standalone component. Adding features = adding/editing one file. The question DB is separate from the UI logic.
-
-6. **Japanese context** — All student-facing UI text is in Japanese. Code, comments, and this document are in English for Codex compatibility.
-
-7. **No over-engineering** — sessionStorage over complex JWT. Inline styles where Tailwind falls short. Simple boolean `is_correct` over complex scoring. Keep it working and deployable.
+1. Authentication is custom and simple, not Supabase Auth
+2. Admin password is hardcoded in the client
+3. Student passwords are readable by admin
+4. RLS is disabled
+5. Supabase public client is used directly in the browser
+6. Student privacy is only partially enforced
+7. Question images are not supported yet
+8. Text answers are still judged by exact match
+9. Weak-unit view has no direct drill-launch flow yet
 
 ---
 
-## 📁 FILE STRUCTURE
+## Recommended Next Priorities
 
-```
-rika-quiz/
-├── src/
-│   ├── app/
-│   │   ├── globals.css         ← fonts, CSS vars, animations, utility classes
-│   │   ├── layout.tsx          ← HTML shell, metadata
-│   │   └── page.tsx            ← root: AuthProvider + screen router + AdminFloatButton
-│   ├── components/
-│   │   ├── LoginPage.tsx       ← password input, auto-login
-│   │   ├── HomePage.tsx        ← field selection, per-field accuracy
-│   │   ├── UnitSelectPage.tsx  ← unit list per field
-│   │   ├── QuizPage.tsx        ← quiz engine
-│   │   ├── MyPage.tsx          ← student dashboard (3 tabs)
-│   │   └── AdminPage.tsx       ← admin panel (3 tabs)
-│   └── lib/
-│       ├── auth.tsx            ← AuthContext, STUDENT_PASSWORDS, STUDENTS
-│       ├── supabase.ts         ← createClient, Database types
-│       └── sampleQuestions.ts  ← 24 seed questions
-├── supabase_schema.sql         ← run this in Supabase SQL editor first
-├── .env.local.example          ← NEXT_PUBLIC_SUPABASE_URL / ANON_KEY
-├── vercel.json
-└── package.json
-```
+These are ordered by practical value, not by novelty.
+
+### Priority 1 — Better Text Answer Judgement
+
+Goal:
+- Improve text-answer correctness without major UI changes
+
+Recommended work:
+- Normalize whitespace
+- Normalize full-width / half-width differences
+- Normalize case where relevant
+- Add optional alternate accepted answers
+
+Suggested schema extension:
+- `questions.accept_answers JSONB`
+
+Estimated effort:
+- 3 to 5 hours
+
+Why first:
+- Small change
+- Immediate improvement in student experience
+
+### Priority 2 — Weak-Unit Drill Flow
+
+Goal:
+- Let students jump directly from weak-unit analysis into focused review
+
+Recommended work:
+- Add `復習する` button in weak-unit tab
+- Route directly into quiz filtered by field + unit
+- Optionally bias future drill mode toward missed questions
+
+Estimated effort:
+- 2 to 4 hours for the basic flow
+- more if missed-question prioritization is added
+
+Why second:
+- Strong educational value
+- Works with existing data model
+
+### Priority 3 — Security / RLS Refactor
+
+Goal:
+- Make the app safer for broader public use
+
+Recommended work:
+- Move privileged write operations to server-side handlers
+- Introduce real session handling
+- Enable Supabase RLS
+- Limit students to their own records
+- Replace "admin can read every password" with reset-based management if desired
+
+Estimated effort:
+- 10 to 15 hours
+
+Why third:
+- This is the highest-risk architectural gap
+- It becomes important before wider public distribution
+
+### Priority 4 — Question Image Support
+
+Goal:
+- Support diagrams, charts, and science visuals
+
+Recommended work:
+- Add `image_url` to `questions`
+- Render optional image in quiz and question list
+- Add image input to admin workflow
+- Optionally add Supabase Storage upload later
+
+Estimated effort:
+- 5 to 8 hours
+
+Why fourth:
+- High value for science teaching
+- Slightly higher content-management overhead than priorities 1 and 2
+
+### Priority 5 — Teacher Dashboard
+
+Goal:
+- Better teacher-side analysis and comparison
+
+Recommended work:
+- Cross-student comparison grid
+- Time filtering
+- More chart usage
+- CSV / PDF export if needed
+
+Estimated effort:
+- 8 to 12 hours
+
+Why fifth:
+- Valuable for operations
+- Less urgent than learning-flow and security improvements
 
 ---
 
-## ⚙️ ENVIRONMENT VARIABLES
+## Development Rules for Codex
+
+If continuing development in this repository:
+
+1. Do not reintroduce old credentials such as:
+   - `yuki2024`
+   - `rika_admin_2024`
+
+2. Do not describe the admin panel as 3 or 4 tabs.
+   Current count is 5.
+
+3. Do not describe MyPage as 3 or 4 tabs.
+   Current count is 5.
+
+4. If you change the database schema, update all of:
+   - [`supabase_schema.sql`](/Users/fumiaki/Desktop/rikarikalove/supabase_schema.sql)
+   - [`src/lib/supabase.ts`](/Users/fumiaki/Desktop/rikarikalove/src/lib/supabase.ts)
+   - [`README.md`](/Users/fumiaki/Desktop/rikarikalove/README.md) when user-facing setup changes
+
+5. If a new feature depends on DB migration, explicitly tell the user to rerun `supabase_schema.sql` or the relevant SQL in Supabase SQL Editor.
+
+6. Preserve existing UX assumptions unless the user asks otherwise:
+   - dark theme
+   - large touch-friendly controls
+   - Japanese UI labels
+   - simple direct workflows
+
+7. Treat current student-question visibility as a convenience feature, not strict security.
+
+8. Before claiming current repo state, verify it from files, not from earlier summaries.
+
+---
+
+## Deploy Checklist
+
+1. Run [`supabase_schema.sql`](/Users/fumiaki/Desktop/rikarikalove/supabase_schema.sql) in Supabase SQL Editor
+2. Ensure env vars are set:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
 ```
 
-Set these in Vercel → Project Settings → Environment Variables before deploying.
+3. Push to GitHub
+4. Deploy on Vercel
+5. After deploy, verify:
+   - student login
+   - admin login
+   - question loading
+   - question bulk import
+   - student question posting
+   - admin question inbox
 
 ---
 
-## 🚀 DEPLOY CHECKLIST
+## Short Reality Check
 
-1. Run `supabase_schema.sql` in Supabase SQL Editor
-2. Push code to GitHub (`git push origin main`)
-3. Import repo in Vercel → set env vars → Deploy
-4. After deploy: open site → click "管理者" button (bottom-right) → pw: `rika_admin_2024`
-5. Go to "問題一覧" tab → click "サンプル問題を追加" to seed 24 questions
+This repository is no longer the older "4 students / simple admin / 3-tab dashboard" version.
 
----
+It is now:
+- 5 IDs
+- device-locked
+- auto-logout enabled
+- bulk question import enabled
+- admin export enabled
+- student question posting enabled
+- admin question inbox enabled
 
-## 🛠️ INSTRUCTIONS FOR CODEX
-
-You are continuing development of **RikaQuiz**, a Next.js 14 + Supabase quiz app for a Japanese cram school.
-
-The codebase is in the attached ZIP (`rika-quiz-v2.zip`). Extract it and work inside the `rika-quiz/` directory.
-
-### Immediate tasks:
-
-**Task 1 — Image support**
-- Add `image_url TEXT` column to `questions` table (update `supabase_schema.sql` too)
-- Update `Database` type in `supabase.ts` to include `image_url: string | null`
-- In `QuizPage.tsx`: if `q.image_url` is present, render it above the question text
-  ```tsx
-  {q.image_url && (
-    <img src={q.image_url} alt="問題の図" className="w-full rounded-xl mb-4 object-contain max-h-48" />
-  )}
-  ```
-- In `AdminPage.tsx` add question form: add a text input for `image_url` (URL paste, not file upload yet)
-- Keep fully backward-compatible — existing questions without images must work unchanged
-
-**Task 2 — Weak unit drill mode**
-- In `MyPage.tsx` weak units tab: add a "復習する →" button on each weak unit card
-- Tapping it should call a new prop `onDrillUnit(field: string, unit: string)`
-- In `page.tsx`: handle this prop to navigate to `QuizPage` with that field+unit
-- In `QuizPage.tsx`: if coming from drill mode, show a amber "復習モード" badge instead of the normal field badge
-
-**Task 3 — Code quality**
-- Ensure all components compile with `next build` without TypeScript errors
-- Remove any unused imports
-- Make sure `answer_logs` Supabase insert in `QuizPage.tsx` correctly references `questions` table foreign key
-
-### Constraints:
-- Do NOT change the color scheme or dark theme
-- Do NOT add new npm packages unless absolutely necessary
-- Do NOT change the authentication logic
-- Keep all student-facing text in Japanese
-- Keep code comments and variable names in English
-- Each task should be completable independently — do not couple them
-
-### When done:
-- Run `npm run build` to verify no errors
-- Output a summary of every file changed and what was changed
+Any future planning or implementation should start from that reality.
