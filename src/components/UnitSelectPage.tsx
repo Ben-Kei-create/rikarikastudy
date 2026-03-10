@@ -107,7 +107,7 @@ export default function UnitSelectPage({
         className="card w-full anim-fade-up mb-4 text-left"
         style={{
           borderColor: `${color}40`,
-          background: `linear-gradient(180deg, ${color}18, rgba(11, 16, 28, 0.88))`,
+          background: `linear-gradient(180deg, ${color}18, var(--surface-elevated))`,
           animationDelay: '0.05s',
           transition: 'transform 0.18s ease, box-shadow 0.18s ease',
         }}
@@ -173,10 +173,10 @@ export default function UnitSelectPage({
                   )}
                 </div>
                 {rate !== null && (
-                  <div className="mt-3" style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 999, height: 6 }}>
-                    <div
-                      style={{
-                        width: `${rate}%`,
+                <div className="mt-3 soft-track" style={{ height: 6 }}>
+                  <div
+                    style={{
+                      width: `${rate}%`,
                         height: '100%',
                         background: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444',
                         borderRadius: 999,

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth'
+import { ThemeProvider, useTheme } from '@/lib/theme'
 import LoginPage from '@/components/LoginPage'
 import HomePage from '@/components/HomePage'
 import UnitSelectPage from '@/components/UnitSelectPage'
@@ -13,6 +14,29 @@ type Screen =
   | 'mypage'
   | { type: 'unit'; field: string }
   | { type: 'quiz'; field: string; unit: string; isDrill?: boolean }
+
+function ThemeToggle() {
+  const { theme, setTheme, ready } = useTheme()
+
+  if (!ready) return null
+
+  return (
+    <div className="theme-toggle anim-fade">
+      <button
+        onClick={() => setTheme('light')}
+        className={`theme-toggle-button ${theme === 'light' ? 'is-active' : ''}`}
+      >
+        ライト
+      </button>
+      <button
+        onClick={() => setTheme('dark')}
+        className={`theme-toggle-button ${theme === 'dark' ? 'is-active' : ''}`}
+      >
+        ダーク
+      </button>
+    </div>
+  )
+}
 
 function App() {
   const { studentId, ready } = useAuth()
@@ -61,9 +85,10 @@ function App() {
 
   return (
     <>
+      <ThemeToggle />
       {content}
       {adminOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#0f172a', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--overlay-bg)', overflowY: 'auto' }}>
           <AdminPage onBack={() => setAdminOpen(false)} />
         </div>
       )}
@@ -73,8 +98,10 @@ function App() {
 
 export default function Page() {
   return (
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ThemeProvider>
   )
 }

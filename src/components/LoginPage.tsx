@@ -95,10 +95,10 @@ export default function LoginPage({
                 key={student.id}
                 className="rounded-[22px] p-4 transition-all"
                 style={{
-                  border: `1px solid ${checked ? 'rgba(86, 168, 255, 0.5)' : 'rgba(255, 255, 255, 0.08)'}`,
+                  border: checked ? '1px solid rgba(86, 168, 255, 0.5)' : '1px solid var(--surface-elevated-border)',
                   background: checked
                     ? 'linear-gradient(180deg, rgba(10, 132, 255, 0.22), rgba(10, 132, 255, 0.14))'
-                    : 'rgba(10, 16, 30, 0.68)',
+                    : 'var(--surface-elevated)',
                   boxShadow: checked ? '0 14px 28px rgba(10, 132, 255, 0.18)' : 'none',
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   opacity: disabled ? 0.35 : 1,
