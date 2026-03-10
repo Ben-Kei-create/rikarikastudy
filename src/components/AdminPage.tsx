@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { ChangeEvent, useEffect, useState } from 'react'
+import { Database, supabase } from '@/lib/supabase'
 import { fetchStudents, useAuth } from '@/lib/auth'
 import { sampleQuestions } from '@/lib/sampleQuestions'
 import { format } from 'date-fns'
@@ -14,6 +14,28 @@ const FIELD_COLORS: Record<string, string> = {
   '物理': '#3b82f6',
   '地学': '#a855f7',
 }
+const BULK_INSERT_CHUNK_SIZE = 100
+const BULK_JSON_EXAMPLE = `[
+  {
+    "field": "生物",
+    "unit": "植物のつくり",
+    "question": "光合成を主に行う部分はどこ？",
+    "type": "choice",
+    "choices": ["葉", "根"],
+    "answer": "葉",
+    "explanation": "葉の葉緑体で光合成を行います。",
+    "grade": "中1"
+  },
+  {
+    "field": "物理",
+    "unit": "電流",
+    "question": "電流の単位は何ですか？",
+    "type": "text",
+    "answer": "A",
+    "explanation": "電流の単位はアンペアです。",
+    "grade": "中2"
+  }
+]`
 
 function buildBinaryChoices(choices: string[] | null, answer: string, seed: string) {
   if (!choices || choices.length === 0) return null
@@ -35,7 +57,145 @@ interface StudentStats {
   byField: Record<string, { total: number; correct: number }>
 }
 
-type AdminTab = 'overview' | 'questions' | 'add'
+type QuizSessionRow = Database['public']['Tables']['quiz_sessions']['Row']
+type AnswerLogRow = Database['public']['Tables']['answer_logs']['Row']
+type QuestionRow = Database['public']['Tables']['questions']['Row']
+
+interface BulkQuestionPayload {
+  field: typeof FIELDS[number]
+  unit: string
+  question: string
+  type: 'choice' | 'text'
+  choices: string[] | null
+  answer: string
+  explanation: string | null
+  grade: string
+}
+
+type AdminTab = 'overview' | 'questions' | 'add' | 'bulk'
+
+function buildStudentStats(
+  students: Array<{ id: number; nickname: string; password: string }>,
+  sessions: QuizSessionRow[]
+) {
+  const statsMap: Record<number, StudentStats> = {}
+
+  students.forEach(student => {
+    statsMap[student.id] = {
+      id: student.id,
+      nickname: student.nickname,
+      password: student.password,
+      totalQ: 0,
+      totalC: 0,
+      lastActivity: null,
+      byField: {},
+    }
+  })
+
+  sessions.forEach(session => {
+    const current = statsMap[session.student_id]
+    if (!current) return
+    current.totalQ += session.total_questions
+    current.totalC += session.correct_count
+    if (!current.lastActivity || session.created_at > current.lastActivity) {
+      current.lastActivity = session.created_at
+    }
+    if (!current.byField[session.field]) current.byField[session.field] = { total: 0, correct: 0 }
+    current.byField[session.field].total += session.total_questions
+    current.byField[session.field].correct += session.correct_count
+  })
+
+  return Object.values(statsMap)
+}
+
+function downloadJsonFile(filename: string, payload: unknown) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
+  const parsed = JSON.parse(jsonText)
+  const items: unknown[] | null = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray(parsed?.questions)
+      ? parsed.questions
+      : null
+
+  if (!items || items.length === 0) {
+    throw new Error('JSON は配列、または {"questions":[...]} の形で入力してください。')
+  }
+
+  return items.map((item, index) => {
+    const row = typeof item === 'object' && item !== null ? item as Record<string, unknown> : {}
+    const prefix = `${index + 1}問目`
+    const field = typeof row.field === 'string' ? row.field.trim() : ''
+    const unit = typeof row.unit === 'string' ? row.unit.trim() : ''
+    const question = typeof row.question === 'string' ? row.question.trim() : ''
+    const type = row.type
+    const answer = typeof row.answer === 'string' ? row.answer.trim() : ''
+    const explanation = typeof row.explanation === 'string' && row.explanation.trim()
+      ? row.explanation.trim()
+      : null
+    const grade = typeof row.grade === 'string' && row.grade.trim()
+      ? row.grade.trim()
+      : '中3'
+
+    if (!FIELDS.includes(field as typeof FIELDS[number])) {
+      throw new Error(`${prefix}: field は ${FIELDS.join(' / ')} のどれかにしてください。`)
+    }
+    if (!unit) throw new Error(`${prefix}: unit は必須です。`)
+    if (!question) throw new Error(`${prefix}: question は必須です。`)
+    if (!answer) throw new Error(`${prefix}: answer は必須です。`)
+    if (type !== 'choice' && type !== 'text') {
+      throw new Error(`${prefix}: type は "choice" か "text" にしてください。`)
+    }
+
+    if (type === 'choice') {
+      if (!Array.isArray(row.choices)) {
+        throw new Error(`${prefix}: choice 問題は choices 配列が必要です。`)
+      }
+      const choices = row.choices
+        .map((choice: unknown) => (typeof choice === 'string' ? choice.trim() : ''))
+        .filter(Boolean)
+
+      if (choices.length !== 2) {
+        throw new Error(`${prefix}: choice 問題の choices は2件にしてください。`)
+      }
+      if (!choices.includes(answer)) {
+        throw new Error(`${prefix}: answer は choices のどちらかと一致させてください。`)
+      }
+
+      return {
+        field: field as typeof FIELDS[number],
+        unit,
+        question,
+        type,
+        choices,
+        answer,
+        explanation,
+        grade,
+      }
+    }
+
+    return {
+      field: field as typeof FIELDS[number],
+      unit,
+      question,
+      type,
+      choices: null,
+      answer,
+      explanation,
+      grade,
+    }
+  })
+}
 
 export default function AdminPage({ onBack }: { onBack: () => void }) {
   const { lockedStudentId, clearDeviceLock } = useAuth()
@@ -46,6 +206,11 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [stats, setStats] = useState<StudentStats[]>([])
   const [questions, setQuestions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [bulkInput, setBulkInput] = useState(BULK_JSON_EXAMPLE)
+  const [bulkMsg, setBulkMsg] = useState('')
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
+  const [exportMsg, setExportMsg] = useState('')
 
   const [form, setForm] = useState({
     field: '生物' as typeof FIELDS[number],
@@ -82,40 +247,74 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         fetchStudents(),
         supabase.from('quiz_sessions').select('*'),
       ])
-
-      const statsMap: Record<number, StudentStats> = {}
-      students.forEach(student => {
-        statsMap[student.id] = {
-          id: student.id,
-          nickname: student.nickname,
-          password: student.password,
-          totalQ: 0,
-          totalC: 0,
-          lastActivity: null,
-          byField: {},
-        }
-      })
-
-      sessions?.forEach(session => {
-        const current = statsMap[session.student_id]
-        if (!current) return
-        current.totalQ += session.total_questions
-        current.totalC += session.correct_count
-        if (!current.lastActivity || session.created_at > current.lastActivity) {
-          current.lastActivity = session.created_at
-        }
-        if (!current.byField[session.field]) current.byField[session.field] = { total: 0, correct: 0 }
-        current.byField[session.field].total += session.total_questions
-        current.byField[session.field].correct += session.correct_count
-      })
-
-      setStats(Object.values(statsMap))
+      setStats(buildStudentStats(students, (sessions || []) as QuizSessionRow[]))
     } else if (tab === 'questions') {
       const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false })
       setQuestions(data || [])
     }
 
     setLoading(false)
+  }
+
+  const handleDownloadAllPerformance = async () => {
+    try {
+      setExportLoading(true)
+      setExportMsg('')
+
+      const [students, sessionsResponse, answerLogsResponse, questionsResponse] = await Promise.all([
+        fetchStudents(),
+        supabase.from('quiz_sessions').select('*').order('created_at', { ascending: false }),
+        supabase.from('answer_logs').select('*').order('created_at', { ascending: false }),
+        supabase.from('questions').select('*').order('created_at', { ascending: false }),
+      ])
+
+      if (sessionsResponse.error) throw new Error(sessionsResponse.error.message)
+      if (answerLogsResponse.error) throw new Error(answerLogsResponse.error.message)
+      if (questionsResponse.error) throw new Error(questionsResponse.error.message)
+
+      const sessions = (sessionsResponse.data || []) as QuizSessionRow[]
+      const answerLogs = (answerLogsResponse.data || []) as AnswerLogRow[]
+      const questions = (questionsResponse.data || []) as QuestionRow[]
+      const statsSnapshot = buildStudentStats(students, sessions)
+
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        format: 'rikarikastudy-admin-export/v1',
+        questionCatalog: questions,
+        students: students.map(student => {
+          const summary = statsSnapshot.find(current => current.id === student.id)
+          const studentSessions = sessions.filter(session => session.student_id === student.id)
+          const studentAnswerLogs = answerLogs.filter(log => log.student_id === student.id)
+          const correctRate = summary && summary.totalQ > 0
+            ? Math.round((summary.totalC / summary.totalQ) * 100)
+            : 0
+
+          return {
+            id: student.id,
+            nickname: student.nickname,
+            summary: {
+              totalQuestions: summary?.totalQ ?? 0,
+              totalCorrect: summary?.totalC ?? 0,
+              correctRate,
+              lastActivity: summary?.lastActivity ?? null,
+              sessionCount: studentSessions.length,
+              answerLogCount: studentAnswerLogs.length,
+              byField: summary?.byField ?? {},
+            },
+            quizSessions: studentSessions,
+            answerLogs: studentAnswerLogs,
+          }
+        }),
+      }
+
+      const filename = `rikarikastudy-grades-${format(new Date(), 'yyyyMMdd-HHmmss')}.json`
+      downloadJsonFile(filename, payload)
+      setExportMsg(`✅ ${filename} をダウンロードしました。`)
+    } catch (error) {
+      setExportMsg(`エラー: ${error instanceof Error ? error.message : '成績データの書き出しに失敗しました。'}`)
+    } finally {
+      setExportLoading(false)
+    }
   }
 
   const handleSeedQuestions = async () => {
@@ -183,6 +382,36 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     setTimeout(() => setAddMsg(''), 3000)
   }
 
+  const handleBulkFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const text = await file.text()
+    setBulkInput(text)
+    setBulkMsg(`📄 ${file.name} を読み込みました。`)
+    event.target.value = ''
+  }
+
+  const handleBulkImport = async () => {
+    try {
+      setBulkLoading(true)
+      setBulkMsg('')
+      const payload = parseBulkQuestions(bulkInput)
+
+      for (let index = 0; index < payload.length; index += BULK_INSERT_CHUNK_SIZE) {
+        const chunk = payload.slice(index, index + BULK_INSERT_CHUNK_SIZE)
+        const { error } = await supabase.from('questions').insert(chunk)
+        if (error) throw new Error(error.message)
+      }
+
+      setBulkMsg(`✅ ${payload.length}問を一括追加しました。`)
+      if (tab === 'questions') await loadData()
+    } catch (error) {
+      setBulkMsg(`エラー: ${error instanceof Error ? error.message : '一括追加に失敗しました。'}`)
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
   const handleDeleteQuestion = async (id: string) => {
     if (!confirm('この問題を削除しますか？')) return
     await supabase.from('questions').delete().eq('id', id)
@@ -221,7 +450,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       </div>
 
       <div className="flex gap-2 mb-6">
-        {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加']] as const).map(([currentTab, label]) => (
+        {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括追加']] as const).map(([currentTab, label]) => (
           <button
             key={currentTab}
             onClick={() => setTab(currentTab)}
@@ -266,6 +495,33 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <div className="text-slate-400 text-center py-12">読み込み中...</div>
           ) : (
             <div className="space-y-4">
+              <div className="card">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-white font-bold">全成績データをダウンロード</div>
+                    <div className="text-slate-400 text-sm mt-1">
+                      生徒ごとの集計、履歴、解答ログを JSON でまとめて保存します。
+                    </div>
+                    {exportMsg && (
+                      <div
+                        className="text-sm mt-2"
+                        style={{ color: exportMsg.startsWith('✅') ? '#4ade80' : '#f87171' }}
+                      >
+                        {exportMsg}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleDownloadAllPerformance}
+                    disabled={exportLoading}
+                    className="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap disabled:opacity-60"
+                    style={{ background: '#3b82f6', color: 'white' }}
+                  >
+                    {exportLoading ? '作成中...' : '⬇️ 成績JSONを保存'}
+                  </button>
+                </div>
+              </div>
+
               {stats.map(student => {
                 const rate = student.totalQ > 0 ? Math.round((student.totalC / student.totalQ) * 100) : 0
                 return (
@@ -475,6 +731,59 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
           {addMsg && <p className={`text-sm ${addMsg.startsWith('✅') ? 'text-green-400' : 'text-red-400'}`}>{addMsg}</p>}
           <button onClick={handleAddQuestion} className="btn-primary w-full">問題を追加する</button>
+        </div>
+      )}
+
+      {tab === 'bulk' && (
+        <div className="space-y-4">
+          <div className="card">
+            <h3 className="text-white font-bold mb-2">JSON 一括追加</h3>
+            <p className="text-slate-400 text-sm leading-6">
+              JSON をそのまま貼り付けるか、`.json` ファイルを読み込んで一括追加できます。
+              choice 問題は `choices` を2件、text 問題は `choices` なしで入力してください。
+            </p>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <label
+                className="px-4 py-2 rounded-xl text-sm font-bold cursor-pointer"
+                style={{ background: '#334155', color: '#e2e8f0' }}
+              >
+                JSONファイルを読み込む
+                <input type="file" accept=".json,application/json" onChange={handleBulkFileChange} className="hidden" />
+              </label>
+              <button
+                onClick={() => setBulkInput(BULK_JSON_EXAMPLE)}
+                className="px-4 py-2 rounded-xl text-sm font-bold"
+                style={{ background: '#1e293b', color: '#cbd5e1', border: '1px solid #334155' }}
+              >
+                サンプルJSONを入れる
+              </button>
+            </div>
+          </div>
+
+          <div className="card">
+            <label className="text-slate-400 text-xs mb-2 block">JSON データ</label>
+            <textarea
+              value={bulkInput}
+              onChange={event => setBulkInput(event.target.value)}
+              rows={18}
+              className="w-full px-4 py-3 rounded-2xl outline-none resize-y font-mono text-sm"
+              style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+              spellCheck={false}
+            />
+            {bulkMsg && (
+              <p className={`mt-3 text-sm ${bulkMsg.startsWith('✅') || bulkMsg.startsWith('📄') ? 'text-green-400' : 'text-red-400'}`}>
+                {bulkMsg}
+              </p>
+            )}
+            <button
+              onClick={handleBulkImport}
+              className="btn-primary w-full mt-4"
+              disabled={bulkLoading}
+              style={{ opacity: bulkLoading ? 0.7 : 1 }}
+            >
+              {bulkLoading ? '一括追加中...' : 'JSON を一括追加する'}
+            </button>
+          </div>
         </div>
       )}
     </div>

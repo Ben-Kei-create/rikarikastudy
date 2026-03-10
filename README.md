@@ -52,6 +52,28 @@ git push -u origin main
 6. 「正解」には A か B と同じ文をそのまま入れる
 7. 「問題を追加する」を押す
 
+### 6. 問題の一括追加方法
+
+#### 管理画面から JSON で一括追加
+
+1. 「もぎ先生ログイン」
+2. 「一括追加」タブを開く
+3. JSON を貼り付けるか、`.json` ファイルを読み込む
+4. 「JSON を一括追加する」を押す
+
+サンプル形式:
+- [questions_bulk_example.json](/Users/fumiaki/Desktop/rikarikalove/examples/questions_bulk_example.json)
+
+#### JSON から SQL を作って Supabase に入れる
+
+ローカルで SQL を生成:
+
+```bash
+npm run questions:sql -- examples/questions_bulk_example.json > questions_bulk.sql
+```
+
+生成された `questions_bulk.sql` を Supabase の SQL Editor に貼って実行します。
+
 ---
 
 ## 🔐 ログイン情報
@@ -111,6 +133,43 @@ git push -u origin main
 
 **記述問題の場合：**
 - 「正解」に模範解答を入力（完全一致で判定）
+
+## 📦 一括投入のJSON形式
+
+`choice` 問題:
+
+```json
+{
+  "field": "生物",
+  "unit": "植物のつくり",
+  "question": "光合成を主に行う部分はどこ？",
+  "type": "choice",
+  "choices": ["葉", "根"],
+  "answer": "葉",
+  "explanation": "葉の葉緑体で光合成を行います。",
+  "grade": "中1"
+}
+```
+
+`text` 問題:
+
+```json
+{
+  "field": "物理",
+  "unit": "電流",
+  "question": "電流の単位は何ですか？",
+  "type": "text",
+  "answer": "A",
+  "explanation": "電流の単位はアンペアです。",
+  "grade": "中2"
+}
+```
+
+ルール:
+- `field` は `生物 / 化学 / 物理 / 地学`
+- `choice` 問題の `choices` は2件
+- `answer` は `choices` のどちらかと完全一致
+- 配列そのままでも、`{"questions":[...]}` でも投入可能
 
 ---
 

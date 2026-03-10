@@ -1,0 +1,31 @@
+[
+  {
+    "field": "生物",
+    "unit": "植物のつくり",
+    "question": "光合成を主に行う部分はどこ？",
+    "type": "choice",
+    "choices": ["葉", "根"],
+    "answer": "葉",
+    "explanation": "葉の葉緑体で光合成を行います。",
+    "grade": "中1"
+  },
+  {
+    "field": "化学",
+    "unit": "物質の性質",
+    "question": "水に溶けても電流が流れない物質の例は？",
+    "type": "choice",
+    "choices": ["食塩水", "砂糖水"],
+    "answer": "砂糖水",
+    "explanation": "砂糖は電離しないので、水溶液は電気を通しにくいです。",
+    "grade": "中2"
+  },
+  {
+    "field": "物理",
+    "unit": "電流",
+    "question": "電流の単位は何ですか？",
+    "type": "text",
+    "answer": "A",
+    "explanation": "電流の単位はアンペアです。",
+    "grade": "中2"
+  }
+]
