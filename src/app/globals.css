@@ -172,6 +172,7 @@ body {
   background: linear-gradient(180deg, #56a8ff 0%, #0a84ff 100%);
   color: white;
   padding: 13px 22px;
+  min-height: 48px;
   border-radius: 18px;
   font-weight: 700;
   font-size: 1rem;
@@ -189,6 +190,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 12px 18px;
+  min-height: 48px;
   font-weight: 600;
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
   backdrop-filter: blur(20px);
@@ -206,6 +208,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 12px 18px;
+  min-height: 48px;
   font-weight: 600;
   transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
@@ -218,16 +221,20 @@ body {
 
 .page-shell {
   min-height: 100vh;
-  max-width: 42rem;
+  max-width: 60rem;
   margin: 0 auto;
-  padding: 24px 20px 72px;
+  padding: 20px 16px 72px;
 }
 
 .page-shell-wide {
   min-height: 100vh;
-  max-width: 72rem;
+  max-width: 86rem;
   margin: 0 auto;
-  padding: 24px 20px 72px;
+  padding: 20px 16px 72px;
+}
+
+.page-shell-dashboard {
+  max-width: 76rem;
 }
 
 .hero-card {
@@ -240,14 +247,16 @@ body {
 }
 
 .segment-bar {
-  display: inline-flex;
-  flex-wrap: wrap;
+  display: flex;
   gap: 8px;
   padding: 6px;
   border-radius: 20px;
   background: var(--segment-bg);
   border: 1px solid var(--border);
   backdrop-filter: blur(18px);
+  overflow-x: auto;
+  width: 100%;
+  scrollbar-width: none;
 }
 
 .segment-button {
@@ -259,6 +268,8 @@ body {
   color: var(--text-muted);
   background: transparent;
   transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .segment-button.is-active {
@@ -305,6 +316,141 @@ body {
 .soft-track {
   background: var(--track-bg);
   border-radius: 999px;
+}
+
+.segment-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.science-surface {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.science-surface > :not(.science-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+.science-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.science-backdrop__mesh {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 42%),
+    radial-gradient(circle at 15% 18%, rgba(34, 197, 94, 0.16), transparent 28%),
+    radial-gradient(circle at 82% 20%, rgba(249, 115, 22, 0.16), transparent 30%),
+    radial-gradient(circle at 76% 74%, rgba(77, 162, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 18% 82%, rgba(139, 124, 255, 0.16), transparent 30%);
+  opacity: 0.95;
+}
+
+.science-backdrop__grid {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 88%);
+  opacity: 0.3;
+}
+
+.science-backdrop__glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(34px);
+  opacity: 0.26;
+}
+
+.science-backdrop__glow--bio {
+  left: -4%;
+  bottom: 2%;
+  width: 30%;
+  height: 34%;
+  background: rgba(34, 197, 94, 0.32);
+}
+
+.science-backdrop__glow--chem {
+  right: 14%;
+  top: 4%;
+  width: 26%;
+  height: 26%;
+  background: rgba(249, 115, 22, 0.3);
+}
+
+.science-backdrop__glow--phys {
+  right: -4%;
+  top: 30%;
+  width: 28%;
+  height: 34%;
+  background: rgba(77, 162, 255, 0.34);
+}
+
+.science-backdrop__glow--earth {
+  left: 26%;
+  bottom: -10%;
+  width: 36%;
+  height: 30%;
+  background: rgba(139, 124, 255, 0.26);
+}
+
+.science-motif {
+  position: absolute;
+  width: clamp(88px, 16vw, 168px);
+  height: auto;
+  fill: none;
+  opacity: 0.42;
+  filter: drop-shadow(0 0 18px rgba(5, 8, 22, 0.35));
+}
+
+.science-motif--bio {
+  left: -6px;
+  bottom: -8px;
+  color: rgba(74, 222, 128, 0.82);
+  transform: rotate(-8deg);
+}
+
+.science-motif--chem {
+  top: 8px;
+  right: 96px;
+  color: rgba(251, 146, 60, 0.84);
+  transform: rotate(10deg);
+}
+
+.science-motif--phys {
+  right: -6px;
+  bottom: 18%;
+  color: rgba(96, 165, 250, 0.84);
+}
+
+.science-motif--earth {
+  left: 34%;
+  top: 14px;
+  color: rgba(167, 139, 250, 0.8);
+  transform: rotate(-8deg);
+}
+
+.science-intro-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.science-intro-card {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 14px 16px;
+  background: rgba(8, 13, 24, 0.36);
+  backdrop-filter: blur(16px);
 }
 
 .theme-toggle {
@@ -367,6 +513,24 @@ body {
 
 [data-theme='light'] .text-slate-600 {
   color: #8a99ab !important;
+}
+
+@media (min-width: 640px) {
+  .page-shell,
+  .page-shell-wide {
+    padding: 28px 24px 88px;
+  }
+}
+
+@media (max-width: 639px) {
+  .science-motif--chem {
+    right: 44px;
+  }
+
+  .science-motif--earth {
+    left: 24%;
+    top: 32px;
+  }
 }
 
 /* スクロールバー */

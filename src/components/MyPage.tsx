@@ -10,12 +10,15 @@ import {
   markColumnMissing,
   markColumnSupported,
 } from '@/lib/schemaCompat'
+import ScienceBackdrop from '@/components/ScienceBackdrop'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
+  '4分野総合': '#38bdf8',
 }
 const FIELD_EMOJI: Record<string, string> = {
   '生物': '🌿', '化学': '⚗️', '物理': '⚡', '地学': '🌏',
+  '4分野総合': '🔬',
 }
 const FIELDS = ['生物', '化学', '物理', '地学']
 
@@ -306,7 +309,7 @@ export default function MyPage({
   }
 
   return (
-    <div className="page-shell">
+    <div className="page-shell page-shell-dashboard">
       {/* ヘッダー */}
       <div className="sticky top-0 z-10 px-1 pt-2 pb-4 floating-header">
         <div className="flex items-center justify-between gap-3 mb-3">
@@ -320,15 +323,16 @@ export default function MyPage({
             ログアウト
           </button>
         </div>
-        <div className="hero-card px-5 py-5 sm:px-6">
-          <div className="flex items-end justify-between gap-4">
+        <div className="hero-card science-surface px-5 py-5 sm:px-6">
+          <ScienceBackdrop />
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">My Page</div>
               <h1 className="font-display text-3xl text-white">マイページ</h1>
               <p className="text-slate-400 text-sm mt-1">{nickname}さんの成績</p>
             </div>
             {streak > 0 && (
-              <div className="flex items-center gap-2 rounded-[20px] px-4 py-3" style={{ background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
+              <div className="flex w-fit items-center gap-2 rounded-[20px] px-4 py-3" style={{ background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
                 <span className="text-2xl">🔥</span>
                 <span className="font-display text-2xl text-orange-300">{streak}</span>
                 <span className="text-slate-400 text-xs">日連続</span>
@@ -354,7 +358,7 @@ export default function MyPage({
         {/* ===== 概要タブ ===== */}
         {tab === 'overview' && (
           <div className="space-y-4 anim-fade">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
               {[
                 { label: '総問題数', display: `${totalQ}問`, color: '#3b82f6' },
                 { label: '総合正答率', display: `${overallRate}%`, color: overallRate >= 70 ? '#22c55e' : overallRate >= 50 ? '#f59e0b' : '#ef4444' },
@@ -476,12 +480,12 @@ export default function MyPage({
                 </div>
               ) : sessions.slice(0, 50).map(s => {
               const rate = Math.round((s.correct_count / s.total_questions) * 100)
-              const color = FIELD_COLORS[s.field]
+              const color = FIELD_COLORS[s.field] ?? '#38bdf8'
               const dateStr = format(new Date(s.created_at), 'M月d日(E) HH:mm', { locale: ja })
               return (
                 <div key={s.id} className="subcard p-4">
                   <div className="flex items-start gap-3">
-                    <span style={{ fontSize: 24, flexShrink: 0 }}>{FIELD_EMOJI[s.field]}</span>
+                    <span style={{ fontSize: 24, flexShrink: 0 }}>{FIELD_EMOJI[s.field] ?? '🔬'}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-sm" style={{ color }}>{s.field}</span>
@@ -518,7 +522,7 @@ export default function MyPage({
                 {totalQ < 10 ? 'もっと問題を解くと弱点が分かるよ！' : '弱点単元なし！全部得意だね 🎉'}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid gap-3 lg:grid-cols-2">
                 {weakUnits.map((u, i) => {
                   const color = FIELD_COLORS[u.field]
                   const medal = i === 0 ? '🚨' : i === 1 ? '⚠️' : i === 2 ? '📌' : '📍'
@@ -569,7 +573,7 @@ export default function MyPage({
               <p className="text-slate-500 text-xs leading-6">
                 ここで作った問題は、自分だけが解けます。先生は管理画面の問題一覧で確認できます。
               </p>
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="grid grid-cols-1 gap-3 mt-4 sm:grid-cols-2">
                 <select
                   value={questionForm.field}
                   onChange={e => setQuestionForm(current => ({ ...current, field: e.target.value as typeof FIELDS[number] }))}
@@ -586,7 +590,7 @@ export default function MyPage({
                   <option value="text">記述</option>
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="grid grid-cols-1 gap-3 mt-3 sm:grid-cols-2">
                 <input
                   type="text"
                   value={questionForm.unit}
@@ -611,7 +615,7 @@ export default function MyPage({
                   className="input-surface resize-y"
                 />
                 {questionForm.type === 'choice' && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <input
                       type="text"
                       value={questionForm.choices[0]}
@@ -673,7 +677,7 @@ export default function MyPage({
               ) : (
                 myQuestions.map(question => (
                   <div key={question.id} className="card">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
@@ -715,51 +719,53 @@ export default function MyPage({
               <div className="mt-3 text-slate-400 text-sm">ログインID: <span className="text-white font-bold">{studentId}</span></div>
             </div>
 
-            <div className="card">
-              <h3 className="text-slate-300 font-bold mb-4">ニックネーム変更</h3>
-              <input
-                type="text"
-                value={nicknameInput}
-                onChange={e => setNicknameInput(e.target.value)}
-                placeholder="ニックネーム"
-                className="input-surface"
-              />
-              <button
-                onClick={handleSaveNickname}
-                className="btn-primary w-full mt-3"
-                disabled={saving === 'nickname'}
-                style={{ opacity: saving === 'nickname' ? 0.7 : 1 }}
-              >
-                {saving === 'nickname' ? '保存中...' : 'ニックネームを保存'}
-              </button>
-            </div>
-
-            <div className="card">
-              <h3 className="text-slate-300 font-bold mb-4">パスワード変更</h3>
-              <div className="space-y-3">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="card">
+                <h3 className="text-slate-300 font-bold mb-4">ニックネーム変更</h3>
                 <input
-                  type="password"
-                  value={passwordInput}
-                  onChange={e => setPasswordInput(e.target.value)}
-                  placeholder="新しいパスワード"
+                  type="text"
+                  value={nicknameInput}
+                  onChange={e => setNicknameInput(e.target.value)}
+                  placeholder="ニックネーム"
                   className="input-surface"
                 />
-                <input
-                  type="password"
-                  value={passwordConfirm}
-                  onChange={e => setPasswordConfirm(e.target.value)}
-                  placeholder="新しいパスワード（確認）"
-                  className="input-surface"
-                />
+                <button
+                  onClick={handleSaveNickname}
+                  className="btn-primary w-full mt-3"
+                  disabled={saving === 'nickname'}
+                  style={{ opacity: saving === 'nickname' ? 0.7 : 1 }}
+                >
+                  {saving === 'nickname' ? '保存中...' : 'ニックネームを保存'}
+                </button>
               </div>
-              <button
-                onClick={handleSavePassword}
-                className="btn-primary w-full mt-3"
-                disabled={saving === 'password'}
-                style={{ opacity: saving === 'password' ? 0.7 : 1 }}
-              >
-                {saving === 'password' ? '保存中...' : 'パスワードを変更'}
-              </button>
+
+              <div className="card">
+                <h3 className="text-slate-300 font-bold mb-4">パスワード変更</h3>
+                <div className="space-y-3">
+                  <input
+                    type="password"
+                    value={passwordInput}
+                    onChange={e => setPasswordInput(e.target.value)}
+                    placeholder="新しいパスワード"
+                    className="input-surface"
+                  />
+                  <input
+                    type="password"
+                    value={passwordConfirm}
+                    onChange={e => setPasswordConfirm(e.target.value)}
+                    placeholder="新しいパスワード（確認）"
+                    className="input-surface"
+                  />
+                </div>
+                <button
+                  onClick={handleSavePassword}
+                  className="btn-primary w-full mt-3"
+                  disabled={saving === 'password'}
+                  style={{ opacity: saving === 'password' ? 0.7 : 1 }}
+                >
+                  {saving === 'password' ? '保存中...' : 'パスワードを変更'}
+                </button>
+              </div>
             </div>
 
             {accountMsg && (

@@ -7,12 +7,15 @@ import UnitSelectPage from '@/components/UnitSelectPage'
 import QuizPage from '@/components/QuizPage'
 import MyPage from '@/components/MyPage'
 import AdminPage from '@/components/AdminPage'
+import ChemistryPracticePage from '@/components/ChemistryPracticePage'
+import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 
 type Screen =
   | 'home'
   | 'mypage'
   | { type: 'unit'; field: string }
-  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean }
+  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean }
+  | { type: 'chemistry-practice'; mode: ChemistryPracticeMode }
 
 function App() {
   const { studentId, ready } = useAuth()
@@ -38,7 +41,15 @@ function App() {
       <UnitSelectPage
         field={screen.field}
         onSelect={unit => setScreen({ type: 'quiz', field: screen.field, unit })}
+        onSelectSpecialMode={mode => setScreen({ type: 'chemistry-practice', mode })}
         onBack={() => setScreen('home')}
+      />
+    )
+  } else if (typeof screen === 'object' && screen.type === 'chemistry-practice') {
+    content = (
+      <ChemistryPracticePage
+        mode={screen.mode}
+        onBack={() => setScreen({ type: 'unit', field: '化学' })}
       />
     )
   } else if (typeof screen === 'object' && screen.type === 'quiz') {
@@ -47,13 +58,21 @@ function App() {
         field={screen.field}
         unit={screen.unit}
         isDrill={screen.isDrill}
-        onBack={() => setScreen(screen.isDrill ? 'mypage' : { type: 'unit', field: screen.field })}
+        quickStartAll={screen.quickStartAll}
+        onBack={() => setScreen(
+          screen.isDrill
+            ? 'mypage'
+            : screen.quickStartAll
+              ? 'home'
+              : { type: 'unit', field: screen.field }
+        )}
       />
     )
   } else {
     content = (
       <HomePage
         onSelectField={field => setScreen({ type: 'unit', field })}
+        onQuickStartAll={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', quickStartAll: true })}
         onMyPage={() => setScreen('mypage')}
       />
     )

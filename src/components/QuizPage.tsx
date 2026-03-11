@@ -12,6 +12,35 @@ import {
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
+  'all': '#38bdf8',
+}
+const CORE_FIELDS = ['生物', '化学', '物理', '地学']
+
+function pickQuizQuestions(pool: Question[], field: string) {
+  const shuffled = [...pool].sort(() => Math.random() - 0.5)
+
+  if (field !== 'all') {
+    return shuffled.slice(0, 10)
+  }
+
+  const picked: Question[] = []
+  const usedIds = new Set<string>()
+
+  for (const currentField of CORE_FIELDS) {
+    const candidate = shuffled.find(question => question.field === currentField && !usedIds.has(question.id))
+    if (!candidate) continue
+    picked.push(candidate)
+    usedIds.add(candidate.id)
+  }
+
+  for (const question of shuffled) {
+    if (usedIds.has(question.id)) continue
+    picked.push(question)
+    usedIds.add(question.id)
+    if (picked.length >= 10) break
+  }
+
+  return picked.slice(0, 10)
 }
 
 interface Question {
@@ -32,15 +61,17 @@ export default function QuizPage({
   field,
   unit,
   isDrill = false,
+  quickStartAll = false,
   onBack,
 }: {
   field: string
   unit: string
   isDrill?: boolean
+  quickStartAll?: boolean
   onBack: () => void
 }) {
   const { studentId, logout } = useAuth()
-  const color = FIELD_COLORS[field]
+  const color = FIELD_COLORS[field] ?? '#38bdf8'
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [current, setCurrent] = useState(0)
@@ -66,7 +97,8 @@ export default function QuizPage({
       setAnswerLogs([])
       startedAtRef.current = null
 
-      let query = supabase.from('questions').select('*').eq('field', field)
+      let query = supabase.from('questions').select('*')
+      if (field !== 'all') query = query.eq('field', field)
       if (unit !== 'all') query = query.eq('unit', unit)
       const supportsStudentQuestionFilter = getCachedColumnSupport('created_by_student_id') !== false
 
@@ -83,7 +115,8 @@ export default function QuizPage({
       // Backward compatibility for deployments where created_by_student_id is not migrated yet.
       if (error && isMissingColumnError(error, 'created_by_student_id')) {
         markColumnMissing('created_by_student_id')
-        let fallbackQuery = supabase.from('questions').select('*').eq('field', field)
+        let fallbackQuery = supabase.from('questions').select('*')
+        if (field !== 'all') fallbackQuery = fallbackQuery.eq('field', field)
         if (unit !== 'all') fallbackQuery = fallbackQuery.eq('unit', unit)
         const fallbackResponse = await fallbackQuery
         data = fallbackResponse.data
@@ -99,8 +132,7 @@ export default function QuizPage({
       }
 
       if (data && data.length > 0) {
-        const shuffled = [...data].sort(() => Math.random() - 0.5).slice(0, 10)
-        setQuestions(shuffled)
+        setQuestions(pickQuizQuestions(data as Question[], field))
         startedAtRef.current = Date.now()
       }
       setLoading(false)
@@ -142,8 +174,8 @@ export default function QuizPage({
         .from('quiz_sessions')
         .insert({
           student_id: studentId!,
-          field,
-          unit: unit === 'all' ? '全単元' : unit,
+          field: quickStartAll ? '4分野総合' : field,
+          unit: quickStartAll ? 'クイックスタート' : unit === 'all' ? '全単元' : unit,
           total_questions: questions.length,
           correct_count: score + (isCorrect ? 0 : 0), // すでに加算済み
           duration_seconds: durationSeconds,
@@ -157,8 +189,8 @@ export default function QuizPage({
           .from('quiz_sessions')
           .insert({
             student_id: studentId!,
-            field,
-            unit: unit === 'all' ? '全単元' : unit,
+            field: quickStartAll ? '4分野総合' : field,
+            unit: quickStartAll ? 'クイックスタート' : unit === 'all' ? '全単元' : unit,
             total_questions: questions.length,
             correct_count: score + (isCorrect ? 0 : 0),
           })
@@ -227,10 +259,10 @@ export default function QuizPage({
   if (phase === 'finished') {
     const rate = Math.round((score / questions.length) * 100)
     const msg = rate >= 90 ? '🎉 すごい！完璧に近い！' : rate >= 70 ? '👍 よくできました！' : rate >= 50 ? '😊 もう少しがんばろう！' : '💪 復習してみよう！'
-    const backLabel = isDrill ? 'マイページへ' : '分野選択へ'
+    const backLabel = isDrill ? 'マイページへ' : quickStartAll ? 'ホームへ' : '分野選択へ'
     return (
       <div className="page-shell flex flex-col items-center justify-center anim-fade">
-        <div className="hero-card w-full max-w-md text-center p-6 sm:p-7">
+        <div className="hero-card w-full max-w-2xl text-center p-6 sm:p-7">
           <div className="text-5xl mb-4">{rate >= 70 ? '🏆' : '📚'}</div>
           <div className="font-display text-4xl mb-2" style={{ color }}>
             {score} / {questions.length}
@@ -250,7 +282,7 @@ export default function QuizPage({
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button
               onClick={() => {
                 startedAtRef.current = Date.now()
@@ -285,13 +317,29 @@ export default function QuizPage({
   return (
     <div className="page-shell">
       <div className="card mb-4 anim-fade-up">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="btn-secondary text-sm !px-4 !py-2.5">
-            やめる
-          </button>
-          <div className="flex-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center justify-between gap-3 sm:w-auto">
+            <button onClick={onBack} className="btn-secondary text-sm !px-4 !py-2.5">
+              やめる
+            </button>
+            <button
+              onClick={() => logout()}
+              className="btn-ghost text-sm !px-4 !py-2.5 sm:hidden"
+            >
+              ログアウト
+            </button>
+          </div>
+          <div className="flex-1 min-w-0">
             <div className="flex justify-between text-xs text-slate-400 mb-2">
-              <span>{isDrill ? `復習: ${field} / ${unit}` : unit === 'all' ? '全単元' : unit}</span>
+              <span>
+                {isDrill
+                  ? `復習: ${field} / ${unit}`
+                  : quickStartAll
+                    ? '4分野総合クイックスタート'
+                    : unit === 'all'
+                      ? '全単元'
+                      : unit}
+              </span>
               <span>{current + 1} / {questions.length}</span>
             </div>
             <div className="soft-track" style={{ height: 8 }}>
@@ -303,15 +351,17 @@ export default function QuizPage({
               }} />
             </div>
           </div>
-          <div className="text-sm font-semibold" style={{ color }}>
-            {score}正解
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
+            <div className="text-sm font-semibold" style={{ color }}>
+              {score}正解
+            </div>
+            <button
+              onClick={() => logout()}
+              className="btn-ghost hidden text-sm !px-4 !py-2.5 sm:inline-flex"
+            >
+              ログアウト
+            </button>
           </div>
-          <button
-            onClick={() => logout()}
-            className="btn-ghost text-sm !px-4 !py-2.5"
-          >
-            ログアウト
-          </button>
         </div>
       </div>
 
@@ -333,12 +383,12 @@ export default function QuizPage({
             {q.type === 'choice' ? `${q.choices?.length ?? 0}択` : '記述'}
           </span>
         </div>
-        <p className="text-lg font-bold leading-relaxed text-white">{q.question}</p>
+        <p className="text-lg font-bold leading-relaxed text-white sm:text-[1.35rem]">{q.question}</p>
       </div>
 
       {/* 選択肢 / 記述 */}
       {q.type === 'choice' ? (
-        <div className="grid gap-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {q.choices?.map((c, i) => {
             let bg = 'var(--surface-elevated)'
             let border = '1px solid var(--surface-elevated-border)'
@@ -352,7 +402,7 @@ export default function QuizPage({
                 key={i}
                 onClick={() => handleChoice(c)}
                 disabled={phase === 'result'}
-                className="p-4 rounded-xl text-left font-bold transition-all anim-fade-up"
+                className="min-h-[92px] p-4 rounded-xl text-left font-bold transition-all anim-fade-up"
                 style={{ animationDelay: `${i * 0.06}s`, background: bg, border, color: textColor }}
               >
                 <span className="mr-3 opacity-50">{'ABCD'[i] ?? `${i + 1}` }.</span>{c}

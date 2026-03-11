@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
+import ScienceBackdrop from '@/components/ScienceBackdrop'
+import { CHEMISTRY_MODE_META, ChemistryPracticeMode } from '@/lib/chemistryPractice'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e',
@@ -26,16 +28,19 @@ interface UnitStat {
 export default function UnitSelectPage({
   field,
   onSelect,
+  onSelectSpecialMode,
   onBack,
 }: {
   field: string
   onSelect: (unit: string) => void
+  onSelectSpecialMode: (mode: ChemistryPracticeMode) => void
   onBack: () => void
 }) {
   const { studentId, logout } = useAuth()
   const [units, setUnits] = useState<UnitStat[]>([])
   const [loading, setLoading] = useState(true)
   const color = FIELD_COLORS[field]
+  const totalQuestionCount = units.reduce((sum, item) => sum + item.questionCount, 0)
 
   useEffect(() => {
     const load = async () => {
@@ -77,9 +82,10 @@ export default function UnitSelectPage({
   }, [field, studentId])
 
   return (
-    <div className="page-shell">
-      <div className="hero-card p-5 sm:p-6 mb-5 anim-fade-up">
-        <div className="flex items-start justify-between gap-4">
+    <div className="page-shell page-shell-dashboard">
+      <div className="hero-card science-surface p-5 sm:p-6 lg:p-7 mb-5 anim-fade-up">
+        <ScienceBackdrop />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <div
               className="flex h-16 w-16 items-center justify-center rounded-[22px] text-3xl"
@@ -95,12 +101,76 @@ export default function UnitSelectPage({
               <p className="text-slate-400 text-sm mt-1">単元を選んで、そのまま解き始められます。</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={onBack} className="btn-secondary">もどる</button>
-            <button onClick={() => logout()} className="btn-ghost">ログアウト</button>
+          <div className="grid grid-cols-2 gap-3 lg:min-w-[320px]">
+            <div className="subcard p-4">
+              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">単元数</div>
+              <div className="mt-2 font-display text-2xl text-white">{units.length}</div>
+              <div className="mt-1 text-xs text-slate-500">units</div>
+            </div>
+            <div className="subcard p-4">
+              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">問題数</div>
+              <div className="mt-2 font-display text-2xl text-white">{totalQuestionCount}</div>
+              <div className="mt-1 text-xs text-slate-500">questions</div>
+            </div>
+            <button onClick={onBack} className="btn-secondary w-full">もどる</button>
+            <button onClick={() => logout()} className="btn-ghost w-full">ログアウト</button>
           </div>
         </div>
       </div>
+
+      {field === '化学' && (
+        <div className="mb-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-slate-100">化学ラボ</h2>
+            <span className="text-xs text-slate-500">special modes</span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {(['flash', 'equation'] as const).map(mode => {
+              const meta = CHEMISTRY_MODE_META[mode]
+              return (
+                <button
+                  key={mode}
+                  onClick={() => onSelectSpecialMode(mode)}
+                  className="card text-left"
+                  style={{
+                    borderColor: `${meta.accent}3a`,
+                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
+                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
+                  }}
+                  onMouseEnter={event => {
+                    event.currentTarget.style.transform = 'translateY(-2px)'
+                    event.currentTarget.style.borderColor = `${meta.accent}70`
+                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
+                  }}
+                  onMouseLeave={event => {
+                    event.currentTarget.style.transform = ''
+                    event.currentTarget.style.borderColor = `${meta.accent}3a`
+                    event.currentTarget.style.boxShadow = ''
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div
+                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
+                        style={{ background: `${meta.accent}18`, color: meta.accent }}
+                      >
+                        <span>{meta.badge}</span>
+                      </div>
+                      <div className="mt-4 flex items-center gap-3">
+                        <span className="text-3xl">{meta.icon}</span>
+                        <div>
+                          <div className="font-display text-2xl text-white">{meta.title}</div>
+                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <button
         onClick={() => onSelect('all')}
@@ -137,14 +207,14 @@ export default function UnitSelectPage({
       {loading ? (
         <div className="text-center text-slate-400 py-12">読み込み中...</div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {units.map((unitItem, index) => {
             const rate = unitItem.total > 0 ? Math.round((unitItem.correct / unitItem.total) * 100) : null
             return (
               <button
                 key={unitItem.unit}
                 onClick={() => onSelect(unitItem.unit)}
-                className="card anim-fade-up text-left"
+                className="card anim-fade-up text-left h-full"
                 style={{
                   animationDelay: `${(index + 1) * 0.07}s`,
                   transition: 'transform 0.18s ease, border-color 0.18s ease',
@@ -172,6 +242,11 @@ export default function UnitSelectPage({
                     </div>
                   )}
                 </div>
+                {rate === null && (
+                  <div className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    未チャレンジ
+                  </div>
+                )}
                 {rate !== null && (
                 <div className="mt-3 soft-track" style={{ height: 6 }}>
                   <div

@@ -5,6 +5,7 @@ import { fetchStudents, useAuth } from '@/lib/auth'
 import { sampleQuestions } from '@/lib/sampleQuestions'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import ScienceBackdrop from '@/components/ScienceBackdrop'
 
 const ADMIN_PW = 'rikaadmin2026'
 const FIELDS = ['生物', '化学', '物理', '地学'] as const
@@ -446,7 +447,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="page-shell-wide">
-      <div className="hero-card p-5 sm:p-6 mb-6">
+      <div className="hero-card science-surface p-5 sm:p-6 mb-6">
+        <ScienceBackdrop />
         <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
           <div className="flex items-center gap-4">
             <button onClick={onBack} className="btn-secondary">もどる</button>
@@ -470,7 +472,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       </div>
 
       <div className="card mb-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-white font-bold">この端末のログイン固定</div>
             <div className="text-slate-400 text-sm mt-1">
@@ -498,7 +500,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           ) : (
             <div className="space-y-4">
               <div className="card">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="text-white font-bold">全成績データをダウンロード</div>
                     <div className="text-slate-400 text-sm mt-1">
@@ -523,11 +525,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 </div>
               </div>
 
-              {stats.map(student => {
+              <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                {stats.map(student => {
                 const rate = student.totalQ > 0 ? Math.round((student.totalC / student.totalQ) * 100) : 0
                 return (
                   <div key={student.id} className="card">
-                    <div className="flex items-start justify-between mb-4 gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-4">
                       <div className="flex items-start gap-3">
                         <div className="font-display text-3xl text-blue-400">{student.id}</div>
                         <div>
@@ -548,7 +551,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {FIELDS.map(field => {
                         const current = student.byField[field]
                         const fieldRate = current && current.total > 0 ? Math.round((current.correct / current.total) * 100) : null
@@ -570,6 +573,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                   </div>
                 )
               })}
+              </div>
             </div>
           )}
         </div>
@@ -577,7 +581,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       {tab === 'questions' && (
         <div>
-          <div className="flex justify-between items-center mb-4">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-slate-400">
               {questions.length}問登録済み
               {questions.length > 0 && (
@@ -599,23 +603,25 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <div className="space-y-2">
               {questions.map(question => (
                 <div key={question.id} className="subcard p-4">
-                  <div className="flex items-start gap-2">
-                    <span
-                      className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
-                      style={{ background: `${FIELD_COLORS[question.field]}20`, color: FIELD_COLORS[question.field] }}
-                    >
-                      {question.field}
-                    </span>
-                    <span className="text-slate-400 text-xs flex-shrink-0">{question.unit}</span>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
-                      style={{
-                        background: question.created_by_student_id ? '#f59e0b20' : 'var(--surface-elevated-border)',
-                        color: question.created_by_student_id ? '#fbbf24' : 'var(--text-muted)',
-                      }}
-                    >
-                      {question.created_by_student_id ? `ID ${question.created_by_student_id} 作成` : '共有問題'}
-                    </span>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                        style={{ background: `${FIELD_COLORS[question.field]}20`, color: FIELD_COLORS[question.field] }}
+                      >
+                        {question.field}
+                      </span>
+                      <span className="text-slate-400 text-xs flex-shrink-0">{question.unit}</span>
+                      <span
+                        className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                        style={{
+                          background: question.created_by_student_id ? '#f59e0b20' : 'var(--surface-elevated-border)',
+                          color: question.created_by_student_id ? '#fbbf24' : 'var(--text-muted)',
+                        }}
+                      >
+                        {question.created_by_student_id ? `ID ${question.created_by_student_id} 作成` : '共有問題'}
+                      </span>
+                    </div>
                     <p className="text-white text-sm flex-1 line-clamp-2">{question.question}</p>
                     <button
                       onClick={() => handleDeleteQuestion(question.id)}
@@ -639,7 +645,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       {tab === 'add' && (
         <div className="card space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="text-slate-400 text-xs mb-1 block">分野 *</label>
               <select
@@ -663,7 +669,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="text-slate-400 text-xs mb-1 block">単元 *</label>
               <input
