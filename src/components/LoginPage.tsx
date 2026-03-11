@@ -19,12 +19,8 @@ export default function LoginPage({
 
   useEffect(() => {
     let active = true
-    fetchStudents().then(data => {
-      if (active) setStudents(data)
-    })
-    return () => {
-      active = false
-    }
+    fetchStudents().then(data => { if (active) setStudents(data) })
+    return () => { active = false }
   }, [])
 
   useEffect(() => {
@@ -35,13 +31,7 @@ export default function LoginPage({
     setSubmitting(true)
     const result = await login(studentId, pw)
     setSubmitting(false)
-
-    if (result.ok) {
-      setError('')
-      onDone()
-      return
-    }
-
+    if (result.ok) { setError(''); onDone(); return }
     setError(result.message)
     setShakeKey(k => k + 1)
     setPw('')
@@ -49,59 +39,49 @@ export default function LoginPage({
 
   return (
     <div className="page-shell flex flex-col items-center justify-center">
+      {/* Brand */}
       <div className="mb-8 text-center anim-fade-up">
-        <div
-          className="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.18em] uppercase"
-          style={{ background: 'rgba(86, 168, 255, 0.12)', color: '#8cc7ff', border: '1px solid rgba(86, 168, 255, 0.16)' }}
-        >
-          Science Study App
-        </div>
-        <div className="font-display text-5xl mt-5 mb-2 text-white">
+        <div className="text-4xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>
           RikaQuiz
         </div>
-        <p className="text-slate-400 text-sm">理科一問一答を、迷わずすぐ始められる形に整理しました。</p>
+        <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          理科の一問一答で、効率よく復習しよう。
+        </p>
       </div>
 
-      <div className="hero-card w-full max-w-md anim-fade-up px-5 py-6 sm:px-7" style={{ animationDelay: '0.1s' }}>
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-center text-white">ログイン</h2>
-          <p className="text-slate-400 text-sm text-center mt-2">ID を選んでパスワードを入力してください</p>
-        </div>
+      {/* Login card */}
+      <div className="card w-full max-w-sm anim-fade-up" style={{ animationDelay: '0.08s' }}>
+        <h2 className="text-lg font-semibold text-center mb-1">ログイン</h2>
+        <p className="text-center text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>
+          IDを選んでパスワードを入力
+        </p>
 
         {notice && (
-          <div
-            className="info-banner text-sm mb-4"
-            style={{ background: 'rgba(245, 158, 11, 0.14)', borderColor: 'rgba(245, 158, 11, 0.28)', color: '#fcd34d' }}
-          >
+          <div className="info-banner mb-4" style={{ background: 'rgba(255,149,0,0.1)', color: 'var(--warning)' }}>
             {notice}
           </div>
         )}
 
         {lockedStudentId && (
-          <div
-            className="info-banner text-sm mb-4"
-            style={{ background: 'rgba(10, 132, 255, 0.14)', borderColor: 'rgba(10, 132, 255, 0.22)', color: '#b9e1ff' }}
-          >
-            この表示はログアウト忘れではなく端末固定です。この端末は ID {lockedStudentId} 専用で、切り替えはもぎ先生ログインから解除できます。
+          <div className="info-banner mb-4">
+            この端末は ID {lockedStudentId} 専用です。切り替えはもぎ先生ログインから解除できます。
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        {/* ID grid */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
           {students.map(student => {
             const checked = studentId === student.id
             const disabled = !!lockedStudentId && lockedStudentId !== student.id
             return (
               <label
                 key={student.id}
-                className="rounded-[22px] p-4 transition-all"
+                className="rounded-xl p-3 text-center cursor-pointer transition-all"
                 style={{
-                  border: checked ? '1px solid rgba(86, 168, 255, 0.5)' : '1px solid var(--surface-elevated-border)',
-                  background: checked
-                    ? 'linear-gradient(180deg, rgba(10, 132, 255, 0.22), rgba(10, 132, 255, 0.14))'
-                    : 'var(--surface-elevated)',
-                  boxShadow: checked ? '0 14px 28px rgba(10, 132, 255, 0.18)' : 'none',
-                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  background: checked ? 'var(--tint-bg)' : 'var(--input-bg)',
+                  border: checked ? '2px solid var(--tint)' : '2px solid transparent',
                   opacity: disabled ? 0.35 : 1,
+                  cursor: disabled ? 'not-allowed' : 'pointer',
                 }}
               >
                 <input
@@ -113,44 +93,39 @@ export default function LoginPage({
                   disabled={disabled}
                   className="sr-only"
                 />
-                <div className="text-xs text-slate-400">ID {student.id}</div>
-                <div className="font-display text-[1.8rem] text-white mt-2">{student.nickname}</div>
+                <div className="text-2xl font-bold" style={{ color: checked ? 'var(--tint)' : 'var(--text)' }}>
+                  {student.nickname}
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>ID {student.id}</div>
               </label>
             )
           })}
         </div>
 
+        {/* Password */}
         <div key={shakeKey} className={error ? 'anim-shake' : ''}>
           <input
             type="password"
             value={pw}
             onChange={e => setPw(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            placeholder="Password"
-            className="input-surface text-center text-xl tracking-[0.22em] mb-3"
-            style={{
-              borderColor: error ? '#ef4444' : undefined,
-            }}
+            placeholder="パスワード"
+            className="input-surface text-center tracking-widest mb-3"
+            style={{ borderColor: error ? 'var(--danger)' : undefined }}
             autoFocus
           />
-          {error && <p className="text-red-400 text-sm text-center mb-3">{error}</p>}
+          {error && <p className="text-sm text-center mb-3" style={{ color: 'var(--danger)' }}>{error}</p>}
         </div>
 
-        <button
-          onClick={handleLogin}
-          className="btn-primary w-full"
-          disabled={submitting}
-          style={{ opacity: submitting ? 0.7 : 1 }}
-        >
+        <button onClick={handleLogin} className="btn-primary w-full" disabled={submitting} style={{ opacity: submitting ? 0.6 : 1 }}>
           {submitting ? 'ログイン中...' : 'ログイン'}
         </button>
 
-        <button
-          onClick={onAdmin}
-          className="btn-secondary w-full mt-3"
-        >
-          もぎ先生ログイン
-        </button>
+        <div className="mt-3 text-center">
+          <button onClick={onAdmin} className="btn-ghost text-sm">
+            もぎ先生ログイン →
+          </button>
+        </div>
       </div>
     </div>
   )

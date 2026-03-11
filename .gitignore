@@ -26,6 +26,9 @@ yarn-error.log*
 .env*.local
 .env
 
+# playwright
+.playwright-cli/
+
 # vercel
 .vercel
 

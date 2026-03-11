@@ -1,17 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  ''
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    'Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and either NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY.'
-  )
-}
+// Never throw at module level — a throw here kills client-side hydration.
+// When credentials are missing the client points at a dummy host;
+// auth.tsx falls back to DEFAULT_STUDENTS on any fetch error.
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.invalid',
+  supabaseKey || 'placeholder'
+)
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabaseConfigured = Boolean(supabaseUrl && supabaseKey)
 
 export type Database = {
   public: {

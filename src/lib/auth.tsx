@@ -178,7 +178,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Safety timeout: force ready after 5s even if Supabase hangs
+    let safetyTimer: ReturnType<typeof setTimeout> | undefined
+    if (typeof window !== 'undefined') {
+      safetyTimer = setTimeout(() => {
+        if (!cancelled) {
+          setState(prev => prev.ready ? prev : { ...prev, ready: true })
+        }
+      }, 5000)
+    }
+
     restore().finally(() => {
+      if (safetyTimer !== undefined) clearTimeout(safetyTimer)
       if (!cancelled) {
         setState(prev => ({ ...prev, ready: true }))
       }
@@ -186,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true
+      if (safetyTimer !== undefined) clearTimeout(safetyTimer)
     }
   }, [])
 

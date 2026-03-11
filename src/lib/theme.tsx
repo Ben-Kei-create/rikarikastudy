@@ -19,11 +19,11 @@ function resolveInitialTheme(): Theme {
   const storedTheme = window.localStorage.getItem(STORAGE_KEY)
   if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return 'light'
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark')
+  const [theme, setTheme] = useState<Theme>('light')
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
