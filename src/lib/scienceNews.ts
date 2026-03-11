@@ -1,5 +1,3 @@
-export type ScienceNewsField = '生物' | '化学' | '物理' | '地学'
-
 export interface ScienceNewsItem {
   title: string
   summary: string
@@ -8,14 +6,8 @@ export interface ScienceNewsItem {
   publishedAt: string
 }
 
-export interface ScienceNewsCategoryItem extends ScienceNewsItem {
-  field: ScienceNewsField
-  emoji: string
-  color: string
-}
-
 export interface ScienceNewsResponse {
-  items: ScienceNewsCategoryItem[]
+  item: ScienceNewsItem
 }
 
 interface ScienceNewsSourceConfig {
@@ -23,16 +15,6 @@ interface ScienceNewsSourceConfig {
   source: string
   link: string
   rssUrl: string
-}
-
-interface ScienceNewsFieldConfig {
-  field: ScienceNewsField
-  emoji: string
-  color: string
-  fallbackTitle: string
-  fallbackSummary: string
-  keywords: string[]
-  preferredSource?: ScienceNewsSourceConfig['key']
 }
 
 interface ParsedNewsCandidate extends ScienceNewsItem {
@@ -54,44 +36,17 @@ export const SCIENCE_NEWS_SOURCES: ScienceNewsSourceConfig[] = [
   },
 ]
 
-export const SCIENCE_NEWS_FIELDS: ScienceNewsFieldConfig[] = [
-  {
-    field: '生物',
-    emoji: '🌿',
-    color: '#22c55e',
-    fallbackTitle: '生物ニュースは準備中です',
-    fallbackSummary: '生き物、細胞、遺伝、からだのしくみに近い日本語ニュースをここに出します。',
-    keywords: ['生物', '細胞', '遺伝', 'DNA', 'RNA', '植物', '動物', '生態', '免疫', '微生物', '花粉', '乳がん', 'たんぱく質', '脳', '神経', '進化', '新種'],
-    preferredSource: 'scienceportal',
-  },
-  {
-    field: '化学',
-    emoji: '⚗️',
-    color: '#f97316',
-    fallbackTitle: '化学ニュースは準備中です',
-    fallbackSummary: '原子、分子、化合物、反応、材料に近い日本語ニュースをここに出します。',
-    keywords: ['化学', '分子', '原子', 'イオン', '高分子', '物質', '化合物', '触媒', '反応', '電池', '材料', '溶液', '合成', '元素', '結晶', '有機', '無機'],
-    preferredSource: 'scienceportal',
-  },
-  {
-    field: '物理',
-    emoji: '⚡',
-    color: '#4da2ff',
-    fallbackTitle: '物理ニュースは準備中です',
-    fallbackSummary: '光、電気、力、エネルギーに近い日本語ニュースをここに出します。',
-    keywords: ['物理', '量子', '光', '音', '力', '電流', '電圧', '磁気', 'レーザー', '核融合', '重力', 'エネルギー', '超伝導', 'X線', 'ビーム', '加速器', '半導体'],
-    preferredSource: 'scienceportal',
-  },
-  {
-    field: '地学',
-    emoji: '🌏',
-    color: '#8b7cff',
-    fallbackTitle: '地学ニュースは準備中です',
-    fallbackSummary: '地球、気象、宇宙に近い日本語ニュースをここに出します。',
-    keywords: ['地球', '地学', '地震', '火山', '気象', '気候', '温暖化', '大雪', '台風', '海洋', '宇宙', '惑星', '月', '太陽', '小惑星', '衛星', 'JAXA', '地層', '化石'],
-    preferredSource: 'jaxa',
-  },
-]
+export const FALLBACK_SCIENCE_NEWS: ScienceNewsItem = {
+  title: '本日の科学ニュースは準備中です',
+  summary: '日本語の科学ニュースを1日1本だけ、コンパクトに表示します。',
+  link: 'https://scienceportal.jst.go.jp/',
+  source: 'サイエンスポータル',
+  publishedAt: new Date().toISOString(),
+}
+
+export const FALLBACK_SCIENCE_NEWS_RESPONSE: ScienceNewsResponse = {
+  item: FALLBACK_SCIENCE_NEWS,
+}
 
 function toTokyoDateKey(dateLike?: string | Date) {
   const raw = dateLike instanceof Date ? dateLike : new Date(dateLike ?? Date.now())
@@ -145,6 +100,12 @@ export function parseRssItems(xmlText: string, sourceConfig: ScienceNewsSourceCo
     .filter(item => item.title && /^https?:\/\//.test(item.link))
 }
 
+function parsePublishedAt(value: string) {
+  const parsed = new Date(value)
+  const time = parsed.getTime()
+  return Number.isNaN(time) ? 0 : time
+}
+
 function hashString(value: string) {
   let hash = 0
   for (let index = 0; index < value.length; index += 1) {
@@ -153,82 +114,23 @@ function hashString(value: string) {
   return Math.abs(hash)
 }
 
-function parsePublishedAt(value: string) {
-  const parsed = new Date(value)
-  const time = parsed.getTime()
-  return Number.isNaN(time) ? 0 : time
-}
-
-function countMatches(text: string, keywords: string[]) {
-  let score = 0
-  for (const keyword of keywords) {
-    if (text.includes(keyword)) score += 1
-  }
-  return score
-}
-
-function scoreCandidate(fieldConfig: ScienceNewsFieldConfig, candidate: ParsedNewsCandidate) {
-  const title = candidate.title.toLowerCase()
-  const summary = candidate.summary.toLowerCase()
-  const keywords = fieldConfig.keywords.map(keyword => keyword.toLowerCase())
-
-  const titleScore = countMatches(title, keywords) * 3
-  const summaryScore = countMatches(summary, keywords)
-  const sourceBonus = candidate.sourceKey === fieldConfig.preferredSource ? 2 : 0
-
-  return titleScore + summaryScore + sourceBonus
-}
-
-function createFallbackItem(fieldConfig: ScienceNewsFieldConfig): ScienceNewsCategoryItem {
-  const source = SCIENCE_NEWS_SOURCES.find(item => item.key === fieldConfig.preferredSource) ?? SCIENCE_NEWS_SOURCES[0]
-  return {
-    field: fieldConfig.field,
-    emoji: fieldConfig.emoji,
-    color: fieldConfig.color,
-    title: fieldConfig.fallbackTitle,
-    summary: fieldConfig.fallbackSummary,
-    link: source.link,
-    source: source.source,
-    publishedAt: new Date().toISOString(),
-  }
-}
-
-export const FALLBACK_SCIENCE_NEWS_RESPONSE: ScienceNewsResponse = {
-  items: SCIENCE_NEWS_FIELDS.map(createFallbackItem),
-}
-
 export function buildScienceNewsResponse(
   candidates: ParsedNewsCandidate[],
   dateKey = toTokyoDateKey(),
 ) {
-  const items = SCIENCE_NEWS_FIELDS.map(fieldConfig => {
-    const scored = candidates
-      .map(candidate => ({
-        candidate,
-        score: scoreCandidate(fieldConfig, candidate),
-      }))
-      .filter(row => row.score > 0)
-      .sort((left, right) => {
-        if (right.score !== left.score) return right.score - left.score
-        return parsePublishedAt(right.candidate.publishedAt) - parsePublishedAt(left.candidate.publishedAt)
-      })
+  if (candidates.length === 0) return FALLBACK_SCIENCE_NEWS_RESPONSE
 
-    if (scored.length === 0) return createFallbackItem(fieldConfig)
+  const sorted = [...candidates].sort((left, right) => parsePublishedAt(right.publishedAt) - parsePublishedAt(left.publishedAt))
+  const topCandidates = sorted.slice(0, Math.min(6, sorted.length))
+  const picked = topCandidates[hashString(dateKey) % topCandidates.length]
 
-    const topCandidates = scored.slice(0, Math.min(3, scored.length))
-    const picked = topCandidates[hashString(`${dateKey}:${fieldConfig.field}`) % topCandidates.length].candidate
-
-    return {
-      field: fieldConfig.field,
-      emoji: fieldConfig.emoji,
-      color: fieldConfig.color,
+  return {
+    item: {
       title: picked.title,
-      summary: picked.summary || fieldConfig.fallbackSummary,
+      summary: picked.summary || FALLBACK_SCIENCE_NEWS.summary,
       link: picked.link,
       source: picked.source,
       publishedAt: picked.publishedAt,
-    } satisfies ScienceNewsCategoryItem
-  })
-
-  return { items } satisfies ScienceNewsResponse
+    },
+  } satisfies ScienceNewsResponse
 }

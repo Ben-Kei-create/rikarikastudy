@@ -101,7 +101,7 @@ export default function HomePage({
         const response = await fetch('/api/science-news')
         if (!response.ok) return
         const payload = await response.json() as ScienceNewsResponse
-        if (active && Array.isArray(payload.items) && payload.items.length > 0) setScienceNews(payload)
+        if (active && payload.item) setScienceNews(payload)
       } catch {}
     }
 
@@ -238,7 +238,7 @@ export default function HomePage({
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_1fr] mb-4">
+      <div className="grid gap-4 lg:grid-cols-[1.08fr_0.92fr] mb-4">
         <button
           onClick={onQuickStartAll}
           className="card anim-fade-up w-full text-left"
@@ -277,6 +277,7 @@ export default function HomePage({
             overflow: 'hidden',
             borderColor: '#f59e0b40',
             background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.82) 48%, rgba(56, 189, 248, 0.12))',
+            padding: '18px 20px',
           }}
         >
           <div
@@ -287,56 +288,41 @@ export default function HomePage({
               pointerEvents: 'none',
             }}
           />
-          <div className="relative z-[1] h-full">
+          <a
+            href={scienceNews.item.link}
+            target="_blank"
+            rel="noreferrer"
+            className="relative z-[1] block h-full"
+          >
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-semibold tracking-[0.2em] text-amber-200 uppercase">
                   Daily Science News
                 </span>
                 <span className="rounded-full border border-amber-300/20 bg-amber-200/10 px-2.5 py-1 text-[11px] font-semibold text-amber-100">
-                  4分野
+                  1日1記事
                 </span>
               </div>
-              <div className="mt-3 font-display text-xl text-white sm:text-2xl">
+              <div className="mt-3 font-display text-lg text-white sm:text-xl">
                 本日の科学ニュース
               </div>
-              <p className="mt-2 text-sm leading-7 text-slate-200">
-                生物・化学・物理・地学を1つずつ、気になったカードから見られます。
+              <p className="mt-2 text-xs leading-6 text-slate-300">
+                日本語の科学ニュースを1本だけ、コンパクトに表示します。
               </p>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {scienceNews.items.map(item => (
-                <a
-                  key={item.field}
-                  href={item.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-[22px] border p-4 transition-all hover:-translate-y-0.5"
-                  style={{
-                    borderColor: `${item.color}35`,
-                    background: 'rgba(15, 23, 42, 0.52)',
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{item.emoji}</span>
-                    <span className="font-semibold" style={{ color: item.color }}>
-                      {item.field}
-                    </span>
-                  </div>
-                  <div className="mt-3 text-sm font-semibold leading-6 text-white line-clamp-2">
-                    {item.title}
-                  </div>
-                  <p className="mt-2 text-xs leading-6 text-slate-300 line-clamp-3">
-                    {item.summary}
-                  </p>
-                  <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-                    <span>{item.source}</span>
-                    <span>{newsDateFormatter.format(new Date(item.publishedAt))}</span>
-                  </div>
-                </a>
-              ))}
+            <div className="mt-4 rounded-[20px] border border-amber-300/18 bg-slate-950/28 p-4">
+              <div className="text-sm font-semibold leading-6 text-white line-clamp-2">
+                {scienceNews.item.title}
+              </div>
+              <p className="mt-2 text-xs leading-6 text-slate-300 line-clamp-3">
+                {scienceNews.item.summary}
+              </p>
+              <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-slate-400">
+                <span>{scienceNews.item.source}</span>
+                <span>{newsDateFormatter.format(new Date(scienceNews.item.publishedAt))}</span>
+              </div>
             </div>
-          </div>
+          </a>
         </div>
       </div>
 
