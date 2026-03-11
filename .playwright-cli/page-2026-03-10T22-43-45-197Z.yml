@@ -1,0 +1,7 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e4]
+  - generic [ref=e154]:
+    - paragraph [ref=e155]: 問題がまだ登録されていません。
+    - generic [ref=e156]:
+      - button "もどる" [ref=e157] [cursor=pointer]
+      - button "ログアウト" [ref=e158] [cursor=pointer]

@@ -1,0 +1,14 @@
+Total messages: 12 (Errors: 1, Warnings: 0)
+
+[INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:38559
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/favicon.ico:0
+[LOG] [app] render {ready: false, studentId: null, screen: home, adminOpen: false} @ webpack-internal:///(app-pages-browser)/./src/app/page.tsx:29
+[LOG] [app] render {ready: false, studentId: null, screen: home, adminOpen: false} @ webpack-internal:///(app-pages-browser)/./src/app/page.tsx:29
+[LOG] [auth] restore:start @ webpack-internal:///(app-pages-browser)/./src/lib/auth.tsx:108
+[LOG] [auth] restore:no-session @ webpack-internal:///(app-pages-browser)/./src/lib/auth.tsx:120
+[LOG] [auth] restore:start @ webpack-internal:///(app-pages-browser)/./src/lib/auth.tsx:108
+[LOG] [auth] restore:no-session @ webpack-internal:///(app-pages-browser)/./src/lib/auth.tsx:120
+[LOG] [auth] restore:ready @ webpack-internal:///(app-pages-browser)/./src/lib/auth.tsx:181
+[LOG] [app] render {ready: true, studentId: null, screen: home, adminOpen: false} @ webpack-internal:///(app-pages-browser)/./src/app/page.tsx:29
+[LOG] [app] render {ready: true, studentId: null, screen: home, adminOpen: false} @ webpack-internal:///(app-pages-browser)/./src/app/page.tsx:29
+[VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/:0

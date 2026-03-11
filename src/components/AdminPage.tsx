@@ -516,8 +516,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                   <button
                     onClick={handleDownloadAllPerformance}
                     disabled={exportLoading}
-                    className="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap disabled:opacity-60"
-                    style={{ background: '#3b82f6', color: 'white' }}
+                    className="btn-primary whitespace-nowrap disabled:opacity-60"
                   >
                     {exportLoading ? '作成中...' : '⬇️ 成績JSONを保存'}
                   </button>
@@ -589,8 +588,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             </p>
             <button
               onClick={handleSeedQuestions}
-              className="px-4 py-2 rounded-xl text-sm font-bold"
-              style={{ background: '#334155', color: '#94a3b8' }}
+              className="btn-secondary text-sm"
             >
               📦 サンプル問題を追加
             </button>
@@ -600,7 +598,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           ) : (
             <div className="space-y-2">
               {questions.map(question => (
-                <div key={question.id} className="p-4 rounded-xl" style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                <div key={question.id} className="subcard p-4">
                   <div className="flex items-start gap-2">
                     <span
                       className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
@@ -612,8 +610,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     <span
                       className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
                       style={{
-                        background: question.created_by_student_id ? '#f59e0b20' : '#334155',
-                        color: question.created_by_student_id ? '#fbbf24' : '#94a3b8',
+                        background: question.created_by_student_id ? '#f59e0b20' : 'var(--surface-elevated-border)',
+                        color: question.created_by_student_id ? '#fbbf24' : 'var(--text-muted)',
                       }}
                     >
                       {question.created_by_student_id ? `ID ${question.created_by_student_id} 作成` : '共有問題'}
@@ -647,8 +645,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <select
                 value={form.field}
                 onChange={e => setForm(current => ({ ...current, field: e.target.value as typeof FIELDS[number] }))}
-                className="w-full px-3 py-2 rounded-xl outline-none"
-                style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
+                className="input-surface"
               >
                 {FIELDS.map(field => <option key={field}>{field}</option>)}
               </select>
@@ -658,8 +655,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <select
                 value={form.type}
                 onChange={e => setForm(current => ({ ...current, type: e.target.value as 'choice' | 'text' }))}
-                className="w-full px-3 py-2 rounded-xl outline-none"
-                style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
+                className="input-surface"
               >
                 <option value="choice">2択</option>
                 <option value="text">記述</option>
@@ -674,8 +670,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 value={form.unit}
                 onChange={e => setForm(current => ({ ...current, unit: e.target.value }))}
                 placeholder="例: 細胞と生物"
-                className="w-full px-3 py-2 rounded-xl outline-none"
-                style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
+                className="input-surface"
               />
             </div>
             <div>
@@ -683,8 +678,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <select
                 value={form.grade}
                 onChange={e => setForm(current => ({ ...current, grade: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl outline-none"
-                style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
+                className="input-surface"
               >
                 {['中1', '中2', '中3', '高校'].map(grade => <option key={grade}>{grade}</option>)}
               </select>
@@ -698,8 +692,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               onChange={e => setForm(current => ({ ...current, question: e.target.value }))}
               placeholder="問題文を入力..."
               rows={3}
-              className="w-full px-3 py-2 rounded-xl outline-none resize-none"
-              style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
+              className="input-surface resize-none"
             />
           </div>
 
@@ -716,8 +709,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       choices: current.choices.map((currentChoice, currentIndex) => currentIndex === index ? e.target.value : currentChoice),
                     }))}
                     placeholder={`${'AB'[index]}. 選択肢`}
-                    className="px-3 py-2 rounded-xl outline-none"
-                    style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
+                    className="input-surface"
                   />
                 ))}
               </div>
@@ -730,8 +722,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               value={form.answer}
               onChange={e => setForm(current => ({ ...current, answer: e.target.value }))}
               placeholder="正解をそのまま入力（AかBと同じ文）"
-              className="w-full px-3 py-2 rounded-xl outline-none"
-              style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
+              className="input-surface"
             />
           </div>
 
@@ -742,8 +733,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               onChange={e => setForm(current => ({ ...current, explanation: e.target.value }))}
               placeholder="解説文..."
               rows={2}
-              className="w-full px-3 py-2 rounded-xl outline-none resize-none"
-              style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9' }}
+              className="input-surface resize-none"
             />
           </div>
 
@@ -762,16 +752,14 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             </p>
             <div className="flex flex-wrap gap-3 mt-4">
               <label
-                className="px-4 py-2 rounded-xl text-sm font-bold cursor-pointer"
-                style={{ background: '#334155', color: '#e2e8f0' }}
+                className="btn-secondary text-sm cursor-pointer"
               >
                 JSONファイルを読み込む
                 <input type="file" accept=".json,application/json" onChange={handleBulkFileChange} className="hidden" />
               </label>
               <button
                 onClick={() => setBulkInput(BULK_JSON_EXAMPLE)}
-                className="px-4 py-2 rounded-xl text-sm font-bold"
-                style={{ background: '#1e293b', color: '#cbd5e1', border: '1px solid #334155' }}
+                className="btn-ghost text-sm"
               >
                 サンプルJSONを入れる
               </button>
@@ -784,8 +772,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               value={bulkInput}
               onChange={event => setBulkInput(event.target.value)}
               rows={18}
-              className="w-full px-4 py-3 rounded-2xl outline-none resize-y font-mono text-sm"
-              style={{ background: '#0f172a', border: '1px solid #334155', color: '#f8fafc' }}
+              className="input-surface resize-y font-mono text-sm"
               spellCheck={false}
             />
             {bulkMsg && (

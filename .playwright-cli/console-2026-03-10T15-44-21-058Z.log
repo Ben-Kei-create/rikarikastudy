@@ -1,0 +1,4 @@
+Total messages: 2 (Errors: 1, Warnings: 0)
+
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://rikarikastudy.vercel.app/favicon.ico:0
+[VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://rikarikastudy.vercel.app/:0

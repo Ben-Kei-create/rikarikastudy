@@ -1,0 +1,22 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e4]
+  - generic [ref=e153]:
+    - generic [ref=e155]:
+      - button "やめる" [ref=e156] [cursor=pointer]
+      - generic [ref=e158]:
+        - generic [ref=e159]: 全単元
+        - generic [ref=e160]: 1 / 10
+      - generic [ref=e162]: 0正解
+      - button "ログアウト" [ref=e163] [cursor=pointer]
+    - generic [ref=e164]:
+      - generic [ref=e165]:
+        - generic [ref=e166]: 生物 · 生物のからだのつくりとはたらき
+        - generic [ref=e167]: 記述
+      - paragraph [ref=e168]: だ液の働きの実験で、だ液とデンプンを入れた試験管を約40℃のお湯につけるのはなぜですか。
+    - textbox "ここに答えを書いてください" [disabled] [ref=e170]: 唾液の酵素が最も働きやすい温度だから
+    - generic [ref=e172]:
+      - generic [ref=e173]:
+        - generic [ref=e174]: ❌
+        - generic [ref=e175]: 不正解 → 答え：消化酵素は、人間の体温に近い温度で最もよく働くから。
+      - paragraph [ref=e176]: だ液に含まれるアミラーゼなどの消化酵素は、35〜40℃付近で最も活発にデンプンを分解します。
+      - button "次の問題 →" [ref=e177] [cursor=pointer]
