@@ -25,6 +25,7 @@
     "question": "電流の単位は何ですか？",
     "type": "text",
     "answer": "A",
+    "keywords": ["アンペア"],
     "explanation": "電流の単位はアンペアです。",
     "grade": "中2"
   }

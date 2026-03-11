@@ -12,7 +12,7 @@
 2. 「SQL Editor」を開き、`supabase_schema.sql` の内容を全てコピー＆実行
    - 既存プロジェクトでも再実行OK
    - `students.password` 列と初期データ（ID 1〜5 / S, M, T, K, 先生 / `rikalove1〜4`, `rikaadmin2026`）を揃えます
-   - `questions.created_by_student_id` や `quiz_sessions.duration_seconds` などの追加列もここで揃います
+   - `questions.created_by_student_id` / `questions.keywords` や `quiz_sessions.duration_seconds` などの追加列もここで揃います
 3. 「Project Settings → API」から以下をコピー：
    - `Project URL`
    - `Publishable Key`（推奨）または `Anon Key (Legacy)`
@@ -63,8 +63,9 @@ git push -u origin main
 3. 「問題追加」タブを開く
 4. `分野 / 単元 / 問題文 / 正解` を入力
 5. 選択問題なら `A・B` の2択だけ入力
-6. 「正解」には A か B と同じ文をそのまま入れる
-7. 「問題を追加する」を押す
+6. 記述問題なら、必要に応じて `キーワード` をカンマ区切りで入力
+7. 「正解」には choice なら A か B と同じ文、text なら模範解答を入れる
+8. 「問題を追加する」を押す
 
 ### 6. 問題の一括追加方法
 
@@ -103,6 +104,7 @@ npm run questions:import -- - < path/to/questions.json
 ```
 
 同じ `field / unit / question` の問題が既にある場合は自動でスキップします。
+記述問題では `keywords` 配列を付けると、回答文にキーワードが1つでも含まれたときに `▲` 判定になります。
 
 ---
 
@@ -163,7 +165,9 @@ npm run questions:import -- - < path/to/questions.json
 - 「正解」に選択肢AかBと**完全一致**する文字列を入力
 
 **記述問題の場合：**
-- 「正解」に模範解答を入力（完全一致で判定）
+- 「正解」に模範解答を入力（完全一致なら `◯`）
+- `keywords` を設定した場合、回答文にそのどれか1つが含まれていれば `▲`
+- 完全一致でもキーワード一致でもなければ `❌`
 
 ## 📦 一括投入のJSON形式
 
@@ -191,6 +195,7 @@ npm run questions:import -- - < path/to/questions.json
   "question": "電流の単位は何ですか？",
   "type": "text",
   "answer": "A",
+  "keywords": ["アンペア"],
   "explanation": "電流の単位はアンペアです。",
   "grade": "中2"
 }
@@ -200,6 +205,7 @@ npm run questions:import -- - < path/to/questions.json
 - `field` は `生物 / 化学 / 物理 / 地学`
 - `choice` 問題の `choices` は2件
 - `answer` は `choices` のどちらかと完全一致
+- `text` 問題では `keywords` を任意で設定可能
 - 配列そのままでも、`{"questions":[...]}` でも投入可能
 
 ---

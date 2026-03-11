@@ -46,6 +46,7 @@ export type Database = {
           choices: string[] | null
           answer: string
           accept_answers: string[] | null
+          keywords: string[] | null
           created_by_student_id: number | null
           explanation: string | null
           grade: string
@@ -60,6 +61,7 @@ export type Database = {
           choices?: string[] | null
           answer: string
           accept_answers?: string[] | null
+          keywords?: string[] | null
           created_by_student_id?: number | null
           explanation?: string | null
           grade?: string

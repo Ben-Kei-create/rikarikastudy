@@ -26,6 +26,11 @@ function normalizeQuestion(item, index) {
   const grade = typeof item?.grade === 'string' && item.grade.trim()
     ? item.grade.trim()
     : '中3'
+  const keywords = Array.isArray(item?.keywords)
+    ? item.keywords
+      .map(keyword => (typeof keyword === 'string' ? keyword.trim() : ''))
+      .filter(Boolean)
+    : null
 
   if (!FIELDS.has(field)) fail(`${prefix}: field は 生物 / 化学 / 物理 / 地学 のどれかにしてください。`)
   if (!unit) fail(`${prefix}: unit は必須です。`)
@@ -45,7 +50,7 @@ function normalizeQuestion(item, index) {
     return { field, unit, question, type, choices, answer, explanation, grade }
   }
 
-  return { field, unit, question, type, choices: null, answer, explanation, grade }
+  return { field, unit, question, type, choices: null, answer, explanation, grade, keywords: keywords?.length ? keywords : null }
 }
 
 const inputPath = process.argv[2]
@@ -72,6 +77,9 @@ const values = questions.map(question => {
   const choicesValue = question.choices
     ? `${escapeSqlString(JSON.stringify(question.choices))}::jsonb`
     : 'NULL'
+  const keywordsValue = question.keywords
+    ? `${escapeSqlString(JSON.stringify(question.keywords))}::jsonb`
+    : 'NULL'
   const explanationValue = question.explanation ? escapeSqlString(question.explanation) : 'NULL'
 
   return `  (${[
@@ -81,6 +89,7 @@ const values = questions.map(question => {
     escapeSqlString(question.type),
     choicesValue,
     escapeSqlString(question.answer),
+    keywordsValue,
     explanationValue,
     escapeSqlString(question.grade),
   ].join(', ')})`
@@ -93,6 +102,7 @@ process.stdout.write(`INSERT INTO questions (
   type,
   choices,
   answer,
+  keywords,
   explanation,
   grade
 ) VALUES

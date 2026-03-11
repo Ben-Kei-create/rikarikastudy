@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS questions (
   choices JSONB,
   answer TEXT NOT NULL,
   accept_answers JSONB DEFAULT NULL,
+  keywords JSONB DEFAULT NULL,
   created_by_student_id INTEGER REFERENCES students(id),
   explanation TEXT,
   grade TEXT DEFAULT '中3',
@@ -57,6 +58,7 @@ CREATE TABLE IF NOT EXISTS questions (
 );
 
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS accept_answers JSONB DEFAULT NULL;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS keywords JSONB DEFAULT NULL;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS created_by_student_id INTEGER REFERENCES students(id);
 
 -- クイズセッションテーブル

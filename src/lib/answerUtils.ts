@@ -99,10 +99,38 @@ export function normalizeAnswer(input: string) {
   return toHalfWidthKana(input.trim().normalize('NFKC')).toLowerCase()
 }
 
-export function isAnswerMatch(studentAnswer: string, correctAnswer: string, acceptAnswers?: string[] | null) {
+export type TextAnswerResult = 'exact' | 'keyword' | 'incorrect'
+
+export function evaluateTextAnswer(
+  studentAnswer: string,
+  correctAnswer: string,
+  acceptAnswers?: string[] | null,
+  keywords?: string[] | null
+): TextAnswerResult {
   const normalizedStudentAnswer = normalizeAnswer(studentAnswer)
-  if (!normalizedStudentAnswer) return false
+  if (!normalizedStudentAnswer) return 'incorrect'
 
   const candidates = [correctAnswer, ...(acceptAnswers ?? [])].map(normalizeAnswer)
-  return candidates.includes(normalizedStudentAnswer)
+  if (candidates.includes(normalizedStudentAnswer)) {
+    return 'exact'
+  }
+
+  const normalizedKeywords = (keywords ?? [])
+    .map(normalizeAnswer)
+    .filter(Boolean)
+
+  if (normalizedKeywords.some(keyword => normalizedStudentAnswer.includes(keyword))) {
+    return 'keyword'
+  }
+
+  return 'incorrect'
+}
+
+export function isAnswerMatch(
+  studentAnswer: string,
+  correctAnswer: string,
+  acceptAnswers?: string[] | null,
+  keywords?: string[] | null
+) {
+  return evaluateTextAnswer(studentAnswer, correctAnswer, acceptAnswers, keywords) === 'exact'
 }

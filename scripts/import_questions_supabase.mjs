@@ -89,6 +89,14 @@ function normalizeQuestion(item, index) {
     if (acceptAnswers.length === 0) acceptAnswers = null
   }
 
+  let keywords = null
+  if (Array.isArray(item?.keywords)) {
+    keywords = item.keywords
+      .map(keywordItem => (typeof keywordItem === 'string' ? keywordItem.trim() : ''))
+      .filter(Boolean)
+    if (keywords.length === 0) keywords = null
+  }
+
   if (!FIELDS.has(field)) fail(`${prefix}: field は 生物 / 化学 / 物理 / 地学 のどれかにしてください。`)
   if (!unit) fail(`${prefix}: unit は必須です。`)
   if (!question) fail(`${prefix}: question は必須です。`)
@@ -133,6 +141,7 @@ function normalizeQuestion(item, index) {
   }
 
   if (acceptAnswers) normalized.accept_answers = acceptAnswers
+  if (keywords) normalized.keywords = keywords
 
   return normalized
 }
