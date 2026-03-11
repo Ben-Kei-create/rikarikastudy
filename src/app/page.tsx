@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from '@/lib/auth'
 import { ThemeProvider, useTheme } from '@/lib/theme'
 import LoginPage from '@/components/LoginPage'
@@ -37,7 +37,18 @@ function ThemeToggle() {
   )
 }
 
+const BG_THEMES = ['bg-bio', 'bg-chem', 'bg-phys', 'bg-earth'] as const
+
+function useRandomBg() {
+  useEffect(() => {
+    const theme = BG_THEMES[Math.floor(Math.random() * BG_THEMES.length)]
+    document.body.classList.add(theme)
+    return () => { document.body.classList.remove(theme) }
+  }, [])
+}
+
 function App() {
+  useRandomBg()
   const { studentId, ready } = useAuth()
   const [screen, setScreen] = useState<Screen>('home')
   const [adminOpen, setAdminOpen] = useState(false)
