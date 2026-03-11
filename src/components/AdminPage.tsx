@@ -1,11 +1,12 @@
 'use client'
 import { ChangeEvent, useEffect, useState } from 'react'
 import { Database, supabase } from '@/lib/supabase'
-import { fetchStudents, useAuth } from '@/lib/auth'
+import { DEFAULT_STUDENTS, fetchStudents, useAuth } from '@/lib/auth'
 import { sampleQuestions } from '@/lib/sampleQuestions'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
+import { isMissingColumnError } from '@/lib/schemaCompat'
 
 const ADMIN_PW = 'rikaadmin2026'
 const FIELDS = ['生物', '化学', '物理', '地学'] as const
@@ -33,6 +34,7 @@ const BULK_JSON_EXAMPLE = `[
     "question": "電流の単位は何ですか？",
     "type": "text",
     "answer": "A",
+    "keywords": ["アンペア"],
     "explanation": "電流の単位はアンペアです。",
     "grade": "中2"
   }
@@ -61,6 +63,7 @@ interface StudentStats {
 type QuizSessionRow = Database['public']['Tables']['quiz_sessions']['Row']
 type AnswerLogRow = Database['public']['Tables']['answer_logs']['Row']
 type QuestionRow = Database['public']['Tables']['questions']['Row']
+type StudentInsert = Database['public']['Tables']['students']['Insert']
 
 interface BulkQuestionPayload {
   field: typeof FIELDS[number]
@@ -69,11 +72,21 @@ interface BulkQuestionPayload {
   type: 'choice' | 'text'
   choices: string[] | null
   answer: string
+  keywords: string[] | null
   explanation: string | null
   grade: string
 }
 
 type AdminTab = 'overview' | 'questions' | 'add' | 'bulk'
+
+interface RestoreSnapshot {
+  format: string
+  students: StudentInsert[]
+  questions: QuestionRow[]
+  quizSessions: QuizSessionRow[]
+  answerLogs: AnswerLogRow[]
+  defaultPasswordCount: number
+}
 
 function buildStudentStats(
   students: Array<{ id: number; nickname: string; password: string }>,
@@ -121,6 +134,25 @@ function downloadJsonFile(filename: string, payload: unknown) {
   URL.revokeObjectURL(url)
 }
 
+function parseKeywordsArray(value: unknown) {
+  if (!Array.isArray(value)) return null
+
+  const keywords = value
+    .map(keyword => (typeof keyword === 'string' ? keyword.trim() : ''))
+    .filter(Boolean)
+
+  return keywords.length > 0 ? keywords : null
+}
+
+function parseKeywordInput(input: string) {
+  const keywords = input
+    .split(/[,、\n]/)
+    .map(keyword => keyword.trim())
+    .filter(Boolean)
+
+  return keywords.length > 0 ? keywords : null
+}
+
 function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
   const parsed = JSON.parse(jsonText)
   const items: unknown[] | null = Array.isArray(parsed)
@@ -147,6 +179,7 @@ function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
     const grade = typeof row.grade === 'string' && row.grade.trim()
       ? row.grade.trim()
       : '中3'
+    const keywords = parseKeywordsArray(row.keywords)
 
     if (!FIELDS.includes(field as typeof FIELDS[number])) {
       throw new Error(`${prefix}: field は ${FIELDS.join(' / ')} のどれかにしてください。`)
@@ -180,6 +213,7 @@ function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
         type,
         choices,
         answer,
+        keywords: null,
         explanation,
         grade,
       }
@@ -192,10 +226,93 @@ function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
       type,
       choices: null,
       answer,
+      keywords,
       explanation,
       grade,
     }
   })
+}
+
+function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
+  const parsed = JSON.parse(jsonText) as Record<string, unknown>
+  const format = typeof parsed.format === 'string' ? parsed.format : ''
+
+  if (!format.startsWith('rikarikastudy-admin-export/')) {
+    throw new Error('管理画面から出力したバックアップJSONを読み込んでください。')
+  }
+
+  const questionCatalog = Array.isArray(parsed.questionCatalog)
+    ? parsed.questionCatalog as QuestionRow[]
+    : []
+  const rawStudents = Array.isArray(parsed.students)
+    ? parsed.students as Array<Record<string, unknown>>
+    : []
+  const quizSessions = rawStudents.flatMap(student =>
+    Array.isArray(student.quizSessions) ? student.quizSessions as QuizSessionRow[] : []
+  )
+  const answerLogs = rawStudents.flatMap(student =>
+    Array.isArray(student.answerLogs) ? student.answerLogs as AnswerLogRow[] : []
+  )
+
+  if (questionCatalog.length === 0) {
+    throw new Error('このバックアップには問題データが含まれていません。')
+  }
+
+  let defaultPasswordCount = 0
+  const students = DEFAULT_STUDENTS.map(defaultStudent => {
+    const current = rawStudents.find(student => Number(student.id) === defaultStudent.id)
+    const nickname = typeof current?.nickname === 'string' && current.nickname.trim()
+      ? current.nickname.trim()
+      : defaultStudent.nickname
+    const password = typeof current?.password === 'string' && current.password.trim()
+      ? current.password.trim()
+      : defaultStudent.password
+
+    if (!current || typeof current.password !== 'string' || !current.password.trim()) {
+      defaultPasswordCount += 1
+    }
+
+    return {
+      id: defaultStudent.id,
+      nickname,
+      password,
+    }
+  })
+
+  return {
+    format,
+    students,
+    questions: questionCatalog,
+    quizSessions,
+    answerLogs,
+    defaultPasswordCount,
+  }
+}
+
+async function insertRowsInChunks(
+  table: 'questions' | 'quiz_sessions' | 'answer_logs',
+  rows: Record<string, unknown>[]
+) {
+  if (rows.length === 0) return
+
+  for (let index = 0; index < rows.length; index += BULK_INSERT_CHUNK_SIZE) {
+    const chunk = rows.slice(index, index + BULK_INSERT_CHUNK_SIZE)
+    const { error } = await (supabase.from(table) as any).insert(chunk)
+    if (error) throw new Error(error.message)
+  }
+}
+
+function getRestoreErrorMessage(message: string) {
+  if (message.includes('relation') && message.includes('does not exist')) {
+    return 'Supabase のテーブルがありません。先に supabase_schema.sql を SQL Editor で実行してから復元してください。'
+  }
+  if (message.includes('password') || message.includes('duration_seconds') || message.includes('created_by_student_id')) {
+    return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
+  }
+  if (message.includes('keywords')) {
+    return 'Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。'
+  }
+  return message
 }
 
 export default function AdminPage({ onBack }: { onBack: () => void }) {
@@ -213,6 +330,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [bulkLoading, setBulkLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
   const [exportMsg, setExportMsg] = useState('')
+  const [restoreInput, setRestoreInput] = useState('')
+  const [restoreMsg, setRestoreMsg] = useState('')
+  const [restoreLoading, setRestoreLoading] = useState(false)
 
   const [form, setForm] = useState({
     field: '生物' as typeof FIELDS[number],
@@ -221,6 +341,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     type: 'choice' as 'choice' | 'text',
     choices: ['', ''],
     answer: '',
+    keywords: '',
     explanation: '',
     grade: '中3',
   })
@@ -282,7 +403,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       const payload = {
         exportedAt: new Date().toISOString(),
-        format: 'rikarikastudy-admin-export/v1',
+        format: 'rikarikastudy-admin-export/v2',
+        restoreHint: 'テーブルが消えている場合は、先に supabase_schema.sql を SQL Editor で実行してから復元してください。',
         questionCatalog: questions,
         students: students.map(student => {
           const summary = statsSnapshot.find(current => current.id === student.id)
@@ -295,6 +417,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           return {
             id: student.id,
             nickname: student.nickname,
+            password: student.password,
             summary: {
               totalQuestions: summary?.totalQ ?? 0,
               totalCorrect: summary?.totalC ?? 0,
@@ -365,7 +488,15 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       payload.choices = filled
     }
 
+    if (form.type === 'text') {
+      payload.keywords = parseKeywordInput(form.keywords)
+    }
+
     const { error } = await supabase.from('questions').insert([payload])
+    if (error && isMissingColumnError(error, 'keywords')) {
+      setAddMsg('エラー: Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      return
+    }
     if (error) {
       setAddMsg('エラー: ' + error.message)
       return
@@ -379,6 +510,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       type: 'choice',
       choices: ['', ''],
       answer: '',
+      keywords: '',
       explanation: '',
       grade: '中3',
     })
@@ -403,6 +535,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       for (let index = 0; index < payload.length; index += BULK_INSERT_CHUNK_SIZE) {
         const chunk = payload.slice(index, index + BULK_INSERT_CHUNK_SIZE)
         const { error } = await supabase.from('questions').insert(chunk)
+        if (error && isMissingColumnError(error, 'keywords')) {
+          throw new Error('Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+        }
         if (error) throw new Error(error.message)
       }
 
@@ -412,6 +547,81 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       setBulkMsg(`エラー: ${error instanceof Error ? error.message : '一括追加に失敗しました。'}`)
     } finally {
       setBulkLoading(false)
+    }
+  }
+
+  const handleRestoreFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const text = await file.text()
+    setRestoreInput(text)
+    setRestoreMsg(`📄 ${file.name} を読み込みました。`)
+    event.target.value = ''
+  }
+
+  const handleRestoreBackup = async () => {
+    if (!restoreInput.trim()) {
+      setRestoreMsg('バックアップJSONを読み込んでください。')
+      return
+    }
+
+    try {
+      const snapshot = parseAdminRestorePayload(restoreInput)
+      const confirmMessage = [
+        '現在のバックアップ対象データを、このJSONの内容で置き換えて復元します。',
+        `生徒: ${snapshot.students.length}件`,
+        `問題: ${snapshot.questions.length}件`,
+        `クイズ履歴: ${snapshot.quizSessions.length}件`,
+        `解答ログ: ${snapshot.answerLogs.length}件`,
+        '',
+        'questions / quiz_sessions / answer_logs は入れ替えになります。続けますか？',
+      ].join('\n')
+
+      if (!confirm(confirmMessage)) return
+
+      setRestoreLoading(true)
+      setRestoreMsg('')
+
+      const { error: studentError } = await supabase
+        .from('students')
+        .upsert(snapshot.students as any, { onConflict: 'id' })
+
+      if (studentError) throw new Error(studentError.message)
+
+      const { error: deleteAnswerLogsError } = await supabase
+        .from('answer_logs')
+        .delete()
+        .not('id', 'is', null)
+      if (deleteAnswerLogsError) throw new Error(deleteAnswerLogsError.message)
+
+      const { error: deleteSessionsError } = await supabase
+        .from('quiz_sessions')
+        .delete()
+        .not('id', 'is', null)
+      if (deleteSessionsError) throw new Error(deleteSessionsError.message)
+
+      const { error: deleteQuestionsError } = await supabase
+        .from('questions')
+        .delete()
+        .not('id', 'is', null)
+      if (deleteQuestionsError) throw new Error(deleteQuestionsError.message)
+
+      await insertRowsInChunks('questions', snapshot.questions as unknown as Record<string, unknown>[])
+      await insertRowsInChunks('quiz_sessions', snapshot.quizSessions as unknown as Record<string, unknown>[])
+      await insertRowsInChunks('answer_logs', snapshot.answerLogs as unknown as Record<string, unknown>[])
+
+      setRestoreMsg(
+        `✅ 復元しました。問題${snapshot.questions.length}件 / 履歴${snapshot.quizSessions.length}件 / 解答ログ${snapshot.answerLogs.length}件を反映しました。`
+        + (snapshot.defaultPasswordCount > 0
+          ? ` 旧形式JSONだったため、生徒${snapshot.defaultPasswordCount}件のパスワードは既定値で補完しました。`
+          : '')
+      )
+      await loadData()
+    } catch (error) {
+      const message = error instanceof Error ? getRestoreErrorMessage(error.message) : 'バックアップの復元に失敗しました。'
+      setRestoreMsg(`エラー: ${message}`)
+    } finally {
+      setRestoreLoading(false)
     }
   }
 
@@ -504,7 +714,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                   <div>
                     <div className="text-white font-bold">全成績データをダウンロード</div>
                     <div className="text-slate-400 text-sm mt-1">
-                      生徒ごとの集計、履歴、解答ログを JSON でまとめて保存します。
+                      生徒情報、問題、履歴、解答ログを復元用JSONとしてまとめて保存します。
                     </div>
                     {exportMsg && (
                       <div
@@ -520,9 +730,59 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     disabled={exportLoading}
                     className="btn-primary whitespace-nowrap disabled:opacity-60"
                   >
-                    {exportLoading ? '作成中...' : '⬇️ 成績JSONを保存'}
+                    {exportLoading ? '作成中...' : '⬇️ 復元用JSONを保存'}
                   </button>
                 </div>
+              </div>
+
+              <div className="card">
+                <div className="text-white font-bold">バックアップJSONから復元</div>
+                <div className="text-slate-400 text-sm mt-1 leading-6">
+                  管理画面から保存したバックアップJSONを読み込んで、問題・履歴・解答ログを復元します。
+                  テーブル自体が消えている場合は、先に `supabase_schema.sql` を SQL Editor で実行してください。
+                </div>
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <label className="btn-secondary text-sm cursor-pointer">
+                    バックアップJSONを読み込む
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleRestoreFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    onClick={() => {
+                      setRestoreInput('')
+                      setRestoreMsg('')
+                    }}
+                    className="btn-ghost text-sm"
+                  >
+                    入力をクリア
+                  </button>
+                </div>
+                <label className="text-slate-400 text-xs mt-4 mb-2 block">バックアップJSON</label>
+                <textarea
+                  value={restoreInput}
+                  onChange={event => setRestoreInput(event.target.value)}
+                  rows={10}
+                  className="input-surface resize-y font-mono text-sm"
+                  placeholder="ここにバックアップJSONを貼り付けるか、上のボタンから読み込んでください。"
+                  spellCheck={false}
+                />
+                {restoreMsg && (
+                  <p className={`mt-3 text-sm ${restoreMsg.startsWith('✅') || restoreMsg.startsWith('📄') ? 'text-green-400' : 'text-red-400'}`}>
+                    {restoreMsg}
+                  </p>
+                )}
+                <button
+                  onClick={handleRestoreBackup}
+                  className="btn-primary w-full mt-4"
+                  disabled={restoreLoading}
+                  style={{ opacity: restoreLoading ? 0.7 : 1 }}
+                >
+                  {restoreLoading ? '復元中...' : 'JSONから復元する'}
+                </button>
               </div>
 
               <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -631,6 +891,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     </button>
                   </div>
                   <div className="mt-1 text-slate-500 text-xs">答え: {question.answer}</div>
+                  {question.type === 'text' && question.keywords && question.keywords.length > 0 && (
+                    <div className="mt-1 text-amber-300 text-xs">キーワード: {question.keywords.join(' / ')}</div>
+                  )}
                 </div>
               ))}
               {questions.length === 0 && (
@@ -727,10 +990,25 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <input
               value={form.answer}
               onChange={e => setForm(current => ({ ...current, answer: e.target.value }))}
-              placeholder="正解をそのまま入力（AかBと同じ文）"
+              placeholder={form.type === 'choice' ? '正解をそのまま入力（AかBと同じ文）' : '模範解答を入力'}
               className="input-surface"
             />
           </div>
+
+          {form.type === 'text' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">キーワード（任意）</label>
+              <input
+                value={form.keywords}
+                onChange={e => setForm(current => ({ ...current, keywords: e.target.value }))}
+                placeholder="例: アンペア, 電流"
+                className="input-surface"
+              />
+              <p className="text-slate-500 text-xs mt-2">
+                回答文にこのどれか1つでも含まれていれば `▲` 判定にします。カンマ区切りで入力してください。
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="text-slate-400 text-xs mb-1 block">解説（任意）</label>
@@ -755,6 +1033,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <p className="text-slate-400 text-sm leading-6">
               JSON をそのまま貼り付けるか、`.json` ファイルを読み込んで一括追加できます。
               choice 問題は `choices` を2件、text 問題は `choices` なしで入力してください。
+              記述問題では `keywords` 配列を付けると、回答文に1つでも含まれたときに `▲` 判定になります。
             </p>
             <div className="flex flex-wrap gap-3 mt-4">
               <label

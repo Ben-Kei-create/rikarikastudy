@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { isAnswerMatch } from '@/lib/answerUtils'
+import { evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
@@ -52,6 +52,7 @@ interface Question {
   choices: string[] | null
   answer: string
   accept_answers: string[] | null
+  keywords: string[] | null
   explanation: string | null
 }
 
@@ -78,10 +79,10 @@ export default function QuizPage({
   const [phase, setPhase] = useState<Phase>('answering')
   const [selected, setSelected] = useState<string | null>(null)
   const [textInput, setTextInput] = useState('')
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
+  const [answerResult, setAnswerResult] = useState<TextAnswerResult | null>(null)
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string }[]>([])
+  const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string; result: TextAnswerResult }[]>([])
   const startedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export default function QuizPage({
       setPhase('answering')
       setSelected(null)
       setTextInput('')
-      setIsCorrect(null)
+      setAnswerResult(null)
       setScore(0)
       setAnswerLogs([])
       startedAtRef.current = null
@@ -145,21 +146,21 @@ export default function QuizPage({
 
   const handleChoice = (choice: string) => {
     if (phase !== 'answering') return
-    const correct = choice === q.answer
+    const result: TextAnswerResult = choice === q.answer ? 'exact' : 'incorrect'
     setSelected(choice)
-    setIsCorrect(correct)
-    if (correct) setScore(s => s + 1)
-    setAnswerLogs(logs => [...logs, { qId: q.id, correct, answer: choice }])
+    setAnswerResult(result)
+    if (result === 'exact') setScore(s => s + 1)
+    setAnswerLogs(logs => [...logs, { qId: q.id, correct: result === 'exact', answer: choice, result }])
     setPhase('result')
   }
 
   const handleTextSubmit = () => {
     const answer = textInput.trim()
     if (!answer) return
-    const correct = isAnswerMatch(answer, q.answer, q.accept_answers)
-    setIsCorrect(correct)
-    if (correct) setScore(s => s + 1)
-    setAnswerLogs(logs => [...logs, { qId: q.id, correct, answer }])
+    const result = evaluateTextAnswer(answer, q.answer, q.accept_answers, q.keywords)
+    setAnswerResult(result)
+    if (result === 'exact') setScore(s => s + 1)
+    setAnswerLogs(logs => [...logs, { qId: q.id, correct: result === 'exact', answer, result }])
     setPhase('result')
   }
 
@@ -177,7 +178,7 @@ export default function QuizPage({
           field: quickStartAll ? '4分野総合' : field,
           unit: quickStartAll ? 'クイックスタート' : unit === 'all' ? '全単元' : unit,
           total_questions: questions.length,
-          correct_count: score + (isCorrect ? 0 : 0), // すでに加算済み
+          correct_count: score,
           duration_seconds: durationSeconds,
         })
         .select()
@@ -192,7 +193,7 @@ export default function QuizPage({
             field: quickStartAll ? '4分野総合' : field,
             unit: quickStartAll ? 'クイックスタート' : unit === 'all' ? '全単元' : unit,
             total_questions: questions.length,
-            correct_count: score + (isCorrect ? 0 : 0),
+            correct_count: score,
           })
           .select()
           .single()
@@ -224,7 +225,7 @@ export default function QuizPage({
       setPhase('answering')
       setSelected(null)
       setTextInput('')
-      setIsCorrect(null)
+      setAnswerResult(null)
     }
   }
 
@@ -277,10 +278,13 @@ export default function QuizPage({
             {questions.map((_, i) => (
               <div key={i} style={{
                 width: 12, height: 12, borderRadius: '50%',
-                background: answerLogs[i]?.correct ? '#22c55e' : '#ef4444',
+                background: answerLogs[i]?.result === 'exact' ? '#22c55e' : answerLogs[i]?.result === 'keyword' ? '#f59e0b' : '#ef4444',
               }} />
             ))}
           </div>
+          {answerLogs.some(log => log.result === 'keyword') && (
+            <p className="text-xs text-slate-500 mb-8">▲ はキーワード一致で、スコアには加算していません。</p>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button
@@ -291,7 +295,7 @@ export default function QuizPage({
                 setScore(0)
                 setSelected(null)
                 setTextInput('')
-                setIsCorrect(null)
+                setAnswerResult(null)
                 setAnswerLogs([])
               }}
               className="btn-secondary !px-0 !py-3"
@@ -395,7 +399,7 @@ export default function QuizPage({
             let textColor = '#e2e8f0'
             if (phase === 'result') {
               if (c === q.answer) { bg = '#14532d'; border = '2px solid #22c55e'; textColor = '#86efac' }
-              else if (c === selected && !isCorrect) { bg = '#450a0a'; border = '2px solid #ef4444'; textColor = '#fca5a5' }
+              else if (c === selected && answerResult === 'incorrect') { bg = '#450a0a'; border = '2px solid #ef4444'; textColor = '#fca5a5' }
             }
             return (
               <button
@@ -421,7 +425,7 @@ export default function QuizPage({
             className="input-surface resize-none mb-3"
             style={{
               border: phase === 'result'
-                ? `2px solid ${isCorrect ? '#22c55e' : '#ef4444'}`
+                ? `2px solid ${answerResult === 'exact' ? '#22c55e' : answerResult === 'keyword' ? '#f59e0b' : '#ef4444'}`
                 : undefined,
               fontSize: '1rem',
             }}
@@ -436,23 +440,42 @@ export default function QuizPage({
 
       {/* 解説 */}
       {phase === 'result' && (
-        <div className={`card mt-4 anim-pop`} style={{
-          borderColor: isCorrect ? '#22c55e50' : '#ef444450',
-          background: isCorrect ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-        }}>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">{isCorrect ? '✅' : '❌'}</span>
-            <span className="font-bold text-lg" style={{ color: isCorrect ? '#22c55e' : '#ef4444' }}>
-              {isCorrect ? '正解！' : `不正解 → 答え：${q.answer}`}
-            </span>
-          </div>
-          {q.explanation && (
-            <p className="text-slate-300 text-sm leading-relaxed">{q.explanation}</p>
-          )}
-          <button onClick={handleNext} className="btn-primary w-full mt-4">
-            {current + 1 >= questions.length ? '結果を見る' : '次の問題 →'}
-          </button>
-        </div>
+        (() => {
+          const currentResult = answerResult ?? 'incorrect'
+          const accent = currentResult === 'exact' ? '#22c55e' : currentResult === 'keyword' ? '#f59e0b' : '#ef4444'
+          const background = currentResult === 'exact'
+            ? 'rgba(34, 197, 94, 0.12)'
+            : currentResult === 'keyword'
+              ? 'rgba(245, 158, 11, 0.12)'
+              : 'rgba(239, 68, 68, 0.12)'
+          const title = currentResult === 'exact'
+            ? '◯ 正解！'
+            : currentResult === 'keyword'
+              ? '▲ キーワード一致'
+              : '❌ 不正解'
+
+          return (
+            <div className={`card mt-4 anim-pop`} style={{ borderColor: `${accent}50`, background }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-bold text-lg" style={{ color: accent }}>
+                  {title}
+                </span>
+              </div>
+              {currentResult !== 'exact' && (
+                <p className="text-slate-200 text-sm mb-2">模範解答: {q.answer}</p>
+              )}
+              {currentResult === 'keyword' && (
+                <p className="text-amber-200 text-xs mb-2">キーワードを含むため部分一致です。スコアには加算しません。</p>
+              )}
+              {q.explanation && (
+                <p className="text-slate-300 text-sm leading-relaxed">{q.explanation}</p>
+              )}
+              <button onClick={handleNext} className="btn-primary w-full mt-4">
+                {current + 1 >= questions.length ? '結果を見る' : '次の問題 →'}
+              </button>
+            </div>
+          )
+        })()
       )}
     </div>
   )

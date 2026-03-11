@@ -39,6 +39,7 @@ interface CustomQuestionForm {
   type: 'choice' | 'text'
   choices: [string, string]
   answer: string
+  keywords: string
   explanation: string
   grade: string
 }
@@ -50,8 +51,18 @@ const INITIAL_CUSTOM_QUESTION_FORM: CustomQuestionForm = {
   type: 'choice',
   choices: ['', ''],
   answer: '',
+  keywords: '',
   explanation: '',
   grade: '中3',
+}
+
+function parseKeywordInput(input: string) {
+  const keywords = input
+    .split(/[,、\n]/)
+    .map(keyword => keyword.trim())
+    .filter(Boolean)
+
+  return keywords.length > 0 ? keywords : null
 }
 
 function formatStudyTime(totalSeconds: number) {
@@ -268,6 +279,7 @@ export default function MyPage({
           type: questionForm.type,
           choices: questionForm.type === 'choice' ? questionForm.choices.map(choice => choice.trim()) : null,
           answer: questionForm.answer.trim(),
+          keywords: questionForm.type === 'text' ? parseKeywordInput(questionForm.keywords) : null,
           explanation: questionForm.explanation.trim() || null,
           grade: questionForm.grade,
         })
@@ -277,6 +289,10 @@ export default function MyPage({
       if (error && isMissingColumnError(error, 'created_by_student_id')) {
         markColumnMissing('created_by_student_id')
         throw new Error('Supabase の questions テーブルに created_by_student_id 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      }
+
+      if (error && isMissingColumnError(error, 'keywords')) {
+        throw new Error('Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
       }
 
       if (!error) {
@@ -639,6 +655,20 @@ export default function MyPage({
                   placeholder={questionForm.type === 'choice' ? '答え（AかBと同じ内容）' : '答え'}
                   className="input-surface"
                 />
+                {questionForm.type === 'text' && (
+                  <div>
+                    <input
+                      type="text"
+                      value={questionForm.keywords}
+                      onChange={e => setQuestionForm(current => ({ ...current, keywords: e.target.value }))}
+                      placeholder="キーワード（任意 / カンマ区切り）"
+                      className="input-surface"
+                    />
+                    <p className="text-slate-500 text-xs mt-2">
+                      回答文にこのどれか1つでも含まれていれば `▲` 判定にします。
+                    </p>
+                  </div>
+                )}
                 <textarea
                   value={questionForm.explanation}
                   onChange={e => setQuestionForm(current => ({ ...current, explanation: e.target.value }))}
