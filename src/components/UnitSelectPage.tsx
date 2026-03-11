@@ -25,7 +25,13 @@ export default function UnitSelectPage({
   useEffect(() => {
     ;(async () => {
       setLoading(true)
-      const { data: qData } = await supabase.from('questions').select('unit').eq('field', field)
+      let questionQuery = supabase.from('questions').select('unit').eq('field', field)
+      questionQuery = questionQuery.or(
+        studentId
+          ? `created_by_student_id.is.null,created_by_student_id.eq.${studentId}`
+          : 'created_by_student_id.is.null'
+      )
+      const { data: qData } = await questionQuery
       const unitCounts: Record<string, number> = {}
       qData?.forEach(q => { unitCounts[q.unit] = (unitCounts[q.unit] || 0) + 1 })
 
