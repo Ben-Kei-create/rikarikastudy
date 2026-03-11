@@ -10,7 +10,7 @@ import {
 import { GUEST_STUDENT, GUEST_STUDENT_ID, isGuestStudentId } from '@/lib/guestStudy'
 
 const STORAGE_KEY = 'rika_auth_v3'
-const DEVICE_LOCK_KEY = 'rika_device_lock_v1'
+const LEGACY_DEVICE_LOCK_KEY = 'rika_device_lock_v1'
 const SESSION_TIMEOUT_MS = 10 * 60 * 1000
 const PRESENCE_HEARTBEAT_MS = Math.min(60 * 1000, ACTIVE_SESSION_ONLINE_WINDOW_MS - 30 * 1000)
 
@@ -90,7 +90,6 @@ interface AuthState {
   studentId: number | null
   nickname: string | null
   ready: boolean
-  lockedStudentId: number | null
   notice: string | null
 }
 
@@ -109,7 +108,6 @@ interface AuthContextType extends AuthState {
   logout: (reason?: 'manual' | 'expired') => void
   refreshProfile: () => Promise<void>
   updateProfile: (updates: UpdateProfileInput) => Promise<UpdateProfileResult>
-  clearDeviceLock: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -126,7 +124,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     studentId: null,
     nickname: null,
     ready: false,
-    lockedStudentId: null,
     notice: null,
   })
 
@@ -134,32 +131,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false
 
     const restore = async () => {
-      let lockedStudentId: number | null = null
-
       try {
-        const lockRaw = localStorage.getItem(DEVICE_LOCK_KEY)
-        if (lockRaw) {
-          const parsedLock = Number(lockRaw)
-          if (Number.isInteger(parsedLock) && parsedLock >= 1 && parsedLock <= 5) {
-            lockedStudentId = parsedLock
-          } else {
-            localStorage.removeItem(DEVICE_LOCK_KEY)
-          }
-        }
+        localStorage.removeItem(LEGACY_DEVICE_LOCK_KEY)
 
         const saved = sessionStorage.getItem(STORAGE_KEY)
         if (!saved) {
-          if (!cancelled) {
-            setState(prev => ({ ...prev, lockedStudentId }))
-          }
           return
         }
 
         const parsed = JSON.parse(saved) as { studentId?: number; lastActivityAt?: number; sessionToken?: string }
         if (parsed.studentId === undefined || parsed.studentId === null) {
-          if (!cancelled) {
-            setState(prev => ({ ...prev, lockedStudentId }))
-          }
           return
         }
 
@@ -172,7 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               ...prev,
               studentId: null,
               nickname: null,
-              lockedStudentId,
               notice: '10分操作がなかったため、ログアウトしました。',
             }))
           }
@@ -190,7 +170,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           studentId: student.id,
           nickname: student.nickname,
           ready: true,
-          lockedStudentId,
           notice: null,
         })
         return
@@ -226,26 +205,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (studentId: number, password: string) => {
-    if (state.lockedStudentId && state.lockedStudentId !== studentId) {
-      return {
-        ok: false,
-        message: `この端末は ID ${state.lockedStudentId} 用に固定されています。切り替えはもぎ先生ログインから解除してください。`,
-      }
-    }
-
-    const student = await fetchStudentById(studentId)
     const isGuest = isGuestStudentId(studentId)
+    const student = await fetchStudentById(studentId)
 
     if (!student || (!isGuest && student.password !== password.trim())) {
       return {
         ok: false,
         message: 'ID またはパスワードが違います',
       }
-    }
-
-    const nextLockedStudentId = isGuest ? state.lockedStudentId : (state.lockedStudentId ?? student.id)
-    if (!state.lockedStudentId && !isGuest) {
-      localStorage.setItem(DEVICE_LOCK_KEY, String(student.id))
     }
 
     const lastActivityAt = Date.now()
@@ -256,7 +223,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       studentId: student.id,
       nickname: student.nickname,
       ready: true,
-      lockedStudentId: nextLockedStudentId,
       notice: null,
     }
     setState(next)
@@ -286,11 +252,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const student = await fetchStudentById(state.studentId)
     if (!student) return
     setState(prev => ({ ...prev, nickname: student.nickname }))
-  }
-
-  const clearDeviceLock = () => {
-    localStorage.removeItem(DEVICE_LOCK_KEY)
-    setState(prev => ({ ...prev, lockedStudentId: null }))
   }
 
   const updateProfile = async (updates: UpdateProfileInput): Promise<UpdateProfileResult> => {
@@ -399,7 +360,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [state.studentId])
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshProfile, updateProfile, clearDeviceLock }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refreshProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

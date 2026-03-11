@@ -11,12 +11,11 @@ export default function LoginPage({
   onDone: () => void
   onAdmin: () => void
 }) {
-  const { login, lockedStudentId, notice } = useAuth()
+  const { login, notice } = useAuth()
   const [studentId, setStudentId] = useState(1)
   const [students, setStudents] = useState(LOGIN_STUDENTS)
   const [pw, setPw] = useState('')
   const [error, setError] = useState('')
-  const [partyGameNotice, setPartyGameNotice] = useState('')
   const [shakeKey, setShakeKey] = useState(0)
   const [submitting, setSubmitting] = useState(false)
 
@@ -29,10 +28,6 @@ export default function LoginPage({
       active = false
     }
   }, [])
-
-  useEffect(() => {
-    if (lockedStudentId) setStudentId(lockedStudentId)
-  }, [lockedStudentId])
 
   const isGuest = studentId === GUEST_STUDENT_ID
 
@@ -54,21 +49,30 @@ export default function LoginPage({
     }
   }
 
-  const handlePartyGameClick = () => {
-    setPartyGameNotice('パーティゲームは準備中です。まだ入れません。')
-  }
-
   return (
     <div className="page-shell page-shell-dashboard flex min-h-screen items-center justify-center">
       <div className="w-full max-w-2xl">
         <div className="hero-card science-surface w-full anim-fade-up px-5 py-6 sm:px-7 lg:px-8">
           <ScienceBackdrop />
           <div className="mb-6">
-            <div
-              className="mx-auto inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.18em] uppercase"
-              style={{ background: 'rgba(86, 168, 255, 0.12)', color: '#8cc7ff', border: '1px solid rgba(86, 168, 255, 0.16)' }}
-            >
-              RikaQuiz
+            <div className="text-center">
+              <div
+                className="text-[11px] font-semibold tracking-[0.28em] uppercase"
+                style={{ color: '#8cc7ff' }}
+              >
+                Science Study
+              </div>
+              <div
+                className="font-display mt-3 text-[3rem] leading-none sm:text-[4rem]"
+                style={{
+                  background: 'linear-gradient(135deg, #f8fbff 0%, #93c5fd 42%, #38bdf8 100%)',
+                  WebkitBackgroundClip: 'text',
+                  color: 'transparent',
+                  filter: 'drop-shadow(0 18px 34px rgba(56, 189, 248, 0.24))',
+                }}
+              >
+                RikaQuiz
+              </div>
             </div>
             <h2 className="mt-4 text-2xl font-semibold text-center text-white">ログイン</h2>
           </div>
@@ -82,19 +86,9 @@ export default function LoginPage({
             </div>
           )}
 
-          {lockedStudentId && (
-            <div
-              className="info-banner text-sm mb-4"
-              style={{ background: 'rgba(10, 132, 255, 0.14)', borderColor: 'rgba(10, 132, 255, 0.22)', color: '#b9e1ff' }}
-            >
-              この端末は ID {lockedStudentId} 専用です。切り替えはもぎ先生ログインから解除できます。
-            </div>
-          )}
-
           <div className="grid grid-cols-2 gap-3 mb-5 sm:grid-cols-3">
             {students.map(student => {
               const checked = studentId === student.id
-              const disabled = !!lockedStudentId && lockedStudentId !== student.id
               return (
                 <label
                   key={student.id}
@@ -105,8 +99,7 @@ export default function LoginPage({
                       ? 'linear-gradient(180deg, rgba(10, 132, 255, 0.22), rgba(10, 132, 255, 0.14))'
                       : 'var(--surface-elevated)',
                     boxShadow: checked ? '0 14px 28px rgba(10, 132, 255, 0.18)' : 'none',
-                    cursor: disabled ? 'not-allowed' : 'pointer',
-                    opacity: disabled ? 0.35 : 1,
+                    cursor: 'pointer',
                   }}
                 >
                   <input
@@ -114,8 +107,7 @@ export default function LoginPage({
                     name="studentId"
                     value={student.id}
                     checked={checked}
-                    onChange={() => !disabled && setStudentId(student.id)}
-                    disabled={disabled}
+                    onChange={() => setStudentId(student.id)}
                     className="sr-only"
                   />
                   <div className="text-xs text-slate-400">ID {student.id}</div>
@@ -174,24 +166,12 @@ export default function LoginPage({
           </button>
 
           <button
-            onClick={handlePartyGameClick}
+            disabled
             className="btn-ghost w-full mt-3"
+            style={{ opacity: 0.5, cursor: 'not-allowed' }}
           >
-            パーティゲーム
+            オンライン
           </button>
-
-          <div className="mt-3 rounded-[22px] border border-dashed border-slate-700 bg-slate-950/35 px-4 py-3 text-sm leading-6 text-slate-400">
-            各ユーザがオンラインで遊べる学習ゲームをここに追加予定です。
-          </div>
-
-          {partyGameNotice && (
-            <div
-              className="info-banner text-sm mt-3"
-              style={{ background: 'rgba(59, 130, 246, 0.12)', borderColor: 'rgba(59, 130, 246, 0.22)', color: '#bfdbfe' }}
-            >
-              {partyGameNotice}
-            </div>
-          )}
         </div>
       </div>
     </div>

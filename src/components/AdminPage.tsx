@@ -1,7 +1,7 @@
 'use client'
 import { ChangeEvent, useEffect, useState } from 'react'
 import { Database, supabase } from '@/lib/supabase'
-import { DEFAULT_STUDENTS, fetchStudents, useAuth } from '@/lib/auth'
+import { DEFAULT_STUDENTS, fetchStudents } from '@/lib/auth'
 import { sampleQuestions } from '@/lib/sampleQuestions'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
@@ -337,7 +337,6 @@ function getRestoreErrorMessage(message: string) {
 }
 
 export default function AdminPage({ onBack }: { onBack: () => void }) {
-  const { lockedStudentId, clearDeviceLock } = useAuth()
   const [authed, setAuthed] = useState(false)
   const [pw, setPw] = useState('')
   const [pwError, setPwError] = useState(false)
@@ -768,28 +767,6 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               </button>
             ))}
           </div>
-        </div>
-      </div>
-
-      <div className="card mb-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-white font-bold">この端末のログイン固定</div>
-            <div className="text-slate-400 text-sm mt-1">
-              {lockedStudentId
-                ? `現在は ID ${lockedStudentId} に固定されています。`
-                : '現在は固定されていません。'}
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              clearDeviceLock()
-              alert('この端末の固定を解除しました。次回ログイン時にIDを選び直せます。')
-            }}
-            className="btn-secondary"
-          >
-            固定を解除
-          </button>
         </div>
       </div>
 
