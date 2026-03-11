@@ -10,6 +10,8 @@ import MyPage from '@/components/MyPage'
 import AdminPage from '@/components/AdminPage'
 import ChemistryPracticePage from '@/components/ChemistryPracticePage'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
+import ScienceChatPage from '@/components/ScienceChatPage'
+import { ScienceChatField } from '@/lib/scienceChat'
 
 type Screen =
   | 'home'
@@ -17,6 +19,7 @@ type Screen =
   | { type: 'unit'; field: string }
   | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean }
   | { type: 'chemistry-practice'; mode: ChemistryPracticeMode }
+  | { type: 'chat'; field: ScienceChatField }
 
 function ThemeToggle() {
   const { theme, setTheme, ready } = useTheme()
@@ -76,7 +79,15 @@ function App() {
         field={screen.field}
         onSelect={unit => setScreen({ type: 'quiz', field: screen.field, unit })}
         onSelectSpecialMode={mode => setScreen({ type: 'chemistry-practice', mode })}
+        onOpenChat={field => setScreen({ type: 'chat', field })}
         onBack={() => setScreen('home')}
+      />
+    )
+  } else if (typeof screen === 'object' && screen.type === 'chat') {
+    content = (
+      <ScienceChatPage
+        field={screen.field}
+        onBack={() => setScreen({ type: 'unit', field: screen.field })}
       />
     )
   } else if (typeof screen === 'object' && screen.type === 'chemistry-practice') {

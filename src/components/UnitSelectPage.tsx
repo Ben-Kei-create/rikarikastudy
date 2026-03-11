@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { CHEMISTRY_MODE_META, ChemistryPracticeMode } from '@/lib/chemistryPractice'
+import { ScienceChatField } from '@/lib/scienceChat'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
@@ -35,11 +36,13 @@ export default function UnitSelectPage({
   field,
   onSelect,
   onSelectSpecialMode,
+  onOpenChat,
   onBack,
 }: {
   field: string
   onSelect: (unit: string) => void
   onSelectSpecialMode: (mode: ChemistryPracticeMode) => void
+  onOpenChat: (field: ScienceChatField) => void
   onBack: () => void
 }) {
   const { studentId, logout } = useAuth()
@@ -207,6 +210,44 @@ export default function UnitSelectPage({
           </div>
         </div>
       )}
+
+      <button
+        onClick={() => onOpenChat(field as ScienceChatField)}
+        className="card w-full anim-fade-up mb-4 text-left"
+        style={{
+          borderColor: `${color}40`,
+          background: `linear-gradient(135deg, ${color}18, rgba(15, 23, 42, 0.82))`,
+          animationDelay: '0.04s',
+          transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+        }}
+        onMouseEnter={event => {
+          event.currentTarget.style.transform = 'translateY(-2px)'
+          event.currentTarget.style.boxShadow = `0 18px 34px ${color}20`
+        }}
+        onMouseLeave={event => {
+          event.currentTarget.style.transform = ''
+          event.currentTarget.style.boxShadow = ''
+        }}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+              Ask Gemini
+            </div>
+            <div className="mt-2 font-display text-2xl text-white">
+              {field}について質問する
+            </div>
+            <div className="mt-2 text-slate-300 text-sm leading-6">
+              この分野だけに絞って、要点を3行以内でざっくり聞けます。
+            </div>
+          </div>
+          <div
+            className="inline-flex items-center justify-center rounded-full border border-slate-600 bg-slate-800/70 px-4 py-2 text-sm font-semibold text-slate-100"
+          >
+            Geminiに聞く →
+          </div>
+        </div>
+      </button>
 
       <button
         onClick={() => onSelect('all')}
