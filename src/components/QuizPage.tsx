@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isAnswerMatch } from '@/lib/answerUtils'
+import { isMissingColumnError, markColumnMissing } from '@/lib/schemaCompat'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': 'var(--bio)', '化学': 'var(--chem)', '物理': 'var(--phys)', '地学': 'var(--earth)',
@@ -41,15 +42,26 @@ export default function QuizPage({
       setSelected(null); setTextInput(''); setIsCorrect(null); setScore(0)
       setAnswerLogs([]); startedAtRef.current = null
 
-      let query = supabase.from('questions').select('*').eq('field', field)
-      if (unit !== 'all') query = query.eq('unit', unit)
-      query = query.or(
+      const baseQuery = () => {
+        let query = supabase.from('questions').select('*').eq('field', field)
+        if (unit !== 'all') query = query.eq('unit', unit)
+        return query
+      }
+
+      let { data, error } = await baseQuery().or(
         studentId
           ? `created_by_student_id.is.null,created_by_student_id.eq.${studentId}`
           : 'created_by_student_id.is.null'
       )
-      const { data } = await query
-      if (data && data.length > 0) {
+
+      if (isMissingColumnError(error, 'created_by_student_id')) {
+        markColumnMissing('created_by_student_id')
+        const fallback = await baseQuery()
+        data = fallback.data
+        error = fallback.error
+      }
+
+      if (!error && data && data.length > 0) {
         setQuestions([...data].sort(() => Math.random() - 0.5).slice(0, 10))
         startedAtRef.current = Date.now()
       }
@@ -178,9 +190,9 @@ export default function QuizPage({
     <div className="page-shell">
       {/* Progress */}
       <div className="card mb-3 anim-fade-up">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="btn-secondary text-sm !px-3 !py-2">やめる</button>
-          <div className="flex-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <button onClick={onBack} className="btn-secondary text-sm !px-3 !py-2 order-1">やめる</button>
+          <div className="w-full order-3 sm:order-2 sm:flex-1">
             <div className="flex justify-between text-xs mb-1.5" style={{ color: 'var(--text-secondary)' }}>
               <span>{isDrill ? `復習: ${field} / ${unit}` : unit === 'all' ? '全単元' : unit}</span>
               <span>{current + 1} / {questions.length}</span>
@@ -192,8 +204,8 @@ export default function QuizPage({
               }} />
             </div>
           </div>
-          <div className="text-sm font-semibold" style={{ color }}>{score}正解</div>
-          <button onClick={() => logout()} className="btn-ghost text-sm !px-3 !py-2">ログアウト</button>
+          <div className="text-sm font-semibold order-2 sm:order-3" style={{ color }}>{score}正解</div>
+          <button onClick={() => logout()} className="btn-ghost text-sm !px-3 !py-2 order-4">ログアウト</button>
         </div>
       </div>
 
