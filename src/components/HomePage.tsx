@@ -1,11 +1,11 @@
 'use client'
-import { useAuth, fetchStudents } from '@/lib/auth'
+import { useAuth } from '@/lib/auth'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { FALLBACK_SCIENCE_NEWS, ScienceNewsItem } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
-import { getJstWeekRange, getLevelInfo, getSessionXpFallback } from '@/lib/engagement'
+import { getLevelInfo } from '@/lib/engagement'
 import { hasCompletedDailyChallenge } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
@@ -18,20 +18,6 @@ const FIELDS = [
 
 interface FieldStats {
   [field: string]: { total: number; correct: number }
-}
-
-interface RankingRow {
-  studentId: number
-  nickname: string
-  weeklyXp: number
-  totalXp: number
-  level: number
-}
-
-interface FieldLeader {
-  field: string
-  nickname: string
-  xp: number
 }
 
 export default function HomePage({
@@ -54,13 +40,10 @@ export default function HomePage({
   const [onlineCount, setOnlineCount] = useState<number | null>(null)
   const [totalXp, setTotalXp] = useState(0)
   const [dailyCompleted, setDailyCompleted] = useState(false)
-  const [weeklyRanking, setWeeklyRanking] = useState<RankingRow[]>([])
-  const [fieldLeaders, setFieldLeaders] = useState<FieldLeader[]>([])
   const totalQuestions = Object.values(stats).reduce((sum, field) => sum + field.total, 0)
   const totalCorrect = Object.values(stats).reduce((sum, field) => sum + field.correct, 0)
   const overallRate = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null
   const levelInfo = useMemo(() => getLevelInfo(totalXp), [totalXp])
-  const weekRange = useMemo(() => getJstWeekRange(), [])
 
   useEffect(() => {
     if (studentId === null) return
@@ -147,79 +130,6 @@ export default function HomePage({
       window.clearInterval(intervalId)
     }
   }, [studentId])
-
-  useEffect(() => {
-    let active = true
-
-    const loadRanking = async () => {
-      const [students, sessionsResponse] = await Promise.all([
-        fetchStudents(),
-        supabase
-          .from('quiz_sessions')
-          .select('student_id, field, total_questions, correct_count, duration_seconds, xp_earned, session_mode, created_at')
-          .gte('created_at', weekRange.startDate.toISOString())
-          .lt('created_at', weekRange.endDate.toISOString())
-          .order('created_at', { ascending: false }),
-      ])
-
-      if (!active) return
-
-      const visibleStudents = students.filter(student => student.id !== 5)
-      const rows = visibleStudents.map(student => ({
-        studentId: student.id,
-        nickname: student.nickname,
-        totalXp: student.student_xp ?? 0,
-        weeklyXp: 0,
-        level: getLevelInfo(student.student_xp ?? 0).level,
-      }))
-      const rowMap = new Map(rows.map(row => [row.studentId, row]))
-      const fieldStudentXpMap = new Map<string, number>()
-
-      for (const session of sessionsResponse.data || []) {
-        const row = rowMap.get(session.student_id)
-        if (!row) continue
-        const xp = getSessionXpFallback(session)
-        row.weeklyXp += xp
-
-        if (FIELDS.some(field => field.name === session.field)) {
-          const key = `${session.field}:${session.student_id}`
-          fieldStudentXpMap.set(key, (fieldStudentXpMap.get(key) ?? 0) + xp)
-        }
-      }
-
-      rows.sort((a, b) => {
-        if (b.weeklyXp !== a.weeklyXp) return b.weeklyXp - a.weeklyXp
-        if (b.totalXp !== a.totalXp) return b.totalXp - a.totalXp
-        return a.studentId - b.studentId
-      })
-
-      const nextFieldLeaders: FieldLeader[] = FIELDS.map(field => {
-        let winner: FieldLeader | null = null
-        for (const student of visibleStudents) {
-          const xp = fieldStudentXpMap.get(`${field.name}:${student.id}`) ?? 0
-          if (!winner || xp > winner.xp) {
-            winner = {
-              field: field.name,
-              nickname: student.nickname,
-              xp,
-            }
-          }
-        }
-        return winner || { field: field.name, nickname: '—', xp: 0 }
-      })
-
-      setWeeklyRanking(rows)
-      setFieldLeaders(nextFieldLeaders)
-    }
-
-    void loadRanking()
-    const intervalId = window.setInterval(loadRanking, 60 * 1000)
-
-    return () => {
-      active = false
-      window.clearInterval(intervalId)
-    }
-  }, [weekRange.endDate, weekRange.startDate])
 
   const scienceNewsDate = new Intl.DateTimeFormat('ja-JP', {
     month: 'numeric',
@@ -322,78 +232,6 @@ export default function HomePage({
               ログアウト
             </button>
           </div>
-        </div>
-      </div>
-
-      <div className="card anim-fade-up mb-4">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Weekly Ranking</div>
-            <h2 className="mt-2 text-2xl font-bold text-white">今週のランキング</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              集計期間: {weekRange.startKey.replace(/-/g, '/')} - {weekRange.endKey.replace(/-/g, '/')}
-            </p>
-          </div>
-          <div className="rounded-full border border-sky-300/20 bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-100">
-            XP 基準
-          </div>
-        </div>
-
-        <div className="mt-5 space-y-3">
-          {weeklyRanking.map((row, index) => (
-            <div
-              key={row.studentId}
-              className="rounded-[22px] border px-4 py-4"
-              style={{
-                borderColor: row.studentId === studentId ? 'rgba(56, 189, 248, 0.34)' : 'var(--surface-elevated-border)',
-                background: row.studentId === studentId ? 'rgba(56, 189, 248, 0.08)' : 'var(--surface-elevated)',
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 text-2xl text-center">
-                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="font-bold text-white">{row.nickname}</div>
-                    <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-slate-400">
-                      Lv.{row.level}
-                    </span>
-                    {row.studentId === studentId && (
-                      <span className="rounded-full bg-sky-300/15 px-2 py-0.5 text-[11px] font-semibold text-sky-200">
-                        あなた
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">合計XP {row.totalXp}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-display text-2xl text-sky-300">{row.weeklyXp}</div>
-                  <div className="text-xs text-slate-500">weekly XP</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {fieldLeaders.map(field => {
-            const meta = FIELDS.find(item => item.name === field.field)
-            return (
-              <div
-                key={field.field}
-                className="rounded-[20px] border p-4"
-                style={{ borderColor: `${meta?.color ?? '#38bdf8'}30`, background: 'rgba(15, 23, 42, 0.45)' }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{meta?.emoji}</span>
-                  <span className="font-semibold" style={{ color: meta?.color }}>{field.field}</span>
-                </div>
-                <div className="mt-3 text-white font-bold">{field.nickname}</div>
-                <div className="mt-1 text-sm text-slate-400">{field.xp} XP</div>
-              </div>
-            )
-          })}
         </div>
       </div>
 
