@@ -7,6 +7,7 @@ import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { getChatModerationCategoryLabel } from '@/lib/chatModeration'
+import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
 import { isMissingColumnError, isMissingRelationError } from '@/lib/schemaCompat'
 import { fetchActiveSessions } from '@/lib/activeSessions'
 
@@ -73,6 +74,10 @@ type QuizSessionRow = Database['public']['Tables']['quiz_sessions']['Row']
 type AnswerLogRow = Database['public']['Tables']['answer_logs']['Row']
 type QuestionRow = Database['public']['Tables']['questions']['Row']
 type ChatGuardLogRow = Database['public']['Tables']['chat_guard_logs']['Row']
+type DailyChallengeRow = Database['public']['Tables']['daily_challenges']['Row']
+type BadgeRow = Database['public']['Tables']['badges']['Row']
+type StudentBadgeRow = Database['public']['Tables']['student_badges']['Row']
+type TimeAttackRecordRow = Database['public']['Tables']['time_attack_records']['Row']
 type StudentInsert = Database['public']['Tables']['students']['Insert']
 
 interface BulkQuestionPayload {
@@ -96,12 +101,17 @@ interface RestoreSnapshot {
   quizSessions: QuizSessionRow[]
   answerLogs: AnswerLogRow[]
   chatGuardLogs: ChatGuardLogRow[]
+  dailyChallenges: DailyChallengeRow[]
+  badges: BadgeRow[]
+  studentBadges: StudentBadgeRow[]
+  timeAttackRecords: TimeAttackRecordRow[]
   hasChatGuardLogs: boolean
+  hasEngagementTables: boolean
   defaultPasswordCount: number
 }
 
 function buildStudentStats(
-  students: Array<{ id: number; nickname: string; password: string }>,
+  students: Array<{ id: number; nickname: string; password: string; student_xp: number }>,
   sessions: QuizSessionRow[]
 ) {
   const statsMap: Record<number, StudentStats> = {}
@@ -269,6 +279,22 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
   const chatGuardLogs = hasChatGuardLogs
     ? parsed.chatGuardLogs as ChatGuardLogRow[]
     : []
+  const hasEngagementTables = Array.isArray(parsed.dailyChallenges)
+    || Array.isArray(parsed.badges)
+    || Array.isArray(parsed.studentBadges)
+    || Array.isArray(parsed.timeAttackRecords)
+  const dailyChallenges = Array.isArray(parsed.dailyChallenges)
+    ? parsed.dailyChallenges as DailyChallengeRow[]
+    : []
+  const badges = Array.isArray(parsed.badges)
+    ? parsed.badges as BadgeRow[]
+    : []
+  const studentBadges = Array.isArray(parsed.studentBadges)
+    ? parsed.studentBadges as StudentBadgeRow[]
+    : []
+  const timeAttackRecords = Array.isArray(parsed.timeAttackRecords)
+    ? parsed.timeAttackRecords as TimeAttackRecordRow[]
+    : []
 
   if (questionCatalog.length === 0) {
     throw new Error('このバックアップには問題データが含まれていません。')
@@ -292,6 +318,7 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
       id: defaultStudent.id,
       nickname,
       password,
+      student_xp: typeof current?.student_xp === 'number' ? current.student_xp : defaultStudent.student_xp,
     }
   })
 
@@ -302,13 +329,18 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
     quizSessions,
     answerLogs,
     chatGuardLogs,
+    dailyChallenges,
+    badges,
+    studentBadges,
+    timeAttackRecords,
     hasChatGuardLogs,
+    hasEngagementTables,
     defaultPasswordCount,
   }
 }
 
 async function insertRowsInChunks(
-  table: 'questions' | 'quiz_sessions' | 'answer_logs' | 'chat_guard_logs',
+  table: 'questions' | 'quiz_sessions' | 'answer_logs' | 'chat_guard_logs' | 'daily_challenges' | 'badges' | 'student_badges' | 'time_attack_records',
   rows: Record<string, unknown>[]
 ) {
   if (rows.length === 0) return
@@ -324,13 +356,13 @@ function getRestoreErrorMessage(message: string) {
   if (message.includes('relation') && message.includes('does not exist')) {
     return 'Supabase のテーブルがありません。先に supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
-  if (message.includes('password') || message.includes('duration_seconds') || message.includes('created_by_student_id')) {
+  if (message.includes('password') || message.includes('duration_seconds') || message.includes('created_by_student_id') || message.includes('student_xp') || message.includes('xp_earned') || message.includes('session_mode')) {
     return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
   if (message.includes('keywords')) {
     return 'Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。'
   }
-  if (message.includes('chat_guard_logs')) {
+  if (message.includes('chat_guard_logs') || message.includes('daily_challenges') || message.includes('student_badges') || message.includes('time_attack_records') || message.includes('badges')) {
     return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
   return message
@@ -341,7 +373,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [pw, setPw] = useState('')
   const [pwError, setPwError] = useState(false)
   const [tab, setTab] = useState<AdminTab>('overview')
-  const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string }>>([])
+  const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string; student_xp: number }>>([])
   const [stats, setStats] = useState<StudentStats[]>([])
   const [questions, setQuestions] = useState<QuestionRow[]>([])
   const [activeStudents, setActiveStudents] = useState<ActiveStudentStatus[]>([])
@@ -452,12 +484,16 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       setExportLoading(true)
       setExportMsg('')
 
-      const [students, sessionsResponse, answerLogsResponse, questionsResponse, chatGuardLogsResponse] = await Promise.all([
+      const [students, sessionsResponse, answerLogsResponse, questionsResponse, chatGuardLogsResponse, dailyChallengesResponse, badgesResponse, studentBadgesResponse, timeAttackResponse] = await Promise.all([
         fetchStudents(),
         supabase.from('quiz_sessions').select('*').order('created_at', { ascending: false }),
         supabase.from('answer_logs').select('*').order('created_at', { ascending: false }),
         supabase.from('questions').select('*').order('created_at', { ascending: false }),
         supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }),
+        supabase.from('daily_challenges').select('*').order('completed_at', { ascending: false }),
+        supabase.from('badges').select('*').order('created_at', { ascending: false }),
+        supabase.from('student_badges').select('*').order('earned_at', { ascending: false }),
+        supabase.from('time_attack_records').select('*').order('best_score', { ascending: false }),
       ])
 
       if (sessionsResponse.error) throw new Error(sessionsResponse.error.message)
@@ -466,19 +502,31 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       if (chatGuardLogsResponse.error && !isMissingRelationError(chatGuardLogsResponse.error, 'chat_guard_logs')) {
         throw new Error(chatGuardLogsResponse.error.message)
       }
+      if (dailyChallengesResponse.error) throw new Error(dailyChallengesResponse.error.message)
+      if (badgesResponse.error) throw new Error(badgesResponse.error.message)
+      if (studentBadgesResponse.error) throw new Error(studentBadgesResponse.error.message)
+      if (timeAttackResponse.error) throw new Error(timeAttackResponse.error.message)
 
       const sessions = (sessionsResponse.data || []) as QuizSessionRow[]
       const answerLogs = (answerLogsResponse.data || []) as AnswerLogRow[]
       const questions = (questionsResponse.data || []) as QuestionRow[]
       const chatGuardLogs = (chatGuardLogsResponse.data || []) as ChatGuardLogRow[]
+      const dailyChallenges = (dailyChallengesResponse.data || []) as DailyChallengeRow[]
+      const badges = (badgesResponse.data || []) as BadgeRow[]
+      const studentBadges = (studentBadgesResponse.data || []) as StudentBadgeRow[]
+      const timeAttackRecords = (timeAttackResponse.data || []) as TimeAttackRecordRow[]
       const statsSnapshot = buildStudentStats(students, sessions)
 
       const payload = {
         exportedAt: new Date().toISOString(),
-        format: 'rikarikastudy-admin-export/v3',
+        format: 'rikarikastudy-admin-export/v4',
         restoreHint: 'テーブルが消えている場合は、先に supabase_schema.sql を SQL Editor で実行してから復元してください。',
         questionCatalog: questions,
         chatGuardLogs,
+        dailyChallenges,
+        badges,
+        studentBadges,
+        timeAttackRecords,
         students: students.map(student => {
           const summary = statsSnapshot.find(current => current.id === student.id)
           const studentSessions = sessions.filter(session => session.student_id === student.id)
@@ -491,6 +539,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             id: student.id,
             nickname: student.nickname,
             password: student.password,
+            student_xp: student.student_xp,
             summary: {
               totalQuestions: summary?.totalQ ?? 0,
               totalCorrect: summary?.totalC ?? 0,
@@ -524,6 +573,21 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         ? buildBinaryChoices(question.choices, question.answer, question.question)
         : null,
     }))
+    try {
+      await ensureNoDuplicateQuestions(
+        toInsert.map(question => ({
+          field: question.field,
+          unit: question.unit,
+          question: question.question,
+          type: question.type,
+          choices: question.choices,
+          answer: question.answer,
+        })),
+      )
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '重複問題の確認に失敗しました。')
+      return
+    }
     const { error } = await supabase.from('questions').insert(toInsert)
     if (error) alert('エラー: ' + error.message)
     else {
@@ -565,6 +629,20 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       payload.keywords = parseKeywordInput(form.keywords)
     }
 
+    try {
+      await ensureNoDuplicateQuestions([{
+        field: payload.field,
+        unit: payload.unit,
+        question: payload.question,
+        type: payload.type,
+        choices: payload.choices ?? null,
+        answer: payload.answer,
+      }])
+    } catch (error) {
+      setAddMsg(`エラー: ${error instanceof Error ? error.message : '重複問題の確認に失敗しました。'}`)
+      return
+    }
+
     const { error } = await supabase.from('questions').insert([payload])
     if (error && isMissingColumnError(error, 'keywords')) {
       setAddMsg('エラー: Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
@@ -604,6 +682,17 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       setBulkLoading(true)
       setBulkMsg('')
       const payload = parseBulkQuestions(bulkInput)
+
+      await ensureNoDuplicateQuestions(
+        payload.map(question => ({
+          field: question.field,
+          unit: question.unit,
+          question: question.question,
+          type: question.type,
+          choices: question.choices,
+          answer: question.answer,
+        })),
+      )
 
       for (let index = 0; index < payload.length; index += BULK_INSERT_CHUNK_SIZE) {
         const chunk = payload.slice(index, index + BULK_INSERT_CHUNK_SIZE)
@@ -647,6 +736,11 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         `クイズ履歴: ${snapshot.quizSessions.length}件`,
         `解答ログ: ${snapshot.answerLogs.length}件`,
         ...(snapshot.hasChatGuardLogs ? [`チャット警告: ${snapshot.chatGuardLogs.length}件`] : []),
+        ...(snapshot.hasEngagementTables ? [
+          `デイリーチャレンジ: ${snapshot.dailyChallenges.length}件`,
+          `学生バッジ: ${snapshot.studentBadges.length}件`,
+          `タイムアタック記録: ${snapshot.timeAttackRecords.length}件`,
+        ] : []),
         '',
         'questions / quiz_sessions / answer_logs は入れ替えになります。続けますか？',
       ].join('\n')
@@ -688,16 +782,49 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         if (deleteChatGuardLogsError) throw new Error(deleteChatGuardLogsError.message)
       }
 
+      if (snapshot.hasEngagementTables) {
+        const { error: deleteDailyChallengesError } = await supabase
+          .from('daily_challenges')
+          .delete()
+          .not('student_id', 'is', null)
+        if (deleteDailyChallengesError) throw new Error(deleteDailyChallengesError.message)
+
+        const { error: deleteStudentBadgesError } = await supabase
+          .from('student_badges')
+          .delete()
+          .not('student_id', 'is', null)
+        if (deleteStudentBadgesError) throw new Error(deleteStudentBadgesError.message)
+
+        const { error: deleteTimeAttackError } = await supabase
+          .from('time_attack_records')
+          .delete()
+          .not('student_id', 'is', null)
+        if (deleteTimeAttackError) throw new Error(deleteTimeAttackError.message)
+
+        const { error: deleteBadgesError } = await supabase
+          .from('badges')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteBadgesError) throw new Error(deleteBadgesError.message)
+      }
+
       await insertRowsInChunks('questions', snapshot.questions as unknown as Record<string, unknown>[])
       await insertRowsInChunks('quiz_sessions', snapshot.quizSessions as unknown as Record<string, unknown>[])
       await insertRowsInChunks('answer_logs', snapshot.answerLogs as unknown as Record<string, unknown>[])
       if (snapshot.hasChatGuardLogs) {
         await insertRowsInChunks('chat_guard_logs', snapshot.chatGuardLogs as unknown as Record<string, unknown>[])
       }
+      if (snapshot.hasEngagementTables) {
+        await insertRowsInChunks('badges', snapshot.badges as unknown as Record<string, unknown>[])
+        await insertRowsInChunks('student_badges', snapshot.studentBadges as unknown as Record<string, unknown>[])
+        await insertRowsInChunks('time_attack_records', snapshot.timeAttackRecords as unknown as Record<string, unknown>[])
+        await insertRowsInChunks('daily_challenges', snapshot.dailyChallenges as unknown as Record<string, unknown>[])
+      }
 
       setRestoreMsg(
         `✅ 復元しました。問題${snapshot.questions.length}件 / 履歴${snapshot.quizSessions.length}件 / 解答ログ${snapshot.answerLogs.length}件`
         + (snapshot.hasChatGuardLogs ? ` / チャット警告${snapshot.chatGuardLogs.length}件` : '')
+        + (snapshot.hasEngagementTables ? ` / デイリー${snapshot.dailyChallenges.length}件 / バッジ${snapshot.studentBadges.length}件 / タイムアタック${snapshot.timeAttackRecords.length}件` : '')
         + ' を反映しました。'
         + (snapshot.defaultPasswordCount > 0
           ? ` 旧形式JSONだったため、生徒${snapshot.defaultPasswordCount}件のパスワードは既定値で補完しました。`

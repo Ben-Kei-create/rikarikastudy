@@ -1,5 +1,7 @@
 'use client'
 
+import { SessionMode } from '@/lib/engagement'
+
 export const GUEST_STUDENT_ID = 100
 export const GUEST_STUDENT = {
   id: GUEST_STUDENT_ID,
@@ -7,7 +9,7 @@ export const GUEST_STUDENT = {
   password: '',
 }
 
-const GUEST_STUDY_STORAGE_KEY = 'rika_guest_daily_study_v1'
+const GUEST_STUDY_STORAGE_KEY = 'rika_guest_daily_study_v2'
 
 export interface GuestStudySession {
   id: string
@@ -17,6 +19,8 @@ export interface GuestStudySession {
   total_questions: number
   correct_count: number
   duration_seconds: number
+  xp_earned: number
+  session_mode: SessionMode
   created_at: string
 }
 
@@ -30,10 +34,25 @@ export interface GuestStudyAnswerLog {
   created_at: string
 }
 
-interface GuestStudyStore {
+export interface GuestBadgeRecord {
+  badge_key: string
+  earned_at: string
+}
+
+interface GuestDailyChallengeState {
+  date: string | null
+  session_id: string | null
+  completed_at: string | null
+}
+
+export interface GuestStudyStore {
   dayKey: string
+  xp: number
   sessions: GuestStudySession[]
   answerLogs: GuestStudyAnswerLog[]
+  badges: GuestBadgeRecord[]
+  dailyChallenge: GuestDailyChallengeState
+  timeAttackBest: number
 }
 
 interface SaveGuestQuizSessionInput {
@@ -42,6 +61,8 @@ interface SaveGuestQuizSessionInput {
   totalQuestions: number
   correctCount: number
   durationSeconds: number
+  xpEarned?: number
+  sessionMode?: SessionMode
   answerLogs?: Array<{
     qId: string
     correct: boolean
@@ -60,9 +81,33 @@ function getTodayKey() {
 function createEmptyStore(): GuestStudyStore {
   return {
     dayKey: getTodayKey(),
+    xp: 0,
     sessions: [],
     answerLogs: [],
+    badges: [],
+    dailyChallenge: {
+      date: null,
+      session_id: null,
+      completed_at: null,
+    },
+    timeAttackBest: 0,
   }
+}
+
+function sanitizeBadgeRecords(input: unknown) {
+  if (!Array.isArray(input)) return []
+
+  return input
+    .map(item => {
+      if (!item || typeof item !== 'object') return null
+      const row = item as Partial<GuestBadgeRecord>
+      if (typeof row.badge_key !== 'string' || !row.badge_key) return null
+      return {
+        badge_key: row.badge_key,
+        earned_at: typeof row.earned_at === 'string' ? row.earned_at : new Date().toISOString(),
+      }
+    })
+    .filter((item): item is GuestBadgeRecord => item !== null)
 }
 
 function sanitizeStore(input: unknown): GuestStudyStore {
@@ -79,12 +124,26 @@ function sanitizeStore(input: unknown): GuestStudyStore {
 
   return {
     dayKey: todayKey,
+    xp: typeof candidate.xp === 'number' ? Math.max(0, candidate.xp) : 0,
     sessions: Array.isArray(candidate.sessions)
       ? candidate.sessions.filter(session => session && typeof session === 'object') as GuestStudySession[]
       : [],
     answerLogs: Array.isArray(candidate.answerLogs)
       ? candidate.answerLogs.filter(log => log && typeof log === 'object') as GuestStudyAnswerLog[]
       : [],
+    badges: sanitizeBadgeRecords(candidate.badges),
+    dailyChallenge: candidate.dailyChallenge && typeof candidate.dailyChallenge === 'object'
+      ? {
+          date: typeof candidate.dailyChallenge.date === 'string' ? candidate.dailyChallenge.date : null,
+          session_id: typeof candidate.dailyChallenge.session_id === 'string' ? candidate.dailyChallenge.session_id : null,
+          completed_at: typeof candidate.dailyChallenge.completed_at === 'string' ? candidate.dailyChallenge.completed_at : null,
+        }
+      : {
+          date: null,
+          session_id: null,
+          completed_at: null,
+        },
+    timeAttackBest: typeof candidate.timeAttackBest === 'number' ? Math.max(0, candidate.timeAttackBest) : 0,
   }
 }
 
@@ -121,37 +180,105 @@ export function loadGuestStudyStore() {
   return store
 }
 
+export function updateGuestStudyStore(updater: (store: GuestStudyStore) => GuestStudyStore) {
+  const current = readStore()
+  const next = sanitizeStore(updater(current))
+  writeStore(next)
+  return next
+}
+
 export function saveGuestQuizSession(input: SaveGuestQuizSessionInput) {
-  const store = readStore()
+  const createdAt = new Date().toISOString()
+  const sessionId = createId('guest-session')
+
+  const nextStore = updateGuestStudyStore(store => {
+    const nextSession: GuestStudySession = {
+      id: sessionId,
+      student_id: GUEST_STUDENT_ID,
+      field: input.field,
+      unit: input.unit,
+      total_questions: input.totalQuestions,
+      correct_count: input.correctCount,
+      duration_seconds: input.durationSeconds,
+      xp_earned: input.xpEarned ?? 0,
+      session_mode: input.sessionMode ?? 'standard',
+      created_at: createdAt,
+    }
+
+    const nextAnswerLogs = (input.answerLogs ?? []).map(answerLog => ({
+      id: createId('guest-answer'),
+      question_id: answerLog.qId,
+      field: input.field,
+      unit: input.unit,
+      is_correct: answerLog.correct,
+      student_answer: answerLog.answer,
+      created_at: createdAt,
+    }))
+
+    return {
+      ...store,
+      xp: store.xp + (input.xpEarned ?? 0),
+      sessions: [nextSession, ...store.sessions],
+      answerLogs: [...nextAnswerLogs, ...store.answerLogs],
+    }
+  })
+
+  return {
+    store: nextStore,
+    sessionId,
+  }
+}
+
+export function saveGuestBadges(badgeKeys: string[]) {
   const createdAt = new Date().toISOString()
 
-  const nextSession: GuestStudySession = {
-    id: createId('guest-session'),
-    student_id: GUEST_STUDENT_ID,
-    field: input.field,
-    unit: input.unit,
-    total_questions: input.totalQuestions,
-    correct_count: input.correctCount,
-    duration_seconds: input.durationSeconds,
-    created_at: createdAt,
-  }
+  return updateGuestStudyStore(store => {
+    const currentKeys = new Set(store.badges.map(badge => badge.badge_key))
+    const nextBadges = [...store.badges]
 
-  const nextAnswerLogs = (input.answerLogs ?? []).map(answerLog => ({
-    id: createId('guest-answer'),
-    question_id: answerLog.qId,
-    field: input.field,
-    unit: input.unit,
-    is_correct: answerLog.correct,
-    student_answer: answerLog.answer,
-    created_at: createdAt,
-  }))
+    for (const badgeKey of badgeKeys) {
+      if (currentKeys.has(badgeKey)) continue
+      nextBadges.push({
+        badge_key: badgeKey,
+        earned_at: createdAt,
+      })
+      currentKeys.add(badgeKey)
+    }
 
-  const nextStore: GuestStudyStore = {
+    return {
+      ...store,
+      badges: nextBadges,
+    }
+  })
+}
+
+export function getGuestEarnedBadges() {
+  return loadGuestStudyStore().badges
+}
+
+export function hasGuestDailyChallengeCompleted() {
+  const store = loadGuestStudyStore()
+  return store.dailyChallenge.date === store.dayKey
+}
+
+export function markGuestDailyChallengeCompleted(sessionId: string) {
+  return updateGuestStudyStore(store => ({
     ...store,
-    sessions: [nextSession, ...store.sessions],
-    answerLogs: [...nextAnswerLogs, ...store.answerLogs],
-  }
+    dailyChallenge: {
+      date: store.dayKey,
+      session_id: sessionId,
+      completed_at: new Date().toISOString(),
+    },
+  }))
+}
 
-  writeStore(nextStore)
-  return nextStore
+export function getGuestTimeAttackBest() {
+  return loadGuestStudyStore().timeAttackBest
+}
+
+export function saveGuestTimeAttackBest(score: number) {
+  return updateGuestStudyStore(store => ({
+    ...store,
+    timeAttackBest: Math.max(store.timeAttackBest, Math.max(0, score)),
+  }))
 }

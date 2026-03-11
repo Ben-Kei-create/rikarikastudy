@@ -3,7 +3,11 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
-import { isGuestStudentId, saveGuestQuizSession } from '@/lib/guestStudy'
+import { getBadgeRarityLabel } from '@/lib/badges'
+import { getLevelInfo } from '@/lib/engagement'
+import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
+import { pickDailyChallengeQuestions, pickStandardQuizQuestions } from '@/lib/questionPicker'
+import { hasCompletedDailyChallenge, recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
@@ -12,10 +16,12 @@ import {
 } from '@/lib/schemaCompat'
 
 const FIELD_COLORS: Record<string, string> = {
-  '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
+  '生物': '#22c55e',
+  '化学': '#f97316',
+  '物理': '#3b82f6',
+  '地学': '#a855f7',
   'all': '#38bdf8',
 }
-const CORE_FIELDS = ['生物', '化学', '物理', '地学']
 const FAVORITE_STORAGE_KEY = 'rika_favorite_questions_v1'
 
 function readFavoriteQuestionIds(studentId: number | null) {
@@ -42,33 +48,6 @@ function writeFavoriteQuestionIds(studentId: number | null, ids: Set<string>) {
   } catch {}
 }
 
-function pickQuizQuestions(pool: Question[], field: string) {
-  const shuffled = [...pool].sort(() => Math.random() - 0.5)
-
-  if (field !== 'all') {
-    return shuffled.slice(0, 10)
-  }
-
-  const picked: Question[] = []
-  const usedIds = new Set<string>()
-
-  for (const currentField of CORE_FIELDS) {
-    const candidate = shuffled.find(question => question.field === currentField && !usedIds.has(question.id))
-    if (!candidate) continue
-    picked.push(candidate)
-    usedIds.add(candidate.id)
-  }
-
-  for (const question of shuffled) {
-    if (usedIds.has(question.id)) continue
-    picked.push(question)
-    usedIds.add(question.id)
-    if (picked.length >= 10) break
-  }
-
-  return picked.slice(0, 10)
-}
-
 interface Question {
   id: string
   field: string
@@ -84,17 +63,59 @@ interface Question {
 
 type Phase = 'answering' | 'result' | 'finished'
 
+function getSessionFieldLabel(field: string, quickStartAll: boolean, dailyChallenge: boolean) {
+  if (dailyChallenge || quickStartAll) return '4分野総合'
+  return field
+}
+
+function getSessionUnitLabel(unit: string, quickStartAll: boolean, dailyChallenge: boolean) {
+  if (dailyChallenge) return '今日のチャレンジ'
+  if (quickStartAll) return 'クイックスタート'
+  return unit === 'all' ? '全単元' : unit
+}
+
+function buildSessionMode({
+  isDrill,
+  quickStartAll,
+  dailyChallenge,
+}: {
+  isDrill: boolean
+  quickStartAll: boolean
+  dailyChallenge: boolean
+}) {
+  if (dailyChallenge) return 'daily_challenge'
+  if (quickStartAll) return 'mixed_quick_start'
+  if (isDrill) return 'drill'
+  return 'standard'
+}
+
+function buildFinishMessage(rate: number, dailyChallenge: boolean) {
+  if (dailyChallenge) {
+    if (rate === 100) return '今日のチャレンジを完全制覇しました。'
+    if (rate >= 80) return '今日のチャレンジをしっかりクリアできています。'
+    if (rate >= 60) return 'あと少しで今日のチャレンジを攻略できます。'
+    return '明日また再挑戦して、少しずつ積み上げていきましょう。'
+  }
+
+  if (rate >= 90) return '🎉 すごい！完璧に近い！'
+  if (rate >= 70) return '👍 よくできました！'
+  if (rate >= 50) return '😊 もう少しがんばろう！'
+  return '💪 復習してみよう！'
+}
+
 export default function QuizPage({
   field,
   unit,
   isDrill = false,
   quickStartAll = false,
+  dailyChallenge = false,
   onBack,
 }: {
   field: string
   unit: string
   isDrill?: boolean
   quickStartAll?: boolean
+  dailyChallenge?: boolean
   onBack: () => void
 }) {
   const { studentId, logout } = useAuth()
@@ -109,11 +130,15 @@ export default function QuizPage({
   const [answerResult, setAnswerResult] = useState<TextAnswerResult | null>(null)
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [dailyLocked, setDailyLocked] = useState(false)
   const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string; result: TextAnswerResult }[]>([])
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
+  const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
   const startedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
+    let active = true
+
     const load = async () => {
       setLoading(true)
       setQuestions([])
@@ -124,29 +149,40 @@ export default function QuizPage({
       setAnswerResult(null)
       setScore(0)
       setAnswerLogs([])
+      setRewardSummary(null)
+      setDailyLocked(false)
       startedAtRef.current = null
 
+      if (dailyChallenge) {
+        const completed = await hasCompletedDailyChallenge(studentId)
+        if (!active) return
+        if (completed) {
+          setDailyLocked(true)
+          setLoading(false)
+          return
+        }
+      }
+
       let query = supabase.from('questions').select('*')
-      if (field !== 'all') query = query.eq('field', field)
-      if (unit !== 'all') query = query.eq('unit', unit)
+      if (!dailyChallenge && field !== 'all') query = query.eq('field', field)
+      if (!dailyChallenge && unit !== 'all') query = query.eq('unit', unit)
       const supportsStudentQuestionFilter = getCachedColumnSupport('created_by_student_id') !== false
 
       if (supportsStudentQuestionFilter) {
         query = query.or(
           studentId
             ? `created_by_student_id.is.null,created_by_student_id.eq.${studentId}`
-            : 'created_by_student_id.is.null'
+            : 'created_by_student_id.is.null',
         )
       }
 
       let { data, error } = await query
 
-      // Backward compatibility for deployments where created_by_student_id is not migrated yet.
       if (error && isMissingColumnError(error, 'created_by_student_id')) {
         markColumnMissing('created_by_student_id')
         let fallbackQuery = supabase.from('questions').select('*')
-        if (field !== 'all') fallbackQuery = fallbackQuery.eq('field', field)
-        if (unit !== 'all') fallbackQuery = fallbackQuery.eq('unit', unit)
+        if (!dailyChallenge && field !== 'all') fallbackQuery = fallbackQuery.eq('field', field)
+        if (!dailyChallenge && unit !== 'all') fallbackQuery = fallbackQuery.eq('unit', unit)
         const fallbackResponse = await fallbackQuery
         data = fallbackResponse.data
         error = fallbackResponse.error
@@ -156,49 +192,81 @@ export default function QuizPage({
 
       if (error) {
         console.error('[quiz] failed to load questions', error)
-        setLoading(false)
+        if (active) setLoading(false)
         return
       }
 
-      if (data && data.length > 0) {
-        setQuestions(pickQuizQuestions(data as Question[], field))
-        startedAtRef.current = Date.now()
+      const pool = (data || []) as Question[]
+      if (pool.length === 0) {
+        if (active) setLoading(false)
+        return
       }
-      setLoading(false)
+
+      if (dailyChallenge) {
+        const history = isGuest
+          ? loadGuestStudyStore().answerLogs.map(log => ({
+              question_id: log.question_id,
+              is_correct: log.is_correct,
+            }))
+          : await (async () => {
+              if (!studentId) return []
+              const { data: logs } = await supabase
+                .from('answer_logs')
+                .select('question_id, is_correct')
+                .eq('student_id', studentId)
+              return (logs || []).map(log => ({
+                question_id: log.question_id,
+                is_correct: log.is_correct,
+              }))
+            })()
+
+        if (!active) return
+        setQuestions(pickDailyChallengeQuestions(pool, history, 5))
+      } else {
+        setQuestions(pickStandardQuizQuestions(pool, field))
+      }
+
+      startedAtRef.current = Date.now()
+      if (active) setLoading(false)
     }
-    load()
-  }, [field, unit, studentId])
+
+    void load()
+    return () => {
+      active = false
+    }
+  }, [dailyChallenge, field, isGuest, studentId, unit])
 
   useEffect(() => {
     setFavoriteIds(readFavoriteQuestionIds(studentId))
   }, [studentId])
 
   const q = questions[current]
-  const progress = questions.length > 0 ? ((current) / questions.length) * 100 : 0
+  const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
   const isFavorite = !!q && favoriteIds.has(q.id)
 
   const handleChoice = (choice: string) => {
-    if (phase !== 'answering') return
+    if (phase !== 'answering' || !q) return
     const result: TextAnswerResult = choice === q.answer ? 'exact' : 'incorrect'
     setSelected(choice)
     setAnswerResult(result)
-    if (result === 'exact') setScore(s => s + 1)
+    if (result === 'exact') setScore(currentScore => currentScore + 1)
     setAnswerLogs(logs => [...logs, { qId: q.id, correct: result === 'exact', answer: choice, result }])
     setPhase('result')
   }
 
   const handleTextSubmit = () => {
+    if (!q) return
     const answer = textInput.trim()
     if (!answer) return
     const result = evaluateTextAnswer(answer, q.answer, q.accept_answers, q.keywords)
     setAnswerResult(result)
-    if (result === 'exact') setScore(s => s + 1)
+    if (result === 'exact') setScore(currentScore => currentScore + 1)
     setAnswerLogs(logs => [...logs, { qId: q.id, correct: result === 'exact', answer, result }])
     setPhase('result')
   }
 
   const handleDontKnow = () => {
-    if (phase !== 'answering' || q.type !== 'text') return
+    if (phase !== 'answering' || !q || q.type !== 'text') return
     setTextInput('わからない')
     setAnswerResult('incorrect')
     setAnswerLogs(logs => [...logs, { qId: q.id, correct: false, answer: 'わからない', result: 'incorrect' }])
@@ -208,8 +276,8 @@ export default function QuizPage({
   const handleToggleFavorite = () => {
     if (!q || !studentId) return
 
-    setFavoriteIds(current => {
-      const next = new Set(current)
+    setFavoriteIds(currentIds => {
+      const next = new Set(currentIds)
       if (next.has(q.id)) next.delete(q.id)
       else next.add(q.id)
       writeFavoriteQuestionIds(studentId, next)
@@ -218,87 +286,72 @@ export default function QuizPage({
   }
 
   const handleNext = async () => {
+    if (!q) return
+
     if (current + 1 >= questions.length) {
       const durationSeconds = startedAtRef.current
         ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
         : 0
 
-      if (isGuest) {
-        saveGuestQuizSession({
-          field: quickStartAll ? '4分野総合' : field,
-          unit: quickStartAll ? 'クイックスタート' : unit === 'all' ? '全単元' : unit,
-          totalQuestions: questions.length,
-          correctCount: score,
-          durationSeconds,
-          answerLogs,
-        })
-        setPhase('finished')
-        return
-      }
+      const reward = await recordStudySession({
+        studentId,
+        field: getSessionFieldLabel(field, quickStartAll, dailyChallenge),
+        unit: getSessionUnitLabel(unit, quickStartAll, dailyChallenge),
+        totalQuestions: questions.length,
+        correctCount: score,
+        durationSeconds,
+        answerLogs,
+        sessionMode: buildSessionMode({ isDrill, quickStartAll, dailyChallenge }),
+        xpMultiplier: dailyChallenge ? 2 : 1,
+      })
 
-      // セッション保存
-      let sessionResponse = await supabase
-        .from('quiz_sessions')
-        .insert({
-          student_id: studentId!,
-          field: quickStartAll ? '4分野総合' : field,
-          unit: quickStartAll ? 'クイックスタート' : unit === 'all' ? '全単元' : unit,
-          total_questions: questions.length,
-          correct_count: score,
-          duration_seconds: durationSeconds,
-        })
-        .select()
-        .single()
-
-      if (sessionResponse.error && isMissingColumnError(sessionResponse.error, 'duration_seconds')) {
-        markColumnMissing('duration_seconds')
-        sessionResponse = await supabase
-          .from('quiz_sessions')
-          .insert({
-            student_id: studentId!,
-            field: quickStartAll ? '4分野総合' : field,
-            unit: quickStartAll ? 'クイックスタート' : unit === 'all' ? '全単元' : unit,
-            total_questions: questions.length,
-            correct_count: score,
-          })
-          .select()
-          .single()
-      } else if (!sessionResponse.error) {
-        markColumnSupported('duration_seconds')
-      }
-
-      const sessionData = sessionResponse.data
-
-      if (sessionResponse.error) {
-        console.error('[quiz] failed to save session', sessionResponse.error)
-      }
-
-      if (sessionData) {
-        const sid = sessionData.id
-        // 回答ログ保存
-        const logs = answerLogs.map(l => ({
-          session_id: sid,
-          student_id: studentId!,
-          question_id: l.qId,
-          is_correct: l.correct,
-          student_answer: l.answer,
-        }))
-        await supabase.from('answer_logs').insert(logs)
-      }
+      setRewardSummary(reward)
       setPhase('finished')
-    } else {
-      setCurrent(c => c + 1)
-      setPhase('answering')
-      setSelected(null)
-      setTextInput('')
-      setAnswerResult(null)
+      return
     }
+
+    setCurrent(currentIndex => currentIndex + 1)
+    setPhase('answering')
+    setSelected(null)
+    setTextInput('')
+    setAnswerResult(null)
+  }
+
+  const restart = () => {
+    startedAtRef.current = Date.now()
+    setCurrent(0)
+    setPhase('answering')
+    setScore(0)
+    setSelected(null)
+    setTextInput('')
+    setAnswerResult(null)
+    setAnswerLogs([])
+    setRewardSummary(null)
   }
 
   if (loading) {
     return (
       <div className="page-shell flex items-center justify-center">
         <div className="card text-slate-400">問題を読み込み中...</div>
+      </div>
+    )
+  }
+
+  if (dailyLocked) {
+    return (
+      <div className="page-shell flex items-center justify-center">
+        <div className="card w-full max-w-xl text-center">
+          <div className="text-5xl mb-4">✅</div>
+          <div className="font-display text-3xl text-white">今日のチャレンジ完了済み</div>
+          <p className="mt-3 text-sm leading-7 text-slate-300">
+            今日はもうクリア済みです。明日になるとまた挑戦できます。
+          </p>
+          <div className="mt-6 flex justify-center">
+            <button onClick={onBack} className="btn-primary">
+              ホームへ
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
@@ -310,10 +363,7 @@ export default function QuizPage({
           <p className="text-slate-400 mb-4">問題がまだ登録されていません。</p>
           <div className="flex gap-3 justify-center">
             <button onClick={onBack} className="btn-secondary">もどる</button>
-            <button
-              onClick={() => logout()}
-              className="btn-ghost"
-            >
+            <button onClick={() => logout()} className="btn-ghost">
               ログアウト
             </button>
           </div>
@@ -322,59 +372,149 @@ export default function QuizPage({
     )
   }
 
-  // 終了画面
   if (phase === 'finished') {
     const rate = Math.round((score / questions.length) * 100)
-    const msg = rate >= 90 ? '🎉 すごい！完璧に近い！' : rate >= 70 ? '👍 よくできました！' : rate >= 50 ? '😊 もう少しがんばろう！' : '💪 復習してみよう！'
-    const backLabel = isDrill ? 'マイページへ' : quickStartAll ? 'ホームへ' : '分野選択へ'
+    const backLabel = isDrill ? 'マイページへ' : quickStartAll || dailyChallenge ? 'ホームへ' : '分野選択へ'
+    const message = buildFinishMessage(rate, dailyChallenge)
+    const levelInfo = rewardSummary ? getLevelInfo(rewardSummary.totalXp) : null
+
     return (
       <div className="page-shell flex flex-col items-center justify-center anim-fade">
-        <div className="hero-card w-full max-w-2xl text-center p-6 sm:p-7">
-          <div className="text-5xl mb-4">{rate >= 70 ? '🏆' : '📚'}</div>
+        <div className={`hero-card reward-card w-full max-w-3xl p-6 text-center sm:p-7 ${rewardSummary?.leveledUp ? 'is-level-up' : ''}`}>
+          {rewardSummary?.leveledUp && (
+            <div className="reward-confetti" aria-hidden="true">
+              {Array.from({ length: 18 }).map((_, index) => (
+                <span
+                  key={`confetti-${index}`}
+                  className="reward-confetti__piece"
+                  style={{
+                    left: `${6 + ((index * 11) % 88)}%`,
+                    animationDelay: `${(index % 6) * 0.08}s`,
+                    background: index % 3 === 0 ? '#38bdf8' : index % 3 === 1 ? '#f59e0b' : '#22c55e',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="text-5xl mb-4">{dailyChallenge ? '☀️' : rate >= 70 ? '🏆' : '📚'}</div>
           <div className="font-display text-4xl mb-2" style={{ color }}>
             {score} / {questions.length}
           </div>
-          <div className="text-2xl font-bold mb-1" style={{
-            color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444'
-          }}>{rate}%</div>
-          <p className="text-slate-300 mb-6">{msg}</p>
+          <div
+            className="text-2xl font-bold mb-1"
+            style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}
+          >
+            {rate}%
+          </div>
+          <p className="text-slate-300 mb-5">{message}</p>
 
-          {/* 分布 */}
-          <div className="flex gap-2 justify-center mb-8">
-            {questions.map((_, i) => (
-              <div key={i} style={{
-                width: 12, height: 12, borderRadius: '50%',
-                background: answerLogs[i]?.result === 'exact' ? '#22c55e' : answerLogs[i]?.result === 'keyword' ? '#f59e0b' : '#ef4444',
-              }} />
+          <div className="flex gap-2 justify-center mb-6">
+            {questions.map((_, index) => (
+              <div
+                key={`result-${index}`}
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  background:
+                    answerLogs[index]?.result === 'exact'
+                      ? '#22c55e'
+                      : answerLogs[index]?.result === 'keyword'
+                        ? '#f59e0b'
+                        : '#ef4444',
+                }}
+              />
             ))}
           </div>
-          {answerLogs.some(log => log.result === 'keyword') && (
-            <p className="text-xs text-slate-500 mb-8">▲ はキーワード一致で、スコアには加算していません。</p>
+
+          {rewardSummary && (
+            <div className="grid gap-4 sm:grid-cols-2 mb-6">
+              <div className="subcard p-4 text-left">
+                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">獲得XP</div>
+                <div className="mt-2 font-display text-3xl text-sky-300">+{rewardSummary.xpEarned}</div>
+                <div className="mt-2 text-xs text-slate-500">
+                  {dailyChallenge ? '今日のチャレンジ 2x ボーナス適用' : '今回の学習で加算'}
+                </div>
+              </div>
+              {levelInfo && (
+                <div className="subcard p-4 text-left">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">現在レベル</div>
+                      <div className="mt-2 font-display text-2xl text-white">Lv.{levelInfo.level}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-sky-200">{levelInfo.title}</div>
+                      <div className="text-xs text-slate-500">{levelInfo.totalXp} XP</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 soft-track" style={{ height: 8 }}>
+                    <div
+                      style={{
+                        width: `${levelInfo.progressRate}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                        borderRadius: 999,
+                      }}
+                    />
+                  </div>
+                  <div className="mt-2 text-xs text-slate-500">
+                    次のレベルまで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <button
-              onClick={() => {
-                startedAtRef.current = Date.now()
-                setCurrent(0)
-                setPhase('answering')
-                setScore(0)
-                setSelected(null)
-                setTextInput('')
-                setAnswerResult(null)
-                setAnswerLogs([])
-              }}
-              className="btn-secondary !px-0 !py-3"
-            >
-              もう一度
-            </button>
+          {rewardSummary?.leveledUp && levelInfo && (
+            <div className="reward-banner mb-5">
+              <div className="text-xs font-semibold tracking-[0.22em] text-sky-200">LEVEL UP</div>
+              <div className="mt-1 font-display text-3xl text-white">Lv.{levelInfo.level}</div>
+              <div className="mt-1 text-sm text-sky-100">{levelInfo.title}</div>
+            </div>
+          )}
+
+          {rewardSummary && rewardSummary.newBadges.length > 0 && (
+            <div className="mb-6 text-left">
+              <div className="text-sm font-semibold text-white mb-3">新しいバッジ</div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {rewardSummary.newBadges.map((badge, index) => (
+                  <div
+                    key={badge.key}
+                    className={`badge-toast badge-toast--${badge.rarity}`}
+                    style={{ animationDelay: `${index * 0.08}s` }}
+                  >
+                    <div className="text-2xl">{badge.iconEmoji}</div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="font-semibold text-white">{badge.name}</div>
+                        <span className="text-[10px] tracking-[0.18em] text-slate-400">
+                          {getBadgeRarityLabel(badge.rarity)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-300 mt-1">{badge.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {answerLogs.some(log => log.result === 'keyword') && (
+            <p className="text-xs text-slate-500 mb-6">▲ はキーワード一致で、スコアには加算していません。</p>
+          )}
+
+          <div className={`grid gap-3 ${dailyChallenge ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+            {!dailyChallenge && (
+              <button onClick={restart} className="btn-secondary !px-0 !py-3">
+                もう一度
+              </button>
+            )}
             <button onClick={onBack} className="btn-primary py-3">
               {backLabel}
             </button>
-            <button
-              onClick={() => logout()}
-              className="btn-ghost !px-0 !py-3"
-            >
+            <button onClick={() => logout()} className="btn-ghost !px-0 !py-3">
               ログアウト
             </button>
           </div>
@@ -383,7 +523,6 @@ export default function QuizPage({
     )
   }
 
-  // クイズ画面
   return (
     <div className="page-shell">
       <div className="card mb-4 anim-fade-up">
@@ -392,43 +531,44 @@ export default function QuizPage({
             <button onClick={onBack} className="btn-secondary text-sm !px-4 !py-2.5">
               やめる
             </button>
-            <button
-              onClick={() => logout()}
-              className="btn-ghost text-sm !px-4 !py-2.5 sm:hidden"
-            >
+            <button onClick={() => logout()} className="btn-ghost text-sm !px-4 !py-2.5 sm:hidden">
               ログアウト
             </button>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex justify-between text-xs text-slate-400 mb-2">
               <span>
-                {isDrill
-                  ? `復習: ${field} / ${unit}`
-                  : quickStartAll
-                    ? '4分野総合クイックスタート'
-                    : unit === 'all'
-                      ? '全単元'
-                      : unit}
+                {dailyChallenge
+                  ? '今日のチャレンジ'
+                  : isDrill
+                    ? `復習: ${field} / ${unit}`
+                    : quickStartAll
+                      ? '4分野総合クイックスタート'
+                      : unit === 'all'
+                        ? '全単元'
+                        : unit}
               </span>
               <span>{current + 1} / {questions.length}</span>
             </div>
             <div className="soft-track" style={{ height: 8 }}>
-              <div style={{
-                width: `${progress}%`, height: '100%',
-                background: `linear-gradient(90deg, ${color}, ${color}80)`,
-                borderRadius: 999,
-                transition: 'width 0.4s ease',
-              }} />
+              <div
+                style={{
+                  width: `${progress}%`,
+                  height: '100%',
+                  background: dailyChallenge
+                    ? 'linear-gradient(90deg, #f59e0b, #f97316)'
+                    : `linear-gradient(90deg, ${color}, ${color}80)`,
+                  borderRadius: 999,
+                  transition: 'width 0.4s ease',
+                }}
+              />
             </div>
           </div>
           <div className="flex items-center justify-between gap-3 sm:justify-end">
-            <div className="text-sm font-semibold" style={{ color }}>
+            <div className="text-sm font-semibold" style={{ color: dailyChallenge ? '#f59e0b' : color }}>
               {score}正解
             </div>
-            <button
-              onClick={() => logout()}
-              className="btn-ghost hidden text-sm !px-4 !py-2.5 sm:inline-flex"
-            >
+            <button onClick={() => logout()} className="btn-ghost hidden text-sm !px-4 !py-2.5 sm:inline-flex">
               ログアウト
             </button>
           </div>
@@ -438,11 +578,12 @@ export default function QuizPage({
       <div key={current} className="card anim-fade-up mb-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex flex-wrap items-center gap-2">
-            {isDrill ? (
-              <span
-                className="px-2 py-0.5 rounded-full text-xs font-bold"
-                style={{ background: '#f59e0b20', color: '#fbbf24' }}
-              >
+            {dailyChallenge ? (
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f59e0b20', color: '#fbbf24' }}>
+                今日のチャレンジ
+              </span>
+            ) : isDrill ? (
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f59e0b20', color: '#fbbf24' }}>
                 復習モード
               </span>
             ) : (
@@ -472,26 +613,35 @@ export default function QuizPage({
         <p className="text-lg font-bold leading-relaxed sm:text-[1.35rem]" style={{ color: 'var(--text)' }}>{q.question}</p>
       </div>
 
-      {/* 選択肢 / 記述 */}
       {q.type === 'choice' ? (
         <div className="grid gap-3 md:grid-cols-2">
-          {q.choices?.map((c, i) => {
+          {q.choices?.map((choice, index) => {
             let bg = 'var(--surface-elevated)'
             let border = '1px solid var(--surface-elevated-border)'
             let textColor = 'var(--text)'
+
             if (phase === 'result') {
-              if (c === q.answer) { bg = '#14532d'; border = '2px solid #22c55e'; textColor = '#86efac' }
-              else if (c === selected && answerResult === 'incorrect') { bg = '#450a0a'; border = '2px solid #ef4444'; textColor = '#fca5a5' }
+              if (choice === q.answer) {
+                bg = '#14532d'
+                border = '2px solid #22c55e'
+                textColor = '#86efac'
+              } else if (choice === selected && answerResult === 'incorrect') {
+                bg = '#450a0a'
+                border = '2px solid #ef4444'
+                textColor = '#fca5a5'
+              }
             }
+
             return (
               <button
-                key={i}
-                onClick={() => handleChoice(c)}
+                key={choice}
+                onClick={() => handleChoice(choice)}
                 disabled={phase === 'result'}
-                className="min-h-[92px] p-4 rounded-xl text-left font-bold transition-all anim-fade-up"
-                style={{ animationDelay: `${i * 0.06}s`, background: bg, border, color: textColor }}
+                className="min-h-[92px] rounded-xl p-4 text-left font-bold transition-all anim-fade-up"
+                style={{ animationDelay: `${index * 0.06}s`, background: bg, border, color: textColor }}
               >
-                <span className="mr-3 opacity-50">{'ABCD'[i] ?? `${i + 1}` }.</span>{c}
+                <span className="mr-3 opacity-50">{'ABCD'[index] ?? `${index + 1}` }.</span>
+                {choice}
               </button>
             )
           })}
@@ -500,15 +650,16 @@ export default function QuizPage({
         <div className="anim-fade-up">
           <textarea
             value={textInput}
-            onChange={e => setTextInput(e.target.value)}
+            onChange={event => setTextInput(event.target.value)}
             disabled={phase === 'result'}
             placeholder="ここに答えを書いてください"
             rows={3}
             className="input-surface resize-none mb-3"
             style={{
-              border: phase === 'result'
-                ? `2px solid ${answerResult === 'exact' ? '#22c55e' : answerResult === 'keyword' ? '#f59e0b' : '#ef4444'}`
-                : undefined,
+              border:
+                phase === 'result'
+                  ? `2px solid ${answerResult === 'exact' ? '#22c55e' : answerResult === 'keyword' ? '#f59e0b' : '#ef4444'}`
+                  : undefined,
               fontSize: '1rem',
             }}
           />
@@ -525,7 +676,6 @@ export default function QuizPage({
         </div>
       )}
 
-      {/* 解説 */}
       {phase === 'result' && (
         (() => {
           const currentResult = answerResult ?? 'incorrect'
@@ -542,7 +692,7 @@ export default function QuizPage({
               : '❌ 不正解'
 
           return (
-            <div className={`card mt-4 anim-pop`} style={{ borderColor: `${accent}50`, background }}>
+            <div className="card mt-4 anim-pop" style={{ borderColor: `${accent}50`, background }}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-bold text-lg" style={{ color: accent }}>
                   {title}

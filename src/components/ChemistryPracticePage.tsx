@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { getBadgeRarityLabel } from '@/lib/badges'
+import { getLevelInfo } from '@/lib/engagement'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import {
   CHEMISTRY_MODE_META,
@@ -10,12 +11,7 @@ import {
   ChemistryTemplatePart,
   getChemistryPracticeDeck,
 } from '@/lib/chemistryPractice'
-import {
-  isMissingColumnError,
-  markColumnMissing,
-  markColumnSupported,
-} from '@/lib/schemaCompat'
-import { isGuestStudentId, saveGuestQuizSession } from '@/lib/guestStudy'
+import { recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
 
 type Phase = 'answering' | 'result' | 'finished'
 
@@ -60,7 +56,6 @@ export default function ChemistryPracticePage({
 }) {
   const { studentId, logout } = useAuth()
   const meta = CHEMISTRY_MODE_META[mode]
-  const isGuest = isGuestStudentId(studentId)
 
   const [questions, setQuestions] = useState<ChemistryPracticeQuestion[]>([])
   const [current, setCurrent] = useState(0)
@@ -70,6 +65,7 @@ export default function ChemistryPracticePage({
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(true)
   const [resultHistory, setResultHistory] = useState<boolean[]>([])
+  const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
   const startedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -81,6 +77,7 @@ export default function ChemistryPracticePage({
     setIsCorrect(null)
     setScore(0)
     setResultHistory([])
+    setRewardSummary(null)
     startedAtRef.current = Date.now()
     setLoading(false)
   }, [mode])
@@ -96,46 +93,17 @@ export default function ChemistryPracticePage({
       ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
       : 0
 
-    if (isGuest) {
-      saveGuestQuizSession({
-        field: '化学',
-        unit: meta.sessionUnit,
-        totalQuestions: questions.length,
-        correctCount: score,
-        durationSeconds,
-      })
-      return
-    }
+    const reward = await recordStudySession({
+      studentId,
+      field: '化学',
+      unit: meta.sessionUnit,
+      totalQuestions: questions.length,
+      correctCount: score,
+      durationSeconds,
+      sessionMode: mode === 'flash' ? 'chemistry_flash' : 'chemistry_reaction',
+    })
 
-    let sessionResponse = await supabase
-      .from('quiz_sessions')
-      .insert({
-        student_id: studentId,
-        field: '化学',
-        unit: meta.sessionUnit,
-        total_questions: questions.length,
-        correct_count: score,
-        duration_seconds: durationSeconds,
-      })
-      .select()
-      .single()
-
-    if (sessionResponse.error && isMissingColumnError(sessionResponse.error, 'duration_seconds')) {
-      markColumnMissing('duration_seconds')
-      sessionResponse = await supabase
-        .from('quiz_sessions')
-        .insert({
-          student_id: studentId,
-          field: '化学',
-          unit: meta.sessionUnit,
-          total_questions: questions.length,
-          correct_count: score,
-        })
-        .select()
-        .single()
-    } else if (!sessionResponse.error) {
-      markColumnSupported('duration_seconds')
-    }
+    setRewardSummary(reward)
   }
 
   const handlePickToken = (token: string) => {
@@ -179,6 +147,7 @@ export default function ChemistryPracticePage({
     setIsCorrect(null)
     setScore(0)
     setResultHistory([])
+    setRewardSummary(null)
     setPhase('answering')
     startedAtRef.current = Date.now()
   }
@@ -193,6 +162,7 @@ export default function ChemistryPracticePage({
 
   if (phase === 'finished') {
     const rate = Math.round((score / questions.length) * 100)
+    const levelInfo = rewardSummary ? getLevelInfo(rewardSummary.totalXp) : null
     const message = rate >= 90
       ? '語群の使い方までかなり安定しています。'
       : rate >= 70
@@ -203,7 +173,7 @@ export default function ChemistryPracticePage({
 
     return (
       <div className="page-shell page-shell-dashboard flex items-center justify-center">
-        <div className="hero-card w-full max-w-3xl px-6 py-7 text-center sm:px-8">
+        <div className={`hero-card reward-card w-full max-w-3xl px-6 py-7 text-center sm:px-8 ${rewardSummary?.leveledUp ? 'is-level-up' : ''}`}>
           <div className="text-5xl">{meta.icon}</div>
           <div className="mt-4 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: meta.accent }}>
             {meta.badge}
@@ -225,6 +195,61 @@ export default function ChemistryPracticePage({
               />
             ))}
           </div>
+
+          {rewardSummary && (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="subcard p-4 text-left">
+                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">獲得XP</div>
+                <div className="mt-2 font-display text-3xl text-sky-300">+{rewardSummary.xpEarned}</div>
+                <div className="mt-1 text-xs text-slate-500">化学モードの学習結果</div>
+              </div>
+              {levelInfo && (
+                <div className="subcard p-4 text-left">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">現在レベル</div>
+                      <div className="mt-2 font-display text-2xl text-white">Lv.{levelInfo.level}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-sky-200">{levelInfo.title}</div>
+                      <div className="text-xs text-slate-500">{levelInfo.totalXp} XP</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 soft-track" style={{ height: 8 }}>
+                    <div
+                      style={{
+                        width: `${levelInfo.progressRate}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                        borderRadius: 999,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {rewardSummary?.newBadges.length ? (
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 text-left">
+              {rewardSummary.newBadges.map((badge, index) => (
+                <div
+                  key={badge.key}
+                  className={`badge-toast badge-toast--${badge.rarity}`}
+                  style={{ animationDelay: `${index * 0.08}s` }}
+                >
+                  <div className="text-2xl">{badge.iconEmoji}</div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-white">{badge.name}</span>
+                      <span className="text-[10px] tracking-[0.18em] text-slate-400">{getBadgeRarityLabel(badge.rarity)}</span>
+                    </div>
+                    <div className="text-xs text-slate-300 mt-1">{badge.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
 
           <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button onClick={restart} className="btn-secondary w-full">

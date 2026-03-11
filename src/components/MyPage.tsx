@@ -2,8 +2,12 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
+import { useTheme } from '@/lib/theme'
+import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
+import { getLevelInfo } from '@/lib/engagement'
 import { format, subDays, startOfDay, eachDayOfInterval, differenceInCalendarDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
@@ -12,6 +16,7 @@ import {
 } from '@/lib/schemaCompat'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
+import { loadEarnedBadgeRecords } from '@/lib/studyRewards'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
@@ -78,7 +83,7 @@ function formatStudyTime(totalSeconds: number) {
   return `${seconds}秒`
 }
 
-type Tab = 'overview' | 'history' | 'weak' | 'questions' | 'account'
+type Tab = 'overview' | 'history' | 'weak' | 'badges' | 'questions' | 'account'
 
 export default function MyPage({
   onBack,
@@ -88,6 +93,7 @@ export default function MyPage({
   onStartDrill: (field: string, unit: string) => void
 }) {
   const { studentId, nickname, updateProfile, logout } = useAuth()
+  const { theme, setTheme, ready: themeReady } = useTheme()
   const isGuest = isGuestStudentId(studentId)
   const [sessions, setSessions] = useState<Session[]>([])
   const [answerLogs, setAnswerLogs] = useState<AnswerLog[]>([])
@@ -102,6 +108,8 @@ export default function MyPage({
   const [questionForm, setQuestionForm] = useState<CustomQuestionForm>(INITIAL_CUSTOM_QUESTION_FORM)
   const [questionMsg, setQuestionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [savingQuestion, setSavingQuestion] = useState(false)
+  const [studentXp, setStudentXp] = useState(0)
+  const [earnedBadges, setEarnedBadges] = useState<Array<{ badge_key: string; earned_at: string }>>([])
 
   useEffect(() => {
     if (studentId === null) return
@@ -114,18 +122,22 @@ export default function MyPage({
           is_correct: log.is_correct,
           questions: { unit: log.unit, field: log.field },
         })))
+        setStudentXp(store.xp)
+        setEarnedBadges(store.badges)
         setMyQuestions([])
         setLoading(false)
         return
       }
 
       const shouldLoadMyQuestions = getCachedColumnSupport('created_by_student_id') !== false
-      const [sessionsResponse, answerLogsResponse, questionResponse] = await Promise.all([
+      const [sessionsResponse, answerLogsResponse, questionResponse, studentResponse, badgeResponse] = await Promise.all([
         supabase.from('quiz_sessions').select('*').eq('student_id', studentId).order('created_at', { ascending: false }),
         supabase.from('answer_logs').select('question_id, is_correct, questions(unit, field)').eq('student_id', studentId),
         shouldLoadMyQuestions
           ? supabase.from('questions').select('*').eq('created_by_student_id', studentId).order('created_at', { ascending: false })
           : Promise.resolve({ data: [], error: null }),
+        supabase.from('students').select('student_xp').eq('id', studentId).single(),
+        loadEarnedBadgeRecords(studentId),
       ])
 
       const sData = sessionsResponse.data
@@ -142,6 +154,8 @@ export default function MyPage({
       setSessions(sData || [])
       setAnswerLogs((aData as any) || [])
       setMyQuestions((qData as QuestionRow[]) || [])
+      setStudentXp(studentResponse.data?.student_xp ?? 0)
+      setEarnedBadges(badgeResponse)
       setLoading(false)
     }
     load()
@@ -155,6 +169,7 @@ export default function MyPage({
   const totalC = sessions.reduce((a, s) => a + s.correct_count, 0)
   const totalStudySeconds = sessions.reduce((a, s) => a + (s.duration_seconds ?? 0), 0)
   const overallRate = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : 0
+  const levelInfo = useMemo(() => getLevelInfo(studentXp), [studentXp])
 
   const byField = useMemo(() => {
     const m: Record<string, { total: number; correct: number }> = {}
@@ -238,8 +253,8 @@ export default function MyPage({
   const weekData = dailyData.slice(-7)
   const weekMax = Math.max(...weekData.map(d => d.count), 1)
   const tabs = isGuest
-    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点']] as const)
-    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
+    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['account', '⚙️ 設定']] as const)
+    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
 
   const handleSaveNickname = async () => {
     setSaving('nickname')
@@ -287,20 +302,31 @@ export default function MyPage({
     try {
       setSavingQuestion(true)
       setQuestionMsg(null)
+      const payload = {
+        created_by_student_id: studentId,
+        field: questionForm.field,
+        unit: questionForm.unit.trim(),
+        question: questionForm.question.trim(),
+        type: questionForm.type,
+        choices: questionForm.type === 'choice' ? questionForm.choices.map(choice => choice.trim()) : null,
+        answer: questionForm.answer.trim(),
+        keywords: questionForm.type === 'text' ? parseKeywordInput(questionForm.keywords) : null,
+        explanation: questionForm.explanation.trim() || null,
+        grade: questionForm.grade,
+      }
+
+      await ensureNoDuplicateQuestions([{
+        field: payload.field,
+        unit: payload.unit,
+        question: payload.question,
+        type: payload.type,
+        choices: payload.choices,
+        answer: payload.answer,
+      }])
+
       const { data, error } = await supabase
         .from('questions')
-        .insert({
-          created_by_student_id: studentId,
-          field: questionForm.field,
-          unit: questionForm.unit.trim(),
-          question: questionForm.question.trim(),
-          type: questionForm.type,
-          choices: questionForm.type === 'choice' ? questionForm.choices.map(choice => choice.trim()) : null,
-          answer: questionForm.answer.trim(),
-          keywords: questionForm.type === 'text' ? parseKeywordInput(questionForm.keywords) : null,
-          explanation: questionForm.explanation.trim() || null,
-          grade: questionForm.grade,
-        })
+        .insert(payload)
         .select()
         .single()
 
@@ -416,6 +442,36 @@ export default function MyPage({
                   <div className="text-slate-500 text-xs mt-1">{item.label}</div>
                 </div>
               ))}
+            </div>
+
+            <div className="card">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Level Progress</div>
+                  <div className="mt-2 flex items-end gap-3">
+                    <div className="font-display text-4xl text-white">Lv.{levelInfo.level}</div>
+                    <div className="pb-1 text-sm font-semibold text-sky-200">{levelInfo.title}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-slate-500">TOTAL XP</div>
+                  <div className="mt-2 font-display text-3xl text-sky-300">{levelInfo.totalXp}</div>
+                </div>
+              </div>
+              <div className="mt-5 soft-track" style={{ height: 10 }}>
+                <div
+                  style={{
+                    width: `${levelInfo.progressRate}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                    borderRadius: 999,
+                  }}
+                />
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
+                <span>{levelInfo.progressXp} / {levelInfo.progressMax} XP</span>
+                <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
+              </div>
             </div>
 
             {/* 分野別正答率バー */}
@@ -610,6 +666,70 @@ export default function MyPage({
           </div>
         )}
 
+        {tab === 'badges' && (
+          <div className="anim-fade space-y-4">
+            <div className="card">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <h3 className="text-slate-300 font-bold">バッジコレクション</h3>
+                  <p className="text-slate-500 text-xs mt-1">
+                    取ったバッジはカラー表示、未取得はシルエット表示です。
+                  </p>
+                </div>
+                <div className="rounded-full bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-200">
+                  {earnedBadges.length} / {BADGE_DEFINITIONS.length}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {BADGE_DEFINITIONS.map(badge => {
+                const earned = earnedBadges.find(item => item.badge_key === badge.key)
+                const displayDescription = !earned && badge.rarity === 'legendary'
+                  ? '???'
+                  : badge.description
+
+                return (
+                  <div
+                    key={badge.key}
+                    className={`card ${earned ? '' : 'badge-card--locked'}`}
+                    style={{
+                      borderColor: earned
+                        ? badge.rarity === 'legendary'
+                          ? 'rgba(245, 158, 11, 0.34)'
+                          : badge.rarity === 'rare'
+                            ? 'rgba(56, 189, 248, 0.3)'
+                            : 'rgba(34, 197, 94, 0.24)'
+                        : 'var(--surface-elevated-border)',
+                      background: earned
+                        ? badge.rarity === 'legendary'
+                          ? 'linear-gradient(180deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.86))'
+                          : badge.rarity === 'rare'
+                            ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.86))'
+                            : 'linear-gradient(180deg, rgba(34, 197, 94, 0.1), rgba(15, 23, 42, 0.86))'
+                        : 'var(--card-bg)',
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className={`text-4xl ${earned ? '' : 'grayscale opacity-45'}`}>
+                        {earned ? badge.iconEmoji : '🏷️'}
+                      </div>
+                      <div className="text-[10px] tracking-[0.18em] text-slate-500">
+                        {getBadgeRarityLabel(badge.rarity)}
+                      </div>
+                    </div>
+                    <div className="mt-4 font-bold text-white">{badge.name}</div>
+                    <div className="mt-2 text-sm leading-6 text-slate-400">{displayDescription}</div>
+                    <div className="mt-4 text-xs text-slate-500">
+                      {earned ? `獲得日: ${format(new Date(earned.earned_at), 'M月d日(E)', { locale: ja })}` : '未獲得'}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {tab === 'questions' && (
           <div className="space-y-4 anim-fade">
             <div className="card">
@@ -773,58 +893,87 @@ export default function MyPage({
           <div className="space-y-4 anim-fade">
             <div className="card">
               <h3 className="text-slate-300 font-bold mb-1">アカウント設定</h3>
-              <p className="text-slate-500 text-xs">ID は固定です。ニックネームとパスワードだけ変更できます。</p>
+              <p className="text-slate-500 text-xs">
+                {isGuest ? 'テーマ変更だけ使えます。ゲストの成績は毎日リセットされます。' : 'ニックネーム・パスワード・表示テーマを変更できます。'}
+              </p>
               <div className="mt-3 text-slate-400 text-sm">ログインID: <span className="text-white font-bold">{studentId}</span></div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="card">
-                <h3 className="text-slate-300 font-bold mb-4">ニックネーム変更</h3>
-                <input
-                  type="text"
-                  value={nicknameInput}
-                  onChange={e => setNicknameInput(e.target.value)}
-                  placeholder="ニックネーム"
-                  className="input-surface"
-                />
+            <div className="card">
+              <h3 className="text-slate-300 font-bold mb-4">表示テーマ</h3>
+              <div
+                className="inline-flex gap-2 rounded-[20px] p-1.5"
+                style={{
+                  border: '1px solid var(--border)',
+                  background: 'var(--theme-toggle-bg)',
+                  boxShadow: 'var(--shadow-md)',
+                }}
+              >
                 <button
-                  onClick={handleSaveNickname}
-                  className="btn-primary w-full mt-3"
-                  disabled={saving === 'nickname'}
-                  style={{ opacity: saving === 'nickname' ? 0.7 : 1 }}
+                  onClick={() => setTheme('light')}
+                  className={`theme-toggle-button ${themeReady && theme === 'light' ? 'is-active' : ''}`}
                 >
-                  {saving === 'nickname' ? '保存中...' : 'ニックネームを保存'}
+                  ライト
                 </button>
-              </div>
-
-              <div className="card">
-                <h3 className="text-slate-300 font-bold mb-4">パスワード変更</h3>
-                <div className="space-y-3">
-                  <input
-                    type="password"
-                    value={passwordInput}
-                    onChange={e => setPasswordInput(e.target.value)}
-                    placeholder="新しいパスワード"
-                    className="input-surface"
-                  />
-                  <input
-                    type="password"
-                    value={passwordConfirm}
-                    onChange={e => setPasswordConfirm(e.target.value)}
-                    placeholder="新しいパスワード（確認）"
-                    className="input-surface"
-                  />
-                </div>
                 <button
-                  onClick={handleSavePassword}
-                  className="btn-primary w-full mt-3"
-                  disabled={saving === 'password'}
-                  style={{ opacity: saving === 'password' ? 0.7 : 1 }}
+                  onClick={() => setTheme('dark')}
+                  className={`theme-toggle-button ${themeReady && theme === 'dark' ? 'is-active' : ''}`}
                 >
-                  {saving === 'password' ? '保存中...' : 'パスワードを変更'}
+                  ダーク
                 </button>
               </div>
             </div>
+
+            {!isGuest && (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="card">
+                  <h3 className="text-slate-300 font-bold mb-4">ニックネーム変更</h3>
+                  <input
+                    type="text"
+                    value={nicknameInput}
+                    onChange={e => setNicknameInput(e.target.value)}
+                    placeholder="ニックネーム"
+                    className="input-surface"
+                  />
+                  <button
+                    onClick={handleSaveNickname}
+                    className="btn-primary w-full mt-3"
+                    disabled={saving === 'nickname'}
+                    style={{ opacity: saving === 'nickname' ? 0.7 : 1 }}
+                  >
+                    {saving === 'nickname' ? '保存中...' : 'ニックネームを保存'}
+                  </button>
+                </div>
+
+                <div className="card">
+                  <h3 className="text-slate-300 font-bold mb-4">パスワード変更</h3>
+                  <div className="space-y-3">
+                    <input
+                      type="password"
+                      value={passwordInput}
+                      onChange={e => setPasswordInput(e.target.value)}
+                      placeholder="新しいパスワード"
+                      className="input-surface"
+                    />
+                    <input
+                      type="password"
+                      value={passwordConfirm}
+                      onChange={e => setPasswordConfirm(e.target.value)}
+                      placeholder="新しいパスワード（確認）"
+                      className="input-surface"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSavePassword}
+                    className="btn-primary w-full mt-3"
+                    disabled={saving === 'password'}
+                    style={{ opacity: saving === 'password' ? 0.7 : 1 }}
+                  >
+                    {saving === 'password' ? '保存中...' : 'パスワードを変更'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {accountMsg && (
               <div

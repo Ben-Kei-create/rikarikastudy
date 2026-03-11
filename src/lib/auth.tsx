@@ -18,14 +18,15 @@ export interface StudentRecord {
   id: number
   nickname: string
   password: string
+  student_xp: number
 }
 
 export const DEFAULT_STUDENTS: StudentRecord[] = [
-  { id: 1, nickname: 'S', password: 'rikalove1' },
-  { id: 2, nickname: 'M', password: 'rikalove2' },
-  { id: 3, nickname: 'T', password: 'rikalove3' },
-  { id: 4, nickname: 'K', password: 'rikalove4' },
-  { id: 5, nickname: '先生', password: 'rikaadmin2026' },
+  { id: 1, nickname: 'S', password: 'rikalove1', student_xp: 0 },
+  { id: 2, nickname: 'M', password: 'rikalove2', student_xp: 0 },
+  { id: 3, nickname: 'T', password: 'rikalove3', student_xp: 0 },
+  { id: 4, nickname: 'K', password: 'rikalove4', student_xp: 0 },
+  { id: 5, nickname: '先生', password: 'rikaadmin2026', student_xp: 0 },
 ]
 
 export const LOGIN_STUDENTS: StudentRecord[] = [GUEST_STUDENTS_ENTRY(), ...DEFAULT_STUDENTS]
@@ -35,6 +36,7 @@ function GUEST_STUDENTS_ENTRY(): StudentRecord {
     id: GUEST_STUDENT.id,
     nickname: GUEST_STUDENT.nickname,
     password: GUEST_STUDENT.password,
+    student_xp: 0,
   }
 }
 
@@ -45,6 +47,7 @@ function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number
       id: defaultStudent.id,
       nickname: current?.nickname?.trim() || defaultStudent.nickname,
       password: current?.password?.trim() || defaultStudent.password,
+      student_xp: typeof current?.student_xp === 'number' ? current.student_xp : defaultStudent.student_xp,
     }
   })
 }
@@ -52,7 +55,7 @@ function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number
 async function queryStudents(): Promise<StudentRecord[] | null> {
   const { data, error } = await supabase
     .from('students')
-    .select('id, nickname, password')
+    .select('id, nickname, password, student_xp')
     .order('id', { ascending: true })
 
   if (!error && data) return mergeWithDefaults(data)

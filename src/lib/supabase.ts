@@ -16,6 +16,16 @@ export const supabase = createClient(
 
 export const supabaseConfigured = Boolean(supabaseUrl && supabaseKey)
 
+type SessionMode =
+  | 'standard'
+  | 'daily_challenge'
+  | 'quick_start'
+  | 'mixed_quick_start'
+  | 'drill'
+  | 'chemistry_flash'
+  | 'chemistry_reaction'
+  | 'time_attack'
+
 export type Database = {
   public: {
     Tables: {
@@ -24,16 +34,19 @@ export type Database = {
           id: number
           nickname: string
           password: string
+          student_xp: number
           created_at: string
         }
         Insert: {
           id: number
           nickname: string
           password?: string
+          student_xp?: number
         }
         Update: {
           nickname?: string
           password?: string
+          student_xp?: number
         }
       }
       questions: {
@@ -76,6 +89,8 @@ export type Database = {
           total_questions: number
           correct_count: number
           duration_seconds: number
+          xp_earned: number
+          session_mode: SessionMode
           created_at: string
         }
         Insert: {
@@ -85,6 +100,8 @@ export type Database = {
           total_questions: number
           correct_count: number
           duration_seconds?: number
+          xp_earned?: number
+          session_mode?: SessionMode
         }
       }
       answer_logs: {
@@ -147,6 +164,84 @@ export type Database = {
           matched_terms?: string[]
           message_excerpt?: string
           source?: 'draft' | 'send'
+        }
+      }
+      daily_challenges: {
+        Row: {
+          student_id: number
+          date: string
+          session_id: string
+          completed_at: string
+        }
+        Insert: {
+          student_id: number
+          date: string
+          session_id: string
+          completed_at?: string
+        }
+        Update: {
+          session_id?: string
+          completed_at?: string
+        }
+      }
+      badges: {
+        Row: {
+          id: string
+          key: string
+          name: string
+          description: string
+          icon_emoji: string
+          rarity: 'common' | 'rare' | 'legendary'
+          condition_type: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          name: string
+          description: string
+          icon_emoji: string
+          rarity: 'common' | 'rare' | 'legendary'
+          condition_type: string
+          created_at?: string
+        }
+        Update: {
+          name?: string
+          description?: string
+          icon_emoji?: string
+          rarity?: 'common' | 'rare' | 'legendary'
+          condition_type?: string
+        }
+      }
+      student_badges: {
+        Row: {
+          student_id: number
+          badge_key: string
+          earned_at: string
+        }
+        Insert: {
+          student_id: number
+          badge_key: string
+          earned_at?: string
+        }
+        Update: {
+          earned_at?: string
+        }
+      }
+      time_attack_records: {
+        Row: {
+          student_id: number
+          best_score: number
+          achieved_at: string
+        }
+        Insert: {
+          student_id: number
+          best_score: number
+          achieved_at?: string
+        }
+        Update: {
+          best_score?: number
+          achieved_at?: string
         }
       }
     }
