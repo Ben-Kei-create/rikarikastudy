@@ -281,7 +281,6 @@ export default function HomePage({
               <div className="subcard p-4">
                 <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ログイン中</div>
                 <div className="mt-2 font-display text-2xl text-white">{onlineCount !== null ? `${onlineCount}人` : '—'}</div>
-                <div className="mt-1 text-xs text-slate-500">だれがいるかは非表示</div>
               </div>
             </div>
             <button

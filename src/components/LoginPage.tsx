@@ -74,7 +74,12 @@ export default function LoginPage({
                 RikaQuiz
               </div>
             </div>
-            <h2 className="mt-4 text-2xl font-semibold text-center text-white">ログイン</h2>
+            <h2
+              className="font-display mt-4 text-center text-[1.9rem] tracking-[0.18em] text-white sm:text-[2.1rem]"
+              style={{ textShadow: '0 14px 28px rgba(56, 189, 248, 0.18)' }}
+            >
+              Login
+            </h2>
           </div>
 
           {notice && (
