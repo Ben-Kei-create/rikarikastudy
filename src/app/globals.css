@@ -96,6 +96,54 @@ body {
   margin: 0;
 }
 
+/* ===== Random science backgrounds ===== */
+
+body.bg-bio {
+  background-image:
+    radial-gradient(ellipse 600px 600px at 10% 20%, rgba(52, 199, 89, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 400px at 85% 80%, rgba(52, 199, 89, 0.04) 0%, transparent 70%);
+}
+body.bg-chem {
+  background-image:
+    radial-gradient(ellipse 500px 500px at 80% 15%, rgba(255, 149, 0, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 450px 450px at 15% 75%, rgba(255, 149, 0, 0.04) 0%, transparent 70%);
+}
+body.bg-phys {
+  background-image:
+    radial-gradient(ellipse 550px 550px at 20% 10%, rgba(0, 122, 255, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 75% 85%, rgba(0, 122, 255, 0.04) 0%, transparent 70%);
+}
+body.bg-earth {
+  background-image:
+    radial-gradient(ellipse 500px 500px at 70% 20%, rgba(175, 82, 222, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 450px 450px at 25% 80%, rgba(175, 82, 222, 0.04) 0%, transparent 70%);
+}
+
+[data-theme='dark'] body.bg-bio,
+[data-theme='dark'] .bg-bio {
+  background-image:
+    radial-gradient(ellipse 600px 600px at 10% 20%, rgba(52, 199, 89, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 400px at 85% 80%, rgba(52, 199, 89, 0.05) 0%, transparent 70%);
+}
+[data-theme='dark'] body.bg-chem,
+[data-theme='dark'] .bg-chem {
+  background-image:
+    radial-gradient(ellipse 500px 500px at 80% 15%, rgba(255, 149, 0, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 450px 450px at 15% 75%, rgba(255, 149, 0, 0.05) 0%, transparent 70%);
+}
+[data-theme='dark'] body.bg-phys,
+[data-theme='dark'] .bg-phys {
+  background-image:
+    radial-gradient(ellipse 550px 550px at 20% 10%, rgba(0, 122, 255, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 75% 85%, rgba(0, 122, 255, 0.05) 0%, transparent 70%);
+}
+[data-theme='dark'] body.bg-earth,
+[data-theme='dark'] .bg-earth {
+  background-image:
+    radial-gradient(ellipse 500px 500px at 70% 20%, rgba(175, 82, 222, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 450px 450px at 25% 80%, rgba(175, 82, 222, 0.05) 0%, transparent 70%);
+}
+
 /* ===== Animations ===== */
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
