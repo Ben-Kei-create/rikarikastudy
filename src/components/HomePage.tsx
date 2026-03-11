@@ -43,12 +43,12 @@ export default function HomePage({
   return (
     <div className="page-shell">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 anim-fade-up">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 anim-fade-up">
         <div>
           <div className="text-2xl font-bold">こんにちは、{nickname}さん</div>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>分野を選んで始めよう</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 self-start sm:self-auto">
           <button onClick={onMyPage} className="btn-secondary text-sm !px-3 !py-2">マイページ</button>
           <button onClick={() => logout()} className="btn-ghost text-sm !px-3 !py-2">ログアウト</button>
         </div>

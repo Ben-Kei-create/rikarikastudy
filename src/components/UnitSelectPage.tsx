@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
+import { isMissingColumnError, markColumnMissing } from '@/lib/schemaCompat'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': 'var(--bio)', '化学': 'var(--chem)', '物理': 'var(--phys)', '地学': 'var(--earth)',
@@ -21,17 +22,24 @@ export default function UnitSelectPage({
   const [units, setUnits] = useState<UnitStat[]>([])
   const [loading, setLoading] = useState(true)
   const color = FIELD_COLORS[field]
+  const totalQuestions = units.reduce((sum, unit) => sum + unit.questionCount, 0)
 
   useEffect(() => {
     ;(async () => {
       setLoading(true)
-      let questionQuery = supabase.from('questions').select('unit').eq('field', field)
-      questionQuery = questionQuery.or(
+      const baseQuestionQuery = () => supabase.from('questions').select('unit').eq('field', field)
+
+      let { data: qData, error: qError } = await baseQuestionQuery().or(
         studentId
           ? `created_by_student_id.is.null,created_by_student_id.eq.${studentId}`
           : 'created_by_student_id.is.null'
       )
-      const { data: qData } = await questionQuery
+
+      if (isMissingColumnError(qError, 'created_by_student_id')) {
+        markColumnMissing('created_by_student_id')
+        const fallback = await baseQuestionQuery()
+        qData = fallback.data
+      }
       const unitCounts: Record<string, number> = {}
       qData?.forEach(q => { unitCounts[q.unit] = (unitCounts[q.unit] || 0) + 1 })
 
@@ -75,7 +83,8 @@ export default function UnitSelectPage({
       {/* Quick start */}
       <button
         onClick={() => onSelect('all')}
-        className="card w-full anim-fade-up mb-4 text-left transition-transform active:scale-[0.98]"
+        disabled={totalQuestions === 0}
+        className="card w-full anim-fade-up mb-4 text-left transition-transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         style={{ animationDelay: '0.04s' }}
       >
         <div className="flex items-center justify-between gap-3">
@@ -84,7 +93,7 @@ export default function UnitSelectPage({
             <div className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>この分野をまとめて解く</div>
           </div>
           <div className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: 'var(--tint-bg)', color: 'var(--tint)' }}>
-            Quick Start
+            {totalQuestions > 0 ? 'Quick Start' : '問題準備中'}
           </div>
         </div>
       </button>
@@ -92,6 +101,13 @@ export default function UnitSelectPage({
       {/* Unit list */}
       {loading ? (
         <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>読み込み中...</div>
+      ) : units.length === 0 ? (
+        <div className="card text-center anim-fade-up">
+          <p className="font-semibold mb-2">この分野の問題がまだありません</p>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            もぎ先生ログイン → 「問題追加」または「サンプル問題を追加」から準備してください。
+          </p>
+        </div>
       ) : (
         <div className="grid gap-2">
           {units.map((u, i) => {
@@ -100,7 +116,8 @@ export default function UnitSelectPage({
               <button
                 key={u.unit}
                 onClick={() => onSelect(u.unit)}
-                className="card anim-fade-up text-left transition-transform active:scale-[0.98]"
+                disabled={u.questionCount === 0}
+                className="card anim-fade-up text-left transition-transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ animationDelay: `${(i + 1) * 0.05}s` }}
               >
                 <div className="flex items-center justify-between gap-3">
