@@ -40,7 +40,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(true)
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null)
   const [personalBest, setPersonalBest] = useState(0)
-  const [allTimeBest, setAllTimeBest] = useState(0)
+  const [otherLeader, setOtherLeader] = useState<{ studentId: number; nickname: string; score: number } | null>(null)
   const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
   const [answerLogs, setAnswerLogs] = useState<Array<{ qId: string; correct: boolean; answer: string }>>([])
   const startedAtRef = useRef<number | null>(null)
@@ -84,7 +84,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
 
       setQuestions(pickTimeAttackQuestions((data || []) as Question[]))
       setPersonalBest(best.personalBest)
-      setAllTimeBest(best.allTimeBest)
+      setOtherLeader(best.otherLeader)
       setLoading(false)
     }
 
@@ -176,7 +176,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
 
     const bests = await loadTimeAttackBest(studentId)
     setPersonalBest(Math.max(nextBest, bests.personalBest))
-    setAllTimeBest(Math.max(nextBest, bests.allTimeBest))
+    setOtherLeader(bests.otherLeader)
     setRewardSummary(reward)
   }
 
@@ -240,9 +240,13 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               <div className="mt-1 text-xs text-slate-500">best score</div>
             </div>
             <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">全体ベスト</div>
-              <div className="mt-2 font-display text-3xl text-amber-200">{allTimeBest}</div>
-              <div className="mt-1 text-xs text-slate-500">all time</div>
+              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ほかの子の1位</div>
+              <div className="mt-2 font-display text-2xl text-amber-200">
+                {otherLeader ? otherLeader.nickname : '—'}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                {otherLeader ? `${otherLeader.score} point` : 'まだ記録なし'}
+              </div>
             </div>
             <div className="subcard p-4">
               <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題</div>
@@ -284,8 +288,13 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               <div className="mt-2 font-display text-3xl text-white">{personalBest}</div>
             </div>
             <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">全体ベスト</div>
-              <div className="mt-2 font-display text-3xl text-amber-200">{allTimeBest}</div>
+              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ほかの子の1位</div>
+              <div className="mt-2 font-display text-2xl text-amber-200">
+                {otherLeader ? otherLeader.nickname : '—'}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                {otherLeader ? `${otherLeader.score} point` : 'まだ記録なし'}
+              </div>
             </div>
           </div>
 

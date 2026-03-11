@@ -1,5 +1,6 @@
 'use client'
 
+import { fetchStudents } from '@/lib/auth'
 import { BADGE_DEFINITIONS, BadgeDefinition, evaluateNewBadgeKeys } from '@/lib/badges'
 import {
   calculateQuizXp,
@@ -48,6 +49,18 @@ export interface StudyRewardSummary {
   levelAfter: number
   leveledUp: boolean
   newBadges: BadgeDefinition[]
+}
+
+interface TimeAttackLeader {
+  studentId: number
+  nickname: string
+  score: number
+}
+
+interface TimeAttackBestSummary {
+  personalBest: number
+  allTimeBest: number
+  otherLeader: TimeAttackLeader | null
 }
 
 type BadgeSessionRow = {
@@ -348,31 +361,40 @@ export async function loadEarnedBadgeRecords(studentId: number | null) {
   return data || []
 }
 
-export async function loadTimeAttackBest(studentId: number | null) {
-  if (studentId === null) return { personalBest: 0, allTimeBest: 0 }
-  if (isGuestStudentId(studentId)) {
-    const guestBest = getGuestTimeAttackBest()
-    const { data } = await supabase
+export async function loadTimeAttackBest(studentId: number | null): Promise<TimeAttackBestSummary> {
+  const guestBest = studentId !== null && isGuestStudentId(studentId) ? getGuestTimeAttackBest() : 0
+  const [students, recordsResponse, personalResponse] = await Promise.all([
+    fetchStudents(),
+    supabase
       .from('time_attack_records')
-      .select('best_score')
-      .order('best_score', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    return {
-      personalBest: guestBest,
-      allTimeBest: data?.best_score ?? guestBest,
-    }
-  }
-
-  const [personalResponse, allTimeResponse] = await Promise.all([
-    supabase.from('time_attack_records').select('best_score').eq('student_id', studentId).maybeSingle(),
-    supabase.from('time_attack_records').select('best_score').order('best_score', { ascending: false }).limit(1).maybeSingle(),
+      .select('student_id, best_score')
+      .order('best_score', { ascending: false }),
+    studentId === null || isGuestStudentId(studentId)
+      ? Promise.resolve({ data: null, error: null })
+      : supabase.from('time_attack_records').select('best_score').eq('student_id', studentId).maybeSingle(),
   ])
 
+  const records = (recordsResponse.data || [])
+    .filter(record => record.student_id !== 5)
+    .sort((left, right) => right.best_score - left.best_score)
+
+  const studentMap = new Map(students.map(student => [student.id, student.nickname]))
+  const otherLeaderRow = records.find(record => record.student_id !== studentId)
+
   return {
-    personalBest: personalResponse.data?.best_score ?? 0,
-    allTimeBest: allTimeResponse.data?.best_score ?? 0,
+    personalBest: studentId === null
+      ? 0
+      : isGuestStudentId(studentId)
+        ? guestBest
+        : personalResponse.data?.best_score ?? 0,
+    allTimeBest: records[0]?.best_score ?? guestBest,
+    otherLeader: otherLeaderRow
+      ? {
+          studentId: otherLeaderRow.student_id,
+          nickname: studentMap.get(otherLeaderRow.student_id) ?? `ID ${otherLeaderRow.student_id}`,
+          score: otherLeaderRow.best_score,
+        }
+      : null,
   }
 }
 
