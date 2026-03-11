@@ -6,6 +6,7 @@ export type SessionMode =
   | 'quick_start'
   | 'mixed_quick_start'
   | 'drill'
+  | 'custom'
   | 'chemistry_flash'
   | 'chemistry_reaction'
   | 'time_attack'

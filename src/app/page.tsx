@@ -13,13 +13,14 @@ import TimeAttackPage from '@/components/TimeAttackPage'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import ScienceChatPage from '@/components/ScienceChatPage'
 import { ScienceChatField } from '@/lib/scienceChat'
+import { CustomQuizOptions } from '@/lib/customQuiz'
 
 type Screen =
   | 'home'
   | 'mypage'
   | 'time-attack'
   | { type: 'unit'; field: string }
-  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; dailyChallenge?: boolean }
+  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; dailyChallenge?: boolean; customOptions?: CustomQuizOptions }
   | { type: 'chemistry-practice'; mode: ChemistryPracticeMode }
   | { type: 'chat'; field: ScienceChatField }
 
@@ -60,6 +61,7 @@ function App() {
       <UnitSelectPage
         field={screen.field}
         onSelect={unit => setScreen({ type: 'quiz', field: screen.field, unit })}
+        onStartCustomQuiz={options => setScreen({ type: 'quiz', field: screen.field, unit: options.unit, customOptions: options })}
         onSelectSpecialMode={mode => setScreen({ type: 'chemistry-practice', mode })}
         onOpenChat={field => setScreen({ type: 'chat', field })}
         onBack={() => setScreen('home')}
@@ -87,6 +89,7 @@ function App() {
         isDrill={screen.isDrill}
         quickStartAll={screen.quickStartAll}
         dailyChallenge={screen.dailyChallenge}
+        customOptions={screen.customOptions}
         onBack={() => setScreen(
           screen.isDrill
             ? 'mypage'

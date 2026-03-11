@@ -3,7 +3,7 @@ import { useAuth } from '@/lib/auth'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
-import { FALLBACK_SCIENCE_NEWS, ScienceNewsItem } from '@/lib/scienceNews'
+import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
 import { getLevelInfo } from '@/lib/engagement'
 import { hasCompletedDailyChallenge } from '@/lib/studyRewards'
@@ -36,7 +36,7 @@ export default function HomePage({
   const { nickname, studentId, logout } = useAuth()
   const isGuest = isGuestStudentId(studentId)
   const [stats, setStats] = useState<FieldStats>({})
-  const [scienceNews, setScienceNews] = useState<ScienceNewsItem>(FALLBACK_SCIENCE_NEWS)
+  const [scienceNews, setScienceNews] = useState<ScienceNewsResponse>(FALLBACK_SCIENCE_NEWS_RESPONSE)
   const [onlineCount, setOnlineCount] = useState<number | null>(null)
   const [totalXp, setTotalXp] = useState(0)
   const [dailyCompleted, setDailyCompleted] = useState(false)
@@ -100,8 +100,8 @@ export default function HomePage({
       try {
         const response = await fetch('/api/science-news')
         if (!response.ok) return
-        const payload = await response.json() as ScienceNewsItem
-        if (active) setScienceNews(payload)
+        const payload = await response.json() as ScienceNewsResponse
+        if (active && Array.isArray(payload.items) && payload.items.length > 0) setScienceNews(payload)
       } catch {}
     }
 
@@ -131,10 +131,13 @@ export default function HomePage({
     }
   }, [studentId])
 
-  const scienceNewsDate = new Intl.DateTimeFormat('ja-JP', {
-    month: 'numeric',
-    day: 'numeric',
-  }).format(new Date(scienceNews.publishedAt))
+  const newsDateFormatter = useMemo(
+    () => new Intl.DateTimeFormat('ja-JP', {
+      month: 'numeric',
+      day: 'numeric',
+    }),
+    [],
+  )
 
   return (
     <div className="page-shell page-shell-dashboard">
@@ -267,11 +270,8 @@ export default function HomePage({
           </div>
         </button>
 
-        <a
-          href={scienceNews.link}
-          target="_blank"
-          rel="noreferrer"
-          className="card anim-fade-up block text-left"
+        <div
+          className="card anim-fade-up"
           style={{
             position: 'relative',
             overflow: 'hidden',
@@ -287,29 +287,57 @@ export default function HomePage({
               pointerEvents: 'none',
             }}
           />
-          <div className="relative z-[1] flex h-full flex-col justify-between">
+          <div className="relative z-[1] h-full">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-semibold tracking-[0.2em] text-amber-200 uppercase">
                   Daily Science News
                 </span>
                 <span className="rounded-full border border-amber-300/20 bg-amber-200/10 px-2.5 py-1 text-[11px] font-semibold text-amber-100">
-                  試験表示
+                  4分野
                 </span>
               </div>
               <div className="mt-3 font-display text-xl text-white sm:text-2xl">
-                {scienceNews.title}
+                本日の科学ニュース
               </div>
               <p className="mt-2 text-sm leading-7 text-slate-200">
-                {scienceNews.summary}
+                生物・化学・物理・地学を1つずつ、気になったカードから見られます。
               </p>
             </div>
-            <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-300">
-              <div>{scienceNews.source}</div>
-              <div>{scienceNewsDate}</div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {scienceNews.items.map(item => (
+                <a
+                  key={item.field}
+                  href={item.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-[22px] border p-4 transition-all hover:-translate-y-0.5"
+                  style={{
+                    borderColor: `${item.color}35`,
+                    background: 'rgba(15, 23, 42, 0.52)',
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{item.emoji}</span>
+                    <span className="font-semibold" style={{ color: item.color }}>
+                      {item.field}
+                    </span>
+                  </div>
+                  <div className="mt-3 text-sm font-semibold leading-6 text-white line-clamp-2">
+                    {item.title}
+                  </div>
+                  <p className="mt-2 text-xs leading-6 text-slate-300 line-clamp-3">
+                    {item.summary}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-slate-400">
+                    <span>{item.source}</span>
+                    <span>{newsDateFormatter.format(new Date(item.publishedAt))}</span>
+                  </div>
+                </a>
+              ))}
             </div>
           </div>
-        </a>
+        </div>
       </div>
 
       <div className="flex items-center justify-between mb-4">

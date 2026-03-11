@@ -1,5 +1,7 @@
 'use client'
 
+import { CustomQuizOptions } from '@/lib/customQuiz'
+
 const CORE_FIELDS = ['生物', '化学', '物理', '地学']
 
 export interface QuizQuestionLike {
@@ -52,7 +54,7 @@ export function pickStandardQuizQuestions<T extends QuizQuestionLike>(pool: T[],
   return picked.slice(0, 10)
 }
 
-function buildQuestionPriorityMap(history: QuestionHistoryLike[]) {
+export function buildQuestionPriorityMap(history: QuestionHistoryLike[]) {
   const map = new Map<string, { attempts: number; wrong: number }>()
 
   for (const row of history) {
@@ -66,6 +68,37 @@ function buildQuestionPriorityMap(history: QuestionHistoryLike[]) {
   }
 
   return map
+}
+
+function matchesCustomHistoryFilter(
+  questionId: string,
+  historyMap: Map<string, { attempts: number; wrong: number }>,
+  historyFilter: CustomQuizOptions['historyFilter'],
+) {
+  if (historyFilter === 'all') return true
+
+  const history = historyMap.get(questionId)
+  if (historyFilter === 'unanswered') return !history
+  if (historyFilter === 'weak') return Boolean(history && history.wrong > 0)
+  return true
+}
+
+export function pickCustomQuizQuestions<T extends QuizQuestionLike>(
+  pool: T[],
+  history: QuestionHistoryLike[],
+  options: CustomQuizOptions,
+  count = 10,
+) {
+  const historyMap = buildQuestionPriorityMap(history)
+  const filtered = pool.filter(question => {
+    if (options.questionType !== 'all' && question.type !== options.questionType) {
+      return false
+    }
+
+    return matchesCustomHistoryFilter(question.id, historyMap, options.historyFilter)
+  })
+
+  return shuffleArray(filtered).slice(0, count)
 }
 
 function getDailyChallengeWeight(questionId: string, historyMap: Map<string, { attempts: number; wrong: number }>) {

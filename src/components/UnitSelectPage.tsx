@@ -7,6 +7,15 @@ import { CHEMISTRY_MODE_META, ChemistryPracticeMode } from '@/lib/chemistryPract
 import { ScienceChatField } from '@/lib/scienceChat'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import {
+  CustomQuizHistoryFilter,
+  CustomQuizOptions,
+  CustomQuizQuestionType,
+  DEFAULT_CUSTOM_QUIZ_OPTIONS,
+  getCustomQuizHistoryFilterLabel,
+  getCustomQuizQuestionTypeLabel,
+  getCustomQuizSummaryParts,
+} from '@/lib/customQuiz'
+import {
   getCachedColumnSupport,
   isMissingColumnError,
   markColumnMissing,
@@ -36,12 +45,14 @@ interface UnitStat {
 export default function UnitSelectPage({
   field,
   onSelect,
+  onStartCustomQuiz,
   onSelectSpecialMode,
   onOpenChat,
   onBack,
 }: {
   field: string
   onSelect: (unit: string) => void
+  onStartCustomQuiz: (options: CustomQuizOptions) => void
   onSelectSpecialMode: (mode: ChemistryPracticeMode) => void
   onOpenChat: (field: ScienceChatField) => void
   onBack: () => void
@@ -49,9 +60,16 @@ export default function UnitSelectPage({
   const { studentId, logout } = useAuth()
   const [units, setUnits] = useState<UnitStat[]>([])
   const [loading, setLoading] = useState(true)
+  const [showCustomPanel, setShowCustomPanel] = useState(false)
+  const [customOptions, setCustomOptions] = useState<CustomQuizOptions>(DEFAULT_CUSTOM_QUIZ_OPTIONS)
   const color = FIELD_COLORS[field]
   const totalQuestionCount = units.reduce((sum, item) => sum + item.questionCount, 0)
   const isGuest = isGuestStudentId(studentId)
+
+  useEffect(() => {
+    setShowCustomPanel(false)
+    setCustomOptions(DEFAULT_CUSTOM_QUIZ_OPTIONS)
+  }, [field])
 
   useEffect(() => {
     const load = async () => {
@@ -133,6 +151,14 @@ export default function UnitSelectPage({
     }
     load()
   }, [field, isGuest, studentId])
+
+  const updateQuestionType = (questionType: CustomQuizQuestionType) => {
+    setCustomOptions(current => ({ ...current, questionType }))
+  }
+
+  const updateHistoryFilter = (historyFilter: CustomQuizHistoryFilter) => {
+    setCustomOptions(current => ({ ...current, historyFilter }))
+  }
 
   return (
     <div className="page-shell page-shell-dashboard">
@@ -325,6 +351,137 @@ export default function UnitSelectPage({
           </div>
         </div>
       </button>
+
+      <div
+        className="card w-full anim-fade-up mb-4 text-left"
+        style={{
+          borderColor: `${color}35`,
+          background: `linear-gradient(180deg, ${color}14, rgba(15, 23, 42, 0.82))`,
+          animationDelay: '0.06s',
+        }}
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+              Custom
+            </div>
+            <div className="mt-2 font-display text-2xl text-white">
+              カスタム
+            </div>
+            <div className="mt-2 text-slate-300 text-sm leading-6">
+              記述のみ、選択肢のみ、未回答、苦手だけなどに絞って出題できます。
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {getCustomQuizSummaryParts(customOptions).map(part => (
+                <span
+                  key={part}
+                  className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                  style={{ background: `${color}18`, color }}
+                >
+                  {part}
+                </span>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={() => setShowCustomPanel(current => !current)}
+            className="btn-secondary whitespace-nowrap"
+          >
+            {showCustomPanel ? '閉じる' : '条件をえらぶ'}
+          </button>
+        </div>
+
+        {showCustomPanel && (
+          <div className="mt-5 rounded-[24px] border border-white/8 bg-slate-950/24 p-4 sm:p-5">
+            <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <label className="text-slate-400 text-xs mb-2 block">対象単元</label>
+                <select
+                  value={customOptions.unit}
+                  onChange={event => setCustomOptions(current => ({ ...current, unit: event.target.value }))}
+                  className="input-surface"
+                >
+                  <option value="all">全単元</option>
+                  {units.map(unitItem => (
+                    <option key={unitItem.unit} value={unitItem.unit}>
+                      {unitItem.unit}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs leading-6 text-slate-500">
+                  単元だけで絞りたい時は、ここで選べます。
+                </p>
+              </div>
+
+              <div className="grid gap-4">
+                <div>
+                  <div className="text-slate-400 text-xs mb-2">問題タイプ</div>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {(['all', 'choice', 'text'] as const).map(questionType => {
+                      const active = customOptions.questionType === questionType
+                      return (
+                        <button
+                          key={questionType}
+                          onClick={() => updateQuestionType(questionType)}
+                          className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
+                          style={{
+                            borderColor: active ? `${color}70` : 'var(--surface-elevated-border)',
+                            background: active ? `${color}18` : 'var(--surface-elevated)',
+                            color: active ? color : 'var(--text)',
+                          }}
+                        >
+                          {getCustomQuizQuestionTypeLabel(questionType)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-slate-400 text-xs mb-2">出題条件</div>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {(['all', 'unanswered', 'weak'] as const).map(historyFilter => {
+                      const active = customOptions.historyFilter === historyFilter
+                      return (
+                        <button
+                          key={historyFilter}
+                          onClick={() => updateHistoryFilter(historyFilter)}
+                          className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
+                          style={{
+                            borderColor: active ? `${color}70` : 'var(--surface-elevated-border)',
+                            background: active ? `${color}18` : 'var(--surface-elevated)',
+                            color: active ? color : 'var(--text)',
+                          }}
+                        >
+                          {getCustomQuizHistoryFilterLabel(historyFilter)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="mt-2 text-xs leading-6 text-slate-500">
+                    未回答 = まだ解いていない問題 / 苦手だけ = これまでに1回でもまちがえた問題
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={() => setCustomOptions(DEFAULT_CUSTOM_QUIZ_OPTIONS)}
+                className="btn-ghost"
+              >
+                リセット
+              </button>
+              <button
+                onClick={() => onStartCustomQuiz(customOptions)}
+                className="btn-primary"
+              >
+                この条件で開始
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {loading ? (
         <div className="text-center text-slate-400 py-12">読み込み中...</div>

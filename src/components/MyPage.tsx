@@ -244,9 +244,9 @@ export default function MyPage({
 
   const heatColor = (count: number) => {
     if (count === 0) return 'var(--surface-elevated)'
-    if (count < 5) return '#1d4ed8'
-    if (count < 15) return '#3b82f6'
-    if (count < 30) return '#60a5fa'
+    if (count < 10) return '#1d4ed8'
+    if (count < 30) return '#3b82f6'
+    if (count < 60) return '#60a5fa'
     return '#93c5fd'
   }
 
@@ -565,7 +565,7 @@ export default function MyPage({
                 {['var(--surface-elevated)', '#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd'].map(c => (
                   <div key={c} style={{ width: 14, height: 14, borderRadius: 3, background: c }} />
                 ))}
-                <span className="text-slate-600 text-xs">30問+</span>
+                <span className="text-slate-600 text-xs">100問+</span>
               </div>
             </div>
           </div>

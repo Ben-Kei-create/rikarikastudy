@@ -4,9 +4,10 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
 import { getBadgeRarityLabel } from '@/lib/badges'
+import { CustomQuizOptions, getCustomQuizSessionLabel, getCustomQuizSummaryParts } from '@/lib/customQuiz'
 import { getLevelInfo } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
-import { pickDailyChallengeQuestions, pickStandardQuizQuestions } from '@/lib/questionPicker'
+import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions } from '@/lib/questionPicker'
 import { hasCompletedDailyChallenge, recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
 import {
   getCachedColumnSupport,
@@ -78,13 +79,16 @@ function buildSessionMode({
   isDrill,
   quickStartAll,
   dailyChallenge,
+  isCustom,
 }: {
   isDrill: boolean
   quickStartAll: boolean
   dailyChallenge: boolean
+  isCustom: boolean
 }) {
   if (dailyChallenge) return 'daily_challenge'
   if (quickStartAll) return 'mixed_quick_start'
+  if (isCustom) return 'custom'
   if (isDrill) return 'drill'
   return 'standard'
 }
@@ -109,6 +113,7 @@ export default function QuizPage({
   isDrill = false,
   quickStartAll = false,
   dailyChallenge = false,
+  customOptions,
   onBack,
 }: {
   field: string
@@ -116,11 +121,13 @@ export default function QuizPage({
   isDrill?: boolean
   quickStartAll?: boolean
   dailyChallenge?: boolean
+  customOptions?: CustomQuizOptions
   onBack: () => void
 }) {
   const { studentId, logout } = useAuth()
   const color = FIELD_COLORS[field] ?? '#38bdf8'
   const isGuest = isGuestStudentId(studentId)
+  const isCustom = Boolean(customOptions)
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [current, setCurrent] = useState(0)
@@ -165,7 +172,9 @@ export default function QuizPage({
 
       let query = supabase.from('questions').select('*')
       if (!dailyChallenge && field !== 'all') query = query.eq('field', field)
-      if (!dailyChallenge && unit !== 'all') query = query.eq('unit', unit)
+      if (!dailyChallenge && (customOptions?.unit ?? unit) !== 'all') {
+        query = query.eq('unit', customOptions?.unit ?? unit)
+      }
       const supportsStudentQuestionFilter = getCachedColumnSupport('created_by_student_id') !== false
 
       if (supportsStudentQuestionFilter) {
@@ -202,8 +211,8 @@ export default function QuizPage({
         return
       }
 
-      if (dailyChallenge) {
-        const history = isGuest
+      const history = dailyChallenge || isCustom
+        ? isGuest
           ? loadGuestStudyStore().answerLogs.map(log => ({
               question_id: log.question_id,
               is_correct: log.is_correct,
@@ -219,9 +228,14 @@ export default function QuizPage({
                 is_correct: log.is_correct,
               }))
             })()
+        : []
 
+      if (dailyChallenge) {
         if (!active) return
         setQuestions(pickDailyChallengeQuestions(pool, history, 5))
+      } else if (customOptions) {
+        if (!active) return
+        setQuestions(pickCustomQuizQuestions(pool, history, customOptions, 10))
       } else {
         setQuestions(pickStandardQuizQuestions(pool, field))
       }
@@ -234,7 +248,7 @@ export default function QuizPage({
     return () => {
       active = false
     }
-  }, [dailyChallenge, field, isGuest, studentId, unit])
+  }, [customOptions, dailyChallenge, field, isCustom, isGuest, studentId, unit])
 
   useEffect(() => {
     setFavoriteIds(readFavoriteQuestionIds(studentId))
@@ -296,12 +310,14 @@ export default function QuizPage({
       const reward = await recordStudySession({
         studentId,
         field: getSessionFieldLabel(field, quickStartAll, dailyChallenge),
-        unit: getSessionUnitLabel(unit, quickStartAll, dailyChallenge),
+        unit: customOptions
+          ? getCustomQuizSessionLabel(customOptions)
+          : getSessionUnitLabel(unit, quickStartAll, dailyChallenge),
         totalQuestions: questions.length,
         correctCount: score,
         durationSeconds,
         answerLogs,
-        sessionMode: buildSessionMode({ isDrill, quickStartAll, dailyChallenge }),
+        sessionMode: buildSessionMode({ isDrill, quickStartAll, dailyChallenge, isCustom }),
         xpMultiplier: dailyChallenge ? 2 : 1,
       })
 
@@ -360,7 +376,9 @@ export default function QuizPage({
     return (
       <div className="page-shell flex flex-col items-center justify-center">
         <div className="card w-full max-w-md text-center">
-          <p className="text-slate-400 mb-4">問題がまだ登録されていません。</p>
+          <p className="text-slate-400 mb-4">
+            {customOptions ? '条件に合う問題がありません。条件を変えてみてください。' : '問題がまだ登録されていません。'}
+          </p>
           <div className="flex gap-3 justify-center">
             <button onClick={onBack} className="btn-secondary">もどる</button>
             <button onClick={() => logout()} className="btn-ghost">
@@ -542,6 +560,8 @@ export default function QuizPage({
                   ? '今日のチャレンジ'
                   : isDrill
                     ? `復習: ${field} / ${unit}`
+                    : customOptions
+                      ? `カスタム: ${getCustomQuizSummaryParts(customOptions).join(' / ')}`
                     : quickStartAll
                       ? '4分野総合クイックスタート'
                       : unit === 'all'
@@ -581,6 +601,10 @@ export default function QuizPage({
             {dailyChallenge ? (
               <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f59e0b20', color: '#fbbf24' }}>
                 今日のチャレンジ
+              </span>
+            ) : customOptions ? (
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#38bdf820', color: '#7dd3fc' }}>
+                カスタム
               </span>
             ) : isDrill ? (
               <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f59e0b20', color: '#fbbf24' }}>

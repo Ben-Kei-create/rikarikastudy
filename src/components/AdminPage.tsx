@@ -10,6 +10,8 @@ import { getChatModerationCategoryLabel } from '@/lib/chatModeration'
 import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
 import { isMissingColumnError, isMissingRelationError } from '@/lib/schemaCompat'
 import { fetchActiveSessions } from '@/lib/activeSessions'
+import { BADGE_DEFINITIONS } from '@/lib/badges'
+import { getLevelTitle } from '@/lib/engagement'
 
 const ADMIN_PW = 'rikaadmin2026'
 const FIELDS = ['生物', '化学', '物理', '地学'] as const
@@ -42,6 +44,59 @@ const BULK_JSON_EXAMPLE = `[
     "grade": "中2"
   }
 ]`
+
+const XP_RULES = [
+  '基本XP: 正解数 × 10',
+  'スピードボーナス: max(0, 300 - 解答秒数) / 3 を四捨五入',
+  '全問正解ボーナス: +50 XP',
+  '今日のチャレンジ: 獲得XPが 2倍',
+  'タイムアタック: スコア × 5 XP',
+] as const
+
+const LEVEL_GUIDE = [1, 5, 10, 20, 35, 50, 75, 99].map(level => ({
+  level,
+  title: getLevelTitle(level),
+}))
+
+const BADGE_CONDITION_GUIDE: Record<string, string> = {
+  first_quiz: 'クイズを1セット完了する',
+  streak_3: '3日連続で学習する',
+  bio_debut: '生物を初めて解く',
+  chem_debut: '化学を初めて解く',
+  phys_debut: '物理を初めて解く',
+  earth_debut: '地学を初めて解く',
+  perfect_score: '1回の学習で全問正解する',
+  streak_7: '7日連続で学習する',
+  total_100: '累計100問以上に挑戦する',
+  speed_star: 'タイムアタック以外で60秒未満クリア',
+  daily_perfect: '今日のチャレンジを全問正解する',
+  level_10: 'レベル10に到達する',
+  streak_30: '30日連続で学習する',
+  all_fields_day: '1日のうちに4分野すべて解く',
+  total_1000: '累計1000問以上に挑戦する',
+  level_50: 'レベル50に到達する',
+}
+
+const BADGE_RARITY_STYLES = {
+  common: {
+    label: 'COMMON',
+    borderColor: 'rgba(56, 189, 248, 0.22)',
+    background: 'rgba(56, 189, 248, 0.06)',
+    textColor: '#bae6fd',
+  },
+  rare: {
+    label: 'RARE',
+    borderColor: 'rgba(245, 158, 11, 0.22)',
+    background: 'rgba(245, 158, 11, 0.08)',
+    textColor: '#fde68a',
+  },
+  legendary: {
+    label: 'LEGEND',
+    borderColor: 'rgba(168, 85, 247, 0.24)',
+    background: 'rgba(168, 85, 247, 0.08)',
+    textColor: '#ddd6fe',
+  },
+} as const
 
 function buildBinaryChoices(choices: string[] | null, answer: string, seed: string) {
   if (!choices || choices.length === 0) return null
@@ -966,6 +1021,85 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                   >
                     {exportLoading ? '作成中...' : '⬇️ 復元用JSONを保存'}
                   </button>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[0.72fr_1.28fr]">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-white font-bold">リワード条件一覧</div>
+                      <div className="text-slate-400 text-sm mt-1">
+                        XP の入り方、称号レベル、バッジの条件をここで確認できます。
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-sky-500/16 bg-sky-500/6 p-4">
+                      <div className="text-white font-semibold">XP の入り方</div>
+                      <div className="mt-3 space-y-2">
+                        {XP_RULES.map(rule => (
+                          <div key={rule} className="rounded-xl bg-slate-950/35 px-3 py-2 text-sm text-slate-200">
+                            {rule}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-violet-500/16 bg-violet-500/6 p-4">
+                      <div className="text-white font-semibold">称号レベル</div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {LEVEL_GUIDE.map(item => (
+                          <div
+                            key={item.level}
+                            className="rounded-full border border-violet-400/20 bg-slate-950/35 px-3 py-2 text-xs font-semibold text-violet-100"
+                          >
+                            Lv.{item.level} {item.title}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-white font-semibold">バッジ条件</div>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                      {BADGE_DEFINITIONS.map(badge => {
+                        const rarityStyle = BADGE_RARITY_STYLES[badge.rarity]
+                        return (
+                          <div
+                            key={badge.key}
+                            className="rounded-2xl border p-4"
+                            style={{
+                              borderColor: rarityStyle.borderColor,
+                              background: rarityStyle.background,
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start gap-3">
+                                <div className="text-2xl">{badge.iconEmoji}</div>
+                                <div>
+                                  <div className="font-semibold text-white">{badge.name}</div>
+                                  <div className="text-xs text-slate-400 mt-1">{badge.description}</div>
+                                </div>
+                              </div>
+                              <span
+                                className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em]"
+                                style={{
+                                  color: rarityStyle.textColor,
+                                  background: 'rgba(2, 6, 23, 0.42)',
+                                }}
+                              >
+                                {rarityStyle.label}
+                              </span>
+                            </div>
+                            <div className="mt-3 rounded-xl bg-slate-950/35 px-3 py-2 text-sm text-slate-200">
+                              条件: {BADGE_CONDITION_GUIDE[badge.key] ?? badge.description}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 
