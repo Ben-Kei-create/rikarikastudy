@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { CHEMISTRY_MODE_META, ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { ScienceChatField } from '@/lib/scienceChat'
+import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
@@ -50,6 +51,7 @@ export default function UnitSelectPage({
   const [loading, setLoading] = useState(true)
   const color = FIELD_COLORS[field]
   const totalQuestionCount = units.reduce((sum, item) => sum + item.questionCount, 0)
+  const isGuest = isGuestStudentId(studentId)
 
   useEffect(() => {
     const load = async () => {
@@ -94,18 +96,30 @@ export default function UnitSelectPage({
         unitCounts[question.unit] = (unitCounts[question.unit] || 0) + 1
       })
 
-      const { data: sData } = await supabase
-        .from('quiz_sessions')
-        .select('unit, total_questions, correct_count')
-        .eq('field', field)
-        .eq('student_id', studentId!)
-
       const sessionStats: Record<string, { total: number; correct: number }> = {}
-      sData?.forEach(session => {
-        if (!sessionStats[session.unit]) sessionStats[session.unit] = { total: 0, correct: 0 }
-        sessionStats[session.unit].total += session.total_questions
-        sessionStats[session.unit].correct += session.correct_count
-      })
+
+      if (isGuest) {
+        const store = loadGuestStudyStore()
+        store.sessions
+          .filter(session => session.field === field)
+          .forEach(session => {
+            if (!sessionStats[session.unit]) sessionStats[session.unit] = { total: 0, correct: 0 }
+            sessionStats[session.unit].total += session.total_questions
+            sessionStats[session.unit].correct += session.correct_count
+          })
+      } else if (studentId !== null) {
+        const { data: sData } = await supabase
+          .from('quiz_sessions')
+          .select('unit, total_questions, correct_count')
+          .eq('field', field)
+          .eq('student_id', studentId)
+
+        sData?.forEach(session => {
+          if (!sessionStats[session.unit]) sessionStats[session.unit] = { total: 0, correct: 0 }
+          sessionStats[session.unit].total += session.total_questions
+          sessionStats[session.unit].correct += session.correct_count
+        })
+      }
 
       const unitList = Object.keys(unitCounts).map(unitName => ({
         unit: unitName,
@@ -118,7 +132,7 @@ export default function UnitSelectPage({
       setLoading(false)
     }
     load()
-  }, [field, studentId])
+  }, [field, isGuest, studentId])
 
   return (
     <div className="page-shell page-shell-dashboard">
@@ -211,43 +225,74 @@ export default function UnitSelectPage({
         </div>
       )}
 
-      <button
-        onClick={() => onOpenChat(field as ScienceChatField)}
-        className="card w-full anim-fade-up mb-4 text-left"
-        style={{
-          borderColor: `${color}40`,
-          background: `linear-gradient(135deg, ${color}18, rgba(15, 23, 42, 0.82))`,
-          animationDelay: '0.04s',
-          transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-        }}
-        onMouseEnter={event => {
-          event.currentTarget.style.transform = 'translateY(-2px)'
-          event.currentTarget.style.boxShadow = `0 18px 34px ${color}20`
-        }}
-        onMouseLeave={event => {
-          event.currentTarget.style.transform = ''
-          event.currentTarget.style.boxShadow = ''
-        }}
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
-              Ask Gemini
+      {isGuest ? (
+        <div
+          className="card w-full anim-fade-up mb-4 text-left"
+          style={{
+            borderColor: 'rgba(148, 163, 184, 0.2)',
+            background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), rgba(15, 23, 42, 0.82))',
+            animationDelay: '0.04s',
+            opacity: 0.88,
+          }}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">
+                Ask Gemini
+              </div>
+              <div className="mt-2 font-display text-2xl text-slate-100">
+                {field}について質問する
+              </div>
+              <div className="mt-2 text-slate-400 text-sm leading-6">
+                ゲストモードでは Gemini などの質問機能は使えません。
+              </div>
             </div>
-            <div className="mt-2 font-display text-2xl text-white">
-              {field}について質問する
+            <div
+              className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-400"
+            >
+              利用不可
             </div>
-            <div className="mt-2 text-slate-300 text-sm leading-6">
-              この分野だけに絞って、要点を3行以内でざっくり聞けます。
-            </div>
-          </div>
-          <div
-            className="inline-flex items-center justify-center rounded-full border border-slate-600 bg-slate-800/70 px-4 py-2 text-sm font-semibold text-slate-100"
-          >
-            Geminiに聞く →
           </div>
         </div>
-      </button>
+      ) : (
+        <button
+          onClick={() => onOpenChat(field as ScienceChatField)}
+          className="card w-full anim-fade-up mb-4 text-left"
+          style={{
+            borderColor: `${color}40`,
+            background: `linear-gradient(135deg, ${color}18, rgba(15, 23, 42, 0.82))`,
+            animationDelay: '0.04s',
+            transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+          }}
+          onMouseEnter={event => {
+            event.currentTarget.style.transform = 'translateY(-2px)'
+            event.currentTarget.style.boxShadow = `0 18px 34px ${color}20`
+          }}
+          onMouseLeave={event => {
+            event.currentTarget.style.transform = ''
+            event.currentTarget.style.boxShadow = ''
+          }}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+                Ask Gemini
+              </div>
+              <div className="mt-2 font-display text-2xl text-white">
+                {field}について質問する
+              </div>
+              <div className="mt-2 text-slate-300 text-sm leading-6">
+                この分野だけに絞って、要点を3行以内でざっくり聞けます。
+              </div>
+            </div>
+            <div
+              className="inline-flex items-center justify-center rounded-full border border-slate-600 bg-slate-800/70 px-4 py-2 text-sm font-semibold text-slate-100"
+            >
+              Geminiに聞く →
+            </div>
+          </div>
+        </button>
+      )}
 
       <button
         onClick={() => onSelect('all')}

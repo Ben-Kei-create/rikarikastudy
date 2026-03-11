@@ -6,7 +6,9 @@ import { sampleQuestions } from '@/lib/sampleQuestions'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
-import { isMissingColumnError } from '@/lib/schemaCompat'
+import { getChatModerationCategoryLabel } from '@/lib/chatModeration'
+import { isMissingColumnError, isMissingRelationError } from '@/lib/schemaCompat'
+import { fetchActiveSessions } from '@/lib/activeSessions'
 
 const ADMIN_PW = 'rikaadmin2026'
 const FIELDS = ['生物', '化学', '物理', '地学'] as const
@@ -60,9 +62,17 @@ interface StudentStats {
   byField: Record<string, { total: number; correct: number }>
 }
 
+interface ActiveStudentStatus {
+  id: number
+  nickname: string
+  lastSeenAt: string
+  sessionCount: number
+}
+
 type QuizSessionRow = Database['public']['Tables']['quiz_sessions']['Row']
 type AnswerLogRow = Database['public']['Tables']['answer_logs']['Row']
 type QuestionRow = Database['public']['Tables']['questions']['Row']
+type ChatGuardLogRow = Database['public']['Tables']['chat_guard_logs']['Row']
 type StudentInsert = Database['public']['Tables']['students']['Insert']
 
 interface BulkQuestionPayload {
@@ -85,6 +95,8 @@ interface RestoreSnapshot {
   questions: QuestionRow[]
   quizSessions: QuizSessionRow[]
   answerLogs: AnswerLogRow[]
+  chatGuardLogs: ChatGuardLogRow[]
+  hasChatGuardLogs: boolean
   defaultPasswordCount: number
 }
 
@@ -253,6 +265,10 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
   const answerLogs = rawStudents.flatMap(student =>
     Array.isArray(student.answerLogs) ? student.answerLogs as AnswerLogRow[] : []
   )
+  const hasChatGuardLogs = Array.isArray(parsed.chatGuardLogs)
+  const chatGuardLogs = hasChatGuardLogs
+    ? parsed.chatGuardLogs as ChatGuardLogRow[]
+    : []
 
   if (questionCatalog.length === 0) {
     throw new Error('このバックアップには問題データが含まれていません。')
@@ -285,12 +301,14 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
     questions: questionCatalog,
     quizSessions,
     answerLogs,
+    chatGuardLogs,
+    hasChatGuardLogs,
     defaultPasswordCount,
   }
 }
 
 async function insertRowsInChunks(
-  table: 'questions' | 'quiz_sessions' | 'answer_logs',
+  table: 'questions' | 'quiz_sessions' | 'answer_logs' | 'chat_guard_logs',
   rows: Record<string, unknown>[]
 ) {
   if (rows.length === 0) return
@@ -312,6 +330,9 @@ function getRestoreErrorMessage(message: string) {
   if (message.includes('keywords')) {
     return 'Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。'
   }
+  if (message.includes('chat_guard_logs')) {
+    return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
+  }
   return message
 }
 
@@ -324,6 +345,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string }>>([])
   const [stats, setStats] = useState<StudentStats[]>([])
   const [questions, setQuestions] = useState<QuestionRow[]>([])
+  const [activeStudents, setActiveStudents] = useState<ActiveStudentStatus[]>([])
+  const [chatGuardLogs, setChatGuardLogs] = useState<ChatGuardLogRow[]>([])
   const [loading, setLoading] = useState(false)
   const [bulkInput, setBulkInput] = useState(BULK_JSON_EXAMPLE)
   const [bulkMsg, setBulkMsg] = useState('')
@@ -362,16 +385,61 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     loadData()
   }, [authed, tab])
 
+  useEffect(() => {
+    if (!authed || tab !== 'overview') return
+
+    const intervalId = window.setInterval(() => {
+      void loadData()
+    }, 60 * 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [authed, tab])
+
   const loadData = async () => {
     setLoading(true)
 
     if (tab === 'overview') {
-      const [students, { data: sessions }] = await Promise.all([
+      const [students, { data: sessions }, activeSessionRows, chatGuardLogsResponse] = await Promise.all([
         fetchStudents(),
         supabase.from('quiz_sessions').select('*'),
+        fetchActiveSessions(),
+        supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }).limit(20),
       ])
       setStudentsList(students)
       setStats(buildStudentStats(students, (sessions || []) as QuizSessionRow[]))
+      const activeStudentMap = new Map<number, ActiveStudentStatus>()
+      activeSessionRows
+        .filter(session => session.student_id !== 5)
+        .forEach(session => {
+          const currentStudent = students.find(student => student.id === session.student_id)
+          if (!currentStudent) return
+          const current = activeStudentMap.get(session.student_id)
+          if (!current) {
+            activeStudentMap.set(session.student_id, {
+              id: session.student_id,
+              nickname: currentStudent.nickname,
+              lastSeenAt: session.last_seen_at,
+              sessionCount: 1,
+            })
+            return
+          }
+
+          current.sessionCount += 1
+          if (session.last_seen_at > current.lastSeenAt) {
+            current.lastSeenAt = session.last_seen_at
+          }
+        })
+      setActiveStudents(Array.from(activeStudentMap.values()).sort((a, b) => +new Date(b.lastSeenAt) - +new Date(a.lastSeenAt)))
+      if (chatGuardLogsResponse.error) {
+        if (!isMissingRelationError(chatGuardLogsResponse.error, 'chat_guard_logs')) {
+          console.error(chatGuardLogsResponse.error)
+        }
+        setChatGuardLogs([])
+      } else {
+        setChatGuardLogs((chatGuardLogsResponse.data || []) as ChatGuardLogRow[])
+      }
     } else if (tab === 'questions') {
       const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false })
       setQuestions((data || []) as QuestionRow[])
@@ -385,27 +453,33 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       setExportLoading(true)
       setExportMsg('')
 
-      const [students, sessionsResponse, answerLogsResponse, questionsResponse] = await Promise.all([
+      const [students, sessionsResponse, answerLogsResponse, questionsResponse, chatGuardLogsResponse] = await Promise.all([
         fetchStudents(),
         supabase.from('quiz_sessions').select('*').order('created_at', { ascending: false }),
         supabase.from('answer_logs').select('*').order('created_at', { ascending: false }),
         supabase.from('questions').select('*').order('created_at', { ascending: false }),
+        supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }),
       ])
 
       if (sessionsResponse.error) throw new Error(sessionsResponse.error.message)
       if (answerLogsResponse.error) throw new Error(answerLogsResponse.error.message)
       if (questionsResponse.error) throw new Error(questionsResponse.error.message)
+      if (chatGuardLogsResponse.error && !isMissingRelationError(chatGuardLogsResponse.error, 'chat_guard_logs')) {
+        throw new Error(chatGuardLogsResponse.error.message)
+      }
 
       const sessions = (sessionsResponse.data || []) as QuizSessionRow[]
       const answerLogs = (answerLogsResponse.data || []) as AnswerLogRow[]
       const questions = (questionsResponse.data || []) as QuestionRow[]
+      const chatGuardLogs = (chatGuardLogsResponse.data || []) as ChatGuardLogRow[]
       const statsSnapshot = buildStudentStats(students, sessions)
 
       const payload = {
         exportedAt: new Date().toISOString(),
-        format: 'rikarikastudy-admin-export/v2',
+        format: 'rikarikastudy-admin-export/v3',
         restoreHint: 'テーブルが消えている場合は、先に supabase_schema.sql を SQL Editor で実行してから復元してください。',
         questionCatalog: questions,
+        chatGuardLogs,
         students: students.map(student => {
           const summary = statsSnapshot.find(current => current.id === student.id)
           const studentSessions = sessions.filter(session => session.student_id === student.id)
@@ -573,6 +647,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         `問題: ${snapshot.questions.length}件`,
         `クイズ履歴: ${snapshot.quizSessions.length}件`,
         `解答ログ: ${snapshot.answerLogs.length}件`,
+        ...(snapshot.hasChatGuardLogs ? [`チャット警告: ${snapshot.chatGuardLogs.length}件`] : []),
         '',
         'questions / quiz_sessions / answer_logs は入れ替えになります。続けますか？',
       ].join('\n')
@@ -606,12 +681,25 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         .not('id', 'is', null)
       if (deleteQuestionsError) throw new Error(deleteQuestionsError.message)
 
+      if (snapshot.hasChatGuardLogs) {
+        const { error: deleteChatGuardLogsError } = await supabase
+          .from('chat_guard_logs')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteChatGuardLogsError) throw new Error(deleteChatGuardLogsError.message)
+      }
+
       await insertRowsInChunks('questions', snapshot.questions as unknown as Record<string, unknown>[])
       await insertRowsInChunks('quiz_sessions', snapshot.quizSessions as unknown as Record<string, unknown>[])
       await insertRowsInChunks('answer_logs', snapshot.answerLogs as unknown as Record<string, unknown>[])
+      if (snapshot.hasChatGuardLogs) {
+        await insertRowsInChunks('chat_guard_logs', snapshot.chatGuardLogs as unknown as Record<string, unknown>[])
+      }
 
       setRestoreMsg(
-        `✅ 復元しました。問題${snapshot.questions.length}件 / 履歴${snapshot.quizSessions.length}件 / 解答ログ${snapshot.answerLogs.length}件を反映しました。`
+        `✅ 復元しました。問題${snapshot.questions.length}件 / 履歴${snapshot.quizSessions.length}件 / 解答ログ${snapshot.answerLogs.length}件`
+        + (snapshot.hasChatGuardLogs ? ` / チャット警告${snapshot.chatGuardLogs.length}件` : '')
+        + ' を反映しました。'
         + (snapshot.defaultPasswordCount > 0
           ? ` 旧形式JSONだったため、生徒${snapshot.defaultPasswordCount}件のパスワードは既定値で補完しました。`
           : '')
@@ -654,6 +742,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       </div>
     )
   }
+
+  const studentNameMap = new Map(studentsList.map(student => [student.id, student.nickname]))
 
   return (
     <div className="page-shell-wide">
@@ -710,11 +800,51 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           ) : (
             <div className="space-y-4">
               <div className="card">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="text-white font-bold">現在ログイン中</div>
+                    <div className="text-slate-400 text-sm mt-1">
+                      生徒には人数だけを出し、管理画面では誰がログイン中か確認できます。
+                    </div>
+                  </div>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(10, 132, 255, 0.12)', border: '1px solid rgba(10, 132, 255, 0.22)' }}>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ONLINE</div>
+                    <div className="mt-2 font-display text-3xl text-white">{activeStudents.length}人</div>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+                  {activeStudents.length > 0 ? activeStudents.map(student => (
+                    <div key={student.id} className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="font-bold text-white">{student.nickname}</div>
+                          <div className="text-slate-400 text-xs mt-1">ID {student.id}</div>
+                        </div>
+                        <span className="rounded-full bg-emerald-500/12 px-3 py-1 text-xs font-semibold text-emerald-300">
+                          ログイン中
+                        </span>
+                      </div>
+                      <div className="text-slate-400 text-xs mt-3">
+                        最終更新: {format(new Date(student.lastSeenAt), 'M/d HH:mm:ss', { locale: ja })}
+                      </div>
+                      <div className="text-slate-500 text-xs mt-1">
+                        端末数: {student.sessionCount}
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-5 text-sm text-slate-400">
+                      いまログイン中の生徒はいません。
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="card">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="text-white font-bold">全成績データをダウンロード</div>
                     <div className="text-slate-400 text-sm mt-1">
-                      生徒情報、問題、履歴、解答ログを復元用JSONとしてまとめて保存します。
+                      生徒情報、問題、履歴、解答ログ、チャット警告ログを復元用JSONとしてまとめて保存します。
                     </div>
                     {exportMsg && (
                       <div
@@ -736,9 +866,78 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               </div>
 
               <div className="card">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="text-white font-bold">チャット警告</div>
+                    <div className="text-slate-400 text-sm mt-1">
+                      悪口や下ネタを含む入力を検知すると、ここに記録します。
+                    </div>
+                  </div>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(248, 113, 113, 0.12)', border: '1px solid rgba(248, 113, 113, 0.22)' }}>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ALERT</div>
+                    <div className="mt-2 font-display text-3xl text-white">{chatGuardLogs.length}件</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {chatGuardLogs.length > 0 ? chatGuardLogs.map(log => (
+                    <div key={log.id} className="rounded-2xl border border-rose-500/18 bg-rose-500/6 px-4 py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-white">
+                            {studentNameMap.get(log.student_id) ?? `ID ${log.student_id}`}
+                          </span>
+                          <span className="text-slate-500 text-xs">ID {log.student_id}</span>
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                            style={{ background: `${FIELD_COLORS[log.field] ?? '#64748b'}20`, color: FIELD_COLORS[log.field] ?? '#cbd5e1' }}
+                          >
+                            {log.field}
+                          </span>
+                          <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                            {log.source === 'send' ? '送信時' : '入力中'}
+                          </span>
+                        </div>
+                        <div className="text-slate-500 text-xs">
+                          {format(new Date(log.created_at), 'M/d HH:mm:ss', { locale: ja })}
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {log.categories.map(category => (
+                          <span
+                            key={`${log.id}-${category}`}
+                            className="rounded-full bg-rose-500/12 px-2.5 py-1 text-[11px] font-semibold text-rose-200"
+                          >
+                            {getChatModerationCategoryLabel(category as 'abuse' | 'sexual')}
+                          </span>
+                        ))}
+                        {log.matched_terms.map(term => (
+                          <span
+                            key={`${log.id}-${term}`}
+                            className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300"
+                          >
+                            {term}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="mt-3 text-sm leading-6 text-slate-200">
+                        {log.message_excerpt}
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-5 text-sm text-slate-400">
+                      まだチャット警告はありません。
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="card">
                 <div className="text-white font-bold">バックアップJSONから復元</div>
                 <div className="text-slate-400 text-sm mt-1 leading-6">
-                  管理画面から保存したバックアップJSONを読み込んで、問題・履歴・解答ログを復元します。
+                  管理画面から保存したバックアップJSONを読み込んで、問題・履歴・解答ログ・チャット警告ログを復元します。
                   テーブル自体が消えている場合は、先に `supabase_schema.sql` を SQL Editor で実行してください。
                 </div>
                 <div className="flex flex-wrap gap-3 mt-4">
@@ -788,13 +987,21 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                 {stats.map(student => {
                 const rate = student.totalQ > 0 ? Math.round((student.totalC / student.totalQ) * 100) : 0
+                const isOnline = activeStudents.some(current => current.id === student.id)
                 return (
                   <div key={student.id} className="card">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-4">
                       <div className="flex items-start gap-3">
                         <div className="font-display text-3xl text-blue-400">{student.id}</div>
                         <div>
-                          <div className="font-bold text-white text-lg">{student.nickname}</div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="font-bold text-white text-lg">{student.nickname}</div>
+                            {isOnline && (
+                              <span className="rounded-full bg-emerald-500/12 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
+                                ログイン中
+                              </span>
+                            )}
+                          </div>
                           <div className="text-slate-500 text-xs mt-1">PW: <span className="text-slate-200 font-mono">{student.password}</span></div>
                           <div className="text-slate-500 text-xs mt-1">
                             {student.lastActivity

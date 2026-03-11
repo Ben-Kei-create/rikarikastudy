@@ -3,6 +3,9 @@ import { useAuth } from '@/lib/auth'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
+import { FALLBACK_SCIENCE_NEWS, ScienceNewsItem } from '@/lib/scienceNews'
+import { countActiveStudents } from '@/lib/activeSessions'
+import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
 const FIELDS = [
   { name: '生物', emoji: '🌿', color: '#22c55e', desc: '細胞・遺伝・消化' },
@@ -25,15 +28,31 @@ export default function HomePage({
   onMyPage: () => void
 }) {
   const { nickname, studentId, logout } = useAuth()
+  const isGuest = isGuestStudentId(studentId)
   const [stats, setStats] = useState<FieldStats>({})
-  const learnedFields = FIELDS.filter(field => (stats[field.name]?.total ?? 0) > 0).length
+  const [scienceNews, setScienceNews] = useState<ScienceNewsItem>(FALLBACK_SCIENCE_NEWS)
+  const [onlineCount, setOnlineCount] = useState<number | null>(null)
   const totalQuestions = Object.values(stats).reduce((sum, field) => sum + field.total, 0)
   const totalCorrect = Object.values(stats).reduce((sum, field) => sum + field.correct, 0)
   const overallRate = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null
 
   useEffect(() => {
-    if (!studentId) return
+    if (studentId === null) return
     const load = async () => {
+      if (isGuest) {
+        const store = loadGuestStudyStore()
+        const guestStats: FieldStats = {}
+
+        for (const row of store.sessions) {
+          if (!guestStats[row.field]) guestStats[row.field] = { total: 0, correct: 0 }
+          guestStats[row.field].total += row.total_questions
+          guestStats[row.field].correct += row.correct_count
+        }
+
+        setStats(guestStats)
+        return
+      }
+
       const { data } = await supabase
         .from('quiz_sessions')
         .select('field, total_questions, correct_count')
@@ -48,7 +67,50 @@ export default function HomePage({
       setStats(s)
     }
     load()
+  }, [isGuest, studentId])
+
+  useEffect(() => {
+    let active = true
+
+    const loadNews = async () => {
+      try {
+        const response = await fetch('/api/science-news')
+        if (!response.ok) return
+        const payload = await response.json() as ScienceNewsItem
+        if (active) setScienceNews(payload)
+      } catch {}
+    }
+
+    loadNews()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (studentId === null) return
+    let active = true
+
+    const loadOnlineCount = async () => {
+      try {
+        const count = await countActiveStudents()
+        if (active) setOnlineCount(count)
+      } catch {}
+    }
+
+    loadOnlineCount()
+    const intervalId = window.setInterval(loadOnlineCount, 60 * 1000)
+
+    return () => {
+      active = false
+      window.clearInterval(intervalId)
+    }
   }, [studentId])
+
+  const scienceNewsDate = new Intl.DateTimeFormat('ja-JP', {
+    month: 'numeric',
+    day: 'numeric',
+  }).format(new Date(scienceNews.publishedAt))
 
   return (
     <div className="page-shell page-shell-dashboard">
@@ -60,34 +122,37 @@ export default function HomePage({
               Home
             </div>
             <div className="font-display text-3xl text-white sm:text-4xl">こんにちは、{nickname}さん</div>
-            <p className="text-slate-300 text-sm leading-7 mt-3 sm:text-base">
-              今日の理科を、分野からすぐ始められます。背景には理科4分野の雰囲気だけを薄く重ねて、
-              学習の邪魔にならないトップ画面にしています。
-            </p>
+            {isGuest && (
+              <p className="mt-3 text-sm leading-6 text-sky-200">
+                ゲストモードの成績は当日分だけ保存され、日付が変わるとリセットされます。
+              </p>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-3 lg:max-w-md lg:ml-auto">
-            <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">学習済み</div>
-              <div className="mt-2 font-display text-2xl text-white">{learnedFields}<span className="text-base text-slate-400"> / 4</span></div>
-              <div className="mt-1 text-xs text-slate-500">分野数</div>
-            </div>
+          <div className="grid grid-cols-1 gap-3 lg:max-w-xs lg:ml-auto">
             <div className="subcard p-4">
               <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">正答率</div>
               <div className="mt-2 font-display text-2xl text-white">{overallRate !== null ? `${overallRate}%` : 'START'}</div>
               <div className="mt-1 text-xs text-slate-500">{totalQuestions > 0 ? `${totalQuestions}問解答` : 'まだ未学習'}</div>
             </div>
-            <button
-              onClick={onMyPage}
-              className="btn-secondary w-full"
-            >
-              マイページ
-            </button>
-            <button
-              onClick={() => logout()}
-              className="btn-ghost w-full"
-            >
-              ログアウト
-            </button>
+            <div className="subcard p-4">
+              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ログイン中</div>
+              <div className="mt-2 font-display text-2xl text-white">{onlineCount !== null ? `${onlineCount}人` : '—'}</div>
+              <div className="mt-1 text-xs text-slate-500">だれがログイン中かは表示しません</div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={onMyPage}
+                className="btn-secondary w-full"
+              >
+                マイページ
+              </button>
+              <button
+                onClick={() => logout()}
+                className="btn-ghost w-full"
+              >
+                ログアウト
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -132,6 +197,53 @@ export default function HomePage({
           </div>
         </div>
       </button>
+
+      <a
+        href={scienceNews.link}
+        target="_blank"
+        rel="noreferrer"
+        className="card anim-fade-up mb-4 block text-left"
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderColor: '#f59e0b40',
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.82) 48%, rgba(56, 189, 248, 0.12))',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(circle at right top, rgba(255,255,255,0.1), transparent 34%)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div className="relative z-[1] flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-semibold tracking-[0.2em] text-amber-200 uppercase">
+                Daily Science News
+              </span>
+              <span className="rounded-full border border-amber-300/20 bg-amber-200/10 px-2.5 py-1 text-[11px] font-semibold text-amber-100">
+                試験表示
+              </span>
+            </div>
+            <div className="mt-3 font-display text-xl text-white sm:text-2xl">
+              {scienceNews.title}
+            </div>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-200">
+              {scienceNews.summary}
+            </p>
+          </div>
+          <div className="flex flex-col items-start gap-2 text-xs text-slate-300 sm:items-end sm:text-right">
+            <div>{scienceNews.source}</div>
+            <div>{scienceNewsDate}</div>
+            <div className="inline-flex items-center justify-center rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1.5 text-sm font-semibold text-amber-100">
+              読んでみる →
+            </div>
+          </div>
+        </div>
+      </a>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {FIELDS.map((field, index) => {

@@ -86,6 +86,26 @@ CREATE TABLE IF NOT EXISTS answer_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- オンライン状態テーブル
+CREATE TABLE IF NOT EXISTS active_sessions (
+  session_token TEXT PRIMARY KEY,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- チャット警告ログ
+CREATE TABLE IF NOT EXISTS chat_guard_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  field TEXT NOT NULL CHECK (field IN ('生物', '化学', '物理', '地学')),
+  categories JSONB NOT NULL DEFAULT '[]'::jsonb,
+  matched_terms JSONB NOT NULL DEFAULT '[]'::jsonb,
+  message_excerpt TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'draft' CHECK (source IN ('draft', 'send')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 旧質問DM機能は廃止
 DROP TABLE IF EXISTS student_questions;
 
@@ -95,9 +115,15 @@ CREATE INDEX IF NOT EXISTS idx_answer_logs_student ON answer_logs(student_id);
 CREATE INDEX IF NOT EXISTS idx_answer_logs_question ON answer_logs(question_id);
 CREATE INDEX IF NOT EXISTS idx_questions_field ON questions(field);
 CREATE INDEX IF NOT EXISTS idx_questions_created_by_student ON questions(created_by_student_id);
+CREATE INDEX IF NOT EXISTS idx_active_sessions_student ON active_sessions(student_id);
+CREATE INDEX IF NOT EXISTS idx_active_sessions_last_seen ON active_sessions(last_seen_at);
+CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_student ON chat_guard_logs(student_id);
+CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_created_at ON chat_guard_logs(created_at DESC);
 
 -- RLS（Row Level Security）を無効に（塾内利用のため簡略化）
 ALTER TABLE students DISABLE ROW LEVEL SECURITY;
 ALTER TABLE questions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz_sessions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE answer_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE active_sessions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_guard_logs DISABLE ROW LEVEL SECURITY;

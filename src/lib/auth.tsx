@@ -1,10 +1,18 @@
 'use client'
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
+import {
+  ACTIVE_SESSION_ONLINE_WINDOW_MS,
+  createSessionToken,
+  removeActiveSession,
+  upsertActiveSession,
+} from '@/lib/activeSessions'
+import { GUEST_STUDENT, GUEST_STUDENT_ID, isGuestStudentId } from '@/lib/guestStudy'
 
 const STORAGE_KEY = 'rika_auth_v3'
 const DEVICE_LOCK_KEY = 'rika_device_lock_v1'
 const SESSION_TIMEOUT_MS = 10 * 60 * 1000
+const PRESENCE_HEARTBEAT_MS = Math.min(60 * 1000, ACTIVE_SESSION_ONLINE_WINDOW_MS - 30 * 1000)
 
 export interface StudentRecord {
   id: number
@@ -19,6 +27,16 @@ export const DEFAULT_STUDENTS: StudentRecord[] = [
   { id: 4, nickname: 'K', password: 'rikalove4' },
   { id: 5, nickname: '先生', password: 'rikaadmin2026' },
 ]
+
+export const LOGIN_STUDENTS: StudentRecord[] = [GUEST_STUDENTS_ENTRY(), ...DEFAULT_STUDENTS]
+
+function GUEST_STUDENTS_ENTRY(): StudentRecord {
+  return {
+    id: GUEST_STUDENT.id,
+    nickname: GUEST_STUDENT.nickname,
+    password: GUEST_STUDENT.password,
+  }
+}
 
 function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number }>) {
   return DEFAULT_STUDENTS.map(defaultStudent => {
@@ -56,6 +74,7 @@ export async function fetchStudents() {
 }
 
 async function fetchStudentById(studentId: number) {
+  if (studentId === GUEST_STUDENT_ID) return GUEST_STUDENTS_ENTRY()
   const students = (await queryStudents()) ?? DEFAULT_STUDENTS
   return students.find(student => student.id === studentId) ?? null
 }
@@ -95,12 +114,14 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-function persistSession(studentId: number, lastActivityAt: number) {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ studentId, lastActivityAt }))
+function persistSession(studentId: number, lastActivityAt: number, sessionToken: string | null) {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ studentId, lastActivityAt, sessionToken }))
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const lastActivityAtRef = useRef<number | null>(null)
+  const sessionTokenRef = useRef<string | null>(null)
+  const lastPresenceSyncAtRef = useRef<number>(0)
   const [state, setState] = useState<AuthState>({
     studentId: null,
     nickname: null,
@@ -134,8 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        const parsed = JSON.parse(saved) as { studentId?: number; lastActivityAt?: number }
-        if (!parsed.studentId) {
+        const parsed = JSON.parse(saved) as { studentId?: number; lastActivityAt?: number; sessionToken?: string }
+        if (parsed.studentId === undefined || parsed.studentId === null) {
           if (!cancelled) {
             setState(prev => ({ ...prev, lockedStudentId }))
           }
@@ -144,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const lastActivityAt = parsed.lastActivityAt ?? 0
         if (!lastActivityAt || Date.now() - lastActivityAt > SESSION_TIMEOUT_MS) {
+          void removeActiveSession((parsed as { sessionToken?: string }).sessionToken ?? null)
           sessionStorage.removeItem(STORAGE_KEY)
           if (!cancelled) {
             setState(prev => ({
@@ -161,6 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!student || cancelled) return
 
         lastActivityAtRef.current = lastActivityAt
+        sessionTokenRef.current = parsed.sessionToken || createSessionToken()
+        persistSession(student.id, lastActivityAt, sessionTokenRef.current)
 
         setState({
           studentId: student.id,
@@ -210,20 +234,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const student = await fetchStudentById(studentId)
-    if (!student || student.password !== password.trim()) {
+    const isGuest = isGuestStudentId(studentId)
+
+    if (!student || (!isGuest && student.password !== password.trim())) {
       return {
         ok: false,
         message: 'ID またはパスワードが違います',
       }
     }
 
-    const nextLockedStudentId = state.lockedStudentId ?? student.id
-    if (!state.lockedStudentId) {
+    const nextLockedStudentId = isGuest ? state.lockedStudentId : (state.lockedStudentId ?? student.id)
+    if (!state.lockedStudentId && !isGuest) {
       localStorage.setItem(DEVICE_LOCK_KEY, String(student.id))
     }
 
     const lastActivityAt = Date.now()
     lastActivityAtRef.current = lastActivityAt
+    sessionTokenRef.current = createSessionToken()
 
     const next = {
       studentId: student.id,
@@ -233,12 +260,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       notice: null,
     }
     setState(next)
-    persistSession(student.id, lastActivityAt)
+    persistSession(student.id, lastActivityAt, sessionTokenRef.current)
+    if (sessionTokenRef.current && !isGuest) {
+      void upsertActiveSession(student.id, sessionTokenRef.current)
+    }
     return { ok: true, message: '' }
   }
 
   const logout = (reason: 'manual' | 'expired' = 'manual') => {
+    void removeActiveSession(sessionTokenRef.current)
     lastActivityAtRef.current = null
+    sessionTokenRef.current = null
     setState(prev => ({
       ...prev,
       studentId: null,
@@ -250,7 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshProfile = async () => {
-    if (!state.studentId) return
+    if (state.studentId === null || isGuestStudentId(state.studentId)) return
     const student = await fetchStudentById(state.studentId)
     if (!student) return
     setState(prev => ({ ...prev, nickname: student.nickname }))
@@ -262,8 +294,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const updateProfile = async (updates: UpdateProfileInput): Promise<UpdateProfileResult> => {
-    if (!state.studentId) {
+    if (state.studentId === null) {
       return { ok: false, message: 'ログインしてから変更してください。' }
+    }
+
+    if (isGuestStudentId(state.studentId)) {
+      return { ok: false, message: 'ゲストモードでは変更できません。' }
     }
 
     const payload: UpdateProfileInput = {}
@@ -296,7 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (payload.nickname) {
       setState(prev => ({ ...prev, nickname: payload.nickname || prev.nickname }))
     }
-    persistSession(state.studentId, lastActivityAtRef.current ?? Date.now())
+    persistSession(state.studentId, lastActivityAtRef.current ?? Date.now(), sessionTokenRef.current)
 
     return {
       ok: true,
@@ -306,12 +342,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const studentId = state.studentId
-    if (!studentId) return
+    if (studentId === null || isGuestStudentId(studentId)) return
+
+    const syncPresence = (force = false) => {
+      const sessionToken = sessionTokenRef.current
+      if (!sessionToken) return
+      const now = Date.now()
+      if (!force && now - lastPresenceSyncAtRef.current < PRESENCE_HEARTBEAT_MS - 1000) return
+      lastPresenceSyncAtRef.current = now
+      void upsertActiveSession(studentId, sessionToken)
+    }
 
     const touchSession = () => {
       const now = Date.now()
       lastActivityAtRef.current = now
-      persistSession(studentId, now)
+      persistSession(studentId, now, sessionTokenRef.current)
     }
 
     const expireIfNeeded = () => {
@@ -325,7 +370,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     touchSession()
+    syncPresence(true)
     const timeoutId = window.setInterval(expireIfNeeded, 15 * 1000)
+    const heartbeatId = window.setInterval(() => syncPresence(true), PRESENCE_HEARTBEAT_MS)
     const activityEvents: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'touchstart', 'focus']
 
     activityEvents.forEach(eventName => {
@@ -333,13 +380,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') expireIfNeeded()
+      if (document.visibilityState === 'visible') {
+        expireIfNeeded()
+        syncPresence(true)
+      }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       window.clearInterval(timeoutId)
+      window.clearInterval(heartbeatId)
       activityEvents.forEach(eventName => {
         window.removeEventListener(eventName, touchSession)
       })

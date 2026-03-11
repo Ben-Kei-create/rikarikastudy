@@ -11,6 +11,7 @@ import {
   markColumnSupported,
 } from '@/lib/schemaCompat'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
+import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
@@ -87,6 +88,7 @@ export default function MyPage({
   onStartDrill: (field: string, unit: string) => void
 }) {
   const { studentId, nickname, updateProfile, logout } = useAuth()
+  const isGuest = isGuestStudentId(studentId)
   const [sessions, setSessions] = useState<Session[]>([])
   const [answerLogs, setAnswerLogs] = useState<AnswerLog[]>([])
   const [myQuestions, setMyQuestions] = useState<QuestionRow[]>([])
@@ -102,8 +104,21 @@ export default function MyPage({
   const [savingQuestion, setSavingQuestion] = useState(false)
 
   useEffect(() => {
-    if (!studentId) return
+    if (studentId === null) return
     const load = async () => {
+      if (isGuest) {
+        const store = loadGuestStudyStore()
+        setSessions(store.sessions as Session[])
+        setAnswerLogs(store.answerLogs.map(log => ({
+          question_id: log.question_id,
+          is_correct: log.is_correct,
+          questions: { unit: log.unit, field: log.field },
+        })))
+        setMyQuestions([])
+        setLoading(false)
+        return
+      }
+
       const shouldLoadMyQuestions = getCachedColumnSupport('created_by_student_id') !== false
       const [sessionsResponse, answerLogsResponse, questionResponse] = await Promise.all([
         supabase.from('quiz_sessions').select('*').eq('student_id', studentId).order('created_at', { ascending: false }),
@@ -130,7 +145,7 @@ export default function MyPage({
       setLoading(false)
     }
     load()
-  }, [studentId])
+  }, [isGuest, studentId])
 
   useEffect(() => {
     setNicknameInput(nickname || '')
@@ -222,6 +237,9 @@ export default function MyPage({
 
   const weekData = dailyData.slice(-7)
   const weekMax = Math.max(...weekData.map(d => d.count), 1)
+  const tabs = isGuest
+    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点']] as const)
+    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
 
   const handleSaveNickname = async () => {
     setSaving('nickname')
@@ -345,7 +363,9 @@ export default function MyPage({
             <div>
               <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">My Page</div>
               <h1 className="font-display text-3xl text-white">マイページ</h1>
-              <p className="text-slate-400 text-sm mt-1">{nickname}さんの成績</p>
+              <p className="text-slate-400 text-sm mt-1">
+                {isGuest ? `${nickname}さんの当日成績` : `${nickname}さんの成績`}
+              </p>
             </div>
             {streak > 0 && (
               <div className="flex w-fit items-center gap-2 rounded-[20px] px-4 py-3" style={{ background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
@@ -355,8 +375,16 @@ export default function MyPage({
               </div>
             )}
           </div>
+          {isGuest && (
+            <div
+              className="mt-4 rounded-[20px] px-4 py-3 text-sm leading-6 text-sky-100"
+              style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.2)' }}
+            >
+              ゲストモードでは、成績は当日分だけ保存されます。ニックネーム変更や自分用問題の作成は使えません。
+            </div>
+          )}
           <div className="segment-bar mt-5">
-            {([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const).map(([t, label]) => (
+            {tabs.map(([t, label]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}

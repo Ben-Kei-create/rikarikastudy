@@ -15,11 +15,28 @@ import {
   markColumnMissing,
   markColumnSupported,
 } from '@/lib/schemaCompat'
+import { isGuestStudentId, saveGuestQuizSession } from '@/lib/guestStudy'
 
 type Phase = 'answering' | 'result' | 'finished'
 
+function shuffleArray<T>(items: T[]) {
+  const shuffled = [...items]
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]]
+  }
+
+  return shuffled
+}
+
 function shuffleQuestions(mode: ChemistryPracticeMode) {
-  return [...getChemistryPracticeDeck(mode)].sort(() => Math.random() - 0.5)
+  return shuffleArray(
+    getChemistryPracticeDeck(mode).map(question => ({
+      ...question,
+      choices: shuffleArray(question.choices),
+    })),
+  )
 }
 
 function buildAnswerString(template: ChemistryTemplatePart[], answerTokens: string[]) {
@@ -43,6 +60,7 @@ export default function ChemistryPracticePage({
 }) {
   const { studentId, logout } = useAuth()
   const meta = CHEMISTRY_MODE_META[mode]
+  const isGuest = isGuestStudentId(studentId)
 
   const [questions, setQuestions] = useState<ChemistryPracticeQuestion[]>([])
   const [current, setCurrent] = useState(0)
@@ -72,11 +90,22 @@ export default function ChemistryPracticePage({
   const canSubmit = !!question && selectedTokens.length === question.answerTokens.length
 
   const saveSession = async () => {
-    if (!studentId) return
+    if (studentId === null) return
 
     const durationSeconds = startedAtRef.current
       ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
       : 0
+
+    if (isGuest) {
+      saveGuestQuizSession({
+        field: '化学',
+        unit: meta.sessionUnit,
+        totalQuestions: questions.length,
+        correctCount: score,
+        durationSeconds,
+      })
+      return
+    }
 
     let sessionResponse = await supabase
       .from('quiz_sessions')

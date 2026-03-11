@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { detectScienceChatModeration } from '@/lib/chatModeration'
 import {
   limitToThreeLines,
   makeMockScienceReply,
@@ -76,6 +77,14 @@ export async function POST(request: NextRequest) {
     const latestUserPrompt = [...messages].reverse().find(message => message.role === 'user')?.text?.trim()
     if (!latestUserPrompt) {
       return NextResponse.json({ error: '質問文がありません。' }, { status: 400 })
+    }
+
+    const moderation = detectScienceChatModeration(latestUserPrompt)
+    if (moderation.blocked) {
+      return NextResponse.json(
+        { error: moderation.warningMessage, blocked: true },
+        { status: 422 }
+      )
     }
 
     if (DEFAULT_MODE !== 'live') {

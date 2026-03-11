@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
+import { isGuestStudentId, saveGuestQuizSession } from '@/lib/guestStudy'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
@@ -15,6 +16,31 @@ const FIELD_COLORS: Record<string, string> = {
   'all': '#38bdf8',
 }
 const CORE_FIELDS = ['生物', '化学', '物理', '地学']
+const FAVORITE_STORAGE_KEY = 'rika_favorite_questions_v1'
+
+function readFavoriteQuestionIds(studentId: number | null) {
+  if (typeof window === 'undefined' || !studentId) return new Set<string>()
+
+  try {
+    const raw = window.localStorage.getItem(FAVORITE_STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) as Record<string, string[]> : {}
+    const ids = Array.isArray(parsed[String(studentId)]) ? parsed[String(studentId)] : []
+    return new Set(ids.filter(id => typeof id === 'string' && id))
+  } catch {
+    return new Set<string>()
+  }
+}
+
+function writeFavoriteQuestionIds(studentId: number | null, ids: Set<string>) {
+  if (typeof window === 'undefined' || !studentId) return
+
+  try {
+    const raw = window.localStorage.getItem(FAVORITE_STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) as Record<string, string[]> : {}
+    parsed[String(studentId)] = Array.from(ids)
+    window.localStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(parsed))
+  } catch {}
+}
 
 function pickQuizQuestions(pool: Question[], field: string) {
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
@@ -73,6 +99,7 @@ export default function QuizPage({
 }) {
   const { studentId, logout } = useAuth()
   const color = FIELD_COLORS[field] ?? '#38bdf8'
+  const isGuest = isGuestStudentId(studentId)
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [current, setCurrent] = useState(0)
@@ -83,6 +110,7 @@ export default function QuizPage({
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(true)
   const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string; result: TextAnswerResult }[]>([])
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
   const startedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -141,8 +169,13 @@ export default function QuizPage({
     load()
   }, [field, unit, studentId])
 
+  useEffect(() => {
+    setFavoriteIds(readFavoriteQuestionIds(studentId))
+  }, [studentId])
+
   const q = questions[current]
   const progress = questions.length > 0 ? ((current) / questions.length) * 100 : 0
+  const isFavorite = !!q && favoriteIds.has(q.id)
 
   const handleChoice = (choice: string) => {
     if (phase !== 'answering') return
@@ -164,11 +197,44 @@ export default function QuizPage({
     setPhase('result')
   }
 
+  const handleDontKnow = () => {
+    if (phase !== 'answering' || q.type !== 'text') return
+    setTextInput('わからない')
+    setAnswerResult('incorrect')
+    setAnswerLogs(logs => [...logs, { qId: q.id, correct: false, answer: 'わからない', result: 'incorrect' }])
+    setPhase('result')
+  }
+
+  const handleToggleFavorite = () => {
+    if (!q || !studentId) return
+
+    setFavoriteIds(current => {
+      const next = new Set(current)
+      if (next.has(q.id)) next.delete(q.id)
+      else next.add(q.id)
+      writeFavoriteQuestionIds(studentId, next)
+      return next
+    })
+  }
+
   const handleNext = async () => {
     if (current + 1 >= questions.length) {
       const durationSeconds = startedAtRef.current
         ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
         : 0
+
+      if (isGuest) {
+        saveGuestQuizSession({
+          field: quickStartAll ? '4分野総合' : field,
+          unit: quickStartAll ? 'クイックスタート' : unit === 'all' ? '全単元' : unit,
+          totalQuestions: questions.length,
+          correctCount: score,
+          durationSeconds,
+          answerLogs,
+        })
+        setPhase('finished')
+        return
+      }
 
       // セッション保存
       let sessionResponse = await supabase
@@ -370,24 +436,40 @@ export default function QuizPage({
       </div>
 
       <div key={current} className="card anim-fade-up mb-4">
-        <div className="flex items-center gap-2 mb-3">
-          {isDrill ? (
-            <span
-              className="px-2 py-0.5 rounded-full text-xs font-bold"
-              style={{ background: '#f59e0b20', color: '#fbbf24' }}
-            >
-              復習モード
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {isDrill ? (
+              <span
+                className="px-2 py-0.5 rounded-full text-xs font-bold"
+                style={{ background: '#f59e0b20', color: '#fbbf24' }}
+              >
+                復習モード
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: `${color}20`, color }}>
+                {q.field} · {q.unit}
+              </span>
+            )}
+            <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(148, 163, 184, 0.14)', color: 'var(--text-muted)' }}>
+              {q.type === 'choice' ? `${q.choices?.length ?? 0}択` : '記述'}
             </span>
-          ) : (
-            <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: `${color}20`, color }}>
-              {q.field} · {q.unit}
-            </span>
-          )}
-          <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(148, 163, 184, 0.14)', color: '#b6c2d2' }}>
-            {q.type === 'choice' ? `${q.choices?.length ?? 0}択` : '記述'}
-          </span>
+          </div>
+          <button
+            onClick={handleToggleFavorite}
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-all"
+            style={{
+              border: `1px solid ${isFavorite ? '#f59e0b55' : 'var(--surface-elevated-border)'}`,
+              background: isFavorite ? 'rgba(245, 158, 11, 0.14)' : 'var(--surface-elevated)',
+              color: isFavorite ? '#fbbf24' : 'var(--text-muted)',
+            }}
+            aria-pressed={isFavorite}
+            aria-label={isFavorite ? 'お気に入り解除' : 'お気に入り登録'}
+          >
+            <span aria-hidden="true">{isFavorite ? '★' : '☆'}</span>
+            <span>お気に入り</span>
+          </button>
         </div>
-        <p className="text-lg font-bold leading-relaxed text-white sm:text-[1.35rem]">{q.question}</p>
+        <p className="text-lg font-bold leading-relaxed sm:text-[1.35rem]" style={{ color: 'var(--text)' }}>{q.question}</p>
       </div>
 
       {/* 選択肢 / 記述 */}
@@ -396,7 +478,7 @@ export default function QuizPage({
           {q.choices?.map((c, i) => {
             let bg = 'var(--surface-elevated)'
             let border = '1px solid var(--surface-elevated-border)'
-            let textColor = '#e2e8f0'
+            let textColor = 'var(--text)'
             if (phase === 'result') {
               if (c === q.answer) { bg = '#14532d'; border = '2px solid #22c55e'; textColor = '#86efac' }
               else if (c === selected && answerResult === 'incorrect') { bg = '#450a0a'; border = '2px solid #ef4444'; textColor = '#fca5a5' }
@@ -431,9 +513,14 @@ export default function QuizPage({
             }}
           />
           {phase === 'answering' && (
-            <button onClick={handleTextSubmit} disabled={!textInput.trim()} className="btn-primary w-full">
-              答えを提出
-            </button>
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <button onClick={handleTextSubmit} disabled={!textInput.trim()} className="btn-primary w-full">
+                答えを提出
+              </button>
+              <button onClick={handleDontKnow} className="btn-secondary w-full sm:w-auto">
+                わからない
+              </button>
+            </div>
           )}
         </div>
       )}

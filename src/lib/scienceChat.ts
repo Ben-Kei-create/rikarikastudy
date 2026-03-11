@@ -29,6 +29,12 @@ export interface ScienceChatApiReply {
 export const SCIENCE_CHAT_STORAGE_KEY = 'rika_science_chat_threads_v1'
 export const SCIENCE_CHAT_MAX_THREADS_PER_FIELD = 5
 export const SCIENCE_CHAT_MAX_RALLIES_PER_THREAD = 50
+export const SCIENCE_CHAT_GUEST_MAX_THREADS_PER_FIELD = 2
+export const SCIENCE_CHAT_GUEST_MAX_RALLIES_PER_THREAD = 8
+
+export function getScienceChatStorageKey(studentId: number | null) {
+  return `${SCIENCE_CHAT_STORAGE_KEY}__${studentId ?? 'anon'}`
+}
 
 function trimLine(line: string) {
   return line.replace(/\s+/g, ' ').trim()
@@ -97,7 +103,10 @@ export function sanitizeThreads(input: unknown): ScienceChatThread[] {
   })
 }
 
-export function capThreadsPerField(threads: ScienceChatThread[]) {
+export function capThreadsPerField(
+  threads: ScienceChatThread[],
+  maxThreadsPerField = SCIENCE_CHAT_MAX_THREADS_PER_FIELD
+) {
   const grouped = new Map<ScienceChatField, ScienceChatThread[]>()
 
   for (const thread of threads) {
@@ -109,7 +118,7 @@ export function capThreadsPerField(threads: ScienceChatThread[]) {
   return Array.from(grouped.values()).flatMap(group =>
     group
       .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
-      .slice(0, SCIENCE_CHAT_MAX_THREADS_PER_FIELD)
+      .slice(0, maxThreadsPerField)
   )
 }
 

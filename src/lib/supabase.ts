@@ -105,6 +105,50 @@ export type Database = {
           student_answer: string
         }
       }
+      active_sessions: {
+        Row: {
+          session_token: string
+          student_id: number
+          last_seen_at: string
+          created_at: string
+        }
+        Insert: {
+          session_token: string
+          student_id: number
+          last_seen_at?: string
+        }
+        Update: {
+          student_id?: number
+          last_seen_at?: string
+        }
+      }
+      chat_guard_logs: {
+        Row: {
+          id: string
+          student_id: number
+          field: string
+          categories: string[]
+          matched_terms: string[]
+          message_excerpt: string
+          source: 'draft' | 'send'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          student_id: number
+          field: string
+          categories: string[]
+          matched_terms: string[]
+          message_excerpt: string
+          source?: 'draft' | 'send'
+        }
+        Update: {
+          categories?: string[]
+          matched_terms?: string[]
+          message_excerpt?: string
+          source?: 'draft' | 'send'
+        }
+      }
     }
   }
 }

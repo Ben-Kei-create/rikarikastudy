@@ -42,6 +42,21 @@ export function isMissingColumnError(error: ErrorLike | null | undefined, column
   )
 }
 
+export function isMissingRelationError(error: ErrorLike | null | undefined, relation: string) {
+  if (!error) return false
+
+  const text = [error.message, error.details, error.hint]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+
+  return text.includes(relation.toLowerCase()) && (
+    text.includes('does not exist') ||
+    text.includes('schema cache') ||
+    text.includes('not found')
+  )
+}
+
 export function getCachedColumnSupport(column: string) {
   if (columnSupportCache[column] === null || columnSupportCache[column] === undefined) {
     if (readMissingColumnFlag(column)) {

@@ -1,13 +1,19 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
+import { useAuth } from '@/lib/auth'
+import { detectScienceChatModeration } from '@/lib/chatModeration'
+import { isGuestStudentId } from '@/lib/guestStudy'
 import {
   buildThreadTitle,
   capThreadsPerField,
   countUserMessages,
   createThread,
+  SCIENCE_CHAT_GUEST_MAX_RALLIES_PER_THREAD,
+  SCIENCE_CHAT_GUEST_MAX_THREADS_PER_FIELD,
   SCIENCE_CHAT_MAX_RALLIES_PER_THREAD,
-  SCIENCE_CHAT_STORAGE_KEY,
+  SCIENCE_CHAT_MAX_THREADS_PER_FIELD,
+  getScienceChatStorageKey,
   sanitizeThreads,
   ScienceChatApiReply,
   ScienceChatField,
@@ -23,22 +29,22 @@ const FIELD_META: Record<ScienceChatField, { icon: string; color: string; hint: 
   '地学': { icon: '🌏', color: '#8b7cff', hint: '天気・地震・宇宙の質問をざっくり整理します。' },
 }
 
-function readStoredThreads() {
+function readStoredThreads(storageKey: string) {
   if (typeof window === 'undefined') return []
 
   try {
-    const raw = window.localStorage.getItem(SCIENCE_CHAT_STORAGE_KEY)
+    const raw = window.localStorage.getItem(storageKey)
     return sanitizeThreads(raw ? JSON.parse(raw) : [])
   } catch {
     return []
   }
 }
 
-function writeStoredThreads(threads: ScienceChatThread[]) {
+function writeStoredThreads(storageKey: string, threads: ScienceChatThread[]) {
   if (typeof window === 'undefined') return
 
   try {
-    window.localStorage.setItem(SCIENCE_CHAT_STORAGE_KEY, JSON.stringify(threads))
+    window.localStorage.setItem(storageKey, JSON.stringify(threads))
   } catch {}
 }
 
@@ -68,7 +74,12 @@ export default function ScienceChatPage({
   field: ScienceChatField
   onBack: () => void
 }) {
+  const { studentId } = useAuth()
   const meta = FIELD_META[field]
+  const isGuest = isGuestStudentId(studentId)
+  const maxThreads = isGuest ? SCIENCE_CHAT_GUEST_MAX_THREADS_PER_FIELD : SCIENCE_CHAT_MAX_THREADS_PER_FIELD
+  const maxRallies = isGuest ? SCIENCE_CHAT_GUEST_MAX_RALLIES_PER_THREAD : SCIENCE_CHAT_MAX_RALLIES_PER_THREAD
+  const storageKey = getScienceChatStorageKey(studentId)
   const [allThreads, setAllThreads] = useState<ScienceChatThread[]>([])
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
   const [draftThread, setDraftThread] = useState<ScienceChatThread>(() => createThread(field))
@@ -77,6 +88,7 @@ export default function ScienceChatPage({
   const [loading, setLoading] = useState(false)
   const [provider, setProvider] = useState<ScienceChatProvider>('mock')
   const messagesRef = useRef<HTMLDivElement | null>(null)
+  const reportedBlockedDraftRef = useRef(false)
 
   const visibleThreads = allThreads
     .filter(thread => thread.field === field)
@@ -88,9 +100,10 @@ export default function ScienceChatPage({
   const activeThread = activeStoredThread ?? draftThread
   const rallyCount = countUserMessages(activeThread)
   const isDraft = !activeStoredThread
+  const moderation = detectScienceChatModeration(input)
 
   useEffect(() => {
-    const storedThreads = readStoredThreads()
+    const storedThreads = readStoredThreads(storageKey)
     const nextVisibleThreads = storedThreads
       .filter(thread => thread.field === field)
       .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
@@ -101,17 +114,44 @@ export default function ScienceChatPage({
     setInput('')
     setError('')
     setProvider('mock')
-  }, [field])
+    reportedBlockedDraftRef.current = false
+  }, [field, storageKey])
 
   useEffect(() => {
     if (!messagesRef.current) return
     messagesRef.current.scrollTop = messagesRef.current.scrollHeight
   }, [activeThread.messages.length, loading])
 
+  useEffect(() => {
+    if (!studentId || isGuest || !input.trim() || !moderation.blocked) {
+      reportedBlockedDraftRef.current = false
+      return
+    }
+
+    if (reportedBlockedDraftRef.current) return
+
+    reportedBlockedDraftRef.current = true
+
+    void fetch('/api/science-chat/moderation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        studentId,
+        field,
+        prompt: input.trim(),
+        source: 'draft',
+      }),
+    }).catch(() => {
+      reportedBlockedDraftRef.current = false
+    })
+  }, [field, input, isGuest, moderation.blocked, studentId])
+
   const persistThreads = (nextThreads: ScienceChatThread[]) => {
-    const cappedThreads = capThreadsPerField(nextThreads)
+    const cappedThreads = capThreadsPerField(nextThreads, maxThreads)
     setAllThreads(cappedThreads)
-    writeStoredThreads(cappedThreads)
+    writeStoredThreads(storageKey, cappedThreads)
     return cappedThreads
   }
 
@@ -142,8 +182,13 @@ export default function ScienceChatPage({
     const prompt = input.trim()
     if (!prompt || loading) return
 
-    if (rallyCount >= SCIENCE_CHAT_MAX_RALLIES_PER_THREAD) {
-      setError('このテーマは50ラリーに達しました。新しいテーマを作ってください。')
+    if (moderation.blocked) {
+      setError(moderation.warningMessage)
+      return
+    }
+
+    if (rallyCount >= maxRallies) {
+      setError(`このテーマは${maxRallies}ラリーに達しました。新しいテーマを作ってください。`)
       return
     }
 
@@ -200,6 +245,46 @@ export default function ScienceChatPage({
     }
   }
 
+  if (isGuest) {
+    return (
+      <div className="page-shell page-shell-dashboard">
+        <div className="hero-card science-surface p-5 sm:p-6 lg:p-7 mb-5 anim-fade-up">
+          <ScienceBackdrop />
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-[22px] text-3xl"
+                style={{ background: `${meta.color}18`, border: `1px solid ${meta.color}26` }}
+              >
+                {meta.icon}
+              </div>
+              <div>
+                <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">
+                  Gemini Chat
+                </div>
+                <div className="font-display text-3xl text-white">{field}に質問</div>
+                <p className="text-slate-300 text-sm mt-1 leading-6">
+                  ゲストモードでは Gemini などの質問機能は使えません。
+                </p>
+              </div>
+            </div>
+            <button onClick={onBack} className="btn-secondary w-full lg:w-auto">
+              もどる
+            </button>
+          </div>
+        </div>
+
+        <div className="card text-center py-10">
+          <div className="text-5xl mb-4">🔒</div>
+          <div className="font-display text-2xl text-white">ゲストでは利用できません</div>
+          <p className="mt-3 text-sm leading-7 text-slate-400">
+            Gemini や質問チャットは、通常ログインした生徒だけが使えます。
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="page-shell page-shell-dashboard">
       <div className="hero-card science-surface p-5 sm:p-6 lg:p-7 mb-5 anim-fade-up">
@@ -225,12 +310,12 @@ export default function ScienceChatPage({
           <div className="grid grid-cols-2 gap-3 lg:min-w-[320px]">
             <div className="subcard p-4">
               <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">テーマ</div>
-              <div className="mt-2 font-display text-2xl text-white">{visibleThreads.length}<span className="text-base text-slate-400"> / 5</span></div>
+              <div className="mt-2 font-display text-2xl text-white">{visibleThreads.length}<span className="text-base text-slate-400"> / {maxThreads}</span></div>
               <div className="mt-1 text-xs text-slate-500">この分野の保存テーマ</div>
             </div>
             <div className="subcard p-4">
               <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ラリー</div>
-              <div className="mt-2 font-display text-2xl text-white">{rallyCount}<span className="text-base text-slate-400"> / 50</span></div>
+              <div className="mt-2 font-display text-2xl text-white">{rallyCount}<span className="text-base text-slate-400"> / {maxRallies}</span></div>
               <div className="mt-1 text-xs text-slate-500">1テーマごとの上限</div>
             </div>
             <button onClick={onBack} className="btn-secondary w-full">もどる</button>
@@ -243,7 +328,9 @@ export default function ScienceChatPage({
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
             <div className="text-white font-semibold">最近のテーマ</div>
-            <div className="text-slate-500 text-xs mt-1">この分野ごとに最新5テーマまで保存します</div>
+            <div className="text-slate-500 text-xs mt-1">
+              {isGuest ? `ゲストはこの分野ごとに最新${maxThreads}テーマまで保存します` : 'この分野ごとに最新5テーマまで保存します'}
+            </div>
           </div>
           <span
             className="rounded-full px-3 py-1 text-xs font-semibold"
@@ -350,19 +437,29 @@ export default function ScienceChatPage({
         <div className="mt-4">
           <textarea
             value={input}
-            onChange={event => setInput(event.target.value)}
+            onChange={event => {
+              setInput(event.target.value)
+              setError('')
+            }}
             placeholder={`${field}について質問を書く（3行以内で返答）`}
             rows={3}
             className="input-surface resize-y"
-            disabled={loading || rallyCount >= SCIENCE_CHAT_MAX_RALLIES_PER_THREAD}
+            disabled={loading || rallyCount >= maxRallies}
           />
+          {moderation.blocked && (
+            <div className="mt-3 rounded-2xl border border-amber-700/70 bg-amber-950/60 px-4 py-3 text-sm text-amber-100">
+              {moderation.warningMessage}
+            </div>
+          )}
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs leading-6 text-slate-500">
-              1テーマ50ラリーまで。履歴はこの端末のブラウザにだけ保存します。
+              {isGuest
+                ? `ゲストは1テーマ${maxRallies}ラリーまで。履歴はこの端末のブラウザにだけ保存します。`
+                : '1テーマ50ラリーまで。履歴はこの端末のブラウザにだけ保存します。'}
             </div>
             <button
               onClick={handleSend}
-              disabled={!input.trim() || loading || rallyCount >= SCIENCE_CHAT_MAX_RALLIES_PER_THREAD}
+              disabled={!input.trim() || loading || rallyCount >= maxRallies || moderation.blocked}
               className="btn-primary whitespace-nowrap disabled:opacity-60"
             >
               {loading ? '送信中...' : 'Geminiに聞く'}
