@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS questions (
   created_by_student_id INTEGER REFERENCES students(id),
   explanation TEXT,
   image_url TEXT,
+  image_display_width INTEGER,
+  image_display_height INTEGER,
   grade TEXT DEFAULT '中3',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -62,6 +64,8 @@ ALTER TABLE questions ADD COLUMN IF NOT EXISTS accept_answers JSONB DEFAULT NULL
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS keywords JSONB DEFAULT NULL;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS created_by_student_id INTEGER REFERENCES students(id);
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_display_width INTEGER;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_display_height INTEGER;
 
 -- クイズセッションテーブル
 CREATE TABLE IF NOT EXISTS quiz_sessions (

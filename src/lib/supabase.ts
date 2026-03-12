@@ -68,6 +68,8 @@ export type Database = {
           created_by_student_id: number | null
           explanation: string | null
           image_url: string | null
+          image_display_width: number | null
+          image_display_height: number | null
           grade: string
           created_at: string
         }
@@ -84,6 +86,8 @@ export type Database = {
           created_by_student_id?: number | null
           explanation?: string | null
           image_url?: string | null
+          image_display_width?: number | null
+          image_display_height?: number | null
           grade?: string
         }
         Update: {
@@ -99,6 +103,8 @@ export type Database = {
           created_by_student_id?: number | null
           explanation?: string | null
           image_url?: string | null
+          image_display_width?: number | null
+          image_display_height?: number | null
           grade?: string
         }
       }

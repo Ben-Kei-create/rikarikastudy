@@ -7,6 +7,7 @@ import { getBadgeRarityLabel } from '@/lib/badges'
 import { CustomQuizOptions, getCustomQuizSessionLabel, getCustomQuizSummaryParts } from '@/lib/customQuiz'
 import { getLevelInfo } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
+import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions } from '@/lib/questionPicker'
 import { hasCompletedDailyChallenge, recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
 import {
@@ -61,6 +62,8 @@ interface Question {
   keywords: string[] | null
   explanation: string | null
   image_url: string | null
+  image_display_width: number | null
+  image_display_height: number | null
 }
 
 type Phase = 'answering' | 'result' | 'finished'
@@ -258,6 +261,7 @@ export default function QuizPage({
   const q = questions[current]
   const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
   const isFavorite = !!q && favoriteIds.has(q.id)
+  const questionImageDisplay = q ? getQuestionImageDisplaySize(q) : null
 
   const handleChoice = (choice: string) => {
     if (phase !== 'answering' || !q) return
@@ -636,17 +640,23 @@ export default function QuizPage({
           </button>
         </div>
         <p className="text-lg font-bold leading-relaxed sm:text-[1.35rem]" style={{ color: 'var(--text)' }}>{q.question}</p>
-        {q.image_url && (
-          <div
-            className="mt-4 overflow-hidden rounded-[24px] border bg-slate-950/50"
-            style={{ borderColor: 'rgba(148, 163, 184, 0.16)' }}
-          >
-            <img
-              src={q.image_url}
-              alt={`${q.question} の画像`}
-              className="block max-h-[420px] w-full object-contain"
-              loading="lazy"
-            />
+        {q.image_url && questionImageDisplay && (
+          <div className="mt-4 flex justify-center">
+            <div
+              className="overflow-hidden rounded-[24px] border bg-slate-950/50"
+              style={{
+                borderColor: 'rgba(148, 163, 184, 0.16)',
+                width: `min(100%, ${questionImageDisplay.width}px)`,
+                aspectRatio: questionImageDisplay.aspectRatio,
+              }}
+            >
+              <img
+                src={q.image_url}
+                alt={`${q.question} の画像`}
+                className="block h-full w-full object-fill"
+                loading="lazy"
+              />
+            </div>
           </div>
         )}
       </div>

@@ -3,6 +3,15 @@ const QUESTION_IMAGE_MAX_BYTES = 220 * 1024
 const SCALE_STEPS = [1, 0.86, 0.74, 0.62]
 const QUALITY_STEPS = [0.82, 0.74, 0.66, 0.58, 0.5]
 
+export const QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE = 280
+export const QUESTION_IMAGE_MIN_DISPLAY_SIZE = 120
+export const QUESTION_IMAGE_MAX_DISPLAY_SIZE = 520
+
+export interface QuestionImageDisplayLike {
+  image_display_width?: number | null
+  image_display_height?: number | null
+}
+
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -67,6 +76,31 @@ function formatQuestionImageSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export function clampQuestionImageDisplayValue(
+  value: number | null | undefined,
+  fallback = QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE,
+) {
+  const resolved = typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : fallback
+
+  return Math.max(
+    QUESTION_IMAGE_MIN_DISPLAY_SIZE,
+    Math.min(QUESTION_IMAGE_MAX_DISPLAY_SIZE, Math.round(resolved)),
+  )
+}
+
+export function getQuestionImageDisplaySize(question: QuestionImageDisplayLike) {
+  const width = clampQuestionImageDisplayValue(question.image_display_width)
+  const height = clampQuestionImageDisplayValue(question.image_display_height)
+
+  return {
+    width,
+    height,
+    aspectRatio: `${width} / ${height}`,
+  }
 }
 
 export async function compressQuestionImageFile(file: File) {

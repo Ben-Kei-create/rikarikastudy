@@ -23,6 +23,7 @@ import {
 } from '@/lib/schemaCompat'
 import { loadTimeAttackBest, recordStudySession, saveTimeAttackBest, StudyRewardSummary } from '@/lib/studyRewards'
 import { supabase } from '@/lib/supabase'
+import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 type ChallengeMode = 'time_attack' | 'test_mode' | 'streak_mode'
@@ -41,6 +42,8 @@ interface Question {
   keywords: string[] | null
   explanation: string | null
   image_url: string | null
+  image_display_width: number | null
+  image_display_height: number | null
 }
 
 interface LeaderboardEntry {
@@ -273,6 +276,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     if (questions.length === 0) return null
     return questions[currentIndex] ?? null
   }, [currentIndex, questions])
+  const currentQuestionImageDisplay = currentQuestion ? getQuestionImageDisplaySize(currentQuestion) : null
   const testModeAnswered = selectedMode === 'test_mode' && answerResult !== null
   const testModeProgress = questions.length > 0 ? ((currentIndex + (testModeAnswered ? 1 : 0)) / questions.length) * 100 : 0
   const testModeQuestionReady = allQuestions.length >= TEST_MODE_QUESTION_COUNT
@@ -1014,17 +1018,23 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
 
             <div className="text-2xl font-bold text-white leading-relaxed">{currentQuestion.question}</div>
 
-            {currentQuestion.image_url && (
-              <div
-                className="mt-4 overflow-hidden rounded-[24px] border bg-slate-950/50"
-                style={{ borderColor: 'rgba(148, 163, 184, 0.16)' }}
-              >
-                <img
-                  src={currentQuestion.image_url}
-                  alt={`${currentQuestion.question} の画像`}
-                  className="block max-h-[320px] w-full object-contain"
-                  loading="lazy"
-                />
+            {currentQuestion.image_url && currentQuestionImageDisplay && (
+              <div className="mt-4 flex justify-center">
+                <div
+                  className="overflow-hidden rounded-[24px] border bg-slate-950/50"
+                  style={{
+                    borderColor: 'rgba(148, 163, 184, 0.16)',
+                    width: `min(100%, ${currentQuestionImageDisplay.width}px)`,
+                    aspectRatio: currentQuestionImageDisplay.aspectRatio,
+                  }}
+                >
+                  <img
+                    src={currentQuestion.image_url}
+                    alt={`${currentQuestion.question} の画像`}
+                    className="block h-full w-full object-fill"
+                    loading="lazy"
+                  />
+                </div>
               </div>
             )}
 
@@ -1158,17 +1168,23 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               <span className="text-xs text-slate-500">{currentQuestion.unit}</span>
             </div>
             <h2 className="mt-4 text-2xl font-bold text-white sm:text-3xl">{currentQuestion.question}</h2>
-            {currentQuestion.image_url && (
-              <div
-                className="mt-4 overflow-hidden rounded-[24px] border bg-slate-950/50"
-                style={{ borderColor: 'rgba(148, 163, 184, 0.16)' }}
-              >
-                <img
-                  src={currentQuestion.image_url}
-                  alt={`${currentQuestion.question} の画像`}
-                  className="block max-h-[320px] w-full object-contain"
-                  loading="lazy"
-                />
+            {currentQuestion.image_url && currentQuestionImageDisplay && (
+              <div className="mt-4 flex justify-center">
+                <div
+                  className="overflow-hidden rounded-[24px] border bg-slate-950/50"
+                  style={{
+                    borderColor: 'rgba(148, 163, 184, 0.16)',
+                    width: `min(100%, ${currentQuestionImageDisplay.width}px)`,
+                    aspectRatio: currentQuestionImageDisplay.aspectRatio,
+                  }}
+                >
+                  <img
+                    src={currentQuestion.image_url}
+                    alt={`${currentQuestion.question} の画像`}
+                    className="block h-full w-full object-fill"
+                    loading="lazy"
+                  />
+                </div>
               </div>
             )}
 

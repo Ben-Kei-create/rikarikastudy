@@ -12,7 +12,14 @@ import { isMissingColumnError, isMissingRelationError } from '@/lib/schemaCompat
 import { fetchActiveSessions } from '@/lib/activeSessions'
 import { BADGE_DEFINITIONS } from '@/lib/badges'
 import { getLevelTitle } from '@/lib/engagement'
-import { compressQuestionImageFile } from '@/lib/questionImages'
+import {
+  clampQuestionImageDisplayValue,
+  compressQuestionImageFile,
+  getQuestionImageDisplaySize,
+  QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE,
+  QUESTION_IMAGE_MAX_DISPLAY_SIZE,
+  QUESTION_IMAGE_MIN_DISPLAY_SIZE,
+} from '@/lib/questionImages'
 import { buildGlossaryEntryId, ScienceGlossaryField } from '@/lib/scienceGlossary'
 
 const ADMIN_PW = 'rikaadmin2026'
@@ -533,7 +540,7 @@ function getRestoreErrorMessage(message: string) {
   if (message.includes('relation') && message.includes('does not exist')) {
     return 'Supabase のテーブルがありません。先に supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
-  if (message.includes('password') || message.includes('duration_seconds') || message.includes('created_by_student_id') || message.includes('student_xp') || message.includes('xp_earned') || message.includes('session_mode') || message.includes('image_url')) {
+  if (message.includes('password') || message.includes('duration_seconds') || message.includes('created_by_student_id') || message.includes('student_xp') || message.includes('xp_earned') || message.includes('session_mode') || message.includes('image_url') || message.includes('image_display_width') || message.includes('image_display_height')) {
     return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
   if (message.includes('keywords')) {
@@ -588,12 +595,16 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     grade: '中3',
   })
   const [addMsg, setAddMsg] = useState('')
-  const [questionImageBusyId, setQuestionImageBusyId] = useState<string | null>(null)
+  const [questionImageBusy, setQuestionImageBusy] = useState<{
+    questionId: string
+    action: 'upload' | 'size' | 'remove'
+  } | null>(null)
   const [questionImageStatus, setQuestionImageStatus] = useState<{
     questionId: string
     type: 'success' | 'error'
     text: string
   } | null>(null)
+  const [questionImageSizeDrafts, setQuestionImageSizeDrafts] = useState<Record<string, { width: string; height: string }>>({})
 
   const checkPw = () => {
     if (pw === ADMIN_PW) {
@@ -1105,24 +1116,87 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     setQuestions(current => current.filter(question => question.id !== id))
   }
 
+  const setQuestionImageSizeDraft = (questionId: string, next: { width?: string; height?: string }) => {
+    setQuestionImageSizeDrafts(current => {
+      const existing = current[questionId] ?? {
+        width: String(QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE),
+        height: String(QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE),
+      }
+
+      return {
+        ...current,
+        [questionId]: {
+          width: next.width ?? existing.width,
+          height: next.height ?? existing.height,
+        },
+      }
+    })
+  }
+
+  const clearQuestionImageSizeDraft = (questionId: string) => {
+    setQuestionImageSizeDrafts(current => {
+      const next = { ...current }
+      delete next[questionId]
+      return next
+    })
+  }
+
+  const getQuestionImageDraftSize = (question: QuestionRow) => {
+    const stored = getQuestionImageDisplaySize(question)
+    const draft = questionImageSizeDrafts[question.id]
+
+    return {
+      width: draft?.width ?? String(stored.width),
+      height: draft?.height ?? String(stored.height),
+      storedWidth: stored.width,
+      storedHeight: stored.height,
+    }
+  }
+
+  const parseQuestionImageDraftValue = (value: string, fallback: number) => {
+    if (!value.trim()) return clampQuestionImageDisplayValue(fallback)
+    const parsed = Number(value)
+    if (!Number.isFinite(parsed)) return clampQuestionImageDisplayValue(fallback)
+    return clampQuestionImageDisplayValue(parsed)
+  }
+
   const handleQuestionImageChange = async (questionId: string, event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
 
+    const currentQuestion = questions.find(question => question.id === questionId)
+    const currentDisplay = currentQuestion
+      ? getQuestionImageDisplaySize(currentQuestion)
+      : {
+          width: QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE,
+          height: QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE,
+        }
+
     try {
-      setQuestionImageBusyId(questionId)
+      setQuestionImageBusy({ questionId, action: 'upload' })
       setQuestionImageStatus(null)
       const compressed = await compressQuestionImageFile(file)
       const { data, error } = await supabase
         .from('questions')
-        .update({ image_url: compressed.dataUrl })
+        .update({
+          image_url: compressed.dataUrl,
+          image_display_width: currentDisplay.width,
+          image_display_height: currentDisplay.height,
+        })
         .eq('id', questionId)
         .select('*')
         .single()
 
-      if (error && isMissingColumnError(error, 'image_url')) {
-        throw new Error('Supabase の questions テーブルに image_url 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      if (
+        error
+        && (
+          isMissingColumnError(error, 'image_url')
+          || isMissingColumnError(error, 'image_display_width')
+          || isMissingColumnError(error, 'image_display_height')
+        )
+      ) {
+        throw new Error('Supabase の questions テーブルの画像列が古いです。最新の supabase_schema.sql を SQL Editor で実行してください。')
       }
       if (error) throw new Error(error.message)
 
@@ -1131,10 +1205,14 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           ? data as QuestionRow
           : question
       )))
+      setQuestionImageSizeDraft(questionId, {
+        width: String(data.image_display_width ?? currentDisplay.width),
+        height: String(data.image_display_height ?? currentDisplay.height),
+      })
       setQuestionImageStatus({
         questionId,
         type: 'success',
-        text: `画像を圧縮して保存しました。${compressed.width} × ${compressed.height} / ${compressed.sizeLabel}`,
+        text: `画像を標準画質で保存しました。元画像 ${compressed.width} × ${compressed.height} / ${compressed.sizeLabel} / 表示 ${currentDisplay.width} × ${currentDisplay.height}`,
       })
     } catch (error) {
       setQuestionImageStatus({
@@ -1143,23 +1221,88 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         text: error instanceof Error ? error.message : '画像の保存に失敗しました。',
       })
     } finally {
-      setQuestionImageBusyId(null)
+      setQuestionImageBusy(null)
+    }
+  }
+
+  const handleSaveQuestionImageSize = async (question: QuestionRow) => {
+    const draft = getQuestionImageDraftSize(question)
+    const width = parseQuestionImageDraftValue(draft.width, draft.storedWidth)
+    const height = parseQuestionImageDraftValue(draft.height, draft.storedHeight)
+
+    try {
+      setQuestionImageBusy({ questionId: question.id, action: 'size' })
+      setQuestionImageStatus(null)
+      const { data, error } = await supabase
+        .from('questions')
+        .update({
+          image_display_width: width,
+          image_display_height: height,
+        })
+        .eq('id', question.id)
+        .select('*')
+        .single()
+
+      if (
+        error
+        && (
+          isMissingColumnError(error, 'image_display_width')
+          || isMissingColumnError(error, 'image_display_height')
+        )
+      ) {
+        throw new Error('Supabase の questions テーブルに画像サイズ列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      }
+      if (error) throw new Error(error.message)
+
+      setQuestions(current => current.map(currentQuestion => (
+        currentQuestion.id === question.id
+          ? data as QuestionRow
+          : currentQuestion
+      )))
+      setQuestionImageSizeDraft(question.id, {
+        width: String(width),
+        height: String(height),
+      })
+      setQuestionImageStatus({
+        questionId: question.id,
+        type: 'success',
+        text: `表示サイズを保存しました。${width} × ${height}`,
+      })
+    } catch (error) {
+      setQuestionImageStatus({
+        questionId: question.id,
+        type: 'error',
+        text: error instanceof Error ? error.message : '画像サイズの保存に失敗しました。',
+      })
+    } finally {
+      setQuestionImageBusy(null)
     }
   }
 
   const handleRemoveQuestionImage = async (questionId: string) => {
     try {
-      setQuestionImageBusyId(questionId)
+      setQuestionImageBusy({ questionId, action: 'remove' })
       setQuestionImageStatus(null)
       const { data, error } = await supabase
         .from('questions')
-        .update({ image_url: null })
+        .update({
+          image_url: null,
+          image_display_width: null,
+          image_display_height: null,
+        })
         .eq('id', questionId)
         .select('*')
         .single()
 
-      if (error && isMissingColumnError(error, 'image_url')) {
-        throw new Error('Supabase の questions テーブルに image_url 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      if (
+        error
+        && (
+          isMissingColumnError(error, 'image_url')
+          || isMissingColumnError(error, 'image_display_width')
+          || isMissingColumnError(error, 'image_display_height')
+        )
+      ) {
+        throw new Error('Supabase の questions テーブルの画像列が古いです。最新の supabase_schema.sql を SQL Editor で実行してください。')
       }
       if (error) throw new Error(error.message)
 
@@ -1168,6 +1311,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           ? data as QuestionRow
           : question
       )))
+      clearQuestionImageSizeDraft(questionId)
       setQuestionImageStatus({
         questionId,
         type: 'success',
@@ -1180,7 +1324,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         text: error instanceof Error ? error.message : '画像の削除に失敗しました。',
       })
     } finally {
-      setQuestionImageBusyId(null)
+      setQuestionImageBusy(null)
     }
   }
 

@@ -7,3 +7,6 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-12: 実ブラウザ確認でクリア自体は成功。`render_game_to_text` の完了直後の stale 状態を ref ベースに修正し、直前の ○ / × も右パネルに残すようにした。
 - 2026-03-12: Playwright MCP でゲストログイン → 地学 → Earth Memory → ミスマッチ 1 回 → 全クリアまで確認。`render_game_to_text` は finished を返し、`npm run build` も成功。
 - 2026-03-12: 生物ラボとして「器官・はたらきペア」を追加する方針。地学ラボと同じ canvas ベースのペアゲームを流用し、`生物` 分野から入れるようにする。
+- 2026-03-12: `biologyPractice.ts` と `BiologyPracticePage.tsx` を追加。`葉緑体 × 光合成を行う` など5組の器官・はたらきペアで、生物ラボを実装した。
+- 2026-03-12: `UnitSelectPage` と `app/page.tsx` を更新し、`生物 → 生物ラボ → 器官・はたらきペア` の導線を追加。学習記録は `session_mode: biology_organ_pairs` で保存するようにした。
+- 2026-03-12: `npm run build` 成功。Playwright MCP で `ゲストログイン → 生物 → 生物ラボ` を確認し、`× ちがう組み合わせ` と `◯ ペア成功` の両方、`render_game_to_text` の `matchedCount` 更新、画面スクリーンショットを確認した。
