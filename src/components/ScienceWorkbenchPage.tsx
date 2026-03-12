@@ -21,7 +21,7 @@ import { recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
 declare global {
   interface Window {
     render_game_to_text?: () => string
-    advanceTime?: (ms: number) => void
+    advanceTime?: (ms: number) => void | Promise<void>
   }
 }
 

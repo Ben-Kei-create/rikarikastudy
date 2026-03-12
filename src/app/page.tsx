@@ -11,10 +11,12 @@ import AdminPage from '@/components/AdminPage'
 import BiologyPracticePage from '@/components/BiologyPracticePage'
 import ChemistryPracticePage from '@/components/ChemistryPracticePage'
 import EarthSciencePracticePage from '@/components/EarthSciencePracticePage'
+import ScienceWorkbenchPage from '@/components/ScienceWorkbenchPage'
 import TimeAttackPage from '@/components/TimeAttackPage'
 import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
+import { ScienceWorkbenchMode, SCIENCE_WORKBENCH_MODE_META } from '@/lib/scienceWorkbench'
 import ScienceChatPage from '@/components/ScienceChatPage'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { CustomQuizOptions } from '@/lib/customQuiz'
@@ -28,6 +30,7 @@ type Screen =
   | { type: 'biology-practice'; mode: BiologyPracticeMode }
   | { type: 'chemistry-practice'; mode: ChemistryPracticeMode }
   | { type: 'earth-practice'; mode: EarthSciencePracticeMode }
+  | { type: 'science-workbench'; mode: ScienceWorkbenchMode }
   | { type: 'chat'; field: ScienceChatField }
 
 const BG_THEMES = ['bg-bio', 'bg-chem', 'bg-phys', 'bg-earth'] as const
@@ -71,6 +74,7 @@ function App() {
         onSelectBiologyMode={mode => setScreen({ type: 'biology-practice', mode })}
         onSelectSpecialMode={mode => setScreen({ type: 'chemistry-practice', mode })}
         onSelectEarthMode={mode => setScreen({ type: 'earth-practice', mode })}
+        onSelectWorkbenchMode={mode => setScreen({ type: 'science-workbench', mode })}
         onOpenChat={field => setScreen({ type: 'chat', field })}
         onBack={() => setScreen('home')}
       />
@@ -101,6 +105,13 @@ function App() {
       <EarthSciencePracticePage
         mode={screen.mode}
         onBack={() => setScreen({ type: 'unit', field: '地学' })}
+      />
+    )
+  } else if (typeof screen === 'object' && screen.type === 'science-workbench') {
+    content = (
+      <ScienceWorkbenchPage
+        mode={screen.mode}
+        onBack={() => setScreen({ type: 'unit', field: SCIENCE_WORKBENCH_MODE_META[screen.mode].field })}
       />
     )
   } else if (typeof screen === 'object' && screen.type === 'quiz') {

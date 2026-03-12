@@ -6,6 +6,13 @@ import { BIOLOGY_MODE_META, BiologyPracticeMode } from '@/lib/biologyPractice'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { CHEMISTRY_MODE_META, ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EARTH_SCIENCE_MODE_META, EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
+import {
+  CHEMISTRY_WORKBENCH_MODES,
+  EARTH_WORKBENCH_MODES,
+  PHYSICS_WORKBENCH_MODES,
+  SCIENCE_WORKBENCH_MODE_META,
+  ScienceWorkbenchMode,
+} from '@/lib/scienceWorkbench'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import {
@@ -51,6 +58,7 @@ export default function UnitSelectPage({
   onSelectBiologyMode,
   onSelectSpecialMode,
   onSelectEarthMode,
+  onSelectWorkbenchMode,
   onOpenChat,
   onBack,
 }: {
@@ -60,6 +68,7 @@ export default function UnitSelectPage({
   onSelectBiologyMode: (mode: BiologyPracticeMode) => void
   onSelectSpecialMode: (mode: ChemistryPracticeMode) => void
   onSelectEarthMode: (mode: EarthSciencePracticeMode) => void
+  onSelectWorkbenchMode: (mode: ScienceWorkbenchMode) => void
   onOpenChat: (field: ScienceChatField) => void
   onBack: () => void
 }) {
@@ -317,6 +326,103 @@ export default function UnitSelectPage({
                 </button>
               )
             })}
+            {CHEMISTRY_WORKBENCH_MODES.map(mode => {
+              const meta = SCIENCE_WORKBENCH_MODE_META[mode]
+              return (
+                <button
+                  key={mode}
+                  onClick={() => onSelectWorkbenchMode(mode)}
+                  className="card text-left"
+                  style={{
+                    borderColor: `${meta.accent}3a`,
+                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
+                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
+                  }}
+                  onMouseEnter={event => {
+                    event.currentTarget.style.transform = 'translateY(-2px)'
+                    event.currentTarget.style.borderColor = `${meta.accent}70`
+                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
+                  }}
+                  onMouseLeave={event => {
+                    event.currentTarget.style.transform = ''
+                    event.currentTarget.style.borderColor = `${meta.accent}3a`
+                    event.currentTarget.style.boxShadow = ''
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div
+                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
+                        style={{ background: `${meta.accent}18`, color: meta.accent }}
+                      >
+                        <span>{meta.badge}</span>
+                      </div>
+                      <div className="mt-4 flex items-center gap-3">
+                        <span className="text-3xl">{meta.icon}</span>
+                        <div>
+                          <div className="font-display text-2xl text-white">{meta.title}</div>
+                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {field === '物理' && (
+        <div className="mb-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-slate-100">物理ラボ</h2>
+            <span className="text-xs text-slate-500">special mode</span>
+          </div>
+          <div className="grid gap-3">
+            {PHYSICS_WORKBENCH_MODES.map(mode => {
+              const meta = SCIENCE_WORKBENCH_MODE_META[mode]
+              return (
+                <button
+                  key={mode}
+                  onClick={() => onSelectWorkbenchMode(mode)}
+                  className="card text-left"
+                  style={{
+                    borderColor: `${meta.accent}3a`,
+                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
+                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
+                  }}
+                  onMouseEnter={event => {
+                    event.currentTarget.style.transform = 'translateY(-2px)'
+                    event.currentTarget.style.borderColor = `${meta.accent}70`
+                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
+                  }}
+                  onMouseLeave={event => {
+                    event.currentTarget.style.transform = ''
+                    event.currentTarget.style.borderColor = `${meta.accent}3a`
+                    event.currentTarget.style.boxShadow = ''
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div
+                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
+                        style={{ background: `${meta.accent}18`, color: meta.accent }}
+                      >
+                        <span>{meta.badge}</span>
+                      </div>
+                      <div className="mt-4 flex items-center gap-3">
+                        <span className="text-3xl">{meta.icon}</span>
+                        <div>
+                          <div className="font-display text-2xl text-white">{meta.title}</div>
+                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -325,15 +431,58 @@ export default function UnitSelectPage({
         <div className="mb-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-slate-100">地学ラボ</h2>
-            <span className="text-xs text-slate-500">special mode</span>
+            <span className="text-xs text-slate-500">special modes</span>
           </div>
-          <div className="grid gap-3">
+          <div className="grid gap-3 md:grid-cols-2">
             {(['link-pairs'] as const).map(mode => {
               const meta = EARTH_SCIENCE_MODE_META[mode]
               return (
                 <button
                   key={mode}
                   onClick={() => onSelectEarthMode(mode)}
+                  className="card text-left"
+                  style={{
+                    borderColor: `${meta.accent}3a`,
+                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
+                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
+                  }}
+                  onMouseEnter={event => {
+                    event.currentTarget.style.transform = 'translateY(-2px)'
+                    event.currentTarget.style.borderColor = `${meta.accent}70`
+                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
+                  }}
+                  onMouseLeave={event => {
+                    event.currentTarget.style.transform = ''
+                    event.currentTarget.style.borderColor = `${meta.accent}3a`
+                    event.currentTarget.style.boxShadow = ''
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div
+                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
+                        style={{ background: `${meta.accent}18`, color: meta.accent }}
+                      >
+                        <span>{meta.badge}</span>
+                      </div>
+                      <div className="mt-4 flex items-center gap-3">
+                        <span className="text-3xl">{meta.icon}</span>
+                        <div>
+                          <div className="font-display text-2xl text-white">{meta.title}</div>
+                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+            {EARTH_WORKBENCH_MODES.map(mode => {
+              const meta = SCIENCE_WORKBENCH_MODE_META[mode]
+              return (
+                <button
+                  key={mode}
+                  onClick={() => onSelectWorkbenchMode(mode)}
                   className="card text-left"
                   style={{
                     borderColor: `${meta.accent}3a`,
