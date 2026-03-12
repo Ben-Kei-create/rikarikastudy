@@ -35,7 +35,7 @@ export interface ConcentrationWorkbenchRound {
   prompt: string
   supportText: string
   targetPercent: number
-  startSoliteMass: number
+  startSoluteMass: number
   startWaterMass: number
   hint: string
   explanation: string
@@ -180,7 +180,7 @@ const CONCENTRATION_ROUNDS: ConcentrationWorkbenchRound[] = [
     prompt: '10% の食塩水を作ろう',
     supportText: '濃度 = 溶質の質量 ÷ 溶液の質量 × 100 です。',
     targetPercent: 10,
-    startSoliteMass: 15,
+    startSoluteMass: 15,
     startWaterMass: 45,
     hint: '溶液全体が 100g なら、溶質 10g で 10% になります。',
     explanation: '10% は、溶液 100g の中に溶質が 10g 含まれている状態です。',
@@ -191,7 +191,7 @@ const CONCENTRATION_ROUNDS: ConcentrationWorkbenchRound[] = [
     prompt: '20% の食塩水を作ろう',
     supportText: '溶質を増やすと濃くなり、水を増やすとうすくなります。',
     targetPercent: 20,
-    startSoliteMass: 10,
+    startSoluteMass: 10,
     startWaterMass: 60,
     hint: '溶質 20g、水 80g なら 20% です。',
     explanation: '20% は、溶液 100g あたり溶質 20g の割合です。',
@@ -202,7 +202,7 @@ const CONCENTRATION_ROUNDS: ConcentrationWorkbenchRound[] = [
     prompt: '25% の食塩水を作ろう',
     supportText: '分母は 溶質 + 水 の全体量です。',
     targetPercent: 25,
-    startSoliteMass: 15,
+    startSoluteMass: 15,
     startWaterMass: 35,
     hint: '溶質 25g、水 75g で 25% になります。',
     explanation: '質量パーセント濃度では、溶液全体の質量を分母にします。',
@@ -213,7 +213,7 @@ const CONCENTRATION_ROUNDS: ConcentrationWorkbenchRound[] = [
     prompt: '5% のうすい食塩水を作ろう',
     supportText: 'うすい食塩水では、水の割合がかなり大きくなります。',
     targetPercent: 5,
-    startSoliteMass: 20,
+    startSoluteMass: 20,
     startWaterMass: 60,
     hint: '溶質 5g、水 95g なら 5% です。',
     explanation: '5% は、溶液 100g 中に溶質が 5g だけ入っている状態です。',
@@ -328,4 +328,3 @@ export function getScienceWorkbenchRounds(mode: ScienceWorkbenchMode): ScienceWo
       return DENSITY_ROUNDS
   }
 }
-

@@ -13,3 +13,6 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-12: 地学ラボを「岩石・鉱物ペア」から「地学リンクペア」に変更。`溶岩ドーム × 昭和新山` や `キラウエア × たて状火山` のような関連語ペアに差し替え、カードは最初から見える形にした。
 - 2026-03-12: `EarthSciencePracticePage` の canvas 描画を更新し、常時表示カード向けのレイアウトと複数行テキスト描画を追加。文言も「めくる」前提から「つながりを選ぶ」前提へ変更した。
 - 2026-03-12: `npm run build` 成功。`develop-web-game` の `web_game_playwright_client.js` はローカル `playwright` 依存不足で起動できなかったため、Playwright MCP で `ゲストログイン → 地学 → 地学リンクペア` を確認。全カードが見えている状態、`× ちがう組み合わせ`、`◯ ペア成功`、`render_game_to_text` の `matchedCount: 1` 更新を確認した。
+- 2026-03-12: `scienceWorkbench.ts` と `ScienceWorkbenchPage.tsx` を追加。化学の `密度ラボ / 濃度ラボ`、地学の `飽和水蒸気量ラボ`、物理の `運動グラフラボ` を共通の canvas ベースで描ける構成にした。
+- 2026-03-12: `UnitSelectPage` と `app/page.tsx` を更新し、`ScienceWorkbenchPage` への導線を追加。化学・地学・物理の分野ページから各ラボへ入れるようにし、学習記録用の session mode も `engagement.ts` / `supabase.ts` に追加した。
+- 2026-03-12: `npm run build` 成功。Playwright MCP で `ゲストログイン → 化学 → 密度ラボ` の正解判定、`化学 → 濃度ラボ` の正解判定、`物理 → 運動グラフラボ` の加速度 0 と `render_game_to_text` の time 更新、`地学 → 飽和水蒸気量ラボ` の 10℃ 正解判定を確認。エラーログは 0 件だった。

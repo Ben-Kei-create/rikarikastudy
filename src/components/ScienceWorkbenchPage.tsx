@@ -111,7 +111,7 @@ function getInitialState(round: ScienceWorkbenchRound): WorkbenchState {
     case 'chem-density':
       return { kind: round.kind, mass: round.startMass, volume: round.startVolume }
     case 'chem-concentration':
-      return { kind: round.kind, soluteMass: round.startSoliteMass, waterMass: round.startWaterMass }
+      return { kind: round.kind, soluteMass: round.startSoluteMass, waterMass: round.startWaterMass }
     case 'earth-humidity':
       return { kind: round.kind, temperature: round.startTemperature }
     case 'physics-motion-graph':
