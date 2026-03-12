@@ -112,7 +112,10 @@ export default function EarthSciencePracticePage({
   const feedbackTimeoutRef = useRef<number | null>(null)
   const startedAtRef = useRef<number | null>(null)
   const feedbackAccumulatorRef = useRef(0)
+  const cardsRef = useRef<EarthScienceCard[]>([])
   const selectedCardIdsRef = useRef<string[]>([])
+  const matchedPairIdsRef = useRef<string[]>([])
+  const attemptsRef = useRef(0)
   const feedbackRef = useRef<FeedbackState | null>(null)
   const phaseRef = useRef<Phase>('playing')
 
@@ -124,6 +127,7 @@ export default function EarthSciencePracticePage({
   const [phase, setPhase] = useState<Phase>('playing')
   const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
   const [lastResolvedPair, setLastResolvedPair] = useState<EarthSciencePair | null>(null)
+  const [lastOutcome, setLastOutcome] = useState<{ message: string; detail: string } | null>(null)
 
   const matchedCount = matchedPairIds.length
   const mistakes = Math.max(0, attempts - matchedCount)
@@ -194,6 +198,7 @@ export default function EarthSciencePracticePage({
     setPhase('playing')
     setRewardSummary(null)
     setLastResolvedPair(null)
+    setLastOutcome(null)
 
     return () => {
       clearFeedbackTimer()
@@ -201,8 +206,20 @@ export default function EarthSciencePracticePage({
   }, [mode])
 
   useEffect(() => {
+    cardsRef.current = cards
+  }, [cards])
+
+  useEffect(() => {
     selectedCardIdsRef.current = selectedCardIds
   }, [selectedCardIds])
+
+  useEffect(() => {
+    matchedPairIdsRef.current = matchedPairIds
+  }, [matchedPairIds])
+
+  useEffect(() => {
+    attemptsRef.current = attempts
+  }, [attempts])
 
   useEffect(() => {
     feedbackRef.current = feedback
@@ -227,6 +244,7 @@ export default function EarthSciencePracticePage({
   useEffect(() => {
     if (phase !== 'playing' || pairDeck.length === 0 || matchedPairIds.length !== pairDeck.length) return
 
+    phaseRef.current = 'finished'
     setPhase('finished')
     void saveSession(attempts, matchedPairIds.length)
   }, [attempts, matchedPairIds, pairDeck.length, phase])
@@ -354,7 +372,7 @@ export default function EarthSciencePracticePage({
   useEffect(() => {
     window.render_game_to_text = () => {
       const payload = {
-        mode: phase,
+        mode: phaseRef.current,
         board: {
           origin: 'top-left',
           width: CANVAS_WIDTH,
@@ -362,20 +380,20 @@ export default function EarthSciencePracticePage({
           rows: CARD_ROWS,
           cols: CARD_COLUMNS,
         },
-        attempts,
-        matchedCount,
+        attempts: attemptsRef.current,
+        matchedCount: matchedPairIdsRef.current.length,
         totalPairs: pairDeck.length,
-        selected: selectedCardIds,
-        feedback: feedback ? { type: feedback.type, message: feedback.message } : null,
-        cards: cards.map((card, index) => {
+        selected: selectedCardIdsRef.current,
+        feedback: feedbackRef.current ? { type: feedbackRef.current.type, message: feedbackRef.current.message } : null,
+        cards: cardsRef.current.map((card, index) => {
           const rect = getCardRect(index)
           return {
             id: card.id,
             pairId: card.pairId,
             kind: card.kind,
             label: card.label,
-            matched: matchedPairIds.includes(card.pairId),
-            selected: selectedCardIds.includes(card.id),
+            matched: matchedPairIdsRef.current.includes(card.pairId),
+            selected: selectedCardIdsRef.current.includes(card.id),
             row: rect.row,
             col: rect.col,
             x: rect.x,
@@ -402,7 +420,7 @@ export default function EarthSciencePracticePage({
       delete window.render_game_to_text
       delete window.advanceTime
     }
-  }, [attempts, cards, feedback, matchedCount, matchedPairIds, pairDeck.length, phase, selectedCardIds])
+  }, [pairDeck.length])
 
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (phase !== 'playing' || locked) return
@@ -443,6 +461,10 @@ export default function EarthSciencePracticePage({
     const matched = firstCard.pairId === secondCard.pairId && firstCard.kind !== secondCard.kind
     const pair = pairMap.get(firstCard.pairId) ?? null
 
+    setLastOutcome({
+      message: matched ? '◯ ペア成功' : '× ちがう組み合わせ',
+      detail: matched && pair ? pair.clue : '岩石カード1枚と鉱物カード1枚の組み合わせを見直してみよう。',
+    })
     setFeedback({
       type: matched ? 'match' : 'miss',
       message: matched ? '◯ ペア成功' : '× ちがう組み合わせ',
@@ -468,6 +490,7 @@ export default function EarthSciencePracticePage({
     setPhase('playing')
     setRewardSummary(null)
     setLastResolvedPair(null)
+    setLastOutcome(null)
   }
 
   if (cards.length === 0) {
@@ -625,6 +648,7 @@ export default function EarthSciencePracticePage({
         <div className="card anim-fade-up">
           <canvas
             ref={canvasRef}
+            id="earth-pair-canvas"
             width={CANVAS_WIDTH}
             height={CANVAS_HEIGHT}
             onClick={handleCanvasClick}
@@ -658,10 +682,10 @@ export default function EarthSciencePracticePage({
               }}
             >
               <div className="text-lg font-bold text-white">
-                {feedback?.message ?? (lastResolvedPair ? '◯ 直前の正解ペア' : 'まだ1組目を探しているところ')}
+                {feedback?.message ?? lastOutcome?.message ?? (lastResolvedPair ? '◯ 直前の正解ペア' : 'まだ1組目を探しているところ')}
               </div>
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                {feedback?.detail ?? lastResolvedPair?.clue ?? '岩石カード1枚と鉱物カード1枚を順番にタップして、正しいペアを見つけよう。'}
+                {feedback?.detail ?? lastOutcome?.detail ?? lastResolvedPair?.clue ?? '岩石カード1枚と鉱物カード1枚を順番にタップして、正しいペアを見つけよう。'}
               </p>
             </div>
           </div>
