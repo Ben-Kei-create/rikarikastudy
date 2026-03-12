@@ -26,9 +26,9 @@ declare global {
   }
 }
 
-type Phase = 'adjusting' | 'result' | 'finished'
+export type Phase = 'adjusting' | 'result' | 'finished'
 
-type WorkbenchState =
+export type WorkbenchState =
   | { kind: 'chem-density'; mass: number; volume: number }
   | { kind: 'chem-concentration'; soluteMass: number; waterMass: number }
   | {
@@ -43,16 +43,16 @@ type WorkbenchState =
   | { kind: 'earth-column'; slots: [string | null, string | null, string | null]; activeSlot: 0 | 1 | 2 }
   | { kind: 'physics-motion-graph'; acceleration: number; time: number }
 
-interface RoundFeedback {
+export interface RoundFeedback {
   correct: boolean
   message: string
   detail: string
 }
 
-const CANVAS_WIDTH = 900
-const CANVAS_HEIGHT = 560
+export const CANVAS_WIDTH = 900
+export const CANVAS_HEIGHT = 560
 
-function clamp(value: number, min: number, max: number) {
+export function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
@@ -116,7 +116,7 @@ function drawBackground(ctx: CanvasRenderingContext2D, meta: ScienceWorkbenchMet
   ctx.fillText(meta.description, 42, 74)
 }
 
-function getInitialState(round: ScienceWorkbenchRound): WorkbenchState {
+export function getInitialState(round: ScienceWorkbenchRound): WorkbenchState {
   switch (round.kind) {
     case 'chem-density':
       return { kind: round.kind, mass: round.startMass, volume: round.startVolume }
@@ -199,7 +199,7 @@ function describeMotion(round: MotionWorkbenchRound, state: Extract<WorkbenchSta
   }
 }
 
-function evaluateRound(round: ScienceWorkbenchRound, state: WorkbenchState): RoundFeedback {
+export function evaluateRound(round: ScienceWorkbenchRound, state: WorkbenchState): RoundFeedback {
   if (round.kind === 'chem-density' && state.kind === 'chem-density') {
     const density = getCurrentDensity(state)
     const correct = Math.abs(density - round.targetDensity) < 0.001
@@ -861,7 +861,7 @@ function drawMotionScene(
   ctx.fill()
 }
 
-function drawWorkbenchScene(
+export function drawWorkbenchScene(
   ctx: CanvasRenderingContext2D,
   meta: ScienceWorkbenchMeta,
   round: ScienceWorkbenchRound,

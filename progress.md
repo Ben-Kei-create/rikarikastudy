@@ -16,3 +16,5 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-12: `scienceWorkbench.ts` と `ScienceWorkbenchPage.tsx` を追加。化学の `密度ラボ / 濃度ラボ`、地学の `飽和水蒸気量ラボ`、物理の `運動グラフラボ` を共通の canvas ベースで描ける構成にした。
 - 2026-03-12: `UnitSelectPage` と `app/page.tsx` を更新し、`ScienceWorkbenchPage` への導線を追加。化学・地学・物理の分野ページから各ラボへ入れるようにし、学習記録用の session mode も `engagement.ts` / `supabase.ts` に追加した。
 - 2026-03-12: `npm run build` 成功。Playwright MCP で `ゲストログイン → 化学 → 密度ラボ` の正解判定、`化学 → 濃度ラボ` の正解判定、`物理 → 運動グラフラボ` の加速度 0 と `render_game_to_text` の time 更新、`地学 → 飽和水蒸気量ラボ` の 10℃ 正解判定を確認。エラーログは 0 件だった。
+- 2026-03-13: `TimeAttackPage.tsx` の連続正解モードを調整し、10秒を全体制限ではなく各問題のシンキングタイムとして扱うように変更。正解後は次の問題に進むタイミングで 10 秒へリセットし、判定表示中はカウントを止めるようにした。
+- 2026-03-13: 連続正解モードの案内文も `各問題ごとに10秒` が伝わる表現へ更新。`npm run build` 成功。

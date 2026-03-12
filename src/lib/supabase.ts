@@ -16,6 +16,14 @@ export const supabase = createClient(
 
 export const supabaseConfigured = Boolean(supabaseUrl && supabaseKey)
 
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
 type SessionMode =
   | 'standard'
   | 'daily_challenge'
@@ -171,6 +179,56 @@ export type Database = {
         Update: {
           student_id?: number
           last_seen_at?: string
+        }
+      }
+      online_lab_rooms: {
+        Row: {
+          room_key: string
+          mode: string | null
+          controller_student_id: number | null
+          controller_nickname: string | null
+          is_live: boolean
+          phase: 'idle' | 'adjusting' | 'result' | 'finished'
+          round_index: number
+          score: number
+          history_json: boolean[]
+          state_json: Json | null
+          feedback_json: Json | null
+          memo_text: string
+          whiteboard_strokes: Json
+          updated_at: string
+          created_at: string
+        }
+        Insert: {
+          room_key?: string
+          mode?: string | null
+          controller_student_id?: number | null
+          controller_nickname?: string | null
+          is_live?: boolean
+          phase?: 'idle' | 'adjusting' | 'result' | 'finished'
+          round_index?: number
+          score?: number
+          history_json?: boolean[]
+          state_json?: Json | null
+          feedback_json?: Json | null
+          memo_text?: string
+          whiteboard_strokes?: Json
+          updated_at?: string
+        }
+        Update: {
+          mode?: string | null
+          controller_student_id?: number | null
+          controller_nickname?: string | null
+          is_live?: boolean
+          phase?: 'idle' | 'adjusting' | 'result' | 'finished'
+          round_index?: number
+          score?: number
+          history_json?: boolean[]
+          state_json?: Json | null
+          feedback_json?: Json | null
+          memo_text?: string
+          whiteboard_strokes?: Json
+          updated_at?: string
         }
       }
       chat_guard_logs: {

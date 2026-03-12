@@ -784,7 +784,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   <div className="subcard p-4">
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">制限時間</div>
                     <div className="mt-2 font-display text-3xl text-emerald-300">10秒</div>
-                    <div className="mt-1 text-xs text-slate-500">不正解で終了</div>
+                    <div className="mt-1 text-xs text-slate-500">各問題ごとにリセット</div>
                   </div>
                   <div className="subcard p-4">
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題</div>
@@ -1249,7 +1249,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
         )}
 
         <div className="mt-5 flex items-center justify-between gap-3 text-xs text-slate-400">
-          <span>{selectedMode === 'streak_mode' ? '不正解でその場で終了' : '正解すると +0.5 秒'}</span>
+          <span>{selectedMode === 'streak_mode' ? '正解すると次の問題も10秒で開始' : '正解すると +0.5 秒'}</span>
           <span>
             {selectedMode === 'streak_mode'
               ? `ベスト ${streakSummary.personalBest}問`

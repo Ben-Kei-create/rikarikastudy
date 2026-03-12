@@ -100,6 +100,29 @@ CREATE TABLE IF NOT EXISTS active_sessions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- オンライン実験ラボ共有ルーム
+CREATE TABLE IF NOT EXISTS online_lab_rooms (
+  room_key TEXT PRIMARY KEY,
+  mode TEXT,
+  controller_student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  controller_nickname TEXT,
+  is_live BOOLEAN NOT NULL DEFAULT FALSE,
+  phase TEXT NOT NULL DEFAULT 'idle' CHECK (phase IN ('idle', 'adjusting', 'result', 'finished')),
+  round_index INTEGER NOT NULL DEFAULT 0,
+  score INTEGER NOT NULL DEFAULT 0,
+  history_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+  state_json JSONB DEFAULT NULL,
+  feedback_json JSONB DEFAULT NULL,
+  memo_text TEXT NOT NULL DEFAULT '',
+  whiteboard_strokes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO online_lab_rooms (room_key, is_live)
+VALUES ('main', FALSE)
+ON CONFLICT (room_key) DO NOTHING;
+
 -- チャット警告ログ
 CREATE TABLE IF NOT EXISTS chat_guard_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -136,6 +159,7 @@ CREATE INDEX IF NOT EXISTS idx_questions_field ON questions(field);
 CREATE INDEX IF NOT EXISTS idx_questions_created_by_student ON questions(created_by_student_id);
 CREATE INDEX IF NOT EXISTS idx_active_sessions_student ON active_sessions(student_id);
 CREATE INDEX IF NOT EXISTS idx_active_sessions_last_seen ON active_sessions(last_seen_at);
+CREATE INDEX IF NOT EXISTS idx_online_lab_rooms_updated_at ON online_lab_rooms(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_student ON chat_guard_logs(student_id);
 CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_created_at ON chat_guard_logs(created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_science_glossary_field_term ON science_glossary_entries(field, term);
@@ -147,8 +171,18 @@ ALTER TABLE questions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz_sessions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE answer_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE active_sessions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE online_lab_rooms DISABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_guard_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE science_glossary_entries DISABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE online_lab_rooms;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+  WHEN undefined_object THEN NULL;
+END
+$$;
 
 -- ========================================
 -- Engagement upgrade (XP / daily / badges / time attack)
