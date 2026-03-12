@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { fetchStudents, LOGIN_STUDENTS, useAuth } from '@/lib/auth'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { GUEST_STUDENT_ID } from '@/lib/guestStudy'
+import { getStudentAvatarMeta } from '@/lib/studentAvatar'
 
 export default function LoginPage({
   onDone,
@@ -94,6 +95,7 @@ export default function LoginPage({
           <div className="grid grid-cols-2 gap-3 mb-5 sm:grid-cols-3">
             {students.map(student => {
               const checked = studentId === student.id
+              const avatar = getStudentAvatarMeta(student.id)
               return (
                 <label
                   key={student.id}
@@ -115,7 +117,20 @@ export default function LoginPage({
                     onChange={() => setStudentId(student.id)}
                     className="sr-only"
                   />
-                  <div className="text-xs text-slate-400">ID {student.id}</div>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-11 w-11 items-center justify-center rounded-full text-xl"
+                      style={{
+                        background: avatar.background,
+                        border: `1px solid ${checked ? 'rgba(191, 219, 254, 0.48)' : avatar.borderColor}`,
+                        boxShadow: checked ? '0 12px 26px rgba(59, 130, 246, 0.18)' : avatar.glow,
+                      }}
+                      aria-hidden="true"
+                    >
+                      {avatar.emoji}
+                    </div>
+                    <div className="text-xs text-slate-400">ID {student.id}</div>
+                  </div>
                   <div className="font-display text-[1.8rem] text-white mt-2">{student.nickname}</div>
                   {student.id === GUEST_STUDENT_ID && (
                     <div className="mt-2 text-[11px] leading-5 text-sky-200">

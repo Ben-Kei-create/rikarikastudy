@@ -12,7 +12,7 @@
 2. 「SQL Editor」を開き、`supabase_schema.sql` の内容を全てコピー＆実行
    - 既存プロジェクトでも再実行OK
    - `students.password` 列と初期データ（ID 1〜5 / S, M, T, K, 先生 / `rikalove1〜4`, `rikaadmin2026`）を揃えます
-   - `questions.created_by_student_id` / `questions.keywords` や `quiz_sessions.duration_seconds` などの追加列もここで揃います
+   - `questions.created_by_student_id` / `questions.keywords` / `questions.image_url` や `quiz_sessions.duration_seconds` などの追加列もここで揃います
 3. 「Project Settings → API」から以下をコピー：
    - `Project URL`
    - `Publishable Key`（推奨）または `Anon Key (Legacy)`
@@ -69,6 +69,13 @@ git push -u origin main
 6. 記述問題なら、必要に応じて `キーワード` をカンマ区切りで入力
 7. 「正解」には choice なら A か B と同じ文、text なら模範解答を入れる
 8. 「問題を追加する」を押す
+
+### 5.1 問題に画像を付ける方法
+
+1. 管理画面の「問題一覧」タブを開く
+2. 対象の問題カードで「画像を挿入する」を押す
+3. 画像を選ぶと、ブラウザ側で圧縮して保存されます
+4. 保存した画像はクイズ画面とタイムアタック画面の問題文の下に表示されます
 
 ### 6. 問題・辞書の一括追加方法
 

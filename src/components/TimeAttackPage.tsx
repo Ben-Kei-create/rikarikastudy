@@ -21,6 +21,7 @@ interface Question {
   type: 'choice' | 'text'
   choices: string[] | null
   answer: string
+  image_url: string | null
 }
 
 type Phase = 'intro' | 'playing' | 'finished'
@@ -382,6 +383,19 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               <span className="text-xs text-slate-500">{currentQuestion.unit}</span>
             </div>
             <h2 className="mt-4 text-2xl font-bold text-white sm:text-3xl">{currentQuestion.question}</h2>
+            {currentQuestion.image_url && (
+              <div
+                className="mt-4 overflow-hidden rounded-[24px] border bg-slate-950/50"
+                style={{ borderColor: 'rgba(148, 163, 184, 0.16)' }}
+              >
+                <img
+                  src={currentQuestion.image_url}
+                  alt={`${currentQuestion.question} の画像`}
+                  className="block max-h-[320px] w-full object-contain"
+                  loading="lazy"
+                />
+              </div>
+            )}
 
             <div className="mt-5 grid gap-3 md:grid-cols-2">
               {currentQuestion.choices?.map((choice, index) => (

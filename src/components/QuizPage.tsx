@@ -60,6 +60,7 @@ interface Question {
   accept_answers: string[] | null
   keywords: string[] | null
   explanation: string | null
+  image_url: string | null
 }
 
 type Phase = 'answering' | 'result' | 'finished'
@@ -635,6 +636,19 @@ export default function QuizPage({
           </button>
         </div>
         <p className="text-lg font-bold leading-relaxed sm:text-[1.35rem]" style={{ color: 'var(--text)' }}>{q.question}</p>
+        {q.image_url && (
+          <div
+            className="mt-4 overflow-hidden rounded-[24px] border bg-slate-950/50"
+            style={{ borderColor: 'rgba(148, 163, 184, 0.16)' }}
+          >
+            <img
+              src={q.image_url}
+              alt={`${q.question} の画像`}
+              className="block max-h-[420px] w-full object-contain"
+              loading="lazy"
+            />
+          </div>
+        )}
       </div>
 
       {q.type === 'choice' ? (

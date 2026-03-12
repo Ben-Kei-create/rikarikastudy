@@ -64,6 +64,7 @@ export type Database = {
           keywords: string[] | null
           created_by_student_id: number | null
           explanation: string | null
+          image_url: string | null
           grade: string
           created_at: string
         }
@@ -79,6 +80,22 @@ export type Database = {
           keywords?: string[] | null
           created_by_student_id?: number | null
           explanation?: string | null
+          image_url?: string | null
+          grade?: string
+        }
+        Update: {
+          id?: string
+          field?: string
+          unit?: string
+          question?: string
+          type?: 'choice' | 'text'
+          choices?: string[] | null
+          answer?: string
+          accept_answers?: string[] | null
+          keywords?: string[] | null
+          created_by_student_id?: number | null
+          explanation?: string | null
+          image_url?: string | null
           grade?: string
         }
       }

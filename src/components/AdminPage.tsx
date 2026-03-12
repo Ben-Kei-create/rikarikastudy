@@ -12,6 +12,7 @@ import { isMissingColumnError, isMissingRelationError } from '@/lib/schemaCompat
 import { fetchActiveSessions } from '@/lib/activeSessions'
 import { BADGE_DEFINITIONS } from '@/lib/badges'
 import { getLevelTitle } from '@/lib/engagement'
+import { compressQuestionImageFile } from '@/lib/questionImages'
 import { buildGlossaryEntryId, ScienceGlossaryField } from '@/lib/scienceGlossary'
 
 const ADMIN_PW = 'rikaadmin2026'
@@ -530,7 +531,7 @@ function getRestoreErrorMessage(message: string) {
   if (message.includes('relation') && message.includes('does not exist')) {
     return 'Supabase のテーブルがありません。先に supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
-  if (message.includes('password') || message.includes('duration_seconds') || message.includes('created_by_student_id') || message.includes('student_xp') || message.includes('xp_earned') || message.includes('session_mode')) {
+  if (message.includes('password') || message.includes('duration_seconds') || message.includes('created_by_student_id') || message.includes('student_xp') || message.includes('xp_earned') || message.includes('session_mode') || message.includes('image_url')) {
     return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
   if (message.includes('keywords')) {
@@ -585,6 +586,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     grade: '中3',
   })
   const [addMsg, setAddMsg] = useState('')
+  const [questionImageBusyId, setQuestionImageBusyId] = useState<string | null>(null)
+  const [questionImageStatus, setQuestionImageStatus] = useState<{
+    questionId: string
+    type: 'success' | 'error'
+    text: string
+  } | null>(null)
 
   const checkPw = () => {
     if (pw === ADMIN_PW) {
@@ -1096,6 +1103,85 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     setQuestions(current => current.filter(question => question.id !== id))
   }
 
+  const handleQuestionImageChange = async (questionId: string, event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    try {
+      setQuestionImageBusyId(questionId)
+      setQuestionImageStatus(null)
+      const compressed = await compressQuestionImageFile(file)
+      const { data, error } = await supabase
+        .from('questions')
+        .update({ image_url: compressed.dataUrl })
+        .eq('id', questionId)
+        .select('*')
+        .single()
+
+      if (error && isMissingColumnError(error, 'image_url')) {
+        throw new Error('Supabase の questions テーブルに image_url 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      }
+      if (error) throw new Error(error.message)
+
+      setQuestions(current => current.map(question => (
+        question.id === questionId
+          ? data as QuestionRow
+          : question
+      )))
+      setQuestionImageStatus({
+        questionId,
+        type: 'success',
+        text: `画像を圧縮して保存しました。${compressed.width} × ${compressed.height} / ${compressed.sizeLabel}`,
+      })
+    } catch (error) {
+      setQuestionImageStatus({
+        questionId,
+        type: 'error',
+        text: error instanceof Error ? error.message : '画像の保存に失敗しました。',
+      })
+    } finally {
+      setQuestionImageBusyId(null)
+    }
+  }
+
+  const handleRemoveQuestionImage = async (questionId: string) => {
+    try {
+      setQuestionImageBusyId(questionId)
+      setQuestionImageStatus(null)
+      const { data, error } = await supabase
+        .from('questions')
+        .update({ image_url: null })
+        .eq('id', questionId)
+        .select('*')
+        .single()
+
+      if (error && isMissingColumnError(error, 'image_url')) {
+        throw new Error('Supabase の questions テーブルに image_url 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      }
+      if (error) throw new Error(error.message)
+
+      setQuestions(current => current.map(question => (
+        question.id === questionId
+          ? data as QuestionRow
+          : question
+      )))
+      setQuestionImageStatus({
+        questionId,
+        type: 'success',
+        text: '画像を外しました。',
+      })
+    } catch (error) {
+      setQuestionImageStatus({
+        questionId,
+        type: 'error',
+        text: error instanceof Error ? error.message : '画像の削除に失敗しました。',
+      })
+    } finally {
+      setQuestionImageBusyId(null)
+    }
+  }
+
   if (!authed) {
     return (
       <div className="page-shell flex flex-col items-center justify-center">
@@ -1483,14 +1569,19 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       {tab === 'questions' && (
         <div>
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-slate-400">
-              {questions.length}問登録済み
-              {questions.length > 0 && (
-                <span className="ml-2 text-slate-500 text-sm">
-                  生徒作成 {questions.filter(question => question.created_by_student_id !== null).length}問
-                </span>
-              )}
-            </p>
+            <div>
+              <p className="text-slate-400">
+                {questions.length}問登録済み
+                {questions.length > 0 && (
+                  <span className="ml-2 text-slate-500 text-sm">
+                    生徒作成 {questions.filter(question => question.created_by_student_id !== null).length}問
+                  </span>
+                )}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                ここから画像を追加すると、ブラウザ側で圧縮して保存し、出題画面にもそのまま表示されます。
+              </p>
+            </div>
             <button
               onClick={handleSeedQuestions}
               className="btn-secondary text-sm"
@@ -1504,34 +1595,94 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <div className="space-y-2">
               {questions.map(question => (
                 <div key={question.id} className="subcard p-4">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
-                        style={{ background: `${FIELD_COLORS[question.field]}20`, color: FIELD_COLORS[question.field] }}
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                          style={{ background: `${FIELD_COLORS[question.field]}20`, color: FIELD_COLORS[question.field] }}
+                        >
+                          {question.field}
+                        </span>
+                        <span className="text-slate-400 text-xs flex-shrink-0">{question.unit}</span>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                          style={{
+                            background: question.created_by_student_id ? '#f59e0b20' : 'var(--surface-elevated-border)',
+                            color: question.created_by_student_id ? '#fbbf24' : 'var(--text-muted)',
+                          }}
+                        >
+                          {question.created_by_student_id ? `ID ${question.created_by_student_id} 作成` : '共有問題'}
+                        </span>
+                        {question.image_url && (
+                          <span
+                            className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                            style={{ background: 'rgba(56, 189, 248, 0.14)', color: '#7dd3fc' }}
+                          >
+                            画像あり
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-white text-sm flex-1 line-clamp-2">{question.question}</p>
+                      <button
+                        onClick={() => handleDeleteQuestion(question.id)}
+                        className="text-red-500 hover:text-red-300 text-xs flex-shrink-0 transition-colors"
                       >
-                        {question.field}
-                      </span>
-                      <span className="text-slate-400 text-xs flex-shrink-0">{question.unit}</span>
-                      <span
-                        className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                        削除
+                      </button>
+                    </div>
+                    {question.image_url && (
+                      <div
+                        className="overflow-hidden rounded-2xl border bg-slate-950/50"
+                        style={{ borderColor: 'rgba(148, 163, 184, 0.16)' }}
+                      >
+                        <img
+                          src={question.image_url}
+                          alt={`${question.question} の画像`}
+                          className="block max-h-[260px] w-full object-contain"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="btn-secondary cursor-pointer text-sm">
+                        {questionImageBusyId === question.id ? '圧縮して保存中...' : question.image_url ? '画像を差し替える' : '画像を挿入する'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={questionImageBusyId === question.id}
+                          onChange={event => {
+                            void handleQuestionImageChange(question.id, event)
+                          }}
+                        />
+                      </label>
+                      {question.image_url && (
+                        <button
+                          onClick={() => {
+                            void handleRemoveQuestionImage(question.id)
+                          }}
+                          className="btn-ghost text-sm"
+                          disabled={questionImageBusyId === question.id}
+                        >
+                          画像を外す
+                        </button>
+                      )}
+                    </div>
+                    {questionImageStatus?.questionId === question.id && (
+                      <div
+                        className="rounded-2xl px-4 py-3 text-sm"
                         style={{
-                          background: question.created_by_student_id ? '#f59e0b20' : 'var(--surface-elevated-border)',
-                          color: question.created_by_student_id ? '#fbbf24' : 'var(--text-muted)',
+                          background: questionImageStatus.type === 'success' ? '#052e16' : '#450a0a',
+                          border: `1px solid ${questionImageStatus.type === 'success' ? '#166534' : '#991b1b'}`,
+                          color: questionImageStatus.type === 'success' ? '#86efac' : '#fca5a5',
                         }}
                       >
-                        {question.created_by_student_id ? `ID ${question.created_by_student_id} 作成` : '共有問題'}
-                      </span>
-                    </div>
-                    <p className="text-white text-sm flex-1 line-clamp-2">{question.question}</p>
-                    <button
-                      onClick={() => handleDeleteQuestion(question.id)}
-                      className="text-red-500 hover:text-red-300 text-xs flex-shrink-0 transition-colors"
-                    >
-                      削除
-                    </button>
+                        {questionImageStatus.text}
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-1 text-slate-500 text-xs">答え: {question.answer}</div>
+                  <div className="mt-3 text-slate-500 text-xs">答え: {question.answer}</div>
                   {question.type === 'text' && question.keywords && question.keywords.length > 0 && (
                     <div className="mt-1 text-amber-300 text-xs">キーワード: {question.keywords.join(' / ')}</div>
                   )}
