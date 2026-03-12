@@ -40,7 +40,7 @@ export const CHEMISTRY_MODE_META: Record<
     badge: 'Reaction Lab',
     icon: '⚗️',
     accent: '#4da2ff',
-    description: 'Duolingo 風に、語群をタップして反応式の空欄を順番に埋めます。',
+    description: '',
     sessionUnit: '反応式モード',
   },
 }
@@ -319,4 +319,3 @@ const CHEMISTRY_REACTION_DECK: ChemistryPracticeQuestion[] = [
 export function getChemistryPracticeDeck(mode: ChemistryPracticeMode) {
   return mode === 'flash' ? CHEMISTRY_FORMULA_DECK : CHEMISTRY_REACTION_DECK
 }
-

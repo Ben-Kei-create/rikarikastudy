@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
-import { getLevelInfo } from '@/lib/engagement'
+import { getLevelInfo, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
 import { hasCompletedDailyChallenge } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
@@ -44,6 +44,8 @@ export default function HomePage({
   const totalCorrect = Object.values(stats).reduce((sum, field) => sum + field.correct, 0)
   const overallRate = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null
   const levelInfo = useMemo(() => getLevelInfo(totalXp), [totalXp])
+  const timeAttackUnlocked = levelInfo.level >= TIME_ATTACK_UNLOCK_LEVEL
+  const timeAttackUnlockXpLeft = Math.max(0, getXpFloorForLevel(TIME_ATTACK_UNLOCK_LEVEL) - levelInfo.totalXp)
 
   useEffect(() => {
     if (studentId === null) return
@@ -224,13 +226,23 @@ export default function HomePage({
               </div>
             </button>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={onTimeAttack} className="btn-secondary w-full">
-                タイムアタック
+              <button
+                onClick={onTimeAttack}
+                disabled={!timeAttackUnlocked}
+                className="btn-secondary w-full disabled:opacity-60"
+                style={{ cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed' }}
+              >
+                {timeAttackUnlocked ? 'タイムアタック' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
               </button>
               <button onClick={onMyPage} className="btn-secondary w-full">
                 マイページ
               </button>
             </div>
+            {!timeAttackUnlocked && (
+              <div className="rounded-[18px] border border-slate-700/70 bg-slate-900/35 px-4 py-3 text-xs leading-6 text-slate-400">
+                タイムアタックは Lv.{TIME_ATTACK_UNLOCK_LEVEL} で解放されます。あと {timeAttackUnlockXpLeft} XP。
+              </div>
+            )}
             <button onClick={() => logout()} className="btn-ghost w-full">
               ログアウト
             </button>

@@ -147,3 +147,32 @@ export function pickDailyChallengeQuestions<T extends QuizQuestionLike>(
 export function pickTimeAttackQuestions<T extends QuizQuestionLike>(pool: T[]) {
   return shuffleArray(pool.filter(question => question.type === 'choice'))
 }
+
+export function pickChallengeTestQuestions<T extends QuizQuestionLike>(pool: T[], count = 25) {
+  const grouped = CORE_FIELDS.map(field =>
+    shuffleArray(pool.filter(question => question.field === field)),
+  )
+  const picked: T[] = []
+  const usedIds = new Set<string>()
+
+  while (picked.length < count && grouped.some(group => group.length > 0)) {
+    for (const group of grouped) {
+      const next = group.shift()
+      if (!next || usedIds.has(next.id)) continue
+      picked.push(next)
+      usedIds.add(next.id)
+      if (picked.length >= count) break
+    }
+  }
+
+  if (picked.length < count) {
+    for (const question of shuffleArray(pool)) {
+      if (usedIds.has(question.id)) continue
+      picked.push(question)
+      usedIds.add(question.id)
+      if (picked.length >= count) break
+    }
+  }
+
+  return picked.slice(0, count)
+}

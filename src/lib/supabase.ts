@@ -26,6 +26,8 @@ type SessionMode =
   | 'chemistry_flash'
   | 'chemistry_reaction'
   | 'earth_rock_pairs'
+  | 'test_mode'
+  | 'streak_mode'
   | 'time_attack'
 
 export type Database = {

@@ -279,13 +279,15 @@ export default function ChemistryPracticePage({
             >
               <span>{meta.badge}</span>
             </div>
-            <div className="mt-4 flex items-center gap-3">
-              <div className="text-4xl">{meta.icon}</div>
-              <div>
-                <h1 className="font-display text-3xl text-white sm:text-4xl">{meta.title}</h1>
-                <p className="mt-1 text-sm text-slate-300 sm:text-base">{meta.description}</p>
+              <div className="mt-4 flex items-center gap-3">
+                <div className="text-4xl">{meta.icon}</div>
+                <div>
+                  <h1 className="font-display text-3xl text-white sm:text-4xl">{meta.title}</h1>
+                  {meta.description && (
+                    <p className="mt-1 text-sm text-slate-300 sm:text-base">{meta.description}</p>
+                  )}
+                </div>
               </div>
-            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:min-w-[320px]">

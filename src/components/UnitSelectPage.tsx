@@ -165,37 +165,45 @@ export default function UnitSelectPage({
 
   return (
     <div className="page-shell page-shell-dashboard">
-      <div className="hero-card science-surface p-5 sm:p-6 lg:p-7 mb-5 anim-fade-up">
+      <div className="hero-card science-surface mb-4 anim-fade-up px-4 py-4 sm:px-5 sm:py-5">
         <ScienceBackdrop />
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3 min-w-0">
             <div
-              className="flex h-16 w-16 items-center justify-center rounded-[22px] text-3xl"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] text-[1.7rem]"
               style={{ background: `${color}18`, border: `1px solid ${color}26` }}
             >
               {FIELD_EMOJI[field]}
             </div>
-            <div>
-              <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">
+            <div className="min-w-0">
+              <div className="mb-1 text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
                 Unit Select
               </div>
-              <div className="font-display text-3xl" style={{ color }}>{field}</div>
-              <p className="text-slate-400 text-sm mt-1">単元を選んで、そのまま解き始められます。</p>
+              <div className="font-display text-[2rem] leading-none sm:text-[2.35rem]" style={{ color }}>{field}</div>
+              <p className="mt-1 text-sm text-slate-400">単元を選んで、そのまま解き始められます。</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 lg:min-w-[320px]">
-            <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">単元数</div>
-              <div className="mt-2 font-display text-2xl text-white">{units.length}</div>
-              <div className="mt-1 text-xs text-slate-500">units</div>
+          <div className="flex flex-col gap-2 lg:min-w-[284px] lg:items-end">
+            <div className="grid grid-cols-2 gap-2 w-full lg:w-auto">
+              <div className="subcard px-4 py-3">
+                <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">単元数</div>
+                <div className="mt-1 flex items-end gap-2">
+                  <div className="font-display text-[1.9rem] leading-none text-white">{units.length}</div>
+                  <div className="pb-0.5 text-[11px] text-slate-500">units</div>
+                </div>
+              </div>
+              <div className="subcard px-4 py-3">
+                <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">問題数</div>
+                <div className="mt-1 flex items-end gap-2">
+                  <div className="font-display text-[1.9rem] leading-none text-white">{totalQuestionCount}</div>
+                  <div className="pb-0.5 text-[11px] text-slate-500">questions</div>
+                </div>
+              </div>
             </div>
-            <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">問題数</div>
-              <div className="mt-2 font-display text-2xl text-white">{totalQuestionCount}</div>
-              <div className="mt-1 text-xs text-slate-500">questions</div>
+            <div className="grid grid-cols-2 gap-2 w-full lg:w-[284px]">
+              <button onClick={onBack} className="btn-secondary w-full !py-3">もどる</button>
+              <button onClick={() => logout()} className="btn-ghost w-full !py-3">ログアウト</button>
             </div>
-            <button onClick={onBack} className="btn-secondary w-full">もどる</button>
-            <button onClick={() => logout()} className="btn-ghost w-full">ログアウト</button>
           </div>
         </div>
       </div>
@@ -242,7 +250,9 @@ export default function UnitSelectPage({
                         <span className="text-3xl">{meta.icon}</span>
                         <div>
                           <div className="font-display text-2xl text-white">{meta.title}</div>
-                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
+                          {meta.description && (
+                            <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
+                          )}
                         </div>
                       </div>
                     </div>
