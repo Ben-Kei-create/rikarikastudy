@@ -232,15 +232,20 @@ export default function HomePage({
                 className="btn-secondary w-full disabled:opacity-60"
                 style={{ cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed' }}
               >
-                {timeAttackUnlocked ? 'タイムアタック' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
+                {timeAttackUnlocked ? 'チャレンジ' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
               </button>
               <button onClick={onMyPage} className="btn-secondary w-full">
                 マイページ
               </button>
             </div>
+            {timeAttackUnlocked && (
+              <div className="rounded-[18px] border border-slate-700/70 bg-slate-900/35 px-4 py-3 text-xs leading-6 text-slate-400">
+                タイムアタック / テストモード / 連続正解モード
+              </div>
+            )}
             {!timeAttackUnlocked && (
               <div className="rounded-[18px] border border-slate-700/70 bg-slate-900/35 px-4 py-3 text-xs leading-6 text-slate-400">
-                タイムアタックは Lv.{TIME_ATTACK_UNLOCK_LEVEL} で解放されます。あと {timeAttackUnlockXpLeft} XP。
+                チャレンジモードは Lv.{TIME_ATTACK_UNLOCK_LEVEL} で解放されます。あと {timeAttackUnlockXpLeft} XP。
               </div>
             )}
             <button onClick={() => logout()} className="btn-ghost w-full">
