@@ -1,9 +1,13 @@
+'use client'
+
 import { SessionMode } from '@/lib/engagement'
 
 export type ScienceWorkbenchMode =
   | 'chem-density'
   | 'chem-concentration'
+  | 'chem-battery'
   | 'earth-humidity'
+  | 'earth-column'
   | 'physics-motion-graph'
 
 export interface ScienceWorkbenchMeta {
@@ -41,6 +45,24 @@ export interface ConcentrationWorkbenchRound {
   explanation: string
 }
 
+export type BatteryElectrode = 'zinc' | 'copper'
+export type BatteryDirection = 'zinc-to-copper' | 'copper-to-zinc'
+export type BatteryPlateChange = 'dissolve' | 'attach'
+
+export interface BatteryWorkbenchRound {
+  id: string
+  kind: 'chem-battery'
+  prompt: string
+  supportText: string
+  targetNegativeElectrode: BatteryElectrode | null
+  targetElectronDirection: BatteryDirection | null
+  targetCurrentDirection: BatteryDirection | null
+  targetZincChange: BatteryPlateChange | null
+  targetCopperChange: BatteryPlateChange | null
+  hint: string
+  explanation: string
+}
+
 export interface HumidityWorkbenchRound {
   id: string
   kind: 'earth-humidity'
@@ -49,6 +71,27 @@ export interface HumidityWorkbenchRound {
   vaporAmount: number
   startTemperature: number
   targetTemperature: number
+  hint: string
+  explanation: string
+}
+
+export type ColumnLayerPattern = 'pebbles' | 'sand' | 'lines' | 'bands' | 'ash'
+
+export interface ColumnLayerOption {
+  key: string
+  label: string
+  detail: string
+  color: string
+  pattern: ColumnLayerPattern
+}
+
+export interface ColumnWorkbenchRound {
+  id: string
+  kind: 'earth-column'
+  prompt: string
+  supportText: string
+  options: ColumnLayerOption[]
+  targetOrder: [string, string, string]
   hint: string
   explanation: string
 }
@@ -68,7 +111,9 @@ export interface MotionWorkbenchRound {
 export type ScienceWorkbenchRound =
   | DensityWorkbenchRound
   | ConcentrationWorkbenchRound
+  | BatteryWorkbenchRound
   | HumidityWorkbenchRound
+  | ColumnWorkbenchRound
   | MotionWorkbenchRound
 
 export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWorkbenchMeta> = {
@@ -92,6 +137,16 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
     sessionUnit: '質量パーセント濃度ラボ',
     sessionMode: 'chemistry_concentration_lab',
   },
+  'chem-battery': {
+    field: '化学',
+    title: '化学電池ラボ',
+    badge: 'Battery Lab',
+    icon: '🔋',
+    accent: '#fbbf24',
+    description: '亜鉛板と銅板の化学電池で、電子・電流・電極の変化を図で理解するラボです。',
+    sessionUnit: '化学電池ラボ',
+    sessionMode: 'chemistry_battery_lab',
+  },
   'earth-humidity': {
     field: '地学',
     title: '飽和水蒸気量ラボ',
@@ -101,6 +156,16 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
     description: '温度を動かしながら、飽和水蒸気量と露点の関係をつかむラボです。',
     sessionUnit: '飽和水蒸気量ラボ',
     sessionMode: 'earth_humidity_lab',
+  },
+  'earth-column': {
+    field: '地学',
+    title: '柱状図ラボ',
+    badge: 'Strata Lab',
+    icon: '🪨',
+    accent: '#2dd4bf',
+    description: '地層の特徴を見ながら、柱状図を上から下へ組み立てるラボです。',
+    sessionUnit: '柱状図ラボ',
+    sessionMode: 'earth_column_lab',
   },
   'physics-motion-graph': {
     field: '物理',
@@ -114,8 +179,8 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
   },
 }
 
-export const CHEMISTRY_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['chem-density', 'chem-concentration']
-export const EARTH_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['earth-humidity']
+export const CHEMISTRY_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['chem-density', 'chem-concentration', 'chem-battery']
+export const EARTH_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['earth-humidity', 'earth-column']
 export const PHYSICS_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['physics-motion-graph']
 
 export const SATURATED_VAPOR_TABLE = [
@@ -220,6 +285,61 @@ const CONCENTRATION_ROUNDS: ConcentrationWorkbenchRound[] = [
   },
 ]
 
+const BATTERY_ROUNDS: BatteryWorkbenchRound[] = [
+  {
+    id: 'battery-1',
+    kind: 'chem-battery',
+    prompt: '－極と電子の流れる向きを合わせよう。',
+    supportText: '亜鉛板が －極になり、電子は外部回路を通って銅板へ向かいます。',
+    targetNegativeElectrode: 'zinc',
+    targetElectronDirection: 'zinc-to-copper',
+    targetCurrentDirection: null,
+    targetZincChange: null,
+    targetCopperChange: null,
+    hint: '化学電池では、電子を出すのは亜鉛板です。',
+    explanation: '亜鉛板が －極で、電子は 亜鉛 → 銅 に流れます。',
+  },
+  {
+    id: 'battery-2',
+    kind: 'chem-battery',
+    prompt: '電流の向きまでそろえて、豆電球がつく流れを確認しよう。',
+    supportText: '電流の向きは電子の向きと逆です。',
+    targetNegativeElectrode: 'zinc',
+    targetElectronDirection: 'zinc-to-copper',
+    targetCurrentDirection: 'copper-to-zinc',
+    targetZincChange: null,
+    targetCopperChange: null,
+    hint: '電子が 亜鉛 → 銅 なら、電流はその逆向きです。',
+    explanation: '電子の流れと電流の向きは反対なので、電流は 銅 → 亜鉛 と考えます。',
+  },
+  {
+    id: 'battery-3',
+    kind: 'chem-battery',
+    prompt: '亜鉛板と銅板で起きる変化を合わせよう。',
+    supportText: '亜鉛はとけてイオンになり、銅は表面に付着していきます。',
+    targetNegativeElectrode: null,
+    targetElectronDirection: null,
+    targetCurrentDirection: null,
+    targetZincChange: 'dissolve',
+    targetCopperChange: 'attach',
+    hint: '亜鉛は Zn2+ になって溶液へ出ていき、銅は析出します。',
+    explanation: '亜鉛板では金属亜鉛がイオンになって溶け、銅板では銅が表面に付きます。',
+  },
+  {
+    id: 'battery-4',
+    kind: 'chem-battery',
+    prompt: '化学電池のしくみを全部そろえよう。',
+    supportText: '－極、電子、電流、電極の変化をまとめて確認します。',
+    targetNegativeElectrode: 'zinc',
+    targetElectronDirection: 'zinc-to-copper',
+    targetCurrentDirection: 'copper-to-zinc',
+    targetZincChange: 'dissolve',
+    targetCopperChange: 'attach',
+    hint: '亜鉛が電子を出し、銅が受け取る全体像をひとつずつ確認しよう。',
+    explanation: '亜鉛板が －極、電子は亜鉛から銅へ、電流はその逆で、亜鉛は溶け、銅は付着します。',
+  },
+]
+
 const HUMIDITY_ROUNDS: HumidityWorkbenchRound[] = [
   {
     id: 'humidity-1',
@@ -264,6 +384,65 @@ const HUMIDITY_ROUNDS: HumidityWorkbenchRound[] = [
     targetTemperature: 0,
     hint: '0℃ の飽和水蒸気量は 4.8g です。',
     explanation: '0℃ まで下がると飽和水蒸気量が 4.8g になり、露点に達します。',
+  },
+]
+
+const COLUMN_ROUNDS: ColumnWorkbenchRound[] = [
+  {
+    id: 'column-1',
+    kind: 'earth-column',
+    prompt: '海がだんだん深くなった場所です。柱状図を上から下へ並べよう。',
+    supportText: '上ほど新しく、深い海ほど細かい泥がたまりやすくなります。',
+    options: [
+      { key: 'mudstone', label: '泥岩', detail: '細かい泥がしずんでできる / 深く静かな海', color: '#64748b', pattern: 'lines' },
+      { key: 'sandstone', label: '砂岩', detail: '砂粒が多い / 海岸に近い場所', color: '#d97706', pattern: 'sand' },
+      { key: 'conglomerate', label: 'れき岩', detail: '丸いれきが多い / 流れが強い場所', color: '#78716c', pattern: 'pebbles' },
+    ],
+    targetOrder: ['mudstone', 'sandstone', 'conglomerate'],
+    hint: '流れが強い場所ほど大きなれきがたまり、静かな深い海ほど細かい泥がたまります。',
+    explanation: '上ほど新しいので、深い海の泥岩が上、海岸に近い砂岩が中、流れの強いれき岩が下になります。',
+  },
+  {
+    id: 'column-2',
+    kind: 'earth-column',
+    prompt: '植物がたまった地層の上に火山灰が積もり、そのあと静かな湖の泥が積もりました。上から下へ並べよう。',
+    supportText: '火山灰層は広く同時に積もるので、順序を考える手がかりになります。',
+    options: [
+      { key: 'mudstone', label: '泥岩', detail: '細かい泥 / 湖や深い海でできやすい', color: '#64748b', pattern: 'lines' },
+      { key: 'ash', label: '火山灰層', detail: '広い範囲に一度に積もる / かぎ層になりやすい', color: '#cbd5e1', pattern: 'ash' },
+      { key: 'coal', label: '石炭層', detail: '植物が多くたまった湿地の地層', color: '#1f2937', pattern: 'bands' },
+    ],
+    targetOrder: ['mudstone', 'ash', 'coal'],
+    hint: '植物の地層がいちばん古く、その上に火山灰、そのさらに上に湖の泥が積もっています。',
+    explanation: '古い順に 石炭層 → 火山灰層 → 泥岩 なので、柱状図では上から 泥岩 → 火山灰層 → 石炭層 になります。',
+  },
+  {
+    id: 'column-3',
+    kind: 'earth-column',
+    prompt: '川の近くの地層がだんだん落ち着き、最後に火山灰がおおいました。柱状図を上から下へ並べよう。',
+    supportText: 'れき → 砂 → 火山灰 のように、環境の変化を上の新しい地層ほど後の出来事として考えます。',
+    options: [
+      { key: 'ash', label: '火山灰層', detail: '噴火で広く積もる白っぽい地層', color: '#cbd5e1', pattern: 'ash' },
+      { key: 'sandstone', label: '砂岩', detail: '中くらいの粒 / やや流れのある環境', color: '#d97706', pattern: 'sand' },
+      { key: 'conglomerate', label: 'れき岩', detail: '大きなれき / 流れが強い川の近く', color: '#78716c', pattern: 'pebbles' },
+    ],
+    targetOrder: ['ash', 'sandstone', 'conglomerate'],
+    hint: 'いちばん流れが強かった時代のれき岩が下、そのあと砂岩、最後に火山灰が一番上です。',
+    explanation: '新しい地層ほど上にくるので、噴火で積もった火山灰層が最上部になります。',
+  },
+  {
+    id: 'column-4',
+    kind: 'earth-column',
+    prompt: 'アンモナイトのある海の泥の上に、サンゴが広がる浅い海の地層ができ、その後に火山灰がおおいました。上から下へ並べよう。',
+    supportText: '化石が見つかる環境も、柱状図の順番を考えるヒントになります。',
+    options: [
+      { key: 'ash', label: '火山灰層', detail: '噴火のあとに広く積もる / かぎ層', color: '#cbd5e1', pattern: 'ash' },
+      { key: 'limestone', label: '石灰岩', detail: 'サンゴや貝が多い / 浅い海でできやすい', color: '#f1f5f9', pattern: 'bands' },
+      { key: 'mudstone', label: '泥岩', detail: 'アンモナイト化石がある / 静かな海底', color: '#64748b', pattern: 'lines' },
+    ],
+    targetOrder: ['ash', 'limestone', 'mudstone'],
+    hint: 'アンモナイトの泥岩が古く、その上に浅い海の石灰岩、最後に火山灰です。',
+    explanation: '海の環境変化と噴火の順序を追うと、上から 火山灰層 → 石灰岩 → 泥岩 になります。',
   },
 ]
 
@@ -320,8 +499,12 @@ export function getScienceWorkbenchRounds(mode: ScienceWorkbenchMode): ScienceWo
       return DENSITY_ROUNDS
     case 'chem-concentration':
       return CONCENTRATION_ROUNDS
+    case 'chem-battery':
+      return BATTERY_ROUNDS
     case 'earth-humidity':
       return HUMIDITY_ROUNDS
+    case 'earth-column':
+      return COLUMN_ROUNDS
     case 'physics-motion-graph':
       return MOTION_ROUNDS
     default:

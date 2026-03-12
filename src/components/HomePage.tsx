@@ -40,6 +40,7 @@ export default function HomePage({
   const [onlineCount, setOnlineCount] = useState<number | null>(null)
   const [totalXp, setTotalXp] = useState(0)
   const [dailyCompleted, setDailyCompleted] = useState(false)
+  const [menuExpanded, setMenuExpanded] = useState(false)
   const totalQuestions = Object.values(stats).reduce((sum, field) => sum + field.total, 0)
   const totalCorrect = Object.values(stats).reduce((sum, field) => sum + field.correct, 0)
   const overallRate = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null
@@ -233,162 +234,166 @@ export default function HomePage({
           </div>
           <div className="grid grid-cols-1 gap-3 lg:max-w-sm lg:ml-auto">
             <div className="grid grid-cols-2 gap-3">
-              <div className="subcard p-4">
+              <div className="subcard p-3.5">
                 <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">正答率</div>
-                <div className="mt-2 font-display text-2xl text-white">{overallRate !== null ? `${overallRate}%` : 'START'}</div>
+                <div className="mt-2 font-display text-xl text-white">{overallRate !== null ? `${overallRate}%` : 'START'}</div>
                 <div className="mt-1 text-xs text-slate-500">{totalQuestions > 0 ? `${totalQuestions}問解答` : 'まだ未学習'}</div>
               </div>
-              <div className="subcard p-4">
+              <div className="subcard p-3.5">
                 <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ログイン中</div>
-                <div className="mt-2 font-display text-2xl text-white">{onlineCount !== null ? `${onlineCount}人` : '—'}</div>
+                <div className="mt-2 font-display text-xl text-white">{onlineCount !== null ? `${onlineCount}人` : '—'}</div>
               </div>
             </div>
-            <button
-              onClick={onDailyChallenge}
-              disabled={dailyCompleted}
-              className="card text-left transition-all disabled:opacity-70"
+            <div
+              className="rounded-[24px] border p-4"
               style={{
-                padding: '18px 20px',
-                borderColor: dailyCompleted ? 'rgba(34, 197, 94, 0.24)' : 'rgba(245, 158, 11, 0.24)',
-                background: dailyCompleted
-                  ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(15, 23, 42, 0.82))'
-                  : 'linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(15, 23, 42, 0.82))',
+                borderColor: 'rgba(255,255,255,0.08)',
+                background: 'rgba(15, 23, 42, 0.38)',
               }}
             >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[11px] font-semibold tracking-[0.18em] text-amber-200 uppercase">
-                    Daily Challenge
+              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">すぐはじめる</div>
+              <div className="mt-3 grid gap-3">
+                <button
+                  onClick={onDailyChallenge}
+                  disabled={dailyCompleted}
+                  className="card text-left transition-all disabled:opacity-70"
+                  style={{
+                    padding: '16px 18px',
+                    borderColor: dailyCompleted ? 'rgba(34, 197, 94, 0.24)' : 'rgba(245, 158, 11, 0.24)',
+                    background: dailyCompleted
+                      ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(15, 23, 42, 0.82))'
+                      : 'linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(15, 23, 42, 0.82))',
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] font-semibold tracking-[0.18em] text-amber-200 uppercase">
+                        Daily Challenge
+                      </div>
+                      <div className="mt-1 font-display text-xl text-white">今日のチャレンジ</div>
+                      <div className="mt-1 text-xs text-slate-300">
+                        5問 / 2x XP / 今日1回
+                      </div>
+                    </div>
+                    <div className={`text-2xl ${dailyCompleted ? 'text-emerald-300' : 'text-amber-200'}`}>
+                      {dailyCompleted ? '✅' : '☀️'}
+                    </div>
                   </div>
-                  <div className="mt-2 font-display text-2xl text-white">今日のチャレンジ</div>
-                  <div className="mt-1 text-sm text-slate-300">
-                    5問 / 2x XP / 今日1回
-                  </div>
-                </div>
-                <div className={`text-3xl ${dailyCompleted ? 'text-emerald-300' : 'text-amber-200'}`}>
-                  {dailyCompleted ? '✅' : '☀️'}
+                </button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={onQuickStartAll}
+                    className="subcard text-left transition-all"
+                    style={{
+                      padding: '16px',
+                      borderColor: 'rgba(56, 189, 248, 0.22)',
+                      background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(34, 197, 94, 0.08) 64%, rgba(15, 23, 42, 0.84))',
+                    }}
+                  >
+                    <div className="text-[11px] font-semibold tracking-[0.18em] text-sky-200 uppercase">Quick</div>
+                    <div className="mt-1 font-display text-lg text-white">4分野10問</div>
+                    <div className="mt-1 text-xs leading-5 text-slate-400">短時間で全体を確認</div>
+                  </button>
+                  <button
+                    onClick={onTimeAttack}
+                    disabled={!timeAttackUnlocked}
+                    className="subcard text-left transition-all disabled:opacity-60"
+                    style={{
+                      padding: '16px',
+                      cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
+                      borderColor: timeAttackUnlocked ? 'rgba(168, 85, 247, 0.22)' : 'rgba(148, 163, 184, 0.12)',
+                      background: timeAttackUnlocked
+                        ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.14), rgba(15, 23, 42, 0.84))'
+                        : 'rgba(15, 23, 42, 0.58)',
+                    }}
+                  >
+                    <div className="text-[11px] font-semibold tracking-[0.18em] uppercase" style={{ color: timeAttackUnlocked ? '#ddd6fe' : '#94a3b8' }}>
+                      Challenge
+                    </div>
+                    <div className="mt-1 font-display text-lg text-white">チャレンジ</div>
+                    <div className="mt-1 text-xs leading-5 text-slate-400">
+                      {timeAttackUnlocked
+                        ? 'TA / テスト / 連続正解'
+                        : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}まであと ${timeAttackUnlockXpLeft} XP`}
+                    </div>
+                  </button>
                 </div>
               </div>
-            </button>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={onTimeAttack}
-                disabled={!timeAttackUnlocked}
-                className="btn-secondary w-full disabled:opacity-60"
-                style={{ cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed' }}
-              >
-                {timeAttackUnlocked ? 'チャレンジ' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
-              </button>
+            </div>
+
+            <div className="grid grid-cols-[1fr_auto] gap-3">
               <button onClick={onMyPage} className="btn-secondary w-full">
                 マイページ
               </button>
+              <button
+                onClick={() => setMenuExpanded(current => !current)}
+                className="btn-ghost whitespace-nowrap"
+                aria-expanded={menuExpanded}
+              >
+                {menuExpanded ? '閉じる' : 'その他'}
+              </button>
             </div>
-            <div className="rounded-[18px] border border-slate-700/70 bg-slate-900/35 px-4 py-3 text-xs leading-6 text-slate-400">
-              {timeAttackUnlocked
-                ? 'チャレンジモードは解放済みです。タイムアタック / テストモード / 連続正解モードに挑戦できます。'
-                : `チャレンジモードは Lv.${TIME_ATTACK_UNLOCK_LEVEL} で解放されます。あと ${timeAttackUnlockXpLeft} XP。`}
-            </div>
-            <button onClick={() => logout()} className="btn-ghost w-full">
-              ログアウト
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.08fr_0.92fr] mb-4">
-        <button
-          onClick={onQuickStartAll}
-          className="card anim-fade-up w-full text-left"
-          style={{
-            position: 'relative',
-            overflow: 'hidden',
-            borderColor: '#38bdf840',
-            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(34, 197, 94, 0.08) 32%, rgba(249, 115, 22, 0.08) 66%, rgba(168, 85, 247, 0.12))',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(circle at top right, rgba(255,255,255,0.12), transparent 34%)',
-              pointerEvents: 'none',
-            }}
-          />
-          <div className="relative z-[1]">
-            <div className="text-[11px] font-semibold tracking-[0.2em] text-sky-200 uppercase">
-              Quick Start
-            </div>
-            <div className="mt-2 font-display text-2xl text-white sm:text-[1.9rem]">
-              4分野総合クイックスタート
-            </div>
-            <p className="mt-2 text-sm leading-7 text-slate-200">
-              生物・化学・物理・地学をまとめて10問。短時間で全体感をつかめます。
-            </p>
-          </div>
-        </button>
+            {menuExpanded && (
+              <div
+                className="rounded-[22px] border px-4 py-4 anim-fade-up"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  background: 'rgba(8, 13, 24, 0.62)',
+                }}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">その他メニュー</div>
+                    <div className="mt-1 text-sm text-slate-300">ニュースやログアウトはこちらに収納しています。</div>
+                  </div>
+                  <button onClick={() => logout()} className="btn-ghost whitespace-nowrap text-sm">
+                    ログアウト
+                  </button>
+                </div>
 
-        <div
-          className="card anim-fade-up"
-          style={{
-            position: 'relative',
-            overflow: 'hidden',
-            borderColor: '#f59e0b40',
-            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.82) 48%, rgba(56, 189, 248, 0.12))',
-            padding: '18px 20px',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(circle at right top, rgba(255,255,255,0.1), transparent 34%)',
-              pointerEvents: 'none',
-            }}
-          />
-          <a
-            href={scienceNews.item.link}
-            target="_blank"
-            rel="noreferrer"
-            className="relative z-[1] block h-full"
-          >
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-semibold tracking-[0.2em] text-amber-200 uppercase">
-                  Daily Science News
-                </span>
-                <span className="rounded-full border border-amber-300/20 bg-amber-200/10 px-2.5 py-1 text-[11px] font-semibold text-amber-100">
-                  1日1記事
-                </span>
+                <a
+                  href={scienceNews.item.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 block rounded-[20px] border px-4 py-4 transition-all"
+                  style={{
+                    borderColor: 'rgba(245, 158, 11, 0.18)',
+                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(15, 23, 42, 0.82) 58%, rgba(56, 189, 248, 0.08))',
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[11px] font-semibold tracking-[0.18em] text-amber-200 uppercase">
+                      Science News
+                    </div>
+                    <span className="rounded-full border border-amber-300/20 bg-amber-200/10 px-2.5 py-1 text-[11px] font-semibold text-amber-100">
+                      1日1記事
+                    </span>
+                  </div>
+                  <div className="mt-3 text-sm font-semibold leading-6 text-white line-clamp-2">
+                    {scienceNews.item.title}
+                  </div>
+                  <div className="mt-2 text-xs leading-6 text-slate-300 line-clamp-2">
+                    {scienceNews.item.summary}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-slate-400">
+                    <span>{scienceNews.item.source}</span>
+                    <span>{newsDateFormatter.format(new Date(scienceNews.item.publishedAt))}</span>
+                  </div>
+                </a>
               </div>
-              <div className="mt-3 font-display text-lg text-white sm:text-xl">
-                本日の科学ニュース
-              </div>
-              <p className="mt-2 text-xs leading-6 text-slate-300">
-                日本語の科学ニュースを1本だけ、コンパクトに表示します。
-              </p>
-            </div>
-            <div className="mt-4 rounded-[20px] border border-amber-300/18 bg-slate-950/28 p-4">
-              <div className="text-sm font-semibold leading-6 text-white line-clamp-2">
-                {scienceNews.item.title}
-              </div>
-              <p className="mt-2 text-xs leading-6 text-slate-300 line-clamp-3">
-                {scienceNews.item.summary}
-              </p>
-              <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-                <span>{scienceNews.item.source}</span>
-                <span>{newsDateFormatter.format(new Date(scienceNews.item.publishedAt))}</span>
-              </div>
-            </div>
-          </a>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-slate-100">分野を選ぶ</h2>
-        <span className="text-xs text-slate-500">4 categories</span>
+        <span className="text-xs text-slate-500">タップですぐ開始</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {FIELDS.map((field, index) => {
           const stat = stats[field.name]
           const rate = stat && stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : null
@@ -405,7 +410,7 @@ export default function HomePage({
                 position: 'relative',
                 overflow: 'hidden',
                 borderColor: `${field.color}30`,
-                paddingBottom: rate === null ? 28 : 24,
+                padding: '18px 18px 16px',
               }}
               onMouseEnter={event => {
                 const element = event.currentTarget
@@ -431,36 +436,39 @@ export default function HomePage({
                   borderRadius: '50%',
                 }}
               />
-              <div className="relative z-[1] flex min-h-[74px] items-start gap-4 sm:items-center">
+              <div className="relative z-[1] flex items-start gap-3 sm:items-center">
                 <div
-                  className="flex h-14 w-14 items-center justify-center rounded-[18px] text-2xl"
+                  className="flex h-12 w-12 items-center justify-center rounded-[16px] text-xl"
                   style={{ background: `${field.color}18`, border: `1px solid ${field.color}26` }}
                 >
                   {field.emoji}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className="font-display text-[1.45rem]" style={{ color: field.color }}>{field.name}</div>
-                    <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">start</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="font-display text-[1.35rem]" style={{ color: field.color }}>{field.name}</div>
+                    <span
+                      className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                      style={{
+                        background: rate === null ? `${field.color}16` : 'rgba(148, 163, 184, 0.12)',
+                        color: rate === null ? field.color : '#94a3b8',
+                      }}
+                    >
+                      {rate === null ? 'はじめる' : `${stat?.total}問`}
+                    </span>
                   </div>
                   <div className="mt-1 text-sm leading-6 text-slate-400">{field.desc}</div>
                 </div>
                 {rate !== null && (
                   <div className="text-right">
-                    <div className="font-semibold text-xl" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
+                    <div className="font-semibold text-lg" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
                       {rate}%
                     </div>
-                    <div className="text-slate-500 text-xs mt-1">{stat?.total}問</div>
+                    <div className="text-slate-500 text-xs mt-1">正答率</div>
                   </div>
                 )}
               </div>
-              {rate === null && (
-                <div className="relative z-[1] mt-5 text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
-                  First Challenge
-                </div>
-              )}
               {rate !== null && (
-                <div className="mt-4 relative z-[1] soft-track" style={{ height: 7 }}>
+                <div className="mt-3 relative z-[1] soft-track" style={{ height: 7 }}>
                   <div
                     style={{
                       width: `${rate}%`,

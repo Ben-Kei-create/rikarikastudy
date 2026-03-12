@@ -93,7 +93,7 @@ const CHALLENGE_MODE_META: Record<ChallengeMode, {
     badge: 'Streak Mode',
     emoji: '🔥',
     accent: '#22c55e',
-    description: '10秒以内に何問連続で正解できるか挑戦。不正解で終了。',
+    description: '各問題10秒以内に何問連続で正解できるか挑戦。正解で次の10秒へ進みます。',
     startLabel: '連続正解に挑戦',
   },
 }
@@ -353,6 +353,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     if (phase !== 'playing' || selectedMode === 'test_mode') return
+    if (selectedMode === 'streak_mode' && feedback !== null) return
 
     const intervalId = window.setInterval(() => {
       const nextRemaining = Math.max(0, deadlineRef.current - Date.now())
@@ -366,7 +367,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [phase, selectedMode])
+  }, [feedback, phase, selectedMode])
 
   const resetRunState = () => {
     setCurrentIndex(0)
@@ -380,6 +381,11 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     setAnswerLogs([])
   }
 
+  const resetStreakTimer = () => {
+    deadlineRef.current = Date.now() + STREAK_MODE_DURATION_MS
+    setRemainingMs(STREAK_MODE_DURATION_MS)
+  }
+
   const startRun = () => {
     if (selectedMode === 'test_mode') {
       if (!testModeQuestionReady) return
@@ -390,7 +396,11 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
       setQuestions(shuffleArray(choiceQuestions))
       const baseRemaining = selectedMode === 'streak_mode' ? STREAK_MODE_DURATION_MS : TIME_ATTACK_DURATION_MS
       setRemainingMs(baseRemaining)
-      deadlineRef.current = Date.now() + baseRemaining
+      if (selectedMode === 'streak_mode') {
+        resetStreakTimer()
+      } else {
+        deadlineRef.current = Date.now() + baseRemaining
+      }
     }
 
     resetRunState()
@@ -486,6 +496,9 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
       if (!correct && selectedMode === 'streak_mode') {
         void finishRun()
         return
+      }
+      if (correct && selectedMode === 'streak_mode') {
+        resetStreakTimer()
       }
       advanceQuestion()
     }, correct ? 140 : 220)

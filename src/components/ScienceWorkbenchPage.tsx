@@ -31,7 +31,16 @@ type Phase = 'adjusting' | 'result' | 'finished'
 type WorkbenchState =
   | { kind: 'chem-density'; mass: number; volume: number }
   | { kind: 'chem-concentration'; soluteMass: number; waterMass: number }
+  | {
+      kind: 'chem-battery'
+      negativeElectrode: 'zinc' | 'copper' | null
+      electronDirection: 'zinc-to-copper' | 'copper-to-zinc' | null
+      currentDirection: 'zinc-to-copper' | 'copper-to-zinc' | null
+      zincChange: 'dissolve' | 'attach' | null
+      copperChange: 'dissolve' | 'attach' | null
+    }
   | { kind: 'earth-humidity'; temperature: number }
+  | { kind: 'earth-column'; slots: [string | null, string | null, string | null]; activeSlot: 0 | 1 | 2 }
   | { kind: 'physics-motion-graph'; acceleration: number; time: number }
 
 interface RoundFeedback {
@@ -113,8 +122,19 @@ function getInitialState(round: ScienceWorkbenchRound): WorkbenchState {
       return { kind: round.kind, mass: round.startMass, volume: round.startVolume }
     case 'chem-concentration':
       return { kind: round.kind, soluteMass: round.startSoluteMass, waterMass: round.startWaterMass }
+    case 'chem-battery':
+      return {
+        kind: round.kind,
+        negativeElectrode: null,
+        electronDirection: null,
+        currentDirection: null,
+        zincChange: null,
+        copperChange: null,
+      }
     case 'earth-humidity':
       return { kind: round.kind, temperature: round.startTemperature }
+    case 'earth-column':
+      return { kind: round.kind, slots: [null, null, null], activeSlot: 0 }
     case 'physics-motion-graph':
       return { kind: round.kind, acceleration: round.startAcceleration, time: 2 }
     default:
@@ -135,6 +155,39 @@ function getCurrentConcentration(state: WorkbenchState) {
 
 function getSaturatedAmount(temperature: number) {
   return SATURATED_VAPOR_TABLE.find(item => item.temperature === temperature)?.amount ?? 0
+}
+
+function getColumnOption(round: Extract<ScienceWorkbenchRound, { kind: 'earth-column' }>, key: string | null) {
+  if (!key) return null
+  return round.options.find(option => option.key === key) ?? null
+}
+
+function getBatteryElectrodeLabel(value: 'zinc' | 'copper' | null) {
+  if (value === 'zinc') return '亜鉛板'
+  if (value === 'copper') return '銅板'
+  return '未選択'
+}
+
+function getBatteryDirectionLabel(value: 'zinc-to-copper' | 'copper-to-zinc' | null) {
+  if (value === 'zinc-to-copper') return '亜鉛 → 銅'
+  if (value === 'copper-to-zinc') return '銅 → 亜鉛'
+  return '未選択'
+}
+
+function getBatteryChangeLabel(value: 'dissolve' | 'attach' | null) {
+  if (value === 'dissolve') return 'とけてイオンになる'
+  if (value === 'attach') return '表面に付着する'
+  return '未選択'
+}
+
+function describeBatteryState(state: Extract<WorkbenchState, { kind: 'chem-battery' }>) {
+  return [
+    `－極: ${getBatteryElectrodeLabel(state.negativeElectrode)}`,
+    `電子: ${getBatteryDirectionLabel(state.electronDirection)}`,
+    `電流: ${getBatteryDirectionLabel(state.currentDirection)}`,
+    `亜鉛板: ${getBatteryChangeLabel(state.zincChange)}`,
+    `銅板: ${getBatteryChangeLabel(state.copperChange)}`,
+  ].join(' / ')
 }
 
 function describeMotion(round: MotionWorkbenchRound, state: Extract<WorkbenchState, { kind: 'physics-motion-graph' }>) {
@@ -172,6 +225,24 @@ function evaluateRound(round: ScienceWorkbenchRound, state: WorkbenchState): Rou
     }
   }
 
+  if (round.kind === 'chem-battery' && state.kind === 'chem-battery') {
+    const checks = [
+      round.targetNegativeElectrode === null || state.negativeElectrode === round.targetNegativeElectrode,
+      round.targetElectronDirection === null || state.electronDirection === round.targetElectronDirection,
+      round.targetCurrentDirection === null || state.currentDirection === round.targetCurrentDirection,
+      round.targetZincChange === null || state.zincChange === round.targetZincChange,
+      round.targetCopperChange === null || state.copperChange === round.targetCopperChange,
+    ]
+    const correct = checks.every(Boolean)
+    return {
+      correct,
+      message: correct ? '◯ 化学電池の流れが一致' : '× まだ整理できていない',
+      detail: correct
+        ? `${describeBatteryState(state)}。${round.explanation}`
+        : `今の設定: ${describeBatteryState(state)}。${round.hint}`,
+    }
+  }
+
   if (round.kind === 'earth-humidity' && state.kind === 'earth-humidity') {
     const saturation = getSaturatedAmount(state.temperature)
     const correct = state.temperature === round.targetTemperature
@@ -181,6 +252,24 @@ function evaluateRound(round: ScienceWorkbenchRound, state: WorkbenchState): Rou
       detail: correct
         ? `${state.temperature}℃ の飽和水蒸気量は ${formatNumber(saturation)}g。${round.explanation}`
         : `今の ${state.temperature}℃ では飽和水蒸気量が ${formatNumber(saturation)}g です。${round.hint}`,
+    }
+  }
+
+  if (round.kind === 'earth-column' && state.kind === 'earth-column') {
+    const complete = state.slots.every(Boolean)
+    const correct = complete && state.slots.every((slot, index) => slot === round.targetOrder[index])
+    const selectedLabels = state.slots
+      .map(slot => getColumnOption(round, slot)?.label ?? '未選択')
+      .join(' / ')
+
+    return {
+      correct,
+      message: correct ? '◯ 柱状図が完成' : '× まだ並びがちがう',
+      detail: correct
+        ? `上から ${selectedLabels}。${round.explanation}`
+        : complete
+          ? `今は上から ${selectedLabels}。${round.hint}`
+          : `まだ空いている段があります。上から下へ3段すべて入れてみよう。${round.hint}`,
     }
   }
 
@@ -320,6 +409,286 @@ function drawConcentrationScene(
   ctx.fillText(`溶質 ${state.soluteMass}g`, 98, 252)
   ctx.fillText(`水 ${state.waterMass}g`, 98, 296)
   ctx.fillText(`溶液 ${total}g`, 98, 340)
+}
+
+function drawArrow(
+  ctx: CanvasRenderingContext2D,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  color: string,
+  dashed = false
+) {
+  const angle = Math.atan2(toY - fromY, toX - fromX)
+  ctx.save()
+  ctx.strokeStyle = color
+  ctx.fillStyle = color
+  ctx.lineWidth = 4
+  ctx.setLineDash(dashed ? [8, 6] : [])
+  ctx.beginPath()
+  ctx.moveTo(fromX, fromY)
+  ctx.lineTo(toX, toY)
+  ctx.stroke()
+  ctx.setLineDash([])
+  ctx.beginPath()
+  ctx.moveTo(toX, toY)
+  ctx.lineTo(toX - 14 * Math.cos(angle - Math.PI / 6), toY - 14 * Math.sin(angle - Math.PI / 6))
+  ctx.lineTo(toX - 14 * Math.cos(angle + Math.PI / 6), toY - 14 * Math.sin(angle + Math.PI / 6))
+  ctx.closePath()
+  ctx.fill()
+  ctx.restore()
+}
+
+function fillPattern(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  pattern: 'pebbles' | 'sand' | 'lines' | 'bands' | 'ash'
+) {
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(x, y, width, height)
+  ctx.clip()
+  ctx.fillStyle = 'rgba(255,255,255,0.16)'
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)'
+  ctx.lineWidth = 1.5
+
+  if (pattern === 'pebbles') {
+    for (let row = 0; row < 4; row += 1) {
+      for (let col = 0; col < 7; col += 1) {
+        ctx.beginPath()
+        ctx.arc(x + 24 + col * 32 + (row % 2) * 8, y + 18 + row * 18, 6, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+  } else if (pattern === 'sand') {
+    for (let row = 0; row < 5; row += 1) {
+      for (let col = 0; col < 16; col += 1) {
+        ctx.beginPath()
+        ctx.arc(x + 14 + col * 12 + (row % 2) * 3, y + 12 + row * 14, 2, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+  } else if (pattern === 'lines') {
+    for (let offset = 10; offset < height; offset += 14) {
+      ctx.beginPath()
+      ctx.moveTo(x + 10, y + offset)
+      ctx.lineTo(x + width - 10, y + offset + (offset % 28 === 0 ? 4 : 0))
+      ctx.stroke()
+    }
+  } else if (pattern === 'bands') {
+    for (let offset = 0; offset < height; offset += 18) {
+      ctx.fillRect(x, y + offset, width, 8)
+    }
+  } else {
+    for (let row = 0; row < 4; row += 1) {
+      for (let col = 0; col < 12; col += 1) {
+        const centerX = x + 18 + col * 18 + (row % 2) * 4
+        const centerY = y + 14 + row * 22
+        ctx.beginPath()
+        ctx.moveTo(centerX - 4, centerY - 4)
+        ctx.lineTo(centerX + 4, centerY + 4)
+        ctx.moveTo(centerX + 4, centerY - 4)
+        ctx.lineTo(centerX - 4, centerY + 4)
+        ctx.stroke()
+      }
+    }
+  }
+
+  ctx.restore()
+}
+
+function drawBatteryScene(
+  ctx: CanvasRenderingContext2D,
+  round: Extract<ScienceWorkbenchRound, { kind: 'chem-battery' }>,
+  state: Extract<WorkbenchState, { kind: 'chem-battery' }>,
+  accent: string
+) {
+  const leftPlateX = 246
+  const rightPlateX = 584
+  const plateY = 196
+  const plateHeight = 190
+  const topWireY = 128
+
+  ctx.fillStyle = 'rgba(255,255,255,0.08)'
+  drawRoundedRect(ctx, 64, 112, 772, 332, 28)
+  ctx.fill()
+
+  ctx.fillStyle = 'rgba(96, 165, 250, 0.18)'
+  drawRoundedRect(ctx, 148, 208, 604, 184, 30)
+  ctx.fill()
+  ctx.fillStyle = '#bfdbfe'
+  ctx.font = '600 16px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText('うすい硫酸', 408, 416)
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.24)'
+  ctx.lineWidth = 5
+  ctx.beginPath()
+  ctx.moveTo(leftPlateX + 22, plateY)
+  ctx.lineTo(leftPlateX + 22, topWireY)
+  ctx.lineTo(384, topWireY)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(516, topWireY)
+  ctx.lineTo(rightPlateX + 22, topWireY)
+  ctx.lineTo(rightPlateX + 22, plateY)
+  ctx.stroke()
+
+  ctx.fillStyle = createGradient(ctx, 380, 92, 140, 70, '#fde68a', '#f59e0b')
+  drawRoundedRect(ctx, 380, 92, 140, 70, 20)
+  ctx.fill()
+  ctx.fillStyle = '#422006'
+  ctx.font = '700 20px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText('豆電球', 425, 135)
+
+  ctx.fillStyle = createGradient(ctx, leftPlateX, plateY, 44, plateHeight, '#a1a1aa', '#52525b')
+  drawRoundedRect(ctx, leftPlateX, plateY, 44, plateHeight, 14)
+  ctx.fill()
+  ctx.fillStyle = createGradient(ctx, rightPlateX, plateY, 44, plateHeight, '#fdba74', '#b45309')
+  drawRoundedRect(ctx, rightPlateX, plateY, 44, plateHeight, 14)
+  ctx.fill()
+
+  ctx.fillStyle = '#e5e7eb'
+  ctx.font = '700 20px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText('亜鉛板', 206, 176)
+  ctx.fillStyle = '#fed7aa'
+  ctx.fillText('銅板', 560, 176)
+
+  if (state.negativeElectrode === 'zinc') {
+    ctx.fillStyle = `${accent}22`
+    drawRoundedRect(ctx, 184, 134, 72, 32, 14)
+    ctx.fill()
+    ctx.fillStyle = '#fef3c7'
+    ctx.font = '700 18px "Zen Kaku Gothic New", sans-serif'
+    ctx.fillText('－極', 206, 156)
+  } else if (state.negativeElectrode === 'copper') {
+    ctx.fillStyle = `${accent}22`
+    drawRoundedRect(ctx, 538, 134, 72, 32, 14)
+    ctx.fill()
+    ctx.fillStyle = '#fef3c7'
+    ctx.font = '700 18px "Zen Kaku Gothic New", sans-serif'
+    ctx.fillText('－極', 560, 156)
+  }
+
+  if (state.electronDirection === 'zinc-to-copper') {
+    drawArrow(ctx, 280, topWireY - 12, 620, topWireY - 12, '#f8fafc')
+  } else if (state.electronDirection === 'copper-to-zinc') {
+    drawArrow(ctx, 620, topWireY - 12, 280, topWireY - 12, '#f8fafc')
+  }
+
+  if (state.currentDirection === 'zinc-to-copper') {
+    drawArrow(ctx, 620, topWireY + 18, 280, topWireY + 18, '#93c5fd', true)
+  } else if (state.currentDirection === 'copper-to-zinc') {
+    drawArrow(ctx, 280, topWireY + 18, 620, topWireY + 18, '#93c5fd', true)
+  }
+
+  ctx.fillStyle = '#e2e8f0'
+  ctx.font = '600 15px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText('電子', 420, topWireY - 26)
+  ctx.fillText('電流', 420, topWireY + 42)
+
+  ctx.fillStyle = 'rgba(147, 197, 253, 0.9)'
+  if (state.zincChange === 'dissolve') {
+    for (let index = 0; index < 5; index += 1) {
+      ctx.beginPath()
+      ctx.arc(320 + index * 18, 248 + (index % 2) * 18, 7, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.fillText('Zn2+ が溶液へ', 200, 414)
+  } else if (state.zincChange === 'attach') {
+    for (let index = 0; index < 4; index += 1) {
+      ctx.fillRect(leftPlateX - 10 - index * 8, 230 + index * 28, 10, 16)
+    }
+    ctx.fillText('Zn が板につく', 200, 414)
+  }
+
+  ctx.fillStyle = 'rgba(251, 146, 60, 0.92)'
+  if (state.copperChange === 'attach') {
+    for (let index = 0; index < 4; index += 1) {
+      ctx.fillRect(rightPlateX + 48 + index * 8, 226 + index * 30, 10, 16)
+    }
+    ctx.fillText('Cu が板につく', 542, 414)
+  } else if (state.copperChange === 'dissolve') {
+    for (let index = 0; index < 5; index += 1) {
+      ctx.beginPath()
+      ctx.arc(532 - index * 18, 250 + (index % 2) * 18, 7, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.fillText('Cu2+ が溶液へ', 524, 414)
+  }
+
+  ctx.fillStyle = '#ffffff'
+  ctx.font = '700 24px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText('化学電池のしくみ', 82, 94)
+  ctx.font = '500 15px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText(round.supportText, 82, 474)
+}
+
+function drawColumnScene(
+  ctx: CanvasRenderingContext2D,
+  round: Extract<ScienceWorkbenchRound, { kind: 'earth-column' }>,
+  state: Extract<WorkbenchState, { kind: 'earth-column' }>,
+  accent: string
+) {
+  const columnX = 136
+  const columnY = 156
+  const slotHeight = 92
+  const slotWidth = 230
+
+  ctx.fillStyle = 'rgba(255,255,255,0.08)'
+  drawRoundedRect(ctx, 72, 118, 360, 332, 28)
+  ctx.fill()
+  drawRoundedRect(ctx, 474, 118, 348, 332, 28)
+  ctx.fill()
+
+  ctx.fillStyle = '#ffffff'
+  ctx.font = '700 24px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText('柱状図を上から下へ完成', 88, 94)
+
+  ;(['上', '中', '下'] as const).forEach((label, index) => {
+    const y = columnY + index * slotHeight
+    const option = getColumnOption(round, state.slots[index])
+    const fillColor = option?.color ?? 'rgba(100, 116, 139, 0.18)'
+    ctx.fillStyle = fillColor
+    drawRoundedRect(ctx, columnX, y, slotWidth, slotHeight - 10, 20)
+    ctx.fill()
+    if (option) fillPattern(ctx, columnX, y, slotWidth, slotHeight - 10, option.pattern)
+    ctx.strokeStyle = state.activeSlot === index ? accent : 'rgba(255,255,255,0.16)'
+    ctx.lineWidth = state.activeSlot === index ? 3 : 2
+    drawRoundedRect(ctx, columnX, y, slotWidth, slotHeight - 10, 20)
+    ctx.stroke()
+
+    ctx.fillStyle = '#e2e8f0'
+    ctx.font = '700 16px "Zen Kaku Gothic New", sans-serif'
+    ctx.fillText(label, columnX - 36, y + 46)
+    ctx.fillStyle = option ? '#ffffff' : '#94a3b8'
+    ctx.font = '700 24px "Zen Kaku Gothic New", sans-serif'
+    ctx.fillText(option?.label ?? 'ここに入れる', columnX + 22, y + 48)
+  })
+
+  ctx.fillStyle = '#f0fdfa'
+  ctx.font = '600 15px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText('手がかり', 508, 150)
+  round.options.forEach((option, index) => {
+    const boxY = 166 + index * 92
+    ctx.fillStyle = option.color
+    drawRoundedRect(ctx, 504, boxY, 286, 76, 18)
+    ctx.fill()
+    fillPattern(ctx, 504, boxY, 286, 76, option.pattern)
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)'
+    ctx.lineWidth = 2
+    drawRoundedRect(ctx, 504, boxY, 286, 76, 18)
+    ctx.stroke()
+
+    ctx.fillStyle = '#ffffff'
+    ctx.font = '700 22px "Zen Kaku Gothic New", sans-serif'
+    ctx.fillText(option.label, 524, boxY + 30)
+    ctx.font = '500 14px "Zen Kaku Gothic New", sans-serif'
+    ctx.fillText(option.detail, 524, boxY + 56)
+  })
 }
 
 function drawHumidityScene(
@@ -506,8 +875,14 @@ function drawWorkbenchScene(
     case 'chem-concentration':
       if (state.kind === round.kind) drawConcentrationScene(ctx, round, state, meta.accent)
       break
+    case 'chem-battery':
+      if (state.kind === round.kind) drawBatteryScene(ctx, round, state, meta.accent)
+      break
     case 'earth-humidity':
       if (state.kind === round.kind) drawHumidityScene(ctx, round, state, meta.accent)
+      break
+    case 'earth-column':
+      if (state.kind === round.kind) drawColumnScene(ctx, round, state, meta.accent)
       break
     case 'physics-motion-graph':
       if (state.kind === round.kind) drawMotionScene(ctx, round, state, meta.accent)
@@ -767,6 +1142,120 @@ export default function ScienceWorkbenchPage({
       )
     }
 
+    if (state.kind === 'chem-battery' && round.kind === 'chem-battery') {
+      const choiceClassName = (selected: boolean) => `rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
+        selected
+          ? 'text-white'
+          : 'border-white/10 bg-slate-950/30 text-slate-300'
+      }`
+
+      return (
+        <div className="space-y-3">
+          <div className="text-sm font-semibold text-slate-200">しくみを選ぶ</div>
+          <div className="grid gap-3">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
+              <div className="text-xs tracking-[0.18em] text-slate-400">－極</div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {[
+                  { key: 'zinc', label: '亜鉛板' },
+                  { key: 'copper', label: '銅板' },
+                ].map(choice => (
+                  <button
+                    key={choice.key}
+                    onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, negativeElectrode: choice.key as 'zinc' | 'copper' }))}
+                    className={choiceClassName(state.negativeElectrode === choice.key)}
+                    style={state.negativeElectrode === choice.key ? { borderColor: '#fcd34d', background: 'rgba(251, 191, 36, 0.18)' } : undefined}
+                  >
+                    {choice.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
+              <div className="text-xs tracking-[0.18em] text-slate-400">電子の向き</div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {[
+                  { key: 'zinc-to-copper', label: '亜鉛 → 銅' },
+                  { key: 'copper-to-zinc', label: '銅 → 亜鉛' },
+                ].map(choice => (
+                  <button
+                    key={choice.key}
+                    onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, electronDirection: choice.key as 'zinc-to-copper' | 'copper-to-zinc' }))}
+                    className={choiceClassName(state.electronDirection === choice.key)}
+                    style={state.electronDirection === choice.key ? { borderColor: '#f8fafc', background: 'rgba(248, 250, 252, 0.16)' } : undefined}
+                  >
+                    {choice.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
+              <div className="text-xs tracking-[0.18em] text-slate-400">電流の向き</div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {[
+                  { key: 'zinc-to-copper', label: '亜鉛 → 銅' },
+                  { key: 'copper-to-zinc', label: '銅 → 亜鉛' },
+                ].map(choice => (
+                  <button
+                    key={choice.key}
+                    onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, currentDirection: choice.key as 'zinc-to-copper' | 'copper-to-zinc' }))}
+                    className={choiceClassName(state.currentDirection === choice.key)}
+                    style={state.currentDirection === choice.key ? { borderColor: '#93c5fd', background: 'rgba(59, 130, 246, 0.18)' } : undefined}
+                  >
+                    {choice.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
+                <div className="text-xs tracking-[0.18em] text-slate-400">亜鉛板の変化</div>
+                <div className="mt-3 grid gap-2">
+                  {[
+                    { key: 'dissolve', label: 'とけてイオンになる' },
+                    { key: 'attach', label: '表面に付着する' },
+                  ].map(choice => (
+                    <button
+                      key={choice.key}
+                      onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, zincChange: choice.key as 'dissolve' | 'attach' }))}
+                      className={choiceClassName(state.zincChange === choice.key)}
+                      style={state.zincChange === choice.key ? { borderColor: '#60a5fa', background: 'rgba(96, 165, 250, 0.18)' } : undefined}
+                    >
+                      {choice.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
+                <div className="text-xs tracking-[0.18em] text-slate-400">銅板の変化</div>
+                <div className="mt-3 grid gap-2">
+                  {[
+                    { key: 'attach', label: '表面に付着する' },
+                    { key: 'dissolve', label: 'とけてイオンになる' },
+                  ].map(choice => (
+                    <button
+                      key={choice.key}
+                      onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, copperChange: choice.key as 'dissolve' | 'attach' }))}
+                      className={choiceClassName(state.copperChange === choice.key)}
+                      style={state.copperChange === choice.key ? { borderColor: '#fb923c', background: 'rgba(251, 146, 60, 0.18)' } : undefined}
+                    >
+                      {choice.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-3 text-sm text-amber-100">
+            現在の設定: <span className="font-bold">{describeBatteryState(state)}</span>
+          </div>
+        </div>
+      )
+    }
+
     if (state.kind === 'earth-humidity') {
       return (
         <div className="space-y-3">
@@ -788,6 +1277,79 @@ export default function ScienceWorkbenchPage({
           </div>
           <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-3 text-sm text-violet-100">
             この温度の飽和水蒸気量: <span className="font-bold">{formatNumber(getSaturatedAmount(state.temperature))} g</span>
+          </div>
+        </div>
+      )
+    }
+
+    if (state.kind === 'earth-column' && round.kind === 'earth-column') {
+      return (
+        <div className="space-y-3">
+          <div className="text-sm font-semibold text-slate-200">段を選んで入れる</div>
+          <div className="grid grid-cols-3 gap-2">
+            {(['上', '中', '下'] as const).map((label, index) => (
+              <button
+                key={label}
+                onClick={() => updateState(currentState => currentState.kind !== 'earth-column' ? currentState : ({ ...currentState, activeSlot: index as 0 | 1 | 2 }))}
+                className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
+                  state.activeSlot === index
+                    ? 'border-teal-300 bg-teal-500/20 text-white'
+                    : 'border-white/10 bg-slate-950/30 text-slate-300'
+                }`}
+              >
+                {label}
+                <div className="mt-1 text-xs font-normal text-slate-400">
+                  {getColumnOption(round, state.slots[index])?.label ?? '未設定'}
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="text-sm font-semibold text-slate-200">地層を選ぶ</div>
+          <div className="grid gap-2">
+            {round.options.map(option => (
+              <button
+                key={option.key}
+                onClick={() => updateState(currentState => {
+                  if (currentState.kind !== 'earth-column') return currentState
+                  const nextSlots = [...currentState.slots] as [string | null, string | null, string | null]
+                  nextSlots.forEach((slot, index) => {
+                    if (slot === option.key) nextSlots[index] = null
+                  })
+                  nextSlots[currentState.activeSlot] = option.key
+                  const nextActiveSlot = currentState.activeSlot < 2 ? ((currentState.activeSlot + 1) as 0 | 1 | 2) : currentState.activeSlot
+                  return {
+                    ...currentState,
+                    slots: nextSlots,
+                    activeSlot: nextActiveSlot,
+                  }
+                })}
+                className="rounded-2xl border px-4 py-3 text-left transition"
+                style={{
+                  borderColor: state.slots.includes(option.key) ? `${meta.accent}66` : 'rgba(255,255,255,0.08)',
+                  background: state.slots.includes(option.key) ? `${meta.accent}20` : 'rgba(15, 23, 42, 0.56)',
+                }}
+              >
+                <div className="font-semibold text-white">{option.label}</div>
+                <div className="mt-1 text-xs leading-6 text-slate-400">{option.detail}</div>
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => updateState(currentState => currentState.kind !== 'earth-column' ? currentState : ({
+                ...currentState,
+                slots: currentState.slots.map((slot, index) => index === currentState.activeSlot ? null : slot) as [string | null, string | null, string | null],
+              }))}
+              className="btn-ghost !px-4 !py-2"
+            >
+              今の段をクリア
+            </button>
+            <button
+              onClick={() => updateState(currentState => currentState.kind !== 'earth-column' ? currentState : ({ ...currentState, slots: [null, null, null], activeSlot: 0 }))}
+              className="btn-secondary !px-4 !py-2"
+            >
+              3段ともリセット
+            </button>
           </div>
         </div>
       )
