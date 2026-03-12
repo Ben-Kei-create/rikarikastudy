@@ -10,3 +10,6 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-12: `biologyPractice.ts` と `BiologyPracticePage.tsx` を追加。`葉緑体 × 光合成を行う` など5組の器官・はたらきペアで、生物ラボを実装した。
 - 2026-03-12: `UnitSelectPage` と `app/page.tsx` を更新し、`生物 → 生物ラボ → 器官・はたらきペア` の導線を追加。学習記録は `session_mode: biology_organ_pairs` で保存するようにした。
 - 2026-03-12: `npm run build` 成功。Playwright MCP で `ゲストログイン → 生物 → 生物ラボ` を確認し、`× ちがう組み合わせ` と `◯ ペア成功` の両方、`render_game_to_text` の `matchedCount` 更新、画面スクリーンショットを確認した。
+- 2026-03-12: 地学ラボを「岩石・鉱物ペア」から「地学リンクペア」に変更。`溶岩ドーム × 昭和新山` や `キラウエア × たて状火山` のような関連語ペアに差し替え、カードは最初から見える形にした。
+- 2026-03-12: `EarthSciencePracticePage` の canvas 描画を更新し、常時表示カード向けのレイアウトと複数行テキスト描画を追加。文言も「めくる」前提から「つながりを選ぶ」前提へ変更した。
+- 2026-03-12: `npm run build` 成功。`develop-web-game` の `web_game_playwright_client.js` はローカル `playwright` 依存不足で起動できなかったため、Playwright MCP で `ゲストログイン → 地学 → 地学リンクペア` を確認。全カードが見えている状態、`× ちがう組み合わせ`、`◯ ペア成功`、`render_game_to_text` の `matchedCount: 1` 更新を確認した。
