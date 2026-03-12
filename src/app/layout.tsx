@@ -14,12 +14,12 @@ export default function RootLayout({
   const themeInitScript = `
     try {
       var t = window.localStorage.getItem('rikaquiz-theme');
-      var theme = t === 'light' || t === 'dark' ? t : 'light';
+      var theme = t === 'light' || t === 'dark' || t === 'cute' ? t : 'dark';
       document.documentElement.dataset.theme = theme;
-      document.documentElement.style.colorScheme = theme;
+      document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
     } catch (e) {
-      document.documentElement.dataset.theme = 'light';
-      document.documentElement.style.colorScheme = 'light';
+      document.documentElement.dataset.theme = 'dark';
+      document.documentElement.style.colorScheme = 'dark';
     }
   `;
 

@@ -35,6 +35,38 @@ export const TIME_ATTACK_UNLOCK_LEVEL = 5
 export const TEST_MODE_QUESTION_COUNT = 25
 export const TEST_MODE_POINT_PER_QUESTION = 4
 
+export interface LevelUnlockReward {
+  key: 'challenge_mode' | 'light_theme' | 'cute_theme'
+  level: number
+  title: string
+  description: string
+  emoji: string
+}
+
+export const LEVEL_UNLOCK_REWARDS: LevelUnlockReward[] = [
+  {
+    key: 'challenge_mode',
+    level: TIME_ATTACK_UNLOCK_LEVEL,
+    title: 'チャレンジモード',
+    description: 'タイムアタック・テストモード・連続正解モードが遊べます。',
+    emoji: '🏁',
+  },
+  {
+    key: 'light_theme',
+    level: 10,
+    title: 'ライトテーマ',
+    description: 'マイページでライトモードを選べるようになります。',
+    emoji: '☀️',
+  },
+  {
+    key: 'cute_theme',
+    level: 20,
+    title: 'かわいいテーマ',
+    description: 'マイページでかわいいモードを選べるようになります。',
+    emoji: '🎀',
+  },
+]
+
 export interface LevelInfo {
   level: number
   title: string
@@ -114,6 +146,18 @@ export function getLevelInfo(totalXp: number): LevelInfo {
     progressMax,
     progressRate,
   }
+}
+
+export function getUnlockedLevelRewards(level: number) {
+  return LEVEL_UNLOCK_REWARDS.filter(reward => level >= reward.level)
+}
+
+export function getNextLevelUnlock(level: number) {
+  return LEVEL_UNLOCK_REWARDS.find(reward => level < reward.level) ?? null
+}
+
+export function getNewlyUnlockedLevelRewards(levelBefore: number, levelAfter: number) {
+  return LEVEL_UNLOCK_REWARDS.filter(reward => levelBefore < reward.level && levelAfter >= reward.level)
 }
 
 function toShiftedDate(dateLike?: string | Date) {

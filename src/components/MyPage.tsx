@@ -2,9 +2,9 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { useTheme } from '@/lib/theme'
+import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/theme'
 import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
-import { getLevelInfo } from '@/lib/engagement'
+import { getLevelInfo, getNextLevelUnlock, getUnlockedLevelRewards, getXpFloorForLevel } from '@/lib/engagement'
 import { format, subDays, startOfDay, eachDayOfInterval, differenceInCalendarDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
@@ -79,6 +79,18 @@ function parseKeywordInput(input: string) {
     .filter(Boolean)
 
   return keywords.length > 0 ? keywords : null
+}
+
+function getThemePreview(theme: Theme) {
+  if (theme === 'light') {
+    return 'linear-gradient(135deg, #ffffff 0%, #f6f9ff 52%, #dbeafe 100%)'
+  }
+
+  if (theme === 'cute') {
+    return 'linear-gradient(135deg, #fff8fb 0%, #ffe4f0 52%, #fff0c9 100%)'
+  }
+
+  return 'linear-gradient(135deg, #07111f 0%, #12233f 48%, #050816 100%)'
 }
 
 function formatStudyTime(totalSeconds: number) {
@@ -228,6 +240,8 @@ export default function MyPage({
   const totalStudySeconds = sessions.reduce((a, s) => a + (s.duration_seconds ?? 0), 0)
   const overallRate = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : 0
   const levelInfo = useMemo(() => getLevelInfo(studentXp), [studentXp])
+  const nextUnlock = getNextLevelUnlock(levelInfo.level)
+  const unlockedRewards = getUnlockedLevelRewards(levelInfo.level)
 
   const byField = useMemo(() => {
     const m: Record<string, { total: number; correct: number }> = {}
@@ -584,6 +598,80 @@ export default function MyPage({
               <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
                 <span>{levelInfo.progressXp} / {levelInfo.progressMax} XP</span>
                 <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-2xl">
+                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Level Unlocks</div>
+                  <div className="mt-2 text-lg font-semibold text-white">レベル報酬</div>
+                  <p className="mt-1 text-sm leading-6 text-slate-400">
+                    レベルが上がると、新しい機能やテーマが順番に解放されます。
+                  </p>
+                  {nextUnlock ? (
+                    <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
+                      borderColor: 'rgba(56, 189, 248, 0.18)',
+                      background: 'rgba(56, 189, 248, 0.06)',
+                    }}>
+                      <div className="text-xs font-semibold tracking-[0.18em] text-sky-200">NEXT REWARD</div>
+                      <div className="mt-2 flex items-center gap-3">
+                        <div className="text-2xl">{nextUnlock.emoji}</div>
+                        <div>
+                          <div className="font-semibold text-white">{nextUnlock.title}</div>
+                          <div className="text-xs leading-6 text-slate-400">{nextUnlock.description}</div>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-xs text-slate-500">
+                        Lv.{nextUnlock.level} まであと {Math.max(0, getXpFloorForLevel(nextUnlock.level) - levelInfo.totalXp)} XP
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-[20px] border px-4 py-4 text-sm text-emerald-300" style={{
+                      borderColor: 'rgba(34, 197, 94, 0.2)',
+                      background: 'rgba(34, 197, 94, 0.08)',
+                    }}>
+                      主要なレベル報酬はすべて解放済みです。
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid w-full gap-3 lg:max-w-md">
+                  {[
+                    ...unlockedRewards,
+                    ...(!nextUnlock ? [] : [nextUnlock]),
+                  ]
+                    .filter((reward, index, rewards) => rewards.findIndex(item => item.key === reward.key) === index)
+                    .map(reward => {
+                      const unlocked = reward.level <= levelInfo.level
+                      return (
+                        <div
+                          key={reward.key}
+                          className="rounded-[20px] border px-4 py-3"
+                          style={{
+                            borderColor: unlocked ? 'rgba(34, 197, 94, 0.18)' : 'var(--border)',
+                            background: unlocked ? 'rgba(34, 197, 94, 0.08)' : 'var(--surface-elevated)',
+                          }}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="text-2xl">{reward.emoji}</div>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-white">{reward.title}</div>
+                                <div className="text-xs leading-6 text-slate-400">{reward.description}</div>
+                              </div>
+                            </div>
+                            <span className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{
+                              background: unlocked ? 'rgba(34, 197, 94, 0.14)' : 'rgba(148, 163, 184, 0.14)',
+                              color: unlocked ? '#86efac' : 'var(--text-muted)',
+                            }}>
+                              {unlocked ? '解放済み' : `Lv.${reward.level}`}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
               </div>
             </div>
 
@@ -1192,27 +1280,104 @@ export default function MyPage({
             </div>
 
             <div className="card">
-              <h3 className="text-slate-300 font-bold mb-4">表示テーマ</h3>
-              <div
-                className="inline-flex gap-2 rounded-[20px] p-1.5"
-                style={{
-                  border: '1px solid var(--border)',
-                  background: 'var(--theme-toggle-bg)',
-                  boxShadow: 'var(--shadow-md)',
-                }}
-              >
-                <button
-                  onClick={() => setTheme('light')}
-                  className={`theme-toggle-button ${themeReady && theme === 'light' ? 'is-active' : ''}`}
-                >
-                  ライト
-                </button>
-                <button
-                  onClick={() => setTheme('dark')}
-                  className={`theme-toggle-button ${themeReady && theme === 'dark' ? 'is-active' : ''}`}
-                >
-                  ダーク
-                </button>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 className="text-slate-300 font-bold">表示テーマ</h3>
+                  <p className="text-slate-500 text-xs mt-1">
+                    ダークは最初から利用できます。ライトは Lv.10、かわいいは Lv.20 で解放されます。
+                  </p>
+                </div>
+                <div className="text-xs text-slate-400">現在レベル: Lv.{levelInfo.level}</div>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                {THEME_OPTIONS.map(option => {
+                  const unlocked = isThemeUnlockedAtLevel(option.id, levelInfo.level)
+                  const active = themeReady && theme === option.id
+                  const statusLabel = active ? '使用中' : unlocked ? '解放済み' : `Lv.${option.unlockLevel}で解放`
+
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => {
+                        if (!unlocked || !themeReady) return
+                        setTheme(option.id)
+                      }}
+                      disabled={!unlocked || !themeReady}
+                      className="rounded-[24px] border p-3 text-left transition-all"
+                      style={{
+                        borderColor: active
+                          ? option.id === 'cute'
+                            ? 'rgba(236, 72, 153, 0.4)'
+                            : option.id === 'light'
+                              ? 'rgba(59, 130, 246, 0.28)'
+                              : 'rgba(56, 189, 248, 0.32)'
+                          : 'var(--border)',
+                        background: active
+                          ? option.id === 'cute'
+                            ? 'linear-gradient(180deg, rgba(244, 114, 182, 0.16), rgba(255, 255, 255, 0.06))'
+                            : option.id === 'light'
+                              ? 'linear-gradient(180deg, rgba(148, 163, 184, 0.12), rgba(255, 255, 255, 0.06))'
+                              : 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.24))'
+                          : 'var(--surface-elevated)',
+                        boxShadow: active ? 'var(--shadow-md)' : 'none',
+                        opacity: unlocked ? 1 : 0.66,
+                      }}
+                    >
+                      <div
+                        className="rounded-[18px] border p-3"
+                        style={{
+                          borderColor: unlocked ? 'rgba(255, 255, 255, 0.08)' : 'rgba(148, 163, 184, 0.12)',
+                          background: option.id === 'dark'
+                            ? 'rgba(2, 6, 23, 0.42)'
+                            : option.id === 'light'
+                              ? 'rgba(255, 255, 255, 0.76)'
+                              : 'rgba(255, 244, 249, 0.84)',
+                        }}
+                      >
+                        <div
+                          className="h-16 rounded-[16px]"
+                          style={{
+                            background: getThemePreview(option.id),
+                            border: option.id === 'dark'
+                              ? '1px solid rgba(255,255,255,0.08)'
+                              : option.id === 'light'
+                                ? '1px solid rgba(148,163,184,0.2)'
+                                : '1px solid rgba(244,114,182,0.18)',
+                          }}
+                        />
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <div>
+                          <div className="font-semibold text-white">{option.label}</div>
+                          <div className="mt-1 text-xs text-slate-400">{option.description}</div>
+                        </div>
+                        <span
+                          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                          style={{
+                            background: active
+                              ? option.id === 'cute'
+                                ? 'rgba(236, 72, 153, 0.14)'
+                                : 'rgba(56, 189, 248, 0.14)'
+                              : unlocked
+                                ? 'rgba(34, 197, 94, 0.12)'
+                                : 'rgba(148, 163, 184, 0.14)',
+                            color: active
+                              ? option.id === 'cute'
+                                ? '#ec4899'
+                                : '#38bdf8'
+                              : unlocked
+                                ? '#22c55e'
+                                : 'var(--text-muted)',
+                          }}
+                        >
+                          {statusLabel}
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 

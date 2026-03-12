@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
-import { getLevelInfo, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
+import { getLevelInfo, getNextLevelUnlock, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
 import { hasCompletedDailyChallenge } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
@@ -46,6 +46,8 @@ export default function HomePage({
   const levelInfo = useMemo(() => getLevelInfo(totalXp), [totalXp])
   const timeAttackUnlocked = levelInfo.level >= TIME_ATTACK_UNLOCK_LEVEL
   const timeAttackUnlockXpLeft = Math.max(0, getXpFloorForLevel(TIME_ATTACK_UNLOCK_LEVEL) - levelInfo.totalXp)
+  const nextUnlock = getNextLevelUnlock(levelInfo.level)
+  const unlockedRewards = getUnlockedLevelRewards(levelInfo.level)
 
   useEffect(() => {
     if (studentId === null) return
@@ -180,6 +182,49 @@ export default function HomePage({
                 <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
               </div>
             </div>
+            <div className="mt-4 rounded-[24px] border px-4 py-4" style={{
+              borderColor: 'rgba(255,255,255,0.08)',
+              background: 'rgba(15, 23, 42, 0.28)',
+            }}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">次の解放</div>
+                  {nextUnlock ? (
+                    <div className="mt-2 flex items-center gap-3">
+                      <div className="text-2xl">{nextUnlock.emoji}</div>
+                      <div>
+                        <div className="font-semibold text-white">{nextUnlock.title}</div>
+                        <div className="text-xs leading-6 text-slate-400">{nextUnlock.description}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-sm text-emerald-300">主要なレベル報酬はすべて解放済みです。</div>
+                  )}
+                </div>
+                {nextUnlock && (
+                  <div className="text-right">
+                    <div className="text-xs text-slate-500">UNLOCK</div>
+                    <div className="mt-1 font-display text-2xl text-white">Lv.{nextUnlock.level}</div>
+                    <div className="text-xs text-slate-500">
+                      あと {Math.max(0, getXpFloorForLevel(nextUnlock.level) - levelInfo.totalXp)} XP
+                    </div>
+                  </div>
+                )}
+              </div>
+              {unlockedRewards.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {unlockedRewards.map(reward => (
+                    <span
+                      key={reward.key}
+                      className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                      style={{ background: 'rgba(34, 197, 94, 0.12)', color: '#86efac' }}
+                    >
+                      {reward.emoji} {reward.title}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             {isGuest && (
               <p className="mt-4 text-sm leading-6 text-sky-200">
                 ゲストモードの成績と XP は当日分だけ保存され、日付が変わるとリセットされます。
@@ -238,16 +283,11 @@ export default function HomePage({
                 マイページ
               </button>
             </div>
-            {timeAttackUnlocked && (
-              <div className="rounded-[18px] border border-slate-700/70 bg-slate-900/35 px-4 py-3 text-xs leading-6 text-slate-400">
-                タイムアタック / テストモード / 連続正解モード
-              </div>
-            )}
-            {!timeAttackUnlocked && (
-              <div className="rounded-[18px] border border-slate-700/70 bg-slate-900/35 px-4 py-3 text-xs leading-6 text-slate-400">
-                チャレンジモードは Lv.{TIME_ATTACK_UNLOCK_LEVEL} で解放されます。あと {timeAttackUnlockXpLeft} XP。
-              </div>
-            )}
+            <div className="rounded-[18px] border border-slate-700/70 bg-slate-900/35 px-4 py-3 text-xs leading-6 text-slate-400">
+              {timeAttackUnlocked
+                ? 'チャレンジモードは解放済みです。タイムアタック / テストモード / 連続正解モードに挑戦できます。'
+                : `チャレンジモードは Lv.${TIME_ATTACK_UNLOCK_LEVEL} で解放されます。あと ${timeAttackUnlockXpLeft} XP。`}
+            </div>
             <button onClick={() => logout()} className="btn-ghost w-full">
               ログアウト
             </button>
