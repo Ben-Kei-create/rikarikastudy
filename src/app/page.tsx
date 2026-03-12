@@ -8,9 +8,11 @@ import UnitSelectPage from '@/components/UnitSelectPage'
 import QuizPage from '@/components/QuizPage'
 import MyPage from '@/components/MyPage'
 import AdminPage from '@/components/AdminPage'
+import BiologyPracticePage from '@/components/BiologyPracticePage'
 import ChemistryPracticePage from '@/components/ChemistryPracticePage'
 import EarthSciencePracticePage from '@/components/EarthSciencePracticePage'
 import TimeAttackPage from '@/components/TimeAttackPage'
+import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
 import ScienceChatPage from '@/components/ScienceChatPage'
@@ -23,6 +25,7 @@ type Screen =
   | 'time-attack'
   | { type: 'unit'; field: string }
   | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; dailyChallenge?: boolean; customOptions?: CustomQuizOptions }
+  | { type: 'biology-practice'; mode: BiologyPracticeMode }
   | { type: 'chemistry-practice'; mode: ChemistryPracticeMode }
   | { type: 'earth-practice'; mode: EarthSciencePracticeMode }
   | { type: 'chat'; field: ScienceChatField }
@@ -65,6 +68,7 @@ function App() {
         field={screen.field}
         onSelect={unit => setScreen({ type: 'quiz', field: screen.field, unit })}
         onStartCustomQuiz={options => setScreen({ type: 'quiz', field: screen.field, unit: options.unit, customOptions: options })}
+        onSelectBiologyMode={mode => setScreen({ type: 'biology-practice', mode })}
         onSelectSpecialMode={mode => setScreen({ type: 'chemistry-practice', mode })}
         onSelectEarthMode={mode => setScreen({ type: 'earth-practice', mode })}
         onOpenChat={field => setScreen({ type: 'chat', field })}
@@ -83,6 +87,13 @@ function App() {
       <ChemistryPracticePage
         mode={screen.mode}
         onBack={() => setScreen({ type: 'unit', field: '化学' })}
+      />
+    )
+  } else if (typeof screen === 'object' && screen.type === 'biology-practice') {
+    content = (
+      <BiologyPracticePage
+        mode={screen.mode}
+        onBack={() => setScreen({ type: 'unit', field: '生物' })}
       />
     )
   } else if (typeof screen === 'object' && screen.type === 'earth-practice') {

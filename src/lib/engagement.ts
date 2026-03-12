@@ -9,6 +9,7 @@ export type SessionMode =
   | 'custom'
   | 'chemistry_flash'
   | 'chemistry_reaction'
+  | 'biology_organ_pairs'
   | 'earth_rock_pairs'
   | 'test_mode'
   | 'streak_mode'
