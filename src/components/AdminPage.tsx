@@ -12,6 +12,7 @@ import { isMissingColumnError, isMissingRelationError } from '@/lib/schemaCompat
 import { fetchActiveSessions } from '@/lib/activeSessions'
 import { BADGE_DEFINITIONS } from '@/lib/badges'
 import { getLevelTitle } from '@/lib/engagement'
+import { buildGlossaryEntryId, ScienceGlossaryField } from '@/lib/scienceGlossary'
 
 const ADMIN_PW = 'rikaadmin2026'
 const FIELDS = ['生物', '化学', '物理', '地学'] as const
@@ -42,6 +43,27 @@ const BULK_JSON_EXAMPLE = `[
     "keywords": ["アンペア"],
     "explanation": "電流の単位はアンペアです。",
     "grade": "中2"
+  }
+]`
+
+const GLOSSARY_BULK_JSON_EXAMPLE = `[
+  {
+    "field": "生物",
+    "term": "蒸散",
+    "reading": "じょうさん",
+    "shortDescription": "植物の葉から水分が水蒸気として出ていくこと。",
+    "description": "蒸散は、植物の葉の気孔などから水分が水蒸気として外へ出ていく現象です。根から水を吸い上げるはたらきにも関係します。",
+    "related": ["気孔", "道管", "葉"],
+    "tags": ["植物", "水の移動", "葉"]
+  },
+  {
+    "field": "地学",
+    "term": "露点",
+    "reading": "ろてん",
+    "shortDescription": "空気中の水蒸気が水滴になり始める温度。",
+    "description": "露点は、空気を冷やした時に水蒸気が水滴になり始める温度です。湿度や雲のでき方を考える時の手がかりになります。",
+    "related": ["湿度", "水蒸気", "雲"],
+    "tags": ["天気", "気体", "観測"]
   }
 ]`
 
@@ -134,6 +156,8 @@ type BadgeRow = Database['public']['Tables']['badges']['Row']
 type StudentBadgeRow = Database['public']['Tables']['student_badges']['Row']
 type TimeAttackRecordRow = Database['public']['Tables']['time_attack_records']['Row']
 type StudentInsert = Database['public']['Tables']['students']['Insert']
+type GlossaryRow = Database['public']['Tables']['science_glossary_entries']['Row']
+type GlossaryInsert = Database['public']['Tables']['science_glossary_entries']['Insert']
 
 interface BulkQuestionPayload {
   field: typeof FIELDS[number]
@@ -147,12 +171,24 @@ interface BulkQuestionPayload {
   grade: string
 }
 
+interface BulkGlossaryPayload {
+  id: string
+  term: string
+  reading: string
+  field: ScienceGlossaryField
+  short_description: string
+  description: string
+  related: string[]
+  tags: string[]
+}
+
 type AdminTab = 'overview' | 'questions' | 'add' | 'bulk'
 
 interface RestoreSnapshot {
   format: string
   students: StudentInsert[]
   questions: QuestionRow[]
+  glossaryEntries: GlossaryRow[]
   quizSessions: QuizSessionRow[]
   answerLogs: AnswerLogRow[]
   chatGuardLogs: ChatGuardLogRow[]
@@ -162,6 +198,7 @@ interface RestoreSnapshot {
   timeAttackRecords: TimeAttackRecordRow[]
   hasChatGuardLogs: boolean
   hasEngagementTables: boolean
+  hasGlossaryEntries: boolean
   defaultPasswordCount: number
 }
 
@@ -219,6 +256,14 @@ function parseKeywordsArray(value: unknown) {
     .filter(Boolean)
 
   return keywords.length > 0 ? keywords : null
+}
+
+function parseStringArray(value: unknown) {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .map(item => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
 }
 
 function parseKeywordInput(input: string) {
@@ -310,6 +355,74 @@ function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
   })
 }
 
+function parseBulkGlossaryEntries(jsonText: string): BulkGlossaryPayload[] {
+  const parsed = JSON.parse(jsonText)
+  const items: unknown[] | null = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray(parsed?.entries)
+      ? parsed.entries
+      : Array.isArray(parsed?.glossary)
+        ? parsed.glossary
+        : null
+
+  if (!items || items.length === 0) {
+    throw new Error('JSON は配列、または {"entries":[...]} / {"glossary":[...]} の形で入力してください。')
+  }
+
+  const seenIds = new Set<string>()
+  const seenTerms = new Set<string>()
+
+  return items.map((item, index) => {
+    const row = typeof item === 'object' && item !== null ? item as Record<string, unknown> : {}
+    const prefix = `${index + 1}語目`
+    const field = typeof row.field === 'string' ? row.field.trim() : ''
+    const term = typeof row.term === 'string' ? row.term.trim() : ''
+    const reading = typeof row.reading === 'string' ? row.reading.trim() : ''
+    const shortDescriptionSource = typeof row.shortDescription === 'string'
+      ? row.shortDescription
+      : typeof row.short_description === 'string'
+        ? row.short_description
+        : ''
+    const shortDescription = shortDescriptionSource.trim()
+    const description = typeof row.description === 'string' ? row.description.trim() : ''
+    const related = parseStringArray(row.related)
+    const tags = parseStringArray(row.tags)
+    const idSource = typeof row.id === 'string' ? row.id.trim() : ''
+
+    if (!FIELDS.includes(field as typeof FIELDS[number])) {
+      throw new Error(`${prefix}: field は ${FIELDS.join(' / ')} のどれかにしてください。`)
+    }
+    if (!term) throw new Error(`${prefix}: term は必須です。`)
+    if (!reading) throw new Error(`${prefix}: reading は必須です。`)
+    if (!shortDescription) throw new Error(`${prefix}: shortDescription は必須です。`)
+    if (!description) throw new Error(`${prefix}: description は必須です。`)
+
+    const id = idSource || buildGlossaryEntryId(field as ScienceGlossaryField, term)
+    const termKey = `${field}::${term}`.toLowerCase()
+
+    if (seenIds.has(id)) {
+      throw new Error(`${prefix}: id が重複しています (${id})。`)
+    }
+    if (seenTerms.has(termKey)) {
+      throw new Error(`${prefix}: 同じ field + term が重複しています (${field} / ${term})。`)
+    }
+
+    seenIds.add(id)
+    seenTerms.add(termKey)
+
+    return {
+      id,
+      term,
+      reading,
+      field: field as ScienceGlossaryField,
+      short_description: shortDescription,
+      description,
+      related,
+      tags,
+    }
+  })
+}
+
 function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
   const parsed = JSON.parse(jsonText) as Record<string, unknown>
   const format = typeof parsed.format === 'string' ? parsed.format : ''
@@ -320,6 +433,10 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
 
   const questionCatalog = Array.isArray(parsed.questionCatalog)
     ? parsed.questionCatalog as QuestionRow[]
+    : []
+  const hasGlossaryEntries = Array.isArray(parsed.scienceGlossaryEntries)
+  const glossaryEntries = hasGlossaryEntries
+    ? parsed.scienceGlossaryEntries as GlossaryRow[]
     : []
   const rawStudents = Array.isArray(parsed.students)
     ? parsed.students as Array<Record<string, unknown>>
@@ -381,6 +498,7 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
     format,
     students,
     questions: questionCatalog,
+    glossaryEntries,
     quizSessions,
     answerLogs,
     chatGuardLogs,
@@ -390,12 +508,13 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
     timeAttackRecords,
     hasChatGuardLogs,
     hasEngagementTables,
+    hasGlossaryEntries,
     defaultPasswordCount,
   }
 }
 
 async function insertRowsInChunks(
-  table: 'questions' | 'quiz_sessions' | 'answer_logs' | 'chat_guard_logs' | 'daily_challenges' | 'badges' | 'student_badges' | 'time_attack_records',
+  table: 'questions' | 'science_glossary_entries' | 'quiz_sessions' | 'answer_logs' | 'chat_guard_logs' | 'daily_challenges' | 'badges' | 'student_badges' | 'time_attack_records',
   rows: Record<string, unknown>[]
 ) {
   if (rows.length === 0) return
@@ -417,7 +536,15 @@ function getRestoreErrorMessage(message: string) {
   if (message.includes('keywords')) {
     return 'Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。'
   }
-  if (message.includes('chat_guard_logs') || message.includes('daily_challenges') || message.includes('student_badges') || message.includes('time_attack_records') || message.includes('badges')) {
+  if (
+    message.includes('chat_guard_logs')
+    || message.includes('daily_challenges')
+    || message.includes('student_badges')
+    || message.includes('time_attack_records')
+    || message.includes('badges')
+    || message.includes('science_glossary_entries')
+    || message.includes('short_description')
+  ) {
     return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
   return message
@@ -437,6 +564,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [bulkInput, setBulkInput] = useState(BULK_JSON_EXAMPLE)
   const [bulkMsg, setBulkMsg] = useState('')
   const [bulkLoading, setBulkLoading] = useState(false)
+  const [glossaryBulkInput, setGlossaryBulkInput] = useState(GLOSSARY_BULK_JSON_EXAMPLE)
+  const [glossaryBulkMsg, setGlossaryBulkMsg] = useState('')
+  const [glossaryBulkLoading, setGlossaryBulkLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
   const [exportMsg, setExportMsg] = useState('')
   const [restoreInput, setRestoreInput] = useState('')
@@ -539,11 +669,23 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       setExportLoading(true)
       setExportMsg('')
 
-      const [students, sessionsResponse, answerLogsResponse, questionsResponse, chatGuardLogsResponse, dailyChallengesResponse, badgesResponse, studentBadgesResponse, timeAttackResponse] = await Promise.all([
+      const [
+        students,
+        sessionsResponse,
+        answerLogsResponse,
+        questionsResponse,
+        glossaryResponse,
+        chatGuardLogsResponse,
+        dailyChallengesResponse,
+        badgesResponse,
+        studentBadgesResponse,
+        timeAttackResponse,
+      ] = await Promise.all([
         fetchStudents(),
         supabase.from('quiz_sessions').select('*').order('created_at', { ascending: false }),
         supabase.from('answer_logs').select('*').order('created_at', { ascending: false }),
         supabase.from('questions').select('*').order('created_at', { ascending: false }),
+        supabase.from('science_glossary_entries').select('*').order('reading', { ascending: true }).order('term', { ascending: true }),
         supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }),
         supabase.from('daily_challenges').select('*').order('completed_at', { ascending: false }),
         supabase.from('badges').select('*').order('created_at', { ascending: false }),
@@ -554,6 +696,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       if (sessionsResponse.error) throw new Error(sessionsResponse.error.message)
       if (answerLogsResponse.error) throw new Error(answerLogsResponse.error.message)
       if (questionsResponse.error) throw new Error(questionsResponse.error.message)
+      if (glossaryResponse.error && !isMissingRelationError(glossaryResponse.error, 'science_glossary_entries')) {
+        throw new Error(glossaryResponse.error.message)
+      }
       if (chatGuardLogsResponse.error && !isMissingRelationError(chatGuardLogsResponse.error, 'chat_guard_logs')) {
         throw new Error(chatGuardLogsResponse.error.message)
       }
@@ -565,6 +710,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       const sessions = (sessionsResponse.data || []) as QuizSessionRow[]
       const answerLogs = (answerLogsResponse.data || []) as AnswerLogRow[]
       const questions = (questionsResponse.data || []) as QuestionRow[]
+      const glossaryEntries = (glossaryResponse.data || []) as GlossaryRow[]
+      const hasGlossaryTable = !glossaryResponse.error
       const chatGuardLogs = (chatGuardLogsResponse.data || []) as ChatGuardLogRow[]
       const dailyChallenges = (dailyChallengesResponse.data || []) as DailyChallengeRow[]
       const badges = (badgesResponse.data || []) as BadgeRow[]
@@ -574,9 +721,10 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       const payload = {
         exportedAt: new Date().toISOString(),
-        format: 'rikarikastudy-admin-export/v4',
+        format: 'rikarikastudy-admin-export/v5',
         restoreHint: 'テーブルが消えている場合は、先に supabase_schema.sql を SQL Editor で実行してから復元してください。',
         questionCatalog: questions,
+        ...(hasGlossaryTable ? { scienceGlossaryEntries: glossaryEntries } : {}),
         chatGuardLogs,
         dailyChallenges,
         badges,
@@ -732,6 +880,15 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     event.target.value = ''
   }
 
+  const handleGlossaryBulkFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const text = await file.text()
+    setGlossaryBulkInput(text)
+    setGlossaryBulkMsg(`📄 ${file.name} を読み込みました。`)
+    event.target.value = ''
+  }
+
   const handleBulkImport = async () => {
     try {
       setBulkLoading(true)
@@ -767,6 +924,32 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     }
   }
 
+  const handleGlossaryBulkImport = async () => {
+    try {
+      setGlossaryBulkLoading(true)
+      setGlossaryBulkMsg('')
+      const payload = parseBulkGlossaryEntries(glossaryBulkInput)
+
+      for (let index = 0; index < payload.length; index += BULK_INSERT_CHUNK_SIZE) {
+        const chunk = payload.slice(index, index + BULK_INSERT_CHUNK_SIZE)
+        const { error } = await supabase
+          .from('science_glossary_entries')
+          .upsert(chunk as GlossaryInsert[], { onConflict: 'field,term' })
+
+        if (error && isMissingRelationError(error, 'science_glossary_entries')) {
+          throw new Error('Supabase に science_glossary_entries テーブルがありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+        }
+        if (error) throw new Error(error.message)
+      }
+
+      setGlossaryBulkMsg(`✅ ${payload.length}語を一括登録しました。既存の同じ field + term は上書きされています。`)
+    } catch (error) {
+      setGlossaryBulkMsg(`エラー: ${error instanceof Error ? error.message : '辞書の一括登録に失敗しました。'}`)
+    } finally {
+      setGlossaryBulkLoading(false)
+    }
+  }
+
   const handleRestoreFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -788,6 +971,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         '現在のバックアップ対象データを、このJSONの内容で置き換えて復元します。',
         `生徒: ${snapshot.students.length}件`,
         `問題: ${snapshot.questions.length}件`,
+        ...(snapshot.hasGlossaryEntries ? [`辞書: ${snapshot.glossaryEntries.length}件`] : []),
         `クイズ履歴: ${snapshot.quizSessions.length}件`,
         `解答ログ: ${snapshot.answerLogs.length}件`,
         ...(snapshot.hasChatGuardLogs ? [`チャット警告: ${snapshot.chatGuardLogs.length}件`] : []),
@@ -797,7 +981,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           `タイムアタック記録: ${snapshot.timeAttackRecords.length}件`,
         ] : []),
         '',
-        'questions / quiz_sessions / answer_logs は入れ替えになります。続けますか？',
+        `questions${snapshot.hasGlossaryEntries ? ' / science_glossary_entries' : ''} / quiz_sessions / answer_logs は入れ替えになります。続けますか？`,
       ].join('\n')
 
       if (!confirm(confirmMessage)) return
@@ -828,6 +1012,14 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         .delete()
         .not('id', 'is', null)
       if (deleteQuestionsError) throw new Error(deleteQuestionsError.message)
+
+      if (snapshot.hasGlossaryEntries) {
+        const { error: deleteGlossaryError } = await supabase
+          .from('science_glossary_entries')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteGlossaryError) throw new Error(deleteGlossaryError.message)
+      }
 
       if (snapshot.hasChatGuardLogs) {
         const { error: deleteChatGuardLogsError } = await supabase
@@ -864,6 +1056,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       }
 
       await insertRowsInChunks('questions', snapshot.questions as unknown as Record<string, unknown>[])
+      if (snapshot.hasGlossaryEntries) {
+        await insertRowsInChunks('science_glossary_entries', snapshot.glossaryEntries as unknown as Record<string, unknown>[])
+      }
       await insertRowsInChunks('quiz_sessions', snapshot.quizSessions as unknown as Record<string, unknown>[])
       await insertRowsInChunks('answer_logs', snapshot.answerLogs as unknown as Record<string, unknown>[])
       if (snapshot.hasChatGuardLogs) {
@@ -878,6 +1073,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       setRestoreMsg(
         `✅ 復元しました。問題${snapshot.questions.length}件 / 履歴${snapshot.quizSessions.length}件 / 解答ログ${snapshot.answerLogs.length}件`
+        + (snapshot.hasGlossaryEntries ? ` / 辞書${snapshot.glossaryEntries.length}件` : '')
         + (snapshot.hasChatGuardLogs ? ` / チャット警告${snapshot.chatGuardLogs.length}件` : '')
         + (snapshot.hasEngagementTables ? ` / デイリー${snapshot.dailyChallenges.length}件 / バッジ${snapshot.studentBadges.length}件 / タイムアタック${snapshot.timeAttackRecords.length}件` : '')
         + ' を反映しました。'
@@ -939,7 +1135,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="segment-bar">
-            {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括追加']] as const).map(([currentTab, label]) => (
+            {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録']] as const).map(([currentTab, label]) => (
               <button
                 key={currentTab}
                 onClick={() => setTab(currentTab)}
@@ -1000,11 +1196,11 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
               <div className="card">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="text-white font-bold">全成績データをダウンロード</div>
-                    <div className="text-slate-400 text-sm mt-1">
-                      生徒情報、問題、履歴、解答ログ、チャット警告ログを復元用JSONとしてまとめて保存します。
-                    </div>
+                    <div>
+                      <div className="text-white font-bold">全成績データをダウンロード</div>
+                      <div className="text-slate-400 text-sm mt-1">
+                      生徒情報、問題、辞書、履歴、解答ログ、チャット警告ログを復元用JSONとしてまとめて保存します。
+                      </div>
                     {exportMsg && (
                       <div
                         className="text-sm mt-2"
@@ -1175,7 +1371,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <div className="card">
                 <div className="text-white font-bold">バックアップJSONから復元</div>
                 <div className="text-slate-400 text-sm mt-1 leading-6">
-                  管理画面から保存したバックアップJSONを読み込んで、問題・履歴・解答ログ・チャット警告ログを復元します。
+                  管理画面から保存したバックアップJSONを読み込んで、問題・辞書・履歴・解答ログ・チャット警告ログを復元します。
                   テーブル自体が消えている場合は、先に `supabase_schema.sql` を SQL Editor で実行してください。
                 </div>
                 <div className="flex flex-wrap gap-3 mt-4">
@@ -1473,51 +1669,100 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       {tab === 'bulk' && (
         <div className="space-y-4">
-          <div className="card">
-            <h3 className="text-white font-bold mb-2">JSON 一括追加</h3>
-            <p className="text-slate-400 text-sm leading-6">
-              JSON をそのまま貼り付けるか、`.json` ファイルを読み込んで一括追加できます。
-              choice 問題は `choices` を2件、text 問題は `choices` なしで入力してください。
-              記述問題では `keywords` 配列を付けると、回答文に1つでも含まれたときに `▲` 判定になります。
-            </p>
-            <div className="flex flex-wrap gap-3 mt-4">
-              <label
-                className="btn-secondary text-sm cursor-pointer"
-              >
-                JSONファイルを読み込む
-                <input type="file" accept=".json,application/json" onChange={handleBulkFileChange} className="hidden" />
-              </label>
-              <button
-                onClick={() => setBulkInput(BULK_JSON_EXAMPLE)}
-                className="btn-ghost text-sm"
-              >
-                サンプルJSONを入れる
-              </button>
-            </div>
-          </div>
+          <div className="grid gap-4 xl:grid-cols-2">
+            <div className="space-y-4">
+              <div className="card">
+                <h3 className="text-white font-bold mb-2">問題 JSON 一括追加</h3>
+                <p className="text-slate-400 text-sm leading-6">
+                  JSON をそのまま貼り付けるか、`.json` ファイルを読み込んで一括追加できます。
+                  choice 問題は `choices` を2件、text 問題は `choices` なしで入力してください。
+                  記述問題では `keywords` 配列を付けると、回答文に1つでも含まれたときに `▲` 判定になります。
+                </p>
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <label className="btn-secondary text-sm cursor-pointer">
+                    JSONファイルを読み込む
+                    <input type="file" accept=".json,application/json" onChange={handleBulkFileChange} className="hidden" />
+                  </label>
+                  <button
+                    onClick={() => setBulkInput(BULK_JSON_EXAMPLE)}
+                    className="btn-ghost text-sm"
+                  >
+                    サンプルJSONを入れる
+                  </button>
+                </div>
+              </div>
 
-          <div className="card">
-            <label className="text-slate-400 text-xs mb-2 block">JSON データ</label>
-            <textarea
-              value={bulkInput}
-              onChange={event => setBulkInput(event.target.value)}
-              rows={18}
-              className="input-surface resize-y font-mono text-sm"
-              spellCheck={false}
-            />
-            {bulkMsg && (
-              <p className={`mt-3 text-sm ${bulkMsg.startsWith('✅') || bulkMsg.startsWith('📄') ? 'text-green-400' : 'text-red-400'}`}>
-                {bulkMsg}
-              </p>
-            )}
-            <button
-              onClick={handleBulkImport}
-              className="btn-primary w-full mt-4"
-              disabled={bulkLoading}
-              style={{ opacity: bulkLoading ? 0.7 : 1 }}
-            >
-              {bulkLoading ? '一括追加中...' : 'JSON を一括追加する'}
-            </button>
+              <div className="card">
+                <label className="text-slate-400 text-xs mb-2 block">問題 JSON データ</label>
+                <textarea
+                  value={bulkInput}
+                  onChange={event => setBulkInput(event.target.value)}
+                  rows={18}
+                  className="input-surface resize-y font-mono text-sm"
+                  spellCheck={false}
+                />
+                {bulkMsg && (
+                  <p className={`mt-3 text-sm ${bulkMsg.startsWith('✅') || bulkMsg.startsWith('📄') ? 'text-green-400' : 'text-red-400'}`}>
+                    {bulkMsg}
+                  </p>
+                )}
+                <button
+                  onClick={handleBulkImport}
+                  className="btn-primary w-full mt-4"
+                  disabled={bulkLoading}
+                  style={{ opacity: bulkLoading ? 0.7 : 1 }}
+                >
+                  {bulkLoading ? '一括追加中...' : '問題JSONを一括追加する'}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="card">
+                <h3 className="text-white font-bold mb-2">辞書 JSON 一括登録</h3>
+                <p className="text-slate-400 text-sm leading-6">
+                  辞書語句も管理画面からまとめて登録できます。
+                  `shortDescription` は一覧用の短い説明、`description` は詳細説明です。
+                  `related` と `tags` は文字列配列で、同じ `field + term` は上書き更新されます。
+                </p>
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <label className="btn-secondary text-sm cursor-pointer">
+                    JSONファイルを読み込む
+                    <input type="file" accept=".json,application/json" onChange={handleGlossaryBulkFileChange} className="hidden" />
+                  </label>
+                  <button
+                    onClick={() => setGlossaryBulkInput(GLOSSARY_BULK_JSON_EXAMPLE)}
+                    className="btn-ghost text-sm"
+                  >
+                    サンプルJSONを入れる
+                  </button>
+                </div>
+              </div>
+
+              <div className="card">
+                <label className="text-slate-400 text-xs mb-2 block">辞書 JSON データ</label>
+                <textarea
+                  value={glossaryBulkInput}
+                  onChange={event => setGlossaryBulkInput(event.target.value)}
+                  rows={18}
+                  className="input-surface resize-y font-mono text-sm"
+                  spellCheck={false}
+                />
+                {glossaryBulkMsg && (
+                  <p className={`mt-3 text-sm ${glossaryBulkMsg.startsWith('✅') || glossaryBulkMsg.startsWith('📄') ? 'text-green-400' : 'text-red-400'}`}>
+                    {glossaryBulkMsg}
+                  </p>
+                )}
+                <button
+                  onClick={handleGlossaryBulkImport}
+                  className="btn-primary w-full mt-4"
+                  disabled={glossaryBulkLoading}
+                  style={{ opacity: glossaryBulkLoading ? 0.7 : 1 }}
+                >
+                  {glossaryBulkLoading ? '登録中...' : '辞書JSONを一括登録する'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

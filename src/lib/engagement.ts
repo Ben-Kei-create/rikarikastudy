@@ -9,6 +9,7 @@ export type SessionMode =
   | 'custom'
   | 'chemistry_flash'
   | 'chemistry_reaction'
+  | 'earth_rock_pairs'
   | 'time_attack'
 
 const LEVEL_TITLES = [

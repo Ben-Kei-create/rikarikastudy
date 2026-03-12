@@ -9,8 +9,10 @@ import QuizPage from '@/components/QuizPage'
 import MyPage from '@/components/MyPage'
 import AdminPage from '@/components/AdminPage'
 import ChemistryPracticePage from '@/components/ChemistryPracticePage'
+import EarthSciencePracticePage from '@/components/EarthSciencePracticePage'
 import TimeAttackPage from '@/components/TimeAttackPage'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
+import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
 import ScienceChatPage from '@/components/ScienceChatPage'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { CustomQuizOptions } from '@/lib/customQuiz'
@@ -22,6 +24,7 @@ type Screen =
   | { type: 'unit'; field: string }
   | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; dailyChallenge?: boolean; customOptions?: CustomQuizOptions }
   | { type: 'chemistry-practice'; mode: ChemistryPracticeMode }
+  | { type: 'earth-practice'; mode: EarthSciencePracticeMode }
   | { type: 'chat'; field: ScienceChatField }
 
 const BG_THEMES = ['bg-bio', 'bg-chem', 'bg-phys', 'bg-earth'] as const
@@ -63,6 +66,7 @@ function App() {
         onSelect={unit => setScreen({ type: 'quiz', field: screen.field, unit })}
         onStartCustomQuiz={options => setScreen({ type: 'quiz', field: screen.field, unit: options.unit, customOptions: options })}
         onSelectSpecialMode={mode => setScreen({ type: 'chemistry-practice', mode })}
+        onSelectEarthMode={mode => setScreen({ type: 'earth-practice', mode })}
         onOpenChat={field => setScreen({ type: 'chat', field })}
         onBack={() => setScreen('home')}
       />
@@ -79,6 +83,13 @@ function App() {
       <ChemistryPracticePage
         mode={screen.mode}
         onBack={() => setScreen({ type: 'unit', field: '化学' })}
+      />
+    )
+  } else if (typeof screen === 'object' && screen.type === 'earth-practice') {
+    content = (
+      <EarthSciencePracticePage
+        mode={screen.mode}
+        onBack={() => setScreen({ type: 'unit', field: '地学' })}
       />
     )
   } else if (typeof screen === 'object' && screen.type === 'quiz') {

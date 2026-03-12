@@ -25,7 +25,19 @@ interface GenerateContentResponse {
 }
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
-const DEFAULT_MODE = process.env.SCIENCE_CHAT_MODE || 'mock'
+
+function getScienceChatApiKey() {
+  return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
+}
+
+function getScienceChatMode() {
+  const configuredMode = process.env.SCIENCE_CHAT_MODE?.trim().toLowerCase()
+  if (configuredMode === 'live' || configuredMode === 'mock') {
+    return configuredMode
+  }
+
+  return getScienceChatApiKey() ? 'live' : 'mock'
+}
 
 function isScienceField(value: string): value is ScienceChatField {
   return SCIENCE_CHAT_FIELDS.includes(value as ScienceChatField)
@@ -54,6 +66,7 @@ function extractText(payload: GenerateContentResponse) {
 
 export async function POST(request: NextRequest) {
   try {
+    const mode = getScienceChatMode()
     const body = await request.json() as {
       field?: string
       messages?: RequestMessage[]
@@ -87,7 +100,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (DEFAULT_MODE !== 'live') {
+    if (mode !== 'live') {
       const mockReply: ScienceChatApiReply = {
         reply: makeMockScienceReply(body.field, latestUserPrompt),
         provider: 'mock',
@@ -96,10 +109,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(mockReply)
     }
 
-    const apiKey = process.env.GEMINI_API_KEY
+    const apiKey = getScienceChatApiKey()
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
       return NextResponse.json(
-        { error: 'GEMINI_API_KEY が未設定です。' },
+        { error: 'GEMINI_API_KEY または GOOGLE_API_KEY が未設定です。' },
         { status: 500 }
       )
     }

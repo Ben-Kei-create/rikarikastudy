@@ -25,6 +25,7 @@ type SessionMode =
   | 'custom'
   | 'chemistry_flash'
   | 'chemistry_reaction'
+  | 'earth_rock_pairs'
   | 'time_attack'
 
 export type Database = {
@@ -165,6 +166,38 @@ export type Database = {
           matched_terms?: string[]
           message_excerpt?: string
           source?: 'draft' | 'send'
+        }
+      }
+      science_glossary_entries: {
+        Row: {
+          id: string
+          term: string
+          reading: string
+          field: '生物' | '化学' | '物理' | '地学'
+          short_description: string
+          description: string
+          related: string[]
+          tags: string[]
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          term: string
+          reading: string
+          field: '生物' | '化学' | '物理' | '地学'
+          short_description: string
+          description: string
+          related?: string[]
+          tags?: string[]
+        }
+        Update: {
+          term?: string
+          reading?: string
+          field?: '生物' | '化学' | '物理' | '地学'
+          short_description?: string
+          description?: string
+          related?: string[]
+          tags?: string[]
         }
       }
       daily_challenges: {

@@ -35,6 +35,9 @@ git push -u origin main
    NEXT_PUBLIC_SUPABASE_URL = https://xxxxx.supabase.co
    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = sb_publishable_xxxxx...
    # または NEXT_PUBLIC_SUPABASE_ANON_KEY = eyJxxxxx...
+   GEMINI_API_KEY = xxxxx
+   # または GOOGLE_API_KEY = xxxxx
+   # SCIENCE_CHAT_MODE は未設定でも、API キーがあれば自動で live になります
    ```
 3. 「Deploy」を押す → 完了！
 
@@ -67,17 +70,18 @@ git push -u origin main
 7. 「正解」には choice なら A か B と同じ文、text なら模範解答を入れる
 8. 「問題を追加する」を押す
 
-### 6. 問題の一括追加方法
+### 6. 問題・辞書の一括追加方法
 
 #### 管理画面から JSON で一括追加
 
 1. 「もぎ先生ログイン」
-2. 「一括追加」タブを開く
-3. JSON を貼り付けるか、`.json` ファイルを読み込む
-4. 「JSON を一括追加する」を押す
+2. 「一括登録」タブを開く
+3. 問題JSONまたは辞書JSONを貼り付けるか、`.json` ファイルを読み込む
+4. それぞれの「一括追加 / 一括登録」ボタンを押す
 
 サンプル形式:
 - [questions_bulk_example.json](/Users/fumiaki/Desktop/rikarikalove/examples/questions_bulk_example.json)
+- [glossary_bulk_example.json](/Users/fumiaki/Desktop/rikarikalove/examples/glossary_bulk_example.json)
 
 #### JSON から SQL を作って Supabase に入れる
 
@@ -207,6 +211,27 @@ npm run questions:import -- - < path/to/questions.json
 - `answer` は `choices` のどちらかと完全一致
 - `text` 問題では `keywords` を任意で設定可能
 - 配列そのままでも、`{"questions":[...]}` でも投入可能
+
+`glossary` 辞書:
+
+```json
+{
+  "field": "生物",
+  "term": "蒸散",
+  "reading": "じょうさん",
+  "shortDescription": "植物の葉から水分が水蒸気として出ていくこと。",
+  "description": "蒸散は、植物の葉の気孔などから水分が水蒸気として外へ出ていく現象です。根から水を吸い上げるはたらきにも関係します。",
+  "related": ["気孔", "道管", "葉"],
+  "tags": ["植物", "水の移動", "葉"]
+}
+```
+
+辞書ルール:
+- `field` は `生物 / 化学 / 物理 / 地学`
+- `term / reading / shortDescription / description` は必須
+- `related / tags` は文字列配列で任意
+- 配列そのままでも、`{"entries":[...]}` や `{"glossary":[...]}` でも投入可能
+- 同じ `field + term` を再登録すると上書き更新されます
 
 ---
 

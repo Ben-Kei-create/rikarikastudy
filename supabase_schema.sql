@@ -106,6 +106,19 @@ CREATE TABLE IF NOT EXISTS chat_guard_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 理科辞典テーブル
+CREATE TABLE IF NOT EXISTS science_glossary_entries (
+  id TEXT PRIMARY KEY,
+  term TEXT NOT NULL,
+  reading TEXT NOT NULL,
+  field TEXT NOT NULL CHECK (field IN ('生物', '化学', '物理', '地学')),
+  short_description TEXT NOT NULL,
+  description TEXT NOT NULL,
+  related JSONB NOT NULL DEFAULT '[]'::jsonb,
+  tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 旧質問DM機能は廃止
 DROP TABLE IF EXISTS student_questions;
 
@@ -119,6 +132,8 @@ CREATE INDEX IF NOT EXISTS idx_active_sessions_student ON active_sessions(studen
 CREATE INDEX IF NOT EXISTS idx_active_sessions_last_seen ON active_sessions(last_seen_at);
 CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_student ON chat_guard_logs(student_id);
 CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_created_at ON chat_guard_logs(created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_science_glossary_field_term ON science_glossary_entries(field, term);
+CREATE INDEX IF NOT EXISTS idx_science_glossary_reading ON science_glossary_entries(reading);
 
 -- RLS（Row Level Security）を無効に（塾内利用のため簡略化）
 ALTER TABLE students DISABLE ROW LEVEL SECURITY;
@@ -127,6 +142,7 @@ ALTER TABLE quiz_sessions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE answer_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE active_sessions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_guard_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE science_glossary_entries DISABLE ROW LEVEL SECURITY;
 
 -- ========================================
 -- Engagement upgrade (XP / daily / badges / time attack)

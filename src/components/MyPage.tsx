@@ -11,6 +11,7 @@ import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
+  isMissingRelationError,
   markColumnMissing,
   markColumnSupported,
 } from '@/lib/schemaCompat'
@@ -18,6 +19,7 @@ import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { loadEarnedBadgeRecords } from '@/lib/studyRewards'
 import {
+  mergeGlossaryEntries,
   getGlossaryIndexKey,
   SCIENCE_GLOSSARY,
   SCIENCE_GLOSSARY_FIELDS,
@@ -44,6 +46,7 @@ interface AnswerLog {
   questions: { unit: string; field: string } | null
 }
 type QuestionRow = Database['public']['Tables']['questions']['Row']
+type GlossaryRow = Database['public']['Tables']['science_glossary_entries']['Row']
 
 interface CustomQuestionForm {
   field: string
@@ -90,6 +93,19 @@ function formatStudyTime(totalSeconds: number) {
   return `${seconds}秒`
 }
 
+function toGlossaryEntry(row: GlossaryRow): ScienceGlossaryEntry {
+  return {
+    id: row.id,
+    term: row.term,
+    reading: row.reading,
+    field: row.field,
+    shortDescription: row.short_description,
+    description: row.description,
+    related: Array.isArray(row.related) ? row.related.filter(Boolean) : [],
+    tags: Array.isArray(row.tags) ? row.tags.filter(Boolean) : [],
+  }
+}
+
 type Tab = 'overview' | 'history' | 'weak' | 'badges' | 'glossary' | 'questions' | 'account'
 
 export default function MyPage({
@@ -117,6 +133,7 @@ export default function MyPage({
   const [savingQuestion, setSavingQuestion] = useState(false)
   const [studentXp, setStudentXp] = useState(0)
   const [earnedBadges, setEarnedBadges] = useState<Array<{ badge_key: string; earned_at: string }>>([])
+  const [customGlossaryEntries, setCustomGlossaryEntries] = useState<ScienceGlossaryEntry[]>([])
   const [glossaryQuery, setGlossaryQuery] = useState('')
   const [glossaryField, setGlossaryField] = useState<ScienceGlossaryField | 'all'>('all')
   const [glossaryIndex, setGlossaryIndex] = useState<string>('all')
@@ -171,6 +188,36 @@ export default function MyPage({
     }
     load()
   }, [isGuest, studentId])
+
+  useEffect(() => {
+    let active = true
+
+    const loadGlossaryEntries = async () => {
+      const response = await supabase
+        .from('science_glossary_entries')
+        .select('*')
+        .order('reading', { ascending: true })
+        .order('term', { ascending: true })
+
+      if (!active) return
+
+      if (response.error) {
+        if (!isMissingRelationError(response.error, 'science_glossary_entries')) {
+          console.error(response.error)
+        }
+        setCustomGlossaryEntries([])
+        return
+      }
+
+      setCustomGlossaryEntries(((response.data || []) as GlossaryRow[]).map(toGlossaryEntry))
+    }
+
+    void loadGlossaryEntries()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     setNicknameInput(nickname || '')
@@ -267,9 +314,14 @@ export default function MyPage({
     ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['glossary', '📘 辞典'], ['account', '⚙️ 設定']] as const)
     : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['glossary', '📘 辞典'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
 
+  const allGlossaryEntries = useMemo(
+    () => mergeGlossaryEntries(SCIENCE_GLOSSARY, customGlossaryEntries),
+    [customGlossaryEntries],
+  )
+
   const normalizedGlossaryQuery = glossaryQuery.trim().toLowerCase()
   const glossaryBaseEntries = useMemo(() => {
-    return SCIENCE_GLOSSARY.filter(entry => {
+    return allGlossaryEntries.filter(entry => {
       if (glossaryField !== 'all' && entry.field !== glossaryField) return false
       if (!normalizedGlossaryQuery) return true
 
@@ -286,7 +338,7 @@ export default function MyPage({
 
       return target.includes(normalizedGlossaryQuery)
     })
-  }, [glossaryField, normalizedGlossaryQuery])
+  }, [allGlossaryEntries, glossaryField, normalizedGlossaryQuery])
 
   const glossaryIndexes = useMemo(() => {
     const keys = Array.from(new Set(glossaryBaseEntries.map(entry => getGlossaryIndexKey(entry.reading)))).sort()

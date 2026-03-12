@@ -221,3 +221,34 @@ export const SCIENCE_GLOSSARY_FIELDS: Array<ScienceGlossaryField | 'all'> = ['al
 export function getGlossaryIndexKey(reading: string) {
   return reading.trim().charAt(0) || '#'
 }
+
+export function getGlossaryEntryKey(field: ScienceGlossaryField, term: string) {
+  return `${field}::${term.trim().toLowerCase()}`
+}
+
+export function buildGlossaryEntryId(field: ScienceGlossaryField, term: string) {
+  return `glossary-${encodeURIComponent(field)}-${encodeURIComponent(term.trim())}`.toLowerCase()
+}
+
+export function sortGlossaryEntries(a: ScienceGlossaryEntry, b: ScienceGlossaryEntry) {
+  return a.reading.localeCompare(b.reading, 'ja')
+    || a.term.localeCompare(b.term, 'ja')
+    || a.id.localeCompare(b.id)
+}
+
+export function mergeGlossaryEntries(
+  baseEntries: ScienceGlossaryEntry[],
+  extraEntries: ScienceGlossaryEntry[],
+) {
+  const merged = new Map<string, ScienceGlossaryEntry>()
+
+  for (const entry of baseEntries) {
+    merged.set(getGlossaryEntryKey(entry.field, entry.term), entry)
+  }
+
+  for (const entry of extraEntries) {
+    merged.set(getGlossaryEntryKey(entry.field, entry.term), entry)
+  }
+
+  return Array.from(merged.values()).sort(sortGlossaryEntries)
+}
