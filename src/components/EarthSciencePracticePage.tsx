@@ -97,6 +97,54 @@ function createLinearGradient(ctx: CanvasRenderingContext2D, x: number, y: numbe
   return gradient
 }
 
+function splitTextIntoLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number) {
+  const lines: string[] = []
+  let current = ''
+
+  for (const character of Array.from(text)) {
+    const next = `${current}${character}`
+    if (ctx.measureText(next).width <= maxWidth || current.length === 0) {
+      current = next
+      continue
+    }
+
+    lines.push(current)
+    current = character
+
+    if (lines.length === maxLines - 1) break
+  }
+
+  if (lines.length < maxLines && current) {
+    lines.push(current)
+  } else if (current) {
+    const lastLine = lines[maxLines - 1] ?? ''
+    let clipped = lastLine
+    while (clipped.length > 0 && ctx.measureText(`${clipped}...`).width > maxWidth) {
+      clipped = clipped.slice(0, -1)
+    }
+    lines[maxLines - 1] = `${clipped}...`
+  }
+
+  return lines.slice(0, maxLines)
+}
+
+function drawCenteredTextBlock(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  centerX: number,
+  centerY: number,
+  maxWidth: number
+) {
+  const lines = splitTextIntoLines(ctx, text, maxWidth, 2)
+  const lineHeight = 28
+  const firstLineY = centerY - ((lines.length - 1) * lineHeight) / 2
+
+  lines.forEach((line, index) => {
+    const measuredWidth = ctx.measureText(line).width
+    ctx.fillText(line, centerX - measuredWidth / 2, firstLineY + index * lineHeight)
+  })
+}
+
 export default function EarthSciencePracticePage({
   mode,
   onBack,
@@ -272,16 +320,15 @@ export default function EarthSciencePracticePage({
 
       ctx.fillStyle = '#efe8ff'
       ctx.font = '700 28px "Zen Kaku Gothic New", sans-serif'
-      ctx.fillText('岩石カードと鉱物カードをそろえよう', 42, 46)
+      ctx.fillText('関連する2枚を見つけて消していこう', 42, 46)
       ctx.fillStyle = 'rgba(226, 232, 240, 0.8)'
       ctx.font = '500 15px "Zen Kaku Gothic New", sans-serif'
-      ctx.fillText('同じペアを選べば ○、ちがう組み合わせなら × で元に戻ります。', 42, 72)
+      ctx.fillText('カードは最初から見えています。つながる2枚なら ○、ちがうなら × です。', 42, 72)
 
       cards.forEach((card, index) => {
         const rect = getCardRect(index)
         const matched = matchedPairIds.includes(card.pairId)
         const selected = selectedCardIds.includes(card.id)
-        const revealed = matched || selected
 
         if (matched) {
           ctx.save()
@@ -301,53 +348,35 @@ export default function EarthSciencePracticePage({
 
         drawCardShadow(ctx, rect.x, rect.y, rect.width, rect.height)
         drawRoundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 24)
-        ctx.fillStyle = revealed
-          ? createLinearGradient(
-              ctx,
-              rect.x,
-              rect.y,
-              rect.width,
-              rect.height,
-              card.kind === 'rock' ? '#5b4aa5' : '#3968b7',
-              card.kind === 'rock' ? '#2f234f' : '#18355c',
-            )
-          : createLinearGradient(ctx, rect.x, rect.y, rect.width, rect.height, '#1e293b', '#0f172a')
+        ctx.fillStyle = createLinearGradient(
+          ctx,
+          rect.x,
+          rect.y,
+          rect.width,
+          rect.height,
+          card.kind === 'left' ? '#5b4aa5' : '#3968b7',
+          card.kind === 'left' ? '#2f234f' : '#18355c',
+        )
         ctx.fill()
 
         ctx.lineWidth = selected ? 4 : 1.5
         ctx.strokeStyle = selected ? '#f8fafc' : 'rgba(255,255,255,0.12)'
         ctx.stroke()
 
-        if (!revealed) {
-          ctx.fillStyle = 'rgba(255,255,255,0.12)'
-          ctx.beginPath()
-          ctx.arc(rect.x + rect.width / 2, rect.y + 58, 34, 0, Math.PI * 2)
-          ctx.fill()
-
-          ctx.fillStyle = '#f8fafc'
-          ctx.font = '700 42px "Dela Gothic One", sans-serif'
-          ctx.fillText('?', rect.x + rect.width / 2 - 14, rect.y + 73)
-          ctx.font = '700 14px "Zen Kaku Gothic New", sans-serif'
-          ctx.fillStyle = '#cbd5e1'
-          ctx.fillText('タップしてめくる', rect.x + 28, rect.y + rect.height - 30)
-          return
-        }
-
-        ctx.fillStyle = card.kind === 'rock' ? 'rgba(233, 213, 255, 0.18)' : 'rgba(191, 219, 254, 0.18)'
+        ctx.fillStyle = card.kind === 'left' ? 'rgba(233, 213, 255, 0.18)' : 'rgba(191, 219, 254, 0.18)'
         drawRoundedRect(ctx, rect.x + 16, rect.y + 16, 86, 30, 14)
         ctx.fill()
-        ctx.fillStyle = card.kind === 'rock' ? '#f5d0fe' : '#bfdbfe'
+        ctx.fillStyle = card.kind === 'left' ? '#f5d0fe' : '#bfdbfe'
         ctx.font = '700 13px "Zen Kaku Gothic New", sans-serif'
-        ctx.fillText(card.kind === 'rock' ? '岩石' : '鉱物', rect.x + 32, rect.y + 36)
+        ctx.fillText(card.kind === 'left' ? 'キーワード' : '関連', rect.x + 24, rect.y + 36)
 
         ctx.fillStyle = '#ffffff'
-        ctx.font = '700 26px "Zen Kaku Gothic New", sans-serif'
-        const textWidth = ctx.measureText(card.label).width
-        ctx.fillText(card.label, rect.x + (rect.width - textWidth) / 2, rect.y + 96)
+        ctx.font = '700 23px "Zen Kaku Gothic New", sans-serif'
+        drawCenteredTextBlock(ctx, card.label, rect.x + rect.width / 2, rect.y + 96, rect.width - 42)
 
         ctx.fillStyle = 'rgba(226, 232, 240, 0.78)'
         ctx.font = '500 13px "Zen Kaku Gothic New", sans-serif'
-        ctx.fillText(card.kind === 'rock' ? '岩石名カード' : '鉱物名カード', rect.x + 28, rect.y + rect.height - 30)
+        ctx.fillText(card.kind === 'left' ? 'キーワードカード' : '関連カード', rect.x + 24, rect.y + rect.height - 30)
       })
 
       if (feedback) {
@@ -463,12 +492,12 @@ export default function EarthSciencePracticePage({
 
     setLastOutcome({
       message: matched ? '◯ ペア成功' : '× ちがう組み合わせ',
-      detail: matched && pair ? pair.clue : '岩石カード1枚と鉱物カード1枚の組み合わせを見直してみよう。',
+      detail: matched && pair ? pair.clue : '関連のある2枚になっているか、つながりを見直してみよう。',
     })
     setFeedback({
       type: matched ? 'match' : 'miss',
       message: matched ? '◯ ペア成功' : '× ちがう組み合わせ',
-      detail: matched && pair ? pair.clue : '岩石カードと鉱物カードの正しい組み合わせを探そう。',
+      detail: matched && pair ? pair.clue : '地学用語どうしのつながりが合う組み合わせを探そう。',
       pairId: matched ? firstCard.pairId : null,
       selectedCardIds: nextSelected,
       delayMs: matched ? 720 : 880,
@@ -505,10 +534,10 @@ export default function EarthSciencePracticePage({
     const accuracy = attempts > 0 ? Math.round((matchedCount / attempts) * 100) : 100
     const levelInfo = rewardSummary ? getLevelInfo(rewardSummary.totalXp) : null
     const comment = accuracy >= 85
-      ? '岩石と鉱物の結びつきがかなり安定しています。'
+      ? '地学用語のつながりがかなり安定しています。'
       : accuracy >= 70
-        ? '地学の組み合わせがかなり見えてきました。'
-        : 'もう一度まわして、岩石と鉱物の結びつきを定着させよう。'
+        ? '地学の関連づけがかなり見えてきました。'
+        : 'もう一度まわして、地学用語のつながりを定着させよう。'
 
     return (
       <div className="page-shell page-shell-dashboard flex items-center justify-center">
@@ -685,7 +714,7 @@ export default function EarthSciencePracticePage({
                 {feedback?.message ?? lastOutcome?.message ?? (lastResolvedPair ? '◯ 直前の正解ペア' : 'まだ1組目を探しているところ')}
               </div>
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                {feedback?.detail ?? lastOutcome?.detail ?? lastResolvedPair?.clue ?? '岩石カード1枚と鉱物カード1枚を順番にタップして、正しいペアを見つけよう。'}
+                {feedback?.detail ?? lastOutcome?.detail ?? lastResolvedPair?.clue ?? '関連する地学カード2枚を順番にタップして、正しいペアを見つけよう。'}
               </p>
             </div>
           </div>
@@ -693,14 +722,14 @@ export default function EarthSciencePracticePage({
           <div className="card anim-fade-up">
             <div className="text-sm font-semibold text-slate-200">ねらい</div>
             <ul className="mt-3 space-y-2 text-sm leading-7 text-slate-400">
-              <li>岩石と鉱物の代表的な組み合わせを、カードをそろえながら覚えます。</li>
-              <li>2枚選んで正解ならそのペアが消え、まちがえると元に戻ります。</li>
+              <li>関連する地学用語どうしを、カードのつながりで覚えます。</li>
+              <li>カードは最初から見えていて、正解の2枚を選ぶとそのペアが消えます。</li>
               <li>ミスを少なくすると、学習セッションの正答率と XP が上がります。</li>
             </ul>
           </div>
 
           <div className="card anim-fade-up">
-            <div className="text-sm font-semibold text-slate-200">出てくるペア</div>
+            <div className="text-sm font-semibold text-slate-200">出てくる関連</div>
             <div className="mt-3 space-y-2">
               {pairDeck.map(pair => {
                 const cleared = matchedPairIds.includes(pair.id)
@@ -714,7 +743,7 @@ export default function EarthSciencePracticePage({
                     }}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold text-white">{pair.rock} × {pair.mineral}</div>
+                      <div className="text-sm font-semibold text-white">{pair.left} × {pair.right}</div>
                       <span
                         className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
                         style={{

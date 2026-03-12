@@ -328,7 +328,7 @@ export default function UnitSelectPage({
             <span className="text-xs text-slate-500">special mode</span>
           </div>
           <div className="grid gap-3">
-            {(['rock-pairs'] as const).map(mode => {
+            {(['link-pairs'] as const).map(mode => {
               const meta = EARTH_SCIENCE_MODE_META[mode]
               return (
                 <button

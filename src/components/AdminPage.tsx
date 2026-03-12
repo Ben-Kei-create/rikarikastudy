@@ -1739,7 +1739,16 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <div className="text-slate-400 text-center py-12">読み込み中...</div>
           ) : (
             <div className="space-y-2">
-              {questions.map(question => (
+              {questions.map(question => {
+                const previewImageSize = getQuestionImageDisplaySize(question)
+                const draftImageSize = getQuestionImageDraftSize(question)
+                const busyAction = questionImageBusy?.questionId === question.id ? questionImageBusy.action : null
+                const isImageBusy = questionImageBusy?.questionId === question.id
+                const nextWidth = parseQuestionImageDraftValue(draftImageSize.width, draftImageSize.storedWidth)
+                const nextHeight = parseQuestionImageDraftValue(draftImageSize.height, draftImageSize.storedHeight)
+                const sizeDirty = nextWidth !== draftImageSize.storedWidth || nextHeight !== draftImageSize.storedHeight
+
+                return (
                 <div key={question.id} className="subcard p-4">
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
@@ -1778,26 +1787,129 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       </button>
                     </div>
                     {question.image_url && (
-                      <div
-                        className="overflow-hidden rounded-2xl border bg-slate-950/50"
-                        style={{ borderColor: 'rgba(148, 163, 184, 0.16)' }}
-                      >
-                        <img
-                          src={question.image_url}
-                          alt={`${question.question} の画像`}
-                          className="block max-h-[260px] w-full object-contain"
-                          loading="lazy"
-                        />
+                      <div className="space-y-3">
+                        <div className="flex justify-center">
+                          <div
+                            className="overflow-hidden rounded-2xl border bg-slate-950/50"
+                            style={{
+                              borderColor: 'rgba(148, 163, 184, 0.16)',
+                              width: `min(100%, ${previewImageSize.width}px)`,
+                              aspectRatio: previewImageSize.aspectRatio,
+                            }}
+                          >
+                            <img
+                              src={question.image_url}
+                              alt={`${question.question} の画像`}
+                              className="block h-full w-full object-fill"
+                              loading="lazy"
+                            />
+                          </div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <div className="text-sm font-semibold text-white">表示サイズ</div>
+                              <div className="mt-1 text-xs text-slate-500">
+                                基本は正方形ですが、幅と高さを別々に変えて自由に変形できます。
+                              </div>
+                            </div>
+                            <div className="text-xs text-slate-400">
+                              現在 {draftImageSize.storedWidth} × {draftImageSize.storedHeight}
+                            </div>
+                          </div>
+                          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                            <label className="block">
+                              <span className="text-xs text-slate-400">幅</span>
+                              <div className="mt-2 flex items-center gap-3">
+                                <input
+                                  type="range"
+                                  min={QUESTION_IMAGE_MIN_DISPLAY_SIZE}
+                                  max={QUESTION_IMAGE_MAX_DISPLAY_SIZE}
+                                  step={10}
+                                  value={nextWidth}
+                                  onChange={event => {
+                                    setQuestionImageSizeDraft(question.id, { width: event.target.value })
+                                  }}
+                                  className="flex-1 accent-sky-400"
+                                />
+                                <input
+                                  type="number"
+                                  min={QUESTION_IMAGE_MIN_DISPLAY_SIZE}
+                                  max={QUESTION_IMAGE_MAX_DISPLAY_SIZE}
+                                  step={10}
+                                  value={draftImageSize.width}
+                                  onChange={event => {
+                                    setQuestionImageSizeDraft(question.id, { width: event.target.value })
+                                  }}
+                                  className="input-surface w-24 text-sm"
+                                />
+                              </div>
+                            </label>
+                            <label className="block">
+                              <span className="text-xs text-slate-400">高さ</span>
+                              <div className="mt-2 flex items-center gap-3">
+                                <input
+                                  type="range"
+                                  min={QUESTION_IMAGE_MIN_DISPLAY_SIZE}
+                                  max={QUESTION_IMAGE_MAX_DISPLAY_SIZE}
+                                  step={10}
+                                  value={nextHeight}
+                                  onChange={event => {
+                                    setQuestionImageSizeDraft(question.id, { height: event.target.value })
+                                  }}
+                                  className="flex-1 accent-emerald-400"
+                                />
+                                <input
+                                  type="number"
+                                  min={QUESTION_IMAGE_MIN_DISPLAY_SIZE}
+                                  max={QUESTION_IMAGE_MAX_DISPLAY_SIZE}
+                                  step={10}
+                                  value={draftImageSize.height}
+                                  onChange={event => {
+                                    setQuestionImageSizeDraft(question.id, { height: event.target.value })
+                                  }}
+                                  className="input-surface w-24 text-sm"
+                                />
+                              </div>
+                            </label>
+                          </div>
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <button
+                              onClick={() => {
+                                void handleSaveQuestionImageSize(question)
+                              }}
+                              className="btn-secondary text-sm"
+                              disabled={isImageBusy || !sizeDirty}
+                            >
+                              {busyAction === 'size' ? 'サイズを保存中...' : 'サイズを保存'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setQuestionImageSizeDraft(question.id, {
+                                  width: String(QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE),
+                                  height: String(QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE),
+                                })
+                              }}
+                              className="btn-ghost text-sm"
+                              disabled={isImageBusy}
+                            >
+                              正方形に戻す
+                            </button>
+                            <span className="text-xs text-slate-500">
+                              保存後は出題画面でも {nextWidth} × {nextHeight} の比率で表示されます。
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     )}
                     <div className="flex flex-wrap items-center gap-2">
                       <label className="btn-secondary cursor-pointer text-sm">
-                        {questionImageBusyId === question.id ? '圧縮して保存中...' : question.image_url ? '画像を差し替える' : '画像を挿入する'}
+                        {busyAction === 'upload' ? '画像を保存中...' : question.image_url ? '画像を差し替える' : '画像を挿入する'}
                         <input
                           type="file"
                           accept="image/*"
                           className="hidden"
-                          disabled={questionImageBusyId === question.id}
+                          disabled={isImageBusy}
                           onChange={event => {
                             void handleQuestionImageChange(question.id, event)
                           }}
@@ -1809,9 +1921,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                             void handleRemoveQuestionImage(question.id)
                           }}
                           className="btn-ghost text-sm"
-                          disabled={questionImageBusyId === question.id}
+                          disabled={isImageBusy}
                         >
-                          画像を外す
+                          {busyAction === 'remove' ? '画像を外し中...' : '画像を外す'}
                         </button>
                       )}
                     </div>
@@ -1833,7 +1945,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     <div className="mt-1 text-amber-300 text-xs">キーワード: {question.keywords.join(' / ')}</div>
                   )}
                 </div>
-              ))}
+              )})}
               {questions.length === 0 && (
                 <div className="text-slate-500 text-center py-12 card">
                   問題がありません。サンプルを追加するか、「問題追加」タブから入力してください。
