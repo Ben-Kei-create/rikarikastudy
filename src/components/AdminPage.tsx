@@ -6,6 +6,7 @@ import { sampleQuestions } from '@/lib/sampleQuestions'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
+import AdminStudentDetailSheet from '@/components/AdminStudentDetailSheet'
 import { getChatModerationCategoryLabel } from '@/lib/chatModeration'
 import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
 import { isMissingColumnError, isMissingRelationError } from '@/lib/schemaCompat'
@@ -168,6 +169,15 @@ type TimeAttackRecordRow = Database['public']['Tables']['time_attack_records']['
 type StudentInsert = Database['public']['Tables']['students']['Insert']
 type GlossaryRow = Database['public']['Tables']['science_glossary_entries']['Row']
 type GlossaryInsert = Database['public']['Tables']['science_glossary_entries']['Insert']
+type AdminStudentDetailAnswerLogRow = Pick<AnswerLogRow, 'question_id' | 'is_correct' | 'created_at'> & {
+  questions: Pick<QuestionRow, 'unit' | 'field'> | null
+}
+
+interface AdminStudentDetailData {
+  sessions: QuizSessionRow[]
+  answerLogs: AdminStudentDetailAnswerLogRow[]
+  studentBadges: StudentBadgeRow[]
+}
 
 interface BulkQuestionPayload {
   field: typeof FIELDS[number]
@@ -605,6 +615,10 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     text: string
   } | null>(null)
   const [questionImageSizeDrafts, setQuestionImageSizeDrafts] = useState<Record<string, { width: string; height: string }>>({})
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null)
+  const [selectedStudentDetail, setSelectedStudentDetail] = useState<AdminStudentDetailData | null>(null)
+  const [selectedStudentDetailLoading, setSelectedStudentDetailLoading] = useState(false)
+  const [selectedStudentDetailError, setSelectedStudentDetailError] = useState<string | null>(null)
 
   const checkPw = () => {
     if (pw === ADMIN_PW) {
@@ -632,6 +646,14 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       window.clearInterval(intervalId)
     }
   }, [authed, tab])
+
+  useEffect(() => {
+    if (tab === 'overview') return
+    setSelectedStudentId(null)
+    setSelectedStudentDetail(null)
+    setSelectedStudentDetailLoading(false)
+    setSelectedStudentDetailError(null)
+  }, [tab])
 
   const loadData = async () => {
     setLoading(true)
@@ -683,6 +705,83 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
     setLoading(false)
   }
+
+  useEffect(() => {
+    if (!authed || tab !== 'overview' || selectedStudentId === null) return
+
+    let active = true
+
+    const loadStudentDetail = async () => {
+      try {
+        setSelectedStudentDetail(null)
+        setSelectedStudentDetailLoading(true)
+        setSelectedStudentDetailError(null)
+
+        const [sessionsResponse, answerLogsResponse, studentBadgesResponse] = await Promise.all([
+          supabase
+            .from('quiz_sessions')
+            .select('*')
+            .eq('student_id', selectedStudentId)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('answer_logs')
+            .select('question_id, is_correct, created_at, questions(unit, field)')
+            .eq('student_id', selectedStudentId)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('student_badges')
+            .select('*')
+            .eq('student_id', selectedStudentId)
+            .order('earned_at', { ascending: false }),
+        ])
+
+        if (!active) return
+
+        if (sessionsResponse.error) throw new Error(sessionsResponse.error.message)
+        if (answerLogsResponse.error) throw new Error(answerLogsResponse.error.message)
+
+        let studentBadges: StudentBadgeRow[] = []
+        if (studentBadgesResponse.error) {
+          if (!isMissingRelationError(studentBadgesResponse.error, 'student_badges')) {
+            throw new Error(studentBadgesResponse.error.message)
+          }
+        } else {
+          studentBadges = (studentBadgesResponse.data || []) as StudentBadgeRow[]
+        }
+
+        const answerLogs = ((answerLogsResponse.data || []) as Array<
+          Pick<AnswerLogRow, 'question_id' | 'is_correct' | 'created_at'> & {
+            questions: Pick<QuestionRow, 'unit' | 'field'> | Array<Pick<QuestionRow, 'unit' | 'field'>> | null
+          }
+        >).map(log => ({
+          question_id: log.question_id,
+          is_correct: log.is_correct,
+          created_at: log.created_at,
+          questions: Array.isArray(log.questions) ? (log.questions[0] ?? null) : (log.questions ?? null),
+        }))
+
+        setSelectedStudentDetail({
+          sessions: (sessionsResponse.data || []) as QuizSessionRow[],
+          answerLogs,
+          studentBadges,
+        })
+      } catch (error) {
+        if (!active) return
+        setSelectedStudentDetail(null)
+        setSelectedStudentDetailError(
+          error instanceof Error ? error.message : '生徒の詳細データを読み込めませんでした。'
+        )
+      } finally {
+        if (active) setSelectedStudentDetailLoading(false)
+      }
+    }
+
+    void loadStudentDetail()
+
+    return () => {
+      active = false
+    }
+  }, [authed, selectedStudentId, tab])
 
   const handleDownloadAllPerformance = async () => {
     try {
@@ -1353,6 +1452,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   }
 
   const studentNameMap = new Map(studentsList.map(student => [student.id, student.nickname]))
+  const selectedStudent = selectedStudentId === null
+    ? null
+    : studentsList.find(student => student.id === selectedStudentId) ?? null
 
   return (
     <div className="page-shell-wide">
@@ -1703,6 +1805,17 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                         )
                       })}
                     </div>
+                    <button
+                      onClick={() => setSelectedStudentId(student.id)}
+                      className="btn-secondary mt-4 w-full text-sm"
+                      style={{
+                        background: selectedStudentId === student.id ? 'rgba(56, 189, 248, 0.16)' : undefined,
+                        borderColor: selectedStudentId === student.id ? 'rgba(56, 189, 248, 0.24)' : undefined,
+                        color: selectedStudentId === student.id ? '#bae6fd' : undefined,
+                      }}
+                    >
+                      {selectedStudentId === student.id ? '詳細を表示中' : '詳細を見る'}
+                    </button>
                   </div>
                 )
               })}
@@ -2174,6 +2287,21 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
         </div>
+      )}
+
+      {selectedStudentId !== null && (
+        <AdminStudentDetailSheet
+          student={selectedStudent}
+          detail={selectedStudentDetail}
+          loading={selectedStudentDetailLoading}
+          error={selectedStudentDetailError}
+          onClose={() => {
+            setSelectedStudentId(null)
+            setSelectedStudentDetail(null)
+            setSelectedStudentDetailLoading(false)
+            setSelectedStudentDetailError(null)
+          }}
+        />
       )}
     </div>
   )

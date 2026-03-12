@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { getLevelInfo } from '@/lib/engagement'
+import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 import {
   CHEMISTRY_WORKBENCH_MODES,
   EARTH_WORKBENCH_MODES,
@@ -887,6 +888,8 @@ export default function ScienceWorkbenchPage({
               )}
             </div>
           )}
+
+          <LevelUnlockNotice rewardSummary={rewardSummary} />
 
           {rewardSummary?.newBadges.length ? (
             <div className="mt-6 grid gap-3 sm:grid-cols-2 text-left">

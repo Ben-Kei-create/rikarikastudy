@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { getLevelInfo } from '@/lib/engagement'
+import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 import { recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
 import {
   buildEarthScienceCards,
@@ -591,6 +592,8 @@ export default function EarthSciencePracticePage({
               </div>
             </div>
           )}
+
+          <LevelUnlockNotice rewardSummary={rewardSummary} />
 
           {rewardSummary?.newBadges.length ? (
             <div className="mt-6 grid gap-3 sm:grid-cols-2 text-left">

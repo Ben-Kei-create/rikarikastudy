@@ -16,6 +16,7 @@ import {
   markColumnMissing,
   markColumnSupported,
 } from '@/lib/schemaCompat'
+import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e',
@@ -498,6 +499,8 @@ export default function QuizPage({
               <div className="mt-1 text-sm text-sky-100">{levelInfo.title}</div>
             </div>
           )}
+
+          <LevelUnlockNotice rewardSummary={rewardSummary} />
 
           {rewardSummary && rewardSummary.newBadges.length > 0 && (
             <div className="mb-6 text-left">

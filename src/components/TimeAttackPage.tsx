@@ -25,6 +25,7 @@ import { loadTimeAttackBest, recordStudySession, saveTimeAttackBest, StudyReward
 import { supabase } from '@/lib/supabase'
 import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 
 type ChallengeMode = 'time_attack' | 'test_mode' | 'streak_mode'
 type LeaderboardMode = Extract<ChallengeMode, 'test_mode' | 'streak_mode'>
@@ -867,6 +868,8 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
             </div>
           )}
           <p className="mt-5 text-slate-300">{getModeSummaryMessage(selectedMode, score)}</p>
+
+          <LevelUnlockNotice rewardSummary={rewardSummary} />
 
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <div className="subcard p-4">

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { getLevelInfo } from '@/lib/engagement'
+import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import {
   CHEMISTRY_MODE_META,
@@ -229,6 +230,8 @@ export default function ChemistryPracticePage({
               )}
             </div>
           )}
+
+          <LevelUnlockNotice rewardSummary={rewardSummary} />
 
           {rewardSummary?.newBadges.length ? (
             <div className="mt-6 grid gap-3 sm:grid-cols-2 text-left">
