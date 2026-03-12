@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
+import { evaluateTextAnswer, hasConfiguredTextKeywords, TextAnswerResult } from '@/lib/answerUtils'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { CustomQuizOptions, getCustomQuizSessionLabel, getCustomQuizSummaryParts } from '@/lib/customQuiz'
 import { getLevelInfo } from '@/lib/engagement'
@@ -262,6 +262,7 @@ export default function QuizPage({
   const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
   const isFavorite = !!q && favoriteIds.has(q.id)
   const questionImageDisplay = q ? getQuestionImageDisplaySize(q) : null
+  const usesKeywordInput = q?.type === 'text' ? hasConfiguredTextKeywords(q.keywords) : false
 
   const handleChoice = (choice: string) => {
     if (phase !== 'answering' || !q) return
@@ -525,7 +526,7 @@ export default function QuizPage({
           )}
 
           {answerLogs.some(log => log.result === 'keyword') && (
-            <p className="text-xs text-slate-500 mb-6">▲ はキーワード一致で、スコアには加算していません。</p>
+            <p className="text-xs text-slate-500 mb-6">▲ は理科キーワードの途中まで入力できています。あと少しで正解です。</p>
           )}
 
           <div className={`grid gap-3 ${dailyChallenge ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
@@ -696,13 +697,35 @@ export default function QuizPage({
         </div>
       ) : (
         <div className="anim-fade-up">
-          <textarea
+          <div
+            className="mb-3 rounded-[24px] border px-4 py-3"
+            style={{
+              borderColor: 'rgba(56, 189, 248, 0.18)',
+              background: 'rgba(15, 23, 42, 0.62)',
+            }}
+          >
+            <div className="text-[11px] font-semibold tracking-[0.18em] text-sky-200">キーワード入力</div>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              {usesKeywordInput
+                ? '答えの文章を全部書かなくて大丈夫です。模範解答に入る理科キーワードを1つ入力してください。'
+                : '短く答えを入力してください。'}
+            </p>
+          </div>
+          <input
             value={textInput}
             onChange={event => setTextInput(event.target.value)}
+            onKeyDown={event => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                handleTextSubmit()
+              }
+            }}
             disabled={phase === 'result'}
-            placeholder="ここに答えを書いてください"
-            rows={3}
-            className="input-surface resize-none mb-3"
+            placeholder={usesKeywordInput ? '理科キーワードを1つ入力' : '答えを入力'}
+            enterKeyHint="done"
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="input-surface mb-3"
             style={{
               border:
                 phase === 'result'
@@ -736,7 +759,7 @@ export default function QuizPage({
           const title = currentResult === 'exact'
             ? '◯ 正解！'
             : currentResult === 'keyword'
-              ? '▲ キーワード一致'
+              ? '▲ あと少し'
               : '❌ 不正解'
 
           return (
@@ -749,8 +772,11 @@ export default function QuizPage({
               {currentResult !== 'exact' && (
                 <p className="text-slate-200 text-sm mb-2">模範解答: {q.answer}</p>
               )}
+              {currentResult !== 'exact' && usesKeywordInput && q.keywords && q.keywords.length > 0 && (
+                <p className="text-slate-300 text-xs mb-2">正解キーワード例: {q.keywords.join(' / ')}</p>
+              )}
               {currentResult === 'keyword' && (
-                <p className="text-amber-200 text-xs mb-2">キーワードを含むため部分一致です。スコアには加算しません。</p>
+                <p className="text-amber-200 text-xs mb-2">理科キーワードの途中まで合っています。もう少し入力すると正解になります。</p>
               )}
               {q.explanation && (
                 <p className="text-slate-300 text-sm leading-relaxed">{q.explanation}</p>

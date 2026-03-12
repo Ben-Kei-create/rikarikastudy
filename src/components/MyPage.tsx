@@ -1105,7 +1105,7 @@ export default function MyPage({
                       className="input-surface"
                     />
                     <p className="text-slate-500 text-xs mt-2">
-                      回答文にこのどれか1つでも含まれていれば `▲` 判定にします。
+                      このどれか1つの理科キーワードを入力できれば正解にします。
                     </p>
                   </div>
                 )}

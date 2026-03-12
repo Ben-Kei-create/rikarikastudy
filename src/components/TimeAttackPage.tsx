@@ -1,6 +1,6 @@
 'use client'
 
-import { evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
+import { evaluateTextAnswer, hasConfiguredTextKeywords, TextAnswerResult } from '@/lib/answerUtils'
 import { fetchStudents, useAuth } from '@/lib/auth'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import {
@@ -277,6 +277,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     return questions[currentIndex] ?? null
   }, [currentIndex, questions])
   const currentQuestionImageDisplay = currentQuestion ? getQuestionImageDisplaySize(currentQuestion) : null
+  const usesKeywordInput = currentQuestion?.type === 'text' ? hasConfiguredTextKeywords(currentQuestion.keywords) : false
   const testModeAnswered = selectedMode === 'test_mode' && answerResult !== null
   const testModeProgress = questions.length > 0 ? ((currentIndex + (testModeAnswered ? 1 : 0)) / questions.length) * 100 : 0
   const testModeQuestionReady = allQuestions.length >= TEST_MODE_QUESTION_COUNT
@@ -945,7 +946,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
           {renderRewardStrip()}
 
           {selectedMode === 'test_mode' && answerLogs.some(log => log.result === 'keyword') && (
-            <p className="text-xs text-slate-500 mt-5">キーワード一致は参考表示で、得点には加算していません。</p>
+            <p className="text-xs text-slate-500 mt-5">▲ は理科キーワードの途中まで入力できています。あと少しで正解です。</p>
           )}
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -1075,6 +1076,20 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               </div>
             ) : (
               <div className="mt-5">
+                <div
+                  className="mb-3 rounded-[24px] border px-4 py-3"
+                  style={{
+                    borderColor: 'rgba(245, 158, 11, 0.24)',
+                    background: 'rgba(15, 23, 42, 0.68)',
+                  }}
+                >
+                  <div className="text-[11px] font-semibold tracking-[0.18em] text-amber-200">キーワード入力</div>
+                  <div className="mt-2 text-sm leading-6 text-slate-300">
+                    {usesKeywordInput
+                      ? '答えの文章を全部打たなくてOKです。模範解答に入る理科キーワードを1つ入力してください。'
+                      : '短く答えを入力してください。'}
+                  </div>
+                </div>
                 <input
                   value={textInput}
                   onChange={event => setTextInput(event.target.value)}
@@ -1085,7 +1100,10 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     }
                   }}
                   disabled={testModeAnswered}
-                  placeholder="答えを入力"
+                  placeholder={usesKeywordInput ? '理科キーワードを1つ入力' : '答えを入力'}
+                  enterKeyHint="done"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   className="w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none"
                 />
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -1116,11 +1134,21 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                 }}
               >
                 <div className="font-semibold text-white">
-                  {answerResult === 'exact' ? '○ 正解' : answerResult === 'keyword' ? '△ キーワード一致' : '× 不正解'}
+                  {answerResult === 'exact' ? '○ 正解' : answerResult === 'keyword' ? '△ あと少し' : '× 不正解'}
                 </div>
                 <div className="mt-2 text-sm leading-7 text-slate-300">
                   正解: {currentQuestion.answer}
                 </div>
+                {answerResult !== 'exact' && usesKeywordInput && currentQuestion.keywords && currentQuestion.keywords.length > 0 && (
+                  <div className="mt-2 text-xs leading-6 text-slate-400">
+                    正解キーワード例: {currentQuestion.keywords.join(' / ')}
+                  </div>
+                )}
+                {answerResult === 'keyword' && (
+                  <div className="mt-2 text-xs leading-6 text-amber-200">
+                    理科キーワードの途中まで合っています。もう少し入力すると正解になります。
+                  </div>
+                )}
                 {currentQuestion.explanation && (
                   <div className="mt-2 text-sm leading-7 text-slate-300">{currentQuestion.explanation}</div>
                 )}

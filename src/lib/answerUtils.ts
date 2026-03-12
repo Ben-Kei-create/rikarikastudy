@@ -101,6 +101,10 @@ export function normalizeAnswer(input: string) {
 
 export type TextAnswerResult = 'exact' | 'keyword' | 'incorrect'
 
+export function hasConfiguredTextKeywords(keywords?: string[] | null) {
+  return (keywords ?? []).some(keyword => Boolean(normalizeAnswer(keyword)))
+}
+
 export function evaluateTextAnswer(
   studentAnswer: string,
   correctAnswer: string,
@@ -119,7 +123,11 @@ export function evaluateTextAnswer(
     .map(normalizeAnswer)
     .filter(Boolean)
 
-  if (normalizedKeywords.some(keyword => normalizedStudentAnswer.includes(keyword))) {
+  if (normalizedKeywords.some(keyword => normalizedStudentAnswer === keyword || normalizedStudentAnswer.includes(keyword))) {
+    return 'exact'
+  }
+
+  if (normalizedKeywords.some(keyword => keyword.includes(normalizedStudentAnswer))) {
     return 'keyword'
   }
 

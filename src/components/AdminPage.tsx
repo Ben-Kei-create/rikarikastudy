@@ -2055,7 +2055,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 className="input-surface"
               />
               <p className="text-slate-500 text-xs mt-2">
-                回答文にこのどれか1つでも含まれていれば `▲` 判定にします。カンマ区切りで入力してください。
+                生徒がこのどれか1つの理科キーワードを入力できれば正解にします。長い文章を書かせたくない記述問題で使えます。
               </p>
             </div>
           )}
@@ -2085,7 +2085,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 <p className="text-slate-400 text-sm leading-6">
                   JSON をそのまま貼り付けるか、`.json` ファイルを読み込んで一括追加できます。
                   choice 問題は `choices` を2件、text 問題は `choices` なしで入力してください。
-                  記述問題では `keywords` 配列を付けると、回答文に1つでも含まれたときに `▲` 判定になります。
+                  記述問題では `keywords` 配列を付けると、その理科キーワードを1語入力できれば正解になります。
                 </p>
                 <div className="flex flex-wrap gap-3 mt-4">
                   <label className="btn-secondary text-sm cursor-pointer">
