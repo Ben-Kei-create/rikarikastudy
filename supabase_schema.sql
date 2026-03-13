@@ -277,6 +277,11 @@ $$;
 -- ========================================
 
 ALTER TABLE students ADD COLUMN IF NOT EXISTS student_xp INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS xp INTEGER NOT NULL DEFAULT 0;
+UPDATE students
+SET xp = student_xp
+WHERE COALESCE(xp, 0) = 0
+  AND COALESCE(student_xp, 0) > 0;
 
 ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS xp_earned INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS session_mode TEXT NOT NULL DEFAULT 'standard';

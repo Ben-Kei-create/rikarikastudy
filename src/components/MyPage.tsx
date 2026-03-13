@@ -4,7 +4,7 @@ import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/theme'
 import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
-import { getLevelInfo } from '@/lib/engagement'
+import { getLevelInfo, getTotalXpFromSessions } from '@/lib/engagement'
 import { format, subDays, startOfDay, eachDayOfInterval, differenceInCalendarDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
@@ -179,7 +179,7 @@ export default function MyPage({
           is_correct: log.is_correct,
           questions: { unit: log.unit, field: log.field },
         })))
-        setStudentXp(store.xp)
+        setStudentXp(getTotalXpFromSessions(store.sessions))
         setEarnedBadges(store.badges)
         setMyQuestions([])
         setLoading(false)
@@ -704,6 +704,36 @@ export default function MyPage({
                   <div className="text-slate-500 text-xs mt-1">{item.label}</div>
                 </div>
               ))}
+            </div>
+
+            <div className="card">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">XP / Level</div>
+                  <div className="mt-2 flex items-end gap-3 flex-wrap">
+                    <div className="rounded-full border border-sky-300/20 bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-100">
+                      Lv.{levelInfo.level} {levelInfo.title}
+                    </div>
+                    <div className="font-display text-3xl text-white">{levelInfo.totalXp}<span className="ml-2 text-base text-slate-500">XP</span></div>
+                  </div>
+                </div>
+                <div className="text-sm text-slate-400">
+                  次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP
+                </div>
+              </div>
+              <div className="mt-4 soft-track" style={{ height: 8 }}>
+                <div
+                  style={{
+                    width: `${levelInfo.progressRate}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #7dd3fc, #38bdf8)',
+                    borderRadius: 999,
+                  }}
+                />
+              </div>
+              <div className="mt-2 text-xs text-slate-500">
+                {levelInfo.progressXp} / {levelInfo.progressMax} XP
+              </div>
             </div>
 
             <div className="card">

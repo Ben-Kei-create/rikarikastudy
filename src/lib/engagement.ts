@@ -1,5 +1,13 @@
 'use client'
 
+import {
+  calculateQuizXp as calculateBaseQuizXp,
+  getLevel as getBaseLevel,
+  getLevelTitle as getBaseLevelTitle,
+  getXpForLevel,
+  getXpProgress,
+} from '@/lib/xp'
+
 export type SessionMode =
   | 'standard'
   | 'daily_challenge'
@@ -21,17 +29,6 @@ export type SessionMode =
   | 'test_mode'
   | 'streak_mode'
   | 'time_attack'
-
-const LEVEL_TITLES = [
-  { level: 1, title: '理科のたまご' },
-  { level: 5, title: '実験好き' },
-  { level: 10, title: '研究者見習い' },
-  { level: 20, title: '理科マスター' },
-  { level: 35, title: '観測のエキスパート' },
-  { level: 50, title: '天才科学者' },
-  { level: 75, title: '銀河級リサーチャー' },
-  { level: 99, title: '理科界のレジェンド' },
-] as const
 
 export const JST_OFFSET_MS = 9 * 60 * 60 * 1000
 export const TIME_ATTACK_UNLOCK_LEVEL = 5
@@ -99,10 +96,8 @@ export function calculateQuizXp({
   durationSeconds: number
   multiplier?: number
 }) {
-  const baseXp = Math.max(0, correctCount) * 10
-  const speedBonus = Math.round(Math.max(0, 300 - Math.max(0, durationSeconds)) / 3)
-  const perfectBonus = totalQuestions > 0 && correctCount === totalQuestions ? 50 : 0
-  return Math.max(0, Math.round((baseXp + speedBonus + perfectBonus) * multiplier))
+  const breakdown = calculateBaseQuizXp(correctCount, totalQuestions, durationSeconds)
+  return Math.max(0, Math.floor(breakdown.total * Math.max(0, multiplier)))
 }
 
 export function calculateTimeAttackXp(score: number) {
@@ -118,43 +113,32 @@ export function calculateStreakModeXp(score: number) {
 }
 
 export function getLevelFromXp(totalXp: number) {
-  const safeXp = Math.max(0, totalXp)
-  return Math.min(99, Math.floor(Math.sqrt(safeXp / 25)) + 1)
+  return getBaseLevel(totalXp)
 }
 
 export function getXpFloorForLevel(level: number) {
-  const safeLevel = Math.max(1, Math.min(99, level))
-  return 25 * (safeLevel - 1) * (safeLevel - 1)
+  return getXpForLevel(level)
 }
 
 export function getLevelTitle(level: number) {
-  let current: string = LEVEL_TITLES[0].title
-
-  for (const item of LEVEL_TITLES) {
-    if (level >= item.level) current = item.title
-  }
-
-  return current
+  return getBaseLevelTitle(level)
 }
 
 export function getLevelInfo(totalXp: number): LevelInfo {
   const safeXp = Math.max(0, totalXp)
-  const level = getLevelFromXp(safeXp)
-  const currentLevelXp = getXpFloorForLevel(level)
-  const nextLevelXp = level >= 99 ? currentLevelXp : getXpFloorForLevel(level + 1)
-  const progressXp = safeXp - currentLevelXp
-  const progressMax = Math.max(1, nextLevelXp - currentLevelXp)
-  const progressRate = level >= 99 ? 100 : Math.max(0, Math.min(100, Math.round((progressXp / progressMax) * 100)))
+  const progress = getXpProgress(safeXp)
+  const progressXp = progress.currentXp - progress.xpForCurrent
+  const progressMax = Math.max(1, progress.xpForNext - progress.xpForCurrent)
 
   return {
-    level,
-    title: getLevelTitle(level),
+    level: progress.currentLevel,
+    title: getLevelTitle(progress.currentLevel),
     totalXp: safeXp,
-    currentLevelXp,
-    nextLevelXp,
-    progressXp: level >= 99 ? progressMax : progressXp,
+    currentLevelXp: progress.xpForCurrent,
+    nextLevelXp: progress.xpForNext,
+    progressXp: progress.currentLevel >= 99 ? progressMax : progressXp,
     progressMax,
-    progressRate,
+    progressRate: progress.progressPercent,
   }
 }
 
@@ -244,4 +228,14 @@ export function getSessionXpFallback(session: {
     durationSeconds: session.duration_seconds,
     multiplier: session.session_mode === 'daily_challenge' ? 2 : 1,
   })
+}
+
+export function getTotalXpFromSessions(sessions: Array<{
+  correct_count: number
+  total_questions: number
+  duration_seconds: number
+  xp_earned?: number | null
+  session_mode?: SessionMode | string | null
+}>) {
+  return sessions.reduce((sum, session) => sum + getSessionXpFallback(session), 0)
 }

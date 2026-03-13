@@ -8,6 +8,7 @@ import {
   calculateTestModeXp,
   calculateTimeAttackXp,
   getLevelInfo,
+  getTotalXpFromSessions,
   getXpFloorForLevel,
   TEST_MODE_POINT_PER_QUESTION,
   TEST_MODE_QUESTION_COUNT,
@@ -333,7 +334,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
         studentId === null
           ? Promise.resolve(0)
           : isGuestStudentId(studentId)
-            ? Promise.resolve(loadGuestStudyStore().xp)
+            ? Promise.resolve(getTotalXpFromSessions(loadGuestStudyStore().sessions))
             : supabase
                 .from('students')
                 .select('student_xp')

@@ -55,6 +55,7 @@ export type Database = {
           nickname: string
           password: string
           student_xp: number
+          xp: number
           created_at: string
         }
         Insert: {
@@ -62,11 +63,13 @@ export type Database = {
           nickname: string
           password?: string
           student_xp?: number
+          xp?: number
         }
         Update: {
           nickname?: string
           password?: string
           student_xp?: number
+          xp?: number
         }
       }
       questions: {

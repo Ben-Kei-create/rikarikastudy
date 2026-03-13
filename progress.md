@@ -57,3 +57,6 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-13: `MyPage.tsx` のバッジ表示を大きい四角カードから小さい丸バッジグリッドへ変更。未取得シークレットは `❔ / ???` で伏せ、下段に選択中バッジの詳細だけを出す形に整理した。
 - 2026-03-13: `studyRewards.ts` で新バッジ挿入前に `badges` テーブルへ定義を自動 upsert するようにし、`AdminPage.tsx` のバッジ条件一覧と `supabase_schema.sql` の seed も 30 個構成に更新した。`npm run build` 成功。
 - 2026-03-13: `MyPage.tsx` の辞典で、関連語が辞書内に存在する場合はその場で押してジャンプできるように更新。ジャンプ時は検索語をクリアし、対象分野へ切り替えて該当語を確実に表示するようにした。`npm run build` 成功。
+- 2026-03-13: Phase 1 として `src/lib/xp.ts` を追加。クイズ XP の内訳、レベル計算、称号、レベル進捗を共通化し、`engagement.ts` からも同じ式を使うように整理した。
+- 2026-03-13: `QuizPage.tsx` と `ChemistryPracticePage.tsx` の結果画面に XP 内訳カードを追加し、レベルアップ時はレベルバッジが光る `level-up` アニメーションを `globals.css` に追加した。
+- 2026-03-13: `HomePage.tsx` と `MyPage.tsx` に XP / レベル表示を追加。ゲスト XP は `guestStudy` の保存値ではなく、ローカルのセッション合計から再計算するように更新した。`npm run build` 成功。

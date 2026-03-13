@@ -1,6 +1,6 @@
 'use client'
 
-import { SessionMode } from '@/lib/engagement'
+import { getTotalXpFromSessions, SessionMode } from '@/lib/engagement'
 
 export const GUEST_STUDENT_ID = 100
 export const GUEST_STUDENT = {
@@ -155,12 +155,14 @@ function sanitizeStore(input: unknown): GuestStudyStore {
     return createEmptyStore()
   }
 
+  const sanitizedSessions = Array.isArray(candidate.sessions)
+    ? candidate.sessions.filter(session => session && typeof session === 'object') as GuestStudySession[]
+    : []
+
   return {
     dayKey: todayKey,
-    xp: typeof candidate.xp === 'number' ? Math.max(0, candidate.xp) : 0,
-    sessions: Array.isArray(candidate.sessions)
-      ? candidate.sessions.filter(session => session && typeof session === 'object') as GuestStudySession[]
-      : [],
+    xp: getTotalXpFromSessions(sanitizedSessions),
+    sessions: sanitizedSessions,
     answerLogs: Array.isArray(candidate.answerLogs)
       ? candidate.answerLogs.filter(log => log && typeof log === 'object') as GuestStudyAnswerLog[]
       : [],

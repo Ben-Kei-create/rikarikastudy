@@ -14,6 +14,7 @@ import {
   getChemistryPracticeDeck,
 } from '@/lib/chemistryPractice'
 import { recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
+import { calculateQuizXp as calculateQuizXpBreakdown } from '@/lib/xp'
 
 type Phase = 'answering' | 'result' | 'finished'
 
@@ -94,6 +95,7 @@ export default function ChemistryPracticePage({
     const durationSeconds = startedAtRef.current
       ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
       : 0
+    const xpBreakdown = calculateQuizXpBreakdown(score, questions.length, durationSeconds)
 
     const reward = await recordStudySession({
       studentId,
@@ -103,6 +105,7 @@ export default function ChemistryPracticePage({
       correctCount: score,
       durationSeconds,
       sessionMode: mode === 'flash' ? 'chemistry_flash' : 'chemistry_reaction',
+      xpBreakdown,
     })
 
     setRewardSummary(reward)
@@ -200,17 +203,33 @@ export default function ChemistryPracticePage({
 
           {rewardSummary && (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="subcard p-4 text-left">
+              <div className="subcard anim-pop p-4 text-left">
                 <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">獲得XP</div>
                 <div className="mt-2 font-display text-3xl text-sky-300">+{rewardSummary.xpEarned}</div>
-                <div className="mt-1 text-xs text-slate-500">化学モードの学習結果</div>
+                <div className="mt-3 space-y-1.5 text-xs text-slate-400">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>正解XP</span>
+                    <span>{rewardSummary.xpBreakdown.base} XP</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>スピード</span>
+                    <span>{rewardSummary.xpBreakdown.speed} XP</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>パーフェクト</span>
+                    <span>{rewardSummary.xpBreakdown.perfect} XP</span>
+                  </div>
+                </div>
+                <div className="mt-3 text-xs text-slate-500">化学モードの学習結果</div>
               </div>
               {levelInfo && (
                 <div className="subcard p-4 text-left">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">現在レベル</div>
-                      <div className="mt-2 font-display text-2xl text-white">Lv.{levelInfo.level}</div>
+                      <div className={`mt-2 inline-flex items-center rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1.5 font-display text-2xl text-white ${rewardSummary.leveledUp ? 'level-badge--up' : ''}`}>
+                        Lv.{levelInfo.level}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-semibold text-sky-200">{levelInfo.title}</div>

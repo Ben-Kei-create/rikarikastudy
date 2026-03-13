@@ -8,6 +8,7 @@ import {
   getLevelFromXp,
   SessionMode,
 } from '@/lib/engagement'
+import { calculateQuizXp as calculateQuizXpBreakdown, QuizXpBreakdown } from '@/lib/xp'
 import {
   getGuestEarnedBadges,
   getGuestTimeAttackBest,
@@ -39,11 +40,17 @@ interface RecordStudySessionInput {
   sessionMode?: SessionMode
   xpMultiplier?: number
   xpOverride?: number
+  xpBreakdown?: QuizXpBreakdown
+}
+
+export interface StudyXpBreakdown extends QuizXpBreakdown {
+  multiplier: number
 }
 
 export interface StudyRewardSummary {
   sessionId: string | null
   xpEarned: number
+  xpBreakdown: StudyXpBreakdown
   previousXp: number
   totalXp: number
   levelBefore: number
@@ -76,23 +83,43 @@ type BadgeSessionRow = {
 }
 
 async function fetchStudentXp(studentId: number) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('students')
-    .select('student_xp')
+    .select('student_xp, xp')
     .eq('id', studentId)
     .single()
 
-  return data?.student_xp ?? 0
+  if (error) {
+    const fallback = await supabase
+      .from('students')
+      .select('student_xp')
+      .eq('id', studentId)
+      .single()
+
+    return fallback.data?.student_xp ?? 0
+  }
+
+  if (!data) return 0
+  return typeof data.xp === 'number' && data.xp > 0
+    ? data.xp
+    : data.student_xp ?? 0
 }
 
 async function updateStudentXp(studentId: number, totalXp: number) {
   const { error } = await supabase
     .from('students')
+    .update({ student_xp: totalXp, xp: totalXp })
+    .eq('id', studentId)
+
+  if (!error) return
+
+  const fallback = await supabase
+    .from('students')
     .update({ student_xp: totalXp })
     .eq('id', studentId)
 
-  if (error) {
-    console.error('[engagement] failed to update student_xp', error)
+  if (fallback.error) {
+    console.error('[engagement] failed to update student xp', fallback.error)
   }
 }
 
@@ -221,11 +248,17 @@ export async function recordStudySession({
   sessionMode = 'standard',
   xpMultiplier = 1,
   xpOverride,
+  xpBreakdown,
 }: RecordStudySessionInput): Promise<StudyRewardSummary> {
+  const baseBreakdown = xpBreakdown ?? calculateQuizXpBreakdown(correctCount, totalQuestions, durationSeconds)
   if (studentId === null) {
     return {
       sessionId: null,
       xpEarned: 0,
+      xpBreakdown: {
+        ...baseBreakdown,
+        multiplier: Math.max(1, xpMultiplier),
+      },
       previousXp: 0,
       totalXp: 0,
       levelBefore: 1,
@@ -242,6 +275,11 @@ export async function recordStudySession({
     durationSeconds,
     multiplier: xpMultiplier,
   })
+  const rewardBreakdown: StudyXpBreakdown = {
+    ...baseBreakdown,
+    total: xpEarned,
+    multiplier: Math.max(1, xpMultiplier),
+  }
 
   if (isGuestStudentId(studentId)) {
     const guestStoreBefore = loadGuestStudyStore()
@@ -275,6 +313,7 @@ export async function recordStudySession({
     return {
       sessionId: currentStore.sessionId,
       xpEarned,
+      xpBreakdown: rewardBreakdown,
       previousXp,
       totalXp,
       levelBefore,
@@ -308,6 +347,7 @@ export async function recordStudySession({
     return {
       sessionId: null,
       xpEarned: 0,
+      xpBreakdown: rewardBreakdown,
       previousXp,
       totalXp: previousXp,
       levelBefore: getLevelFromXp(previousXp),
@@ -362,6 +402,7 @@ export async function recordStudySession({
   return {
     sessionId: sessionData.id,
     xpEarned,
+    xpBreakdown: rewardBreakdown,
     previousXp,
     totalXp,
     levelBefore,

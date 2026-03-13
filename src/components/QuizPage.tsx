@@ -11,6 +11,7 @@ import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
 import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions } from '@/lib/questionPicker'
 import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
+import { calculateQuizXp as calculateQuizXpBreakdown } from '@/lib/xp'
 import {
   getQuestionInquirySchemaErrorMessage,
   QUESTION_INQUIRY_CATEGORY_OPTIONS,
@@ -469,6 +470,7 @@ export default function QuizPage({
       const durationSeconds = startedAtRef.current
         ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
         : 0
+      const xpBreakdown = calculateQuizXpBreakdown(score, questions.length, durationSeconds)
 
       const reward = await recordStudySession({
         studentId,
@@ -482,6 +484,7 @@ export default function QuizPage({
         answerLogs,
         sessionMode: buildSessionMode({ isDrill, quickStartAll, dailyChallenge, isCustom }),
         xpMultiplier: dailyChallenge ? 2 : 1,
+        xpBreakdown,
       })
 
       setRewardSummary(reward)
@@ -621,11 +624,31 @@ export default function QuizPage({
 
           {rewardSummary && (
             <div className="grid gap-4 sm:grid-cols-3 mb-6">
-              <div className="subcard p-4 text-left">
+              <div className="subcard anim-pop p-4 text-left">
                 <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">獲得XP</div>
                 <div className="mt-2 font-display text-3xl text-sky-300">+{rewardSummary.xpEarned}</div>
-                <div className="mt-2 text-xs text-slate-500">
-                  {dailyChallenge ? '今日のチャレンジ 2x ボーナス適用' : '今回の学習で加算'}
+                <div className="mt-3 space-y-1.5 text-xs text-slate-400">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>正解XP</span>
+                    <span>{rewardSummary.xpBreakdown.base} XP</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>スピード</span>
+                    <span>{rewardSummary.xpBreakdown.speed} XP</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>パーフェクト</span>
+                    <span>{rewardSummary.xpBreakdown.perfect} XP</span>
+                  </div>
+                  {rewardSummary.xpBreakdown.multiplier > 1 && (
+                    <div className="flex items-center justify-between gap-3 text-amber-200">
+                      <span>今日のチャレンジ</span>
+                      <span>x{rewardSummary.xpBreakdown.multiplier}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 text-xs text-slate-500">
+                  {dailyChallenge ? '今日のチャレンジボーナス込み' : '今回の学習で加算'}
                 </div>
               </div>
               {levelInfo && (
@@ -633,7 +656,9 @@ export default function QuizPage({
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">現在レベル</div>
-                      <div className="mt-2 font-display text-2xl text-white">Lv.{levelInfo.level}</div>
+                      <div className={`mt-2 inline-flex items-center rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1.5 font-display text-2xl text-white ${rewardSummary.leveledUp ? 'level-badge--up' : ''}`}>
+                        Lv.{levelInfo.level}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-semibold text-sky-200">{levelInfo.title}</div>

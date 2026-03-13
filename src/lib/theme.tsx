@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/lib/auth'
-import { getLevelFromXp } from '@/lib/engagement'
+import { getLevelFromXp, getTotalXpFromSessions } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { supabase } from '@/lib/supabase'
 
@@ -49,7 +49,7 @@ async function loadCurrentLevel(studentId: number | null) {
   if (studentId === null) return 1
 
   if (isGuestStudentId(studentId)) {
-    return getLevelFromXp(loadGuestStudyStore().xp)
+    return getLevelFromXp(getTotalXpFromSessions(loadGuestStudyStore().sessions))
   }
 
   const response = await supabase

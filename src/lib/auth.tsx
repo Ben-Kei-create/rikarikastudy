@@ -8,7 +8,7 @@ import {
   upsertActiveSession,
 } from '@/lib/activeSessions'
 import { GUEST_STUDENT, GUEST_STUDENT_ID, isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
-import { getLevelFromXp } from '@/lib/engagement'
+import { getLevelFromXp, getTotalXpFromSessions } from '@/lib/engagement'
 import { claimDailyLoginPeriodicCard, PeriodicCardReward } from '@/lib/periodicCardCollection'
 
 const STORAGE_KEY = 'rika_auth_v3'
@@ -230,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionTokenRef.current = createSessionToken()
 
     const currentLevel = isGuest
-      ? getLevelFromXp(loadGuestStudyStore().xp)
+      ? getLevelFromXp(getTotalXpFromSessions(loadGuestStudyStore().sessions))
       : getLevelFromXp(student.student_xp)
     const pendingLoginCardReward = await claimDailyLoginPeriodicCard(student.id, currentLevel)
 

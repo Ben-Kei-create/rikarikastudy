@@ -6,7 +6,7 @@ import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { PeriodicCardRewardModal } from '@/components/PeriodicCard'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
-import { getLevelInfo, getNextLevelUnlock, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
+import { getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
 import { hasCompletedDailyChallenge } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
@@ -66,7 +66,7 @@ export default function HomePage({
         }
 
         setStats(guestStats)
-        setTotalXp(store.xp)
+        setTotalXp(getTotalXpFromSessions(store.sessions))
         setDailyCompleted(store.dailyChallenge.date === store.dayKey)
         return
       }
@@ -246,8 +246,32 @@ export default function HomePage({
                 <div className="mt-1 text-xs text-slate-500">{totalQuestions > 0 ? `${totalQuestions}問解答` : 'まだ未学習'}</div>
               </div>
               <div className="subcard mobile-mini-card p-3.5">
-                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ログイン中</div>
-                <div className="mt-2 font-display text-xl text-white">{onlineCount !== null ? `${onlineCount}人` : '—'}</div>
+                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">レベル</div>
+                <div className="mt-2 flex items-end gap-2">
+                  <div className="font-display text-xl text-white">Lv.{levelInfo.level}</div>
+                  <div className="pb-0.5 text-xs font-semibold text-sky-200">{levelInfo.title}</div>
+                </div>
+                <div className="mt-1 text-xs text-slate-500">次 Lv.{Math.min(99, levelInfo.level + 1)}</div>
+              </div>
+            </div>
+            <div className="subcard mobile-mini-card p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">XP Progress</div>
+                <div className="text-sm font-semibold text-sky-200">{levelInfo.totalXp} XP</div>
+              </div>
+              <div className="mt-3 soft-track" style={{ height: 8 }}>
+                <div
+                  style={{
+                    width: `${levelInfo.progressRate}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #7dd3fc, #38bdf8)',
+                    borderRadius: 999,
+                  }}
+                />
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-500">
+                <span>{levelInfo.progressXp} / {levelInfo.progressMax} XP</span>
+                <span>{onlineCount !== null ? `ログイン中 ${onlineCount}人` : 'ログイン中 —'}</span>
               </div>
             </div>
             <div
