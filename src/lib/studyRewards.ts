@@ -23,6 +23,8 @@ import {
 import { claimStudyPeriodicCardReward, PeriodicCardReward } from '@/lib/periodicCardCollection'
 import { supabase } from '@/lib/supabase'
 
+const CURRENT_BADGE_KEYS = new Set(BADGE_DEFINITIONS.map(badge => badge.key))
+
 interface AnswerLogInput {
   qId: string
   correct: boolean
@@ -139,7 +141,9 @@ async function fetchStudentBadgeKeys(studentId: number) {
     return []
   }
 
-  return (data || []).map(row => row.badge_key)
+  return (data || [])
+    .map(row => row.badge_key)
+    .filter(key => CURRENT_BADGE_KEYS.has(key))
 }
 
 async function fetchStudentSessions(studentId: number) {
@@ -175,6 +179,22 @@ async function ensureBadgeDefinitionsSeeded() {
   if (error) {
     console.error('[engagement] failed to seed badges', error)
   }
+}
+
+async function fetchHasCustomQuestion(studentId: number) {
+  const { count, error } = await supabase
+    .from('questions')
+    .select('id', { count: 'exact', head: true })
+    .eq('created_by_student_id', studentId)
+
+  if (error) {
+    if (!String(error.message || '').includes('created_by_student_id')) {
+      console.error('[engagement] failed to check custom question count', error)
+    }
+    return false
+  }
+
+  return (count ?? 0) > 0
 }
 
 async function insertStudentBadges(studentId: number, badgeKeys: string[]) {
@@ -340,6 +360,7 @@ export async function recordStudySession({
       sessions: currentStore.store.sessions,
       existingBadgeKeys: getGuestEarnedBadges().map(badge => badge.badge_key),
       totalXp,
+      hasCustomQuestion: false,
     })
     saveGuestBadges(newBadgeKeys)
 
@@ -418,15 +439,17 @@ export async function recordStudySession({
     await markDailyChallengeCompleted(studentId, sessionData.id)
   }
 
-  const [sessions, existingBadgeKeys] = await Promise.all([
+  const [sessions, existingBadgeKeys, hasCustomQuestion] = await Promise.all([
     fetchStudentSessions(studentId),
     fetchStudentBadgeKeys(studentId),
+    fetchHasCustomQuestion(studentId),
   ])
 
   const newBadgeKeys = evaluateNewBadgeKeys({
     sessions,
     existingBadgeKeys,
     totalXp,
+    hasCustomQuestion,
   })
 
   await insertStudentBadges(studentId, newBadgeKeys)
@@ -451,7 +474,9 @@ export async function recordStudySession({
 
 export async function loadEarnedBadgeRecords(studentId: number | null) {
   if (studentId === null) return []
-  if (isGuestStudentId(studentId)) return getGuestEarnedBadges()
+  if (isGuestStudentId(studentId)) {
+    return getGuestEarnedBadges().filter(record => CURRENT_BADGE_KEYS.has(record.badge_key))
+  }
 
   const { data, error } = await supabase
     .from('student_badges')
@@ -464,7 +489,7 @@ export async function loadEarnedBadgeRecords(studentId: number | null) {
     return []
   }
 
-  return data || []
+  return (data || []).filter(record => CURRENT_BADGE_KEYS.has(record.badge_key))
 }
 
 export async function loadTimeAttackBest(studentId: number | null): Promise<TimeAttackBestSummary> {

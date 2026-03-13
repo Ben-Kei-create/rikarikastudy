@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { getLevelInfo } from '@/lib/engagement'
+import BadgeEarnedToastStack from '@/components/BadgeEarnedToastStack'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import {
@@ -1773,6 +1774,7 @@ export default function ScienceWorkbenchPage({
 
     return (
       <div className="page-shell page-shell-dashboard flex items-center justify-center">
+        <BadgeEarnedToastStack badges={rewardSummary?.newBadges ?? []} />
         <div className={`hero-card reward-card w-full max-w-3xl px-6 py-7 text-center sm:px-8 ${rewardSummary?.leveledUp ? 'is-level-up' : ''}`}>
           <div className="text-5xl">{meta.icon}</div>
           <div className="mt-4 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: meta.accent }}>

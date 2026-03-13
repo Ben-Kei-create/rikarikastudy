@@ -63,3 +63,6 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-13: Phase 2 として `HomePage.tsx` に「今週のランキング」を追加。今週の `quiz_sessions` を月曜 00:00 JST 以降で集計し、週XP・ニックネーム・レベル付きで表示するようにした。自分の行は色を変えて強調し、圏外でも見えるように末尾へ差し込む。`npm run build` 成功。
 - 2026-03-13: Phase 3 として `HomePage.tsx` の daily challenge 導線を専用カード化。ランキング直下へ移動し、完了時刻表示・完了時の無効化・金色グロー演出を追加した。
 - 2026-03-13: `app/page.tsx` と `QuizPage.tsx` に `quickStartDaily` フラグを追加。daily challenge はホーム直帰の特別モードとして扱い、`studyRewards.ts` では `challenge_date` を含む保存と旧 schema 向け fallback upsert を実装した。`npm run build` 成功。
+- 2026-03-13: Phase 4 として `badges.ts` を20個の指定バッジ構成へ再編。`初クイズ / 出題者 / コレクター` までの common・rare・legendary を定義し、現在のセッション履歴から streak・分野・速度・正答率・daily challenge 回数・化学モード達成を判定する共通ロジックに整理した。
+- 2026-03-13: `BadgeEarnedToastStack` を追加し、結果画面で新バッジが上からスライドして4秒で消える通知に変更。`globals.css` のレアリティ色も common=青 / rare=金 / legendary=紫へ更新した。
+- 2026-03-13: `MyPage.tsx` のバッジタブを一覧カード型へ変更。取得済みは日付つき、未取得はグレー表示、legendary の未取得説明だけ `???` にした。`student_badges.id` を含む schema/type も更新し、`npm run build` 成功。

@@ -314,11 +314,14 @@ CREATE TABLE IF NOT EXISTS badges (
 );
 
 CREATE TABLE IF NOT EXISTS student_badges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
   badge_key TEXT NOT NULL REFERENCES badges(key) ON DELETE CASCADE,
   earned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (student_id, badge_key)
+  UNIQUE (student_id, badge_key)
 );
+
+ALTER TABLE student_badges ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid();
 
 CREATE TABLE IF NOT EXISTS time_attack_records (
   student_id INTEGER PRIMARY KEY REFERENCES students(id) ON DELETE CASCADE,
@@ -327,36 +330,26 @@ CREATE TABLE IF NOT EXISTS time_attack_records (
 );
 
 INSERT INTO badges (key, name, description, icon_emoji, rarity, condition_type) VALUES
-  ('first_quiz', '初クイズ', 'はじめてクイズをクリアした', '🌱', 'common', 'first_quiz'),
-  ('streak_3', '3日連続', '3日連続で学習した', '🔥', 'common', 'streak'),
-  ('bio_debut', '生物デビュー', '生物の問題を初めて解いた', '🌿', 'common', 'field_debut'),
-  ('chem_debut', '化学デビュー', '化学の問題を初めて解いた', '⚗️', 'common', 'field_debut'),
-  ('phys_debut', '物理デビュー', '物理の問題を初めて解いた', '⚡', 'common', 'field_debut'),
-  ('earth_debut', '地学デビュー', '地学の問題を初めて解いた', '🌏', 'common', 'field_debut'),
-  ('total_30', '30問スタート', '合計30問以上に挑戦した', '🎒', 'common', 'total_questions'),
-  ('bio_50', '生物ノート', '生物を50問以上解いた', '🍃', 'common', 'field_total'),
-  ('chem_50', '化学ノート', '化学を50問以上解いた', '🧴', 'common', 'field_total'),
-  ('phys_50', '物理ノート', '物理を50問以上解いた', '🧲', 'common', 'field_total'),
-  ('earth_50', '地学ノート', '地学を50問以上解いた', '🪐', 'common', 'field_total'),
-  ('perfect_score', '全問正解', '1回の学習で全問正解した', '💯', 'rare', 'perfect'),
-  ('streak_7', '7日連続', '7日連続で学習した', '🏅', 'rare', 'streak'),
-  ('total_100', '100問突破', '合計100問以上に挑戦した', '📚', 'rare', 'total_questions'),
-  ('speed_star', 'スピードスター', '60秒未満で1セットをクリアした', '💨', 'rare', 'speed'),
-  ('daily_perfect', 'デイリーパーフェクト', '今日のチャレンジを全問正解した', '☀️', 'rare', 'daily_challenge'),
-  ('level_10', '研究者見習い', 'レベル10に到達した', '🧪', 'rare', 'level'),
-  ('daily_3', '朝チャレ名人', 'デイリーチャレンジを3回全問正解した', '🌅', 'rare', 'daily_challenge'),
-  ('time_attack_10', '10カウント', 'タイムアタックで10点以上を取った', '⏱️', 'rare', 'time_attack'),
-  ('streak_mode_5', '5連の壁', '連続正解モードで5問連続正解した', '🔥', 'rare', 'streak_mode'),
-  ('test_80', '80点ライン', 'テストモードで80点以上を取った', '📝', 'rare', 'test_mode'),
-  ('lab_explorer', 'ラボ探検隊', '4種類以上のラボや特別モードを遊んだ', '🧭', 'rare', 'lab_modes'),
-  ('streak_14', '14日連続', '14日連続で学習した', '📆', 'rare', 'streak'),
-  ('total_300', '300問通過', '合計300問以上に挑戦した', '📘', 'rare', 'total_questions'),
-  ('level_20', '理科マスター', 'レベル20に到達した', '🎓', 'rare', 'level'),
-  ('streak_30', '30日連続', '30日連続で学習した', '👑', 'legendary', 'streak'),
-  ('all_fields_day', '全分野制覇', '1日のうちに4分野すべてを解いた', '🛰️', 'legendary', 'all_fields_day'),
-  ('total_1000', '1000問の壁', '合計1000問以上に挑戦した', '🚀', 'legendary', 'total_questions'),
-  ('level_50', '天才科学者', 'レベル50に到達した', '🧠', 'legendary', 'level'),
-  ('level_75', '銀河級リサーチャー', 'レベル75に到達した', '🌌', 'legendary', 'level')
+  ('first_quiz', '初クイズ', 'はじめて問題を最後まで解いた。', '🌱', 'common', 'sessions'),
+  ('bio_debut', '生物デビュー', '生物の問題に初挑戦。', '🌿', 'common', 'field'),
+  ('chem_debut', '化学デビュー', '化学の問題に初挑戦。', '⚗️', 'common', 'field'),
+  ('phys_debut', '物理デビュー', '物理の問題に初挑戦。', '⚡', 'common', 'field'),
+  ('earth_debut', '地学デビュー', '地学の問題に初挑戦。', '🌏', 'common', 'field'),
+  ('streak_3', '3日連続', '3日連続で学習した。', '🔥', 'common', 'streak'),
+  ('ten_sessions', '10回突破', '学習セッションが10回をこえた。', '🎯', 'common', 'sessions'),
+  ('first_perfect', '初パーフェクト', 'はじめて全問正解した。', '💯', 'common', 'perfect'),
+  ('streak_7', '1週間連続', '7日連続で学習した。', '📅', 'rare', 'streak'),
+  ('hundred_questions', '100問突破', '合計100問を解いた。', '📚', 'rare', 'questions'),
+  ('speed_star', 'スピードスター', '60秒未満で1セットをクリアした。', '💨', 'rare', 'speed'),
+  ('all_fields_day', '全分野制覇', '1日のうちに4分野すべてを解いた。', '🛰️', 'rare', 'daily_mix'),
+  ('five_perfects', '完璧主義者', '全問正解を5回達成した。', '🏆', 'rare', 'perfect'),
+  ('chem_lab_clear', '化学ラボマスター', '化学の2つの特別モードをクリアした。', '🧪', 'rare', 'chemistry_modes'),
+  ('question_creator', '出題者', '自分で問題を1つ作った。', '✍️', 'rare', 'creation'),
+  ('streak_30', '30日連続', '30日連続で学習した。', '👑', 'legendary', 'streak'),
+  ('thousand_questions', '1000問の壁', '合計1000問を解いた。', '🚀', 'legendary', 'questions'),
+  ('accuracy_90', '正答率90%超', '100問以上で正答率90%以上を維持した。', '🎓', 'legendary', 'accuracy'),
+  ('daily_challenger', '毎日チャレンジャー', '今日のチャレンジを7回クリアした。', '☀️', 'legendary', 'daily_challenge'),
+  ('all_badges_rare', 'コレクター', 'レアバッジをすべて集めた。', '💎', 'legendary', 'collection')
 ON CONFLICT (key) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
@@ -368,6 +361,7 @@ CREATE INDEX IF NOT EXISTS idx_quiz_sessions_created_at ON quiz_sessions(created
 CREATE INDEX IF NOT EXISTS idx_quiz_sessions_mode ON quiz_sessions(session_mode);
 CREATE INDEX IF NOT EXISTS idx_daily_challenges_date ON daily_challenges(date DESC);
 CREATE INDEX IF NOT EXISTS idx_student_badges_student ON student_badges(student_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_student_badges_student_badge_key ON student_badges(student_id, badge_key);
 CREATE INDEX IF NOT EXISTS idx_time_attack_records_score ON time_attack_records(best_score DESC);
 
 ALTER TABLE daily_challenges DISABLE ROW LEVEL SECURITY;

@@ -157,7 +157,6 @@ export default function MyPage({
   const [savingQuestion, setSavingQuestion] = useState(false)
   const [studentXp, setStudentXp] = useState(0)
   const [earnedBadges, setEarnedBadges] = useState<Array<{ badge_key: string; earned_at: string }>>([])
-  const [selectedBadgeKey, setSelectedBadgeKey] = useState<string | null>(BADGE_DEFINITIONS[0]?.key ?? null)
   const [customGlossaryEntries, setCustomGlossaryEntries] = useState<ScienceGlossaryEntry[]>([])
   const [glossaryQuery, setGlossaryQuery] = useState('')
   const [glossaryField, setGlossaryField] = useState<ScienceGlossaryField | 'all'>('all')
@@ -180,7 +179,7 @@ export default function MyPage({
           questions: { unit: log.unit, field: log.field },
         })))
         setStudentXp(getTotalXpFromSessions(store.sessions))
-        setEarnedBadges(store.badges)
+        setEarnedBadges(store.badges.filter(badge => BADGE_DEFINITIONS.some(definition => definition.key === badge.badge_key)))
         setMyQuestions([])
         setLoading(false)
         return
@@ -296,14 +295,7 @@ export default function MyPage({
     () => new Map(earnedBadges.map(badge => [badge.badge_key, badge])),
     [earnedBadges],
   )
-  const secretBadgeCount = useMemo(
-    () => BADGE_DEFINITIONS.filter(badge => badge.isSecret).length,
-    [],
-  )
-  const selectedBadge = useMemo(
-    () => BADGE_DEFINITIONS.find(badge => badge.key === selectedBadgeKey) ?? BADGE_DEFINITIONS[0] ?? null,
-    [selectedBadgeKey],
-  )
+  const earnedBadgeCount = earnedBadgeMap.size
 
   const byField = useMemo(() => {
     const m: Record<string, { total: number; correct: number }> = {}
@@ -467,12 +459,6 @@ export default function MyPage({
     const exists = periodicCards.some(card => card.cardKey === selectedPeriodicCardKey)
     if (!exists) setSelectedPeriodicCardKey(periodicCards[0].cardKey)
   }, [periodicCards, periodicUnlocked, selectedPeriodicCardKey])
-
-  useEffect(() => {
-    if (!selectedBadgeKey || !BADGE_DEFINITIONS.some(badge => badge.key === selectedBadgeKey)) {
-      setSelectedBadgeKey(BADGE_DEFINITIONS[0]?.key ?? null)
-    }
-  }, [selectedBadgeKey])
 
   const handleSaveNickname = async () => {
     setSaving('nickname')
@@ -994,112 +980,78 @@ export default function MyPage({
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
                   <h3 className="text-slate-300 font-bold">バッジコレクション</h3>
-                  <div className="mt-1 text-xs text-slate-500">{secretBadgeCount}個はシークレット</div>
+                  <div className="mt-1 text-xs text-slate-500">集めるほど色が増える</div>
                 </div>
                 <div className="rounded-full bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-200">
-                  {earnedBadges.length} / {BADGE_DEFINITIONS.length}
+                  {earnedBadgeCount} / {BADGE_DEFINITIONS.length}
                 </div>
               </div>
             </div>
 
             <div className="card">
-              <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-7">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {BADGE_DEFINITIONS.map(badge => {
                   const earned = earnedBadgeMap.get(badge.key)
-                  const lockedSecret = !earned && badge.isSecret
-                  const selected = selectedBadge?.key === badge.key
-                  const accent = earned
-                    ? badge.rarity === 'legendary'
-                      ? 'rgba(245, 158, 11, 0.86)'
-                      : badge.rarity === 'rare'
-                        ? 'rgba(56, 189, 248, 0.82)'
-                        : 'rgba(34, 197, 94, 0.78)'
-                    : 'rgba(148, 163, 184, 0.28)'
+                  const lockedLegendary = !earned && badge.rarity === 'legendary'
+                  const accent = badge.rarity === 'legendary'
+                    ? '#c084fc'
+                    : badge.rarity === 'rare'
+                      ? '#fbbf24'
+                      : '#60a5fa'
+                  const rarityLabel = getBadgeRarityLabel(badge.rarity)
+                  const displayIcon = earned ? badge.iconEmoji : lockedLegendary ? '❔' : badge.iconEmoji
+                  const earnedDate = earned ? format(new Date(earned.earned_at), 'M月d日', { locale: ja }) : null
 
                   return (
-                    <button
+                    <div
                       key={badge.key}
-                      type="button"
-                      onClick={() => setSelectedBadgeKey(badge.key)}
-                      className="mx-auto flex aspect-square w-full max-w-[76px] items-center justify-center rounded-full border transition-transform duration-150 hover:-translate-y-0.5"
+                      className="rounded-[24px] border p-4"
                       style={{
-                        borderColor: selected ? accent : 'rgba(148, 163, 184, 0.18)',
+                        borderColor: earned ? `${accent}55` : 'rgba(148, 163, 184, 0.18)',
                         background: earned
-                          ? badge.rarity === 'legendary'
-                            ? 'radial-gradient(circle at 30% 25%, rgba(253, 230, 138, 0.42), rgba(120, 53, 15, 0.95))'
-                            : badge.rarity === 'rare'
-                              ? 'radial-gradient(circle at 30% 25%, rgba(125, 211, 252, 0.38), rgba(8, 47, 73, 0.95))'
-                              : 'radial-gradient(circle at 30% 25%, rgba(134, 239, 172, 0.34), rgba(20, 83, 45, 0.95))'
-                          : 'radial-gradient(circle at 30% 25%, rgba(71, 85, 105, 0.4), rgba(15, 23, 42, 0.94))',
-                        boxShadow: selected ? '0 0 0 3px rgba(148, 163, 184, 0.18)' : 'none',
+                          ? `linear-gradient(135deg, ${accent}22, rgba(15, 23, 42, 0.88))`
+                          : 'rgba(15, 23, 42, 0.62)',
                       }}
-                      aria-label={lockedSecret ? 'シークレットバッジ' : badge.name}
                     >
-                      <span className={`text-[1.7rem] ${earned ? '' : 'opacity-55 grayscale'}`}>
-                        {lockedSecret ? '❔' : earned ? badge.iconEmoji : '○'}
-                      </span>
-                    </button>
+                      <div className="flex items-start gap-4">
+                        <div
+                          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border text-3xl"
+                          style={{
+                            borderColor: earned ? `${accent}66` : 'rgba(148, 163, 184, 0.18)',
+                            background: earned ? `${accent}18` : 'rgba(71, 85, 105, 0.18)',
+                            color: earned ? accent : 'var(--text-muted)',
+                            filter: earned ? 'none' : 'grayscale(1)',
+                            opacity: earned ? 1 : 0.72,
+                          }}
+                        >
+                          {displayIcon}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="font-semibold text-white">{badge.name}</div>
+                            <div
+                              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                              style={{
+                                background: earned ? `${accent}18` : 'rgba(148, 163, 184, 0.14)',
+                                color: earned ? accent : 'var(--text-muted)',
+                              }}
+                            >
+                              {rarityLabel}
+                            </div>
+                          </div>
+                          <div className="mt-2 text-sm leading-6 text-slate-300">
+                            {lockedLegendary ? '???' : badge.description}
+                          </div>
+                          <div className="mt-3 text-xs text-slate-500">
+                            {earnedDate ? `${earnedDate} に獲得` : '未獲得'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   )
                 })}
               </div>
             </div>
-
-            {selectedBadge && (
-              <div className="card">
-                {(() => {
-                  const earned = earnedBadgeMap.get(selectedBadge.key)
-                  const lockedSecret = !earned && selectedBadge.isSecret
-                  const displayName = lockedSecret ? '???' : selectedBadge.name
-                  const displayDescription = lockedSecret ? '???' : selectedBadge.description
-                  const displayEmoji = lockedSecret ? '❔' : earned ? selectedBadge.iconEmoji : '○'
-
-                  return (
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                      <div className="flex items-center gap-4">
-                        <div
-                          className="flex h-20 w-20 items-center justify-center rounded-full border text-4xl"
-                          style={{
-                            borderColor: earned
-                              ? selectedBadge.rarity === 'legendary'
-                                ? 'rgba(245, 158, 11, 0.42)'
-                                : selectedBadge.rarity === 'rare'
-                                  ? 'rgba(56, 189, 248, 0.34)'
-                                  : 'rgba(34, 197, 94, 0.28)'
-                              : 'rgba(148, 163, 184, 0.18)',
-                            background: earned
-                              ? selectedBadge.rarity === 'legendary'
-                                ? 'linear-gradient(180deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.9))'
-                                : selectedBadge.rarity === 'rare'
-                                  ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.9))'
-                                  : 'linear-gradient(180deg, rgba(34, 197, 94, 0.1), rgba(15, 23, 42, 0.9))'
-                              : 'rgba(15, 23, 42, 0.72)',
-                          }}
-                        >
-                          <span className={earned ? '' : 'opacity-55 grayscale'}>{displayEmoji}</span>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <div className="font-bold text-white">{displayName}</div>
-                            <div className="rounded-full bg-slate-900/70 px-2.5 py-1 text-[10px] tracking-[0.16em] text-slate-300">
-                              {getBadgeRarityLabel(selectedBadge.rarity)}
-                            </div>
-                            {selectedBadge.isSecret && !earned ? (
-                              <div className="rounded-full bg-slate-900/70 px-2.5 py-1 text-[10px] tracking-[0.16em] text-amber-200">
-                                SECRET
-                              </div>
-                            ) : null}
-                          </div>
-                          <div className="mt-2 text-sm leading-6 text-slate-400">{displayDescription}</div>
-                        </div>
-                      </div>
-                      <div className="text-sm text-slate-400 md:text-right">
-                        {earned ? `獲得日 ${format(new Date(earned.earned_at), 'M月d日(E)', { locale: ja })}` : '未獲得'}
-                      </div>
-                    </div>
-                  )
-                })()}
-              </div>
-            )}
           </div>
         )}
 

@@ -26,6 +26,7 @@ import {
   markColumnMissing,
   markColumnSupported,
 } from '@/lib/schemaCompat'
+import BadgeEarnedToastStack from '@/components/BadgeEarnedToastStack'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import SuccessBurst from '@/components/SuccessBurst'
@@ -570,6 +571,7 @@ export default function QuizPage({
 
     return (
       <div className="page-shell flex flex-col items-center justify-center anim-fade">
+        <BadgeEarnedToastStack badges={rewardSummary?.newBadges ?? []} />
         <div className={`hero-card reward-card w-full max-w-3xl p-6 text-center sm:p-7 ${rewardSummary?.leveledUp ? 'is-level-up' : ''}`}>
           {rewardSummary?.leveledUp && (
             <div className="reward-confetti" aria-hidden="true">

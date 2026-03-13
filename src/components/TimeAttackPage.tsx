@@ -28,6 +28,7 @@ import { supabase } from '@/lib/supabase'
 import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import BadgeEarnedToastStack from '@/components/BadgeEarnedToastStack'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import SuccessBurst from '@/components/SuccessBurst'
@@ -909,6 +910,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
 
     return (
       <div className="page-shell flex flex-col items-center justify-center">
+        <BadgeEarnedToastStack badges={rewardSummary?.newBadges ?? []} />
         <div className={`hero-card reward-card w-full max-w-3xl p-6 text-center sm:p-7 ${rewardSummary?.leveledUp ? 'is-level-up' : ''}`}>
           <div className="text-5xl mb-4">{currentModeMeta.emoji}</div>
           <div className="font-display text-5xl text-white">{headline}</div>

@@ -509,16 +509,19 @@ export type Database = {
       }
       student_badges: {
         Row: {
+          id: string | null
           student_id: number
           badge_key: string
           earned_at: string
         }
         Insert: {
+          id?: string | null
           student_id: number
           badge_key: string
           earned_at?: string
         }
         Update: {
+          id?: string | null
           earned_at?: string
         }
       }
