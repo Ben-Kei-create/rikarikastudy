@@ -2609,7 +2609,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <input
               value={form.answer}
               onChange={e => setForm(current => ({ ...current, answer: e.target.value }))}
-              placeholder={form.type === 'choice' ? '正解をそのまま入力（AかBと同じ文）' : '模範解答を入力'}
+              placeholder={form.type === 'choice' ? '正解をそのまま入力（AかBと同じ文）' : '模範解答文を入力'}
               className="input-surface"
             />
           </div>

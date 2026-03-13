@@ -154,7 +154,7 @@ function deriveBlankTargetFromAnswer(answer: string) {
     return formulaPart
   }
 
-  const chunks = trimmedAnswer.match(/[一-龠々]+|[ァ-ヶー]+|[A-Za-z0-9⁺⁻₊₋₀₁₂₃₄₅₆₇₈₉]+/gu) ?? []
+  const chunks = trimmedAnswer.match(/[一-龠々]+|[ァ-ヶー]+|[A-Za-z0-9⁺⁻₊₋₀₁₂₃₄₅₆₇₈₉]+/g) ?? []
   const shortChunk = [...chunks]
     .reverse()
     .find(chunk => chunk.length >= 2 && normalizeAnswer(chunk) !== normalizeAnswer(trimmedAnswer))

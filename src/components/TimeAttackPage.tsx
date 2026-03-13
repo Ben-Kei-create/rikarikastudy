@@ -25,8 +25,10 @@ import {
 import { loadTimeAttackBest, recordStudySession, saveTimeAttackBest, StudyRewardSummary } from '@/lib/studyRewards'
 import { supabase } from '@/lib/supabase'
 import { getQuestionImageDisplaySize } from '@/lib/questionImages'
+import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
+import SuccessBurst from '@/components/SuccessBurst'
 
 type ChallengeMode = 'time_attack' | 'test_mode' | 'streak_mode'
 type LeaderboardMode = Extract<ChallengeMode, 'test_mode' | 'streak_mode'>
@@ -140,6 +142,7 @@ function getModeProgressLabel(mode: ChallengeMode, currentIndex: number, total: 
 function getModeSummaryMessage(mode: ChallengeMode, rawScore: number) {
   if (mode === 'test_mode') {
     const pointScore = getDisplayScore(mode, rawScore)
+    if (pointScore === 100) return '100点満点！入試セットを完璧に解き切れました。'
     if (pointScore >= 80) return '入試を意識したセットをかなり安定して解けています。'
     if (pointScore >= 60) return 'あと少しで高得点圏です。弱い単元を詰めれば伸ばせます。'
     return 'もう一度挑戦して、得点源になる単元を増やしていきましょう。'
@@ -259,6 +262,9 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null)
   const [textInput, setTextInput] = useState('')
   const [answerResult, setAnswerResult] = useState<TextAnswerResult | null>(null)
+  const [comboStreak, setComboStreak] = useState(0)
+  const [bestCombo, setBestCombo] = useState(0)
+  const [celebration, setCelebration] = useState<SuccessCelebrationContent | null>(null)
   const [timeAttackBest, setTimeAttackBest] = useState(0)
   const [otherLeader, setOtherLeader] = useState<{ studentId: number; nickname: string; score: number } | null>(null)
   const [testSummary, setTestSummary] = useState<SessionModeSummary>({ personalBest: 0, leaderboard: [] })
@@ -384,6 +390,9 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     setSelectedChoice(null)
     setTextInput('')
     setAnswerResult(null)
+    setComboStreak(0)
+    setBestCombo(0)
+    setCelebration(null)
     setAnswerLogs([])
   }
 
@@ -486,6 +495,15 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     if (phase !== 'playing' || !currentQuestion) return
 
     const correct = choice === currentQuestion.answer
+    if (correct) {
+      const nextCombo = comboStreak + 1
+      setComboStreak(nextCombo)
+      setBestCombo(currentBest => Math.max(currentBest, nextCombo))
+      setCelebration(getSuccessCelebration(nextCombo))
+    } else {
+      setComboStreak(0)
+      setCelebration(null)
+    }
     setFeedback(correct ? 'correct' : 'wrong')
     setScore(current => current + (correct ? 1 : 0))
     setAnsweredCount(current => current + 1)
@@ -513,6 +531,16 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
   const handleTestChoice = (choice: string) => {
     if (phase !== 'playing' || selectedMode !== 'test_mode' || !currentQuestion || testModeAnswered) return
     const result: TextAnswerResult = choice === currentQuestion.answer ? 'exact' : 'incorrect'
+    if (result === 'exact') {
+      const nextCombo = comboStreak + 1
+      const isPerfectRun = currentIndex + 1 >= questions.length && score + 1 === questions.length
+      setComboStreak(nextCombo)
+      setBestCombo(currentBest => Math.max(currentBest, nextCombo))
+      setCelebration(getSuccessCelebration(nextCombo, { perfect: isPerfectRun }))
+    } else {
+      setComboStreak(0)
+      setCelebration(null)
+    }
     setSelectedChoice(choice)
     setAnswerResult(result)
     setAnsweredCount(current => current + 1)
@@ -525,6 +553,16 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     const answer = textInput.trim()
     if (!answer) return
     const result = evaluateTextAnswer(answer, currentQuestion.answer, currentQuestion.accept_answers, currentQuestion.keywords)
+    if (result === 'exact') {
+      const nextCombo = comboStreak + 1
+      const isPerfectRun = currentIndex + 1 >= questions.length && score + 1 === questions.length
+      setComboStreak(nextCombo)
+      setBestCombo(currentBest => Math.max(currentBest, nextCombo))
+      setCelebration(getSuccessCelebration(nextCombo, { perfect: isPerfectRun }))
+    } else {
+      setComboStreak(0)
+      setCelebration(null)
+    }
     setAnswerResult(result)
     setAnsweredCount(current => current + 1)
     if (result === 'exact') setScore(current => current + 1)
@@ -533,6 +571,8 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
 
   const handleTestDontKnow = () => {
     if (phase !== 'playing' || selectedMode !== 'test_mode' || !currentQuestion || testModeAnswered) return
+    setComboStreak(0)
+    setCelebration(null)
     setTextInput('わからない')
     setAnswerResult('incorrect')
     setAnsweredCount(current => current + 1)
@@ -550,6 +590,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     setSelectedChoice(null)
     setTextInput('')
     setAnswerResult(null)
+    setCelebration(null)
   }
 
   const renderRewardStrip = () => {
@@ -874,6 +915,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
 
   if (phase === 'finished') {
     const headline = getModeResultLabel(selectedMode, score)
+    const perfectTestRun = selectedMode === 'test_mode' && getDisplayScore(selectedMode, score) === 100
 
     return (
       <div className="page-shell flex flex-col items-center justify-center">
@@ -887,6 +929,11 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
             </div>
           )}
           <p className="mt-5 text-slate-300">{getModeSummaryMessage(selectedMode, score)}</p>
+          {perfectTestRun && (
+            <div className="mx-auto mt-5 max-w-md">
+              <SuccessBurst celebration={getSuccessCelebration(Math.max(1, bestCombo), { perfect: true })} />
+            </div>
+          )}
 
           <LevelUnlockNotice rewardSummary={rewardSummary} />
 
@@ -941,6 +988,12 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
 
+          <div className="subcard mt-5 p-4 text-left">
+            <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">今回の最高コンボ</div>
+            <div className="mt-2 font-display text-3xl text-emerald-300">{bestCombo}</div>
+            <div className="mt-1 text-xs text-slate-500">連続正解の波を育てるほど伸びます</div>
+          </div>
+
           {selectedMode === 'streak_mode' && streakSummary.leaderboard.length > 0 && (
             <div className="subcard mt-5 p-4 text-left">
               <div className="text-sm font-semibold text-white">連続正解ランキング</div>
@@ -968,7 +1021,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
           {renderRewardStrip()}
 
           {selectedMode === 'test_mode' && answerLogs.some(log => log.result === 'keyword') && (
-            <p className="text-xs text-slate-500 mt-5">▲ は理科キーワードの途中まで入力できています。あと少しで正解です。</p>
+            <p className="text-xs text-slate-500 mt-5">▲ は空欄の答えを途中まで入力できています。あと少しで正解です。</p>
           )}
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -1164,6 +1217,9 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                       : 'rgba(239, 68, 68, 0.08)',
                 }}
               >
+                {answerResult === 'exact' && celebration && (
+                  <SuccessBurst celebration={celebration} compact className="mb-4" />
+                )}
                 <div className="font-semibold text-white">
                   {answerResult === 'exact' ? '○ 正解' : answerResult === 'keyword' ? '△ あと少し' : '× 不正解'}
                 </div>
@@ -1180,7 +1236,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                 )}
                 {answerResult === 'keyword' && (
                   <div className="mt-2 text-xs leading-6 text-amber-200">
-                    理科キーワードの途中まで合っています。もう少し入力すると正解になります。
+                    空欄の答えの途中まで合っています。もう少し入力すると正解になります。
                   </div>
                 )}
                 {currentQuestion.explanation && (
@@ -1217,6 +1273,9 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
 
         {currentQuestion && (
           <div className="mt-6">
+            {feedback === 'correct' && celebration && (
+              <SuccessBurst celebration={celebration} compact className="mb-4" />
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 className="rounded-full px-3 py-1 text-xs font-semibold"

@@ -10,6 +10,7 @@ import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
 import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions } from '@/lib/questionPicker'
+import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
 import {
   getQuestionInquirySchemaErrorMessage,
   QUESTION_INQUIRY_CATEGORY_OPTIONS,
@@ -25,6 +26,7 @@ import {
   markColumnSupported,
 } from '@/lib/schemaCompat'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
+import SuccessBurst from '@/components/SuccessBurst'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e',
@@ -114,7 +116,8 @@ function buildFinishMessage(rate: number, dailyChallenge: boolean) {
     return '明日また再挑戦して、少しずつ積み上げていきましょう。'
   }
 
-  if (rate >= 90) return '🎉 すごい！完璧に近い！'
+  if (rate === 100) return '🎉 完璧！全問正解です！'
+  if (rate >= 90) return '🎉 すごい！ほぼ完璧です！'
   if (rate >= 70) return '👍 よくできました！'
   if (rate >= 50) return '😊 もう少しがんばろう！'
   return '💪 復習してみよう！'
@@ -152,6 +155,9 @@ export default function QuizPage({
   const [loading, setLoading] = useState(true)
   const [dailyLocked, setDailyLocked] = useState(false)
   const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string; result: TextAnswerResult }[]>([])
+  const [comboStreak, setComboStreak] = useState(0)
+  const [bestCombo, setBestCombo] = useState(0)
+  const [celebration, setCelebration] = useState<SuccessCelebrationContent | null>(null)
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
   const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
   const [inquiryOpen, setInquiryOpen] = useState(false)
@@ -176,6 +182,9 @@ export default function QuizPage({
       setAnswerResult(null)
       setScore(0)
       setAnswerLogs([])
+      setComboStreak(0)
+      setBestCombo(0)
+      setCelebration(null)
       setRewardSummary(null)
       setDailyLocked(false)
       startedAtRef.current = null
@@ -335,6 +344,16 @@ export default function QuizPage({
   const handleChoice = (choice: string) => {
     if (phase !== 'answering' || !q) return
     const result: TextAnswerResult = choice === q.answer ? 'exact' : 'incorrect'
+    if (result === 'exact') {
+      const nextCombo = comboStreak + 1
+      const isPerfectRun = current + 1 >= questions.length && score + 1 === questions.length
+      setComboStreak(nextCombo)
+      setBestCombo(currentBest => Math.max(currentBest, nextCombo))
+      setCelebration(getSuccessCelebration(nextCombo, { perfect: isPerfectRun }))
+    } else {
+      setComboStreak(0)
+      setCelebration(null)
+    }
     setSelected(choice)
     setAnswerResult(result)
     if (result === 'exact') setScore(currentScore => currentScore + 1)
@@ -347,6 +366,16 @@ export default function QuizPage({
     const answer = textInput.trim()
     if (!answer) return
     const result = evaluateTextAnswer(answer, q.answer, q.accept_answers, q.keywords)
+    if (result === 'exact') {
+      const nextCombo = comboStreak + 1
+      const isPerfectRun = current + 1 >= questions.length && score + 1 === questions.length
+      setComboStreak(nextCombo)
+      setBestCombo(currentBest => Math.max(currentBest, nextCombo))
+      setCelebration(getSuccessCelebration(nextCombo, { perfect: isPerfectRun }))
+    } else {
+      setComboStreak(0)
+      setCelebration(null)
+    }
     setAnswerResult(result)
     if (result === 'exact') setScore(currentScore => currentScore + 1)
     setAnswerLogs(logs => [...logs, { qId: q.id, correct: result === 'exact', answer, result }])
@@ -355,6 +384,8 @@ export default function QuizPage({
 
   const handleDontKnow = () => {
     if (phase !== 'answering' || !q || q.type !== 'text') return
+    setComboStreak(0)
+    setCelebration(null)
     setTextInput('わからない')
     setAnswerResult('incorrect')
     setAnswerLogs(logs => [...logs, { qId: q.id, correct: false, answer: 'わからない', result: 'incorrect' }])
@@ -462,6 +493,7 @@ export default function QuizPage({
     setSelected(null)
     setTextInput('')
     setAnswerResult(null)
+    setCelebration(null)
   }
 
   const restart = () => {
@@ -473,6 +505,9 @@ export default function QuizPage({
     setTextInput('')
     setAnswerResult(null)
     setAnswerLogs([])
+    setComboStreak(0)
+    setBestCombo(0)
+    setCelebration(null)
     setRewardSummary(null)
   }
 
@@ -558,6 +593,12 @@ export default function QuizPage({
           </div>
           <p className="text-slate-300 mb-5">{message}</p>
 
+          {rate === 100 && (
+            <div className="mx-auto mb-5 max-w-md">
+              <SuccessBurst celebration={getSuccessCelebration(Math.max(1, bestCombo), { perfect: true })} />
+            </div>
+          )}
+
           <div className="flex gap-2 justify-center mb-6">
             {questions.map((_, index) => (
               <div
@@ -578,7 +619,7 @@ export default function QuizPage({
           </div>
 
           {rewardSummary && (
-            <div className="grid gap-4 sm:grid-cols-2 mb-6">
+            <div className="grid gap-4 sm:grid-cols-3 mb-6">
               <div className="subcard p-4 text-left">
                 <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">獲得XP</div>
                 <div className="mt-2 font-display text-3xl text-sky-300">+{rewardSummary.xpEarned}</div>
@@ -613,6 +654,11 @@ export default function QuizPage({
                   </div>
                 </div>
               )}
+              <div className="subcard p-4 text-left">
+                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">最高コンボ</div>
+                <div className="mt-2 font-display text-3xl text-emerald-300">{bestCombo}</div>
+                <div className="mt-2 text-xs text-slate-500">連続正解の自己ベスト</div>
+              </div>
             </div>
           )}
 
@@ -653,7 +699,7 @@ export default function QuizPage({
           )}
 
           {answerLogs.some(log => log.result === 'keyword') && (
-            <p className="text-xs text-slate-500 mb-6">▲ は理科キーワードの途中まで入力できています。あと少しで正解です。</p>
+            <p className="text-xs text-slate-500 mb-6">▲ は空欄の答えを途中まで入力できています。あと少しで正解です。</p>
           )}
 
           <div className={`grid gap-3 ${dailyChallenge ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
@@ -1039,6 +1085,9 @@ export default function QuizPage({
 
           return (
             <div className="card mt-4 anim-pop" style={{ borderColor: `${accent}50`, background }}>
+              {currentResult === 'exact' && celebration && (
+                <SuccessBurst celebration={celebration} className="mb-4" />
+              )}
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-bold text-lg" style={{ color: accent }}>
                   {title}
@@ -1054,7 +1103,7 @@ export default function QuizPage({
                 <p className="text-slate-300 text-xs mb-2">正解キーワード例: {q.keywords.join(' / ')}</p>
               )}
               {currentResult === 'keyword' && (
-                <p className="text-amber-200 text-xs mb-2">理科キーワードの途中まで合っています。もう少し入力すると正解になります。</p>
+                <p className="text-amber-200 text-xs mb-2">空欄の答えの途中まで合っています。もう少し入力すると正解になります。</p>
               )}
               {q.explanation && (
                 <p className="text-slate-300 text-sm leading-relaxed">{q.explanation}</p>

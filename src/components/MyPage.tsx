@@ -1180,7 +1180,7 @@ export default function MyPage({
                   type="text"
                   value={questionForm.answer}
                   onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
-                  placeholder={questionForm.type === 'choice' ? '答え（AかBと同じ内容）' : '答え'}
+                  placeholder={questionForm.type === 'choice' ? '答え（AかBと同じ内容）' : '模範解答文'}
                   className="input-surface"
                 />
                 {questionForm.type === 'text' && (

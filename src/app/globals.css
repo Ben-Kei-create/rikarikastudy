@@ -221,6 +221,25 @@ body {
   80% { transform: translateX(4px); }
   100% { transform: translateX(0); box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0); }
 }
+@keyframes successBurstIn {
+  0% { opacity: 0; transform: translateY(10px) scale(0.92); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes successHalo {
+  0% { opacity: 0.72; transform: scale(0.4); }
+  100% { opacity: 0; transform: scale(1.12); }
+}
+@keyframes successSpark {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--spark-rotation)) translateY(0) scale(0.3);
+  }
+  18% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--spark-rotation)) translateY(-58px) scale(1);
+  }
+}
 
 .anim-fade-up { animation: fadeInUp 0.4s ease both; }
 .anim-fade { animation: fadeIn 0.3s ease both; }
@@ -382,6 +401,67 @@ body {
   background: var(--surface-elevated);
   border: 1px solid var(--surface-elevated-border);
   border-radius: 22px;
+}
+
+.success-burst {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 16px 18px;
+  border: 1px solid var(--success-burst-accent-border);
+  background:
+    linear-gradient(135deg, var(--success-burst-accent-soft), rgba(15, 23, 42, 0.74)),
+    rgba(15, 23, 42, 0.68);
+  animation: successBurstIn 0.28s ease both;
+}
+
+.success-burst.is-compact {
+  padding: 13px 15px;
+  border-radius: 20px;
+}
+
+.success-burst__content {
+  position: relative;
+  z-index: 1;
+}
+
+.success-burst__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: white;
+  background: var(--success-burst-accent-soft);
+  box-shadow: 0 12px 26px var(--success-burst-accent-shadow);
+}
+
+.success-burst__subtitle {
+  margin-top: 10px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: rgba(241, 245, 249, 0.96);
+}
+
+.success-burst__halo {
+  position: absolute;
+  inset: -28%;
+  background: radial-gradient(circle, var(--success-burst-accent-soft) 0%, transparent 68%);
+  animation: successHalo 0.8s ease-out forwards;
+}
+
+.success-burst__spark {
+  position: absolute;
+  top: 54%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--success-burst-accent);
+  box-shadow: 0 0 12px var(--success-burst-accent-glow);
+  animation: successSpark 0.76s ease-out both;
 }
 
 .soft-track {
