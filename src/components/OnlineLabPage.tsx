@@ -78,6 +78,11 @@ function getSaturatedAmount(temperature: number) {
   return SATURATED_VAPOR_TABLE.find(item => item.temperature === temperature)?.amount ?? 0
 }
 
+function getHumidityRatio(vaporAmount: number, saturation: number) {
+  if (saturation <= 0) return 0
+  return Math.max(0, (vaporAmount / saturation) * 100)
+}
+
 function getColumnOption(round: ColumnWorkbenchRound, key: string | null) {
   if (!key) return null
   return round.options.find(option => option.key === key) ?? null
@@ -197,9 +202,12 @@ function applyRoomSnapshot(mode: ScienceWorkbenchMode, room: OnlineLabRoomRow) {
   const nextIndex = clamp(room.round_index ?? 0, 0, Math.max(0, rounds.length - 1))
   const nextRound = rounds[nextIndex]
   const fallbackState = getInitialState(nextRound)
-  const nextState = room.state_json && typeof room.state_json === 'object' && !Array.isArray(room.state_json)
+  const rawState = room.state_json && typeof room.state_json === 'object' && !Array.isArray(room.state_json)
     ? room.state_json as unknown as WorkbenchState
     : fallbackState
+  const nextState = rawState.kind === 'earth-humidity' && typeof rawState.vaporAmount !== 'number'
+    ? { ...rawState, vaporAmount: nextRound.kind === 'earth-humidity' ? nextRound.startVaporAmount : 0 }
+    : rawState
   const nextFeedback = room.feedback_json && typeof room.feedback_json === 'object' && !Array.isArray(room.feedback_json)
     ? room.feedback_json as unknown as RoundFeedback
     : null
@@ -690,9 +698,42 @@ export default function OnlineLabPage({ onBack }: { onBack: () => void }) {
     }
 
     if (state.kind === 'earth-humidity') {
+      const saturation = getSaturatedAmount(state.temperature)
+      const humidityRatio = getHumidityRatio(state.vaporAmount, saturation)
+      const cloudReady = state.vaporAmount >= saturation
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">温度を選ぶ</div>
+          <div className="text-sm font-semibold text-slate-200">温度と水蒸気量を動かす</div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
+              <div className="text-xs tracking-[0.18em] text-slate-400">温度</div>
+              <div className="mt-2 text-xl font-bold text-white">{state.temperature}<span className="ml-1 text-sm text-slate-400">℃</span></div>
+              <input
+                type="range"
+                min={0}
+                max={40}
+                step={10}
+                value={state.temperature}
+                onChange={event => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, temperature: Number(event.target.value) }))}
+                className="mt-3 w-full"
+                style={{ accentColor: meta?.accent ?? '#8b7cff' }}
+              />
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
+              <div className="text-xs tracking-[0.18em] text-slate-400">水蒸気量</div>
+              <div className="mt-2 text-xl font-bold text-white">{formatNumber(state.vaporAmount)}<span className="ml-1 text-sm text-slate-400">g</span></div>
+              <input
+                type="range"
+                min={0}
+                max={SATURATED_VAPOR_TABLE[SATURATED_VAPOR_TABLE.length - 1].amount}
+                step={0.1}
+                value={state.vaporAmount}
+                onChange={event => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, vaporAmount: roundTo(Number(event.target.value), 1) }))}
+                className="mt-3 w-full"
+                style={{ accentColor: meta?.accent ?? '#8b7cff' }}
+              />
+            </div>
+          </div>
           <div className="grid grid-cols-3 gap-2">
             {SATURATED_VAPOR_TABLE.map(item => (
               <button
@@ -708,8 +749,29 @@ export default function OnlineLabPage({ onBack }: { onBack: () => void }) {
               </button>
             ))}
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            {SATURATED_VAPOR_TABLE.map(item => (
+              <button
+                key={`${item.temperature}-${item.amount}`}
+                onClick={() => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, vaporAmount: item.amount }))}
+                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
+                  Math.abs(state.vaporAmount - item.amount) < 0.051
+                    ? 'border-violet-300 bg-violet-500/20 text-white'
+                    : 'border-white/10 bg-slate-950/30 text-slate-300'
+                }`}
+              >
+                {formatNumber(item.amount)}g
+              </button>
+            ))}
+          </div>
           <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-3 text-sm text-violet-100">
-            この温度の飽和水蒸気量: <span className="font-bold">{formatNumber(getSaturatedAmount(state.temperature))} g</span>
+            この温度の飽和水蒸気量: <span className="font-bold">{formatNumber(saturation)} g</span>
+            <br />
+            実際の水蒸気量: <span className="font-bold">{formatNumber(state.vaporAmount)} g</span>
+            <br />
+            湿度: <span className="font-bold">{formatNumber(humidityRatio)}%</span>
+            <br />
+            状態: <span className="font-bold">{cloudReady ? '飽和してくもり始める' : 'まだ飽和していない'}</span>
           </div>
         </div>
       )

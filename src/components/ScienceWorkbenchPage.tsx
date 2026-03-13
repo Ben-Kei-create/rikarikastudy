@@ -39,7 +39,7 @@ export type WorkbenchState =
       zincChange: 'dissolve' | 'attach' | null
       copperChange: 'dissolve' | 'attach' | null
     }
-  | { kind: 'earth-humidity'; temperature: number }
+  | { kind: 'earth-humidity'; temperature: number; vaporAmount: number }
   | { kind: 'earth-column'; slots: [string | null, string | null, string | null]; activeSlot: 0 | 1 | 2 }
   | { kind: 'physics-motion-graph'; acceleration: number; time: number }
 
@@ -209,7 +209,7 @@ export function getInitialState(round: ScienceWorkbenchRound): WorkbenchState {
         copperChange: null,
       }
     case 'earth-humidity':
-      return { kind: round.kind, temperature: round.startTemperature }
+      return { kind: round.kind, temperature: round.startTemperature, vaporAmount: round.startVaporAmount }
     case 'earth-column':
       return { kind: round.kind, slots: [null, null, null], activeSlot: 0 }
     case 'physics-motion-graph':
@@ -232,6 +232,11 @@ function getCurrentConcentration(state: WorkbenchState) {
 
 function getSaturatedAmount(temperature: number) {
   return SATURATED_VAPOR_TABLE.find(item => item.temperature === temperature)?.amount ?? 0
+}
+
+function getHumidityRatio(vaporAmount: number, saturation: number) {
+  if (saturation <= 0) return 0
+  return Math.max(0, (vaporAmount / saturation) * 100)
 }
 
 function getColumnOption(round: Extract<ScienceWorkbenchRound, { kind: 'earth-column' }>, key: string | null) {
@@ -322,13 +327,14 @@ export function evaluateRound(round: ScienceWorkbenchRound, state: WorkbenchStat
 
   if (round.kind === 'earth-humidity' && state.kind === 'earth-humidity') {
     const saturation = getSaturatedAmount(state.temperature)
-    const correct = state.temperature === round.targetTemperature
+    const ratio = getHumidityRatio(state.vaporAmount, saturation)
+    const correct = state.temperature === round.targetTemperature && Math.abs(state.vaporAmount - round.vaporAmount) < 0.051
     return {
       correct,
-      message: correct ? '◯ 露点に到達' : '× 温度を見直そう',
+      message: correct ? '◯ 露点の条件がそろった' : '× 温度と水蒸気量を見直そう',
       detail: correct
-        ? `${state.temperature}℃ の飽和水蒸気量は ${formatNumber(saturation)}g。${round.explanation}`
-        : `今の ${state.temperature}℃ では飽和水蒸気量が ${formatNumber(saturation)}g です。${round.hint}`,
+        ? `${state.temperature}℃ で飽和水蒸気量 ${formatNumber(saturation)}g と、水蒸気量 ${formatNumber(state.vaporAmount)}g が重なりました。${round.explanation}`
+        : `今は ${state.temperature}℃ で飽和水蒸気量 ${formatNumber(saturation)}g、水蒸気量 ${formatNumber(state.vaporAmount)}g、湿度 ${formatNumber(ratio)}% です。${round.hint}`,
     }
   }
 
@@ -887,7 +893,8 @@ function drawHumidityScene(
   const graphHeight = 300
   const currentSaturation = getSaturatedAmount(state.temperature)
   const maxAmount = SATURATED_VAPOR_TABLE[SATURATED_VAPOR_TABLE.length - 1].amount
-  const cloudReady = round.vaporAmount >= currentSaturation
+  const cloudReady = state.vaporAmount >= currentSaturation
+  const humidityRatio = getHumidityRatio(state.vaporAmount, currentSaturation)
 
   ctx.fillStyle = 'rgba(255,255,255,0.08)'
   drawRoundedRect(ctx, 50, 110, 590, 340, 28)
@@ -918,7 +925,7 @@ function drawHumidityScene(
 
   ctx.fillStyle = '#ffffff'
   ctx.font = '700 24px "Zen Kaku Gothic New", sans-serif'
-  ctx.fillText(`水蒸気 ${formatNumber(round.vaporAmount)} g`, 82, 98)
+  ctx.fillText(`水蒸気 ${formatNumber(state.vaporAmount)} g`, 82, 98)
   ctx.fillText(`温度 ${state.temperature}℃`, 680, 160)
 
   ctx.strokeStyle = '#f8fafc'
@@ -929,12 +936,32 @@ function drawHumidityScene(
   ctx.lineTo(tempX, graphY + graphHeight)
   ctx.stroke()
 
-  const vaporY = graphY + graphHeight - (round.vaporAmount / maxAmount) * graphHeight
+  const vaporY = graphY + graphHeight - (state.vaporAmount / maxAmount) * graphHeight
   ctx.beginPath()
   ctx.moveTo(graphX, vaporY)
   ctx.lineTo(graphX + graphWidth, vaporY)
   ctx.stroke()
   ctx.setLineDash([])
+
+  const currentPointX = tempX
+  const currentPointY = vaporY
+  const saturationPointY = graphY + graphHeight - (currentSaturation / maxAmount) * graphHeight
+
+  ctx.fillStyle = '#c4b5fd'
+  ctx.beginPath()
+  ctx.arc(currentPointX, currentPointY, 7, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#f8fafc'
+  ctx.beginPath()
+  ctx.arc(currentPointX, saturationPointY, 6, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.strokeStyle = cloudReady ? 'rgba(196, 181, 253, 0.85)' : 'rgba(125, 211, 252, 0.55)'
+  ctx.lineWidth = 3
+  ctx.beginPath()
+  ctx.moveTo(currentPointX, currentPointY)
+  ctx.lineTo(currentPointX, saturationPointY)
+  ctx.stroke()
 
   for (let index = 0; index < 16; index += 1) {
     const progress = ((clock * 0.22 * intensity + index * 0.07) % 1 + 1) % 1
@@ -971,7 +998,9 @@ function drawHumidityScene(
   ctx.font = '500 15px "Zen Kaku Gothic New", sans-serif'
   ctx.fillText(`飽和水蒸気量 ${formatNumber(currentSaturation)}g`, 686, 364)
   ctx.fillStyle = '#c4b5fd'
-  ctx.fillText(`実際の水蒸気量 ${formatNumber(round.vaporAmount)}g`, 686, 388)
+  ctx.fillText(`実際の水蒸気量 ${formatNumber(state.vaporAmount)}g`, 686, 388)
+  ctx.fillStyle = '#f8fafc'
+  ctx.fillText(`湿度 ${formatNumber(humidityRatio)}%`, 686, 404)
 }
 
 function drawGraphAxes(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, xLabel: string, yLabel: string) {
@@ -1584,19 +1613,34 @@ export default function ScienceWorkbenchPage({
     }
 
     if (state.kind === 'earth-humidity') {
+      const saturation = getSaturatedAmount(state.temperature)
+      const humidityRatio = getHumidityRatio(state.vaporAmount, saturation)
+      const cloudReady = state.vaporAmount >= saturation
       return (
         <div className="space-y-3">
           <div className="text-sm font-semibold text-slate-200">パラメータ調整</div>
-          {renderRangeField(
-            '温度',
-            state.temperature,
-            0,
-            40,
-            10,
-            '℃',
-            next => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, temperature: next })),
-            '露点へ近づく温度',
-          )}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {renderRangeField(
+              '温度',
+              state.temperature,
+              0,
+              40,
+              10,
+              '℃',
+              next => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, temperature: next })),
+              '空気を冷やしたり温めたりする',
+            )}
+            {renderRangeField(
+              '水蒸気量',
+              roundTo(state.vaporAmount, 1),
+              0,
+              SATURATED_VAPOR_TABLE[SATURATED_VAPOR_TABLE.length - 1].amount,
+              0.1,
+              'g',
+              next => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, vaporAmount: roundTo(next, 1) })),
+              '1m3 の空気にふくまれる実際の水蒸気',
+            )}
+          </div>
           <div className="grid grid-cols-5 gap-2">
             {SATURATED_VAPOR_TABLE.map(item => (
               <button
@@ -1612,8 +1656,29 @@ export default function ScienceWorkbenchPage({
               </button>
             ))}
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            {SATURATED_VAPOR_TABLE.map(item => (
+              <button
+                key={`${item.temperature}-${item.amount}`}
+                onClick={() => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, vaporAmount: item.amount }))}
+                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
+                  Math.abs(state.vaporAmount - item.amount) < 0.051
+                    ? 'border-violet-300 bg-violet-500/20 text-white'
+                    : 'border-white/10 bg-slate-950/30 text-slate-300'
+                }`}
+              >
+                {formatNumber(item.amount)}g
+              </button>
+            ))}
+          </div>
           <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-3 text-sm text-violet-100">
-            この温度の飽和水蒸気量: <span className="font-bold">{formatNumber(getSaturatedAmount(state.temperature))} g</span>
+            この温度の飽和水蒸気量: <span className="font-bold">{formatNumber(saturation)} g</span>
+            <br />
+            実際の水蒸気量: <span className="font-bold">{formatNumber(state.vaporAmount)} g</span>
+            <br />
+            湿度: <span className="font-bold">{formatNumber(humidityRatio)}%</span>
+            <br />
+            状態: <span className="font-bold">{cloudReady ? '飽和してくもり始める' : 'まだ飽和していない'}</span>
           </div>
         </div>
       )
@@ -1909,7 +1974,7 @@ export default function ScienceWorkbenchPage({
             <p className="mt-2 text-sm leading-7 text-slate-400">{round.supportText}</p>
           </div>
 
-          {renderVisualPanel()}
+          {state.kind !== 'earth-humidity' && renderVisualPanel()}
 
           <div className={`card anim-fade-up ${disabled ? 'opacity-90' : ''}`}>
             {renderControls()}

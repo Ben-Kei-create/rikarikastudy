@@ -69,6 +69,7 @@ export interface HumidityWorkbenchRound {
   prompt: string
   supportText: string
   vaporAmount: number
+  startVaporAmount: number
   startTemperature: number
   targetTemperature: number
   hint: string
@@ -148,14 +149,14 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
     sessionMode: 'chemistry_battery_lab',
   },
   'earth-humidity': {
-    field: '地学',
+    field: '化学',
     title: '飽和水蒸気量ラボ',
     badge: 'Humidity Lab',
     icon: '☁️',
     accent: '#8b7cff',
-    description: '温度を動かしながら、飽和水蒸気量と露点の関係をつかむラボです。',
+    description: '温度と水蒸気量を動かして、飽和水蒸気量と露点の関係を目で理解するラボです。',
     sessionUnit: '飽和水蒸気量ラボ',
-    sessionMode: 'earth_humidity_lab',
+    sessionMode: 'chemistry_humidity_lab',
   },
   'earth-column': {
     field: '地学',
@@ -179,8 +180,8 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
   },
 }
 
-export const CHEMISTRY_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['chem-density', 'chem-concentration', 'chem-battery']
-export const EARTH_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['earth-humidity', 'earth-column']
+export const CHEMISTRY_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['chem-density', 'chem-concentration', 'chem-battery', 'earth-humidity']
+export const EARTH_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['earth-column']
 export const PHYSICS_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['physics-motion-graph']
 
 export const SATURATED_VAPOR_TABLE = [
@@ -345,8 +346,9 @@ const HUMIDITY_ROUNDS: HumidityWorkbenchRound[] = [
     id: 'humidity-1',
     kind: 'earth-humidity',
     prompt: '空気 1m3 に 9.4g の水蒸気があります。くもり始める温度に合わせよう。',
-    supportText: '温度を下げると飽和水蒸気量は小さくなります。',
+    supportText: '温度と水蒸気量の交点が飽和曲線に重なると、くもり始める露点になります。',
     vaporAmount: 9.4,
+    startVaporAmount: 17.3,
     startTemperature: 30,
     targetTemperature: 10,
     hint: '表で 9.4g に対応する温度を見つけると露点がわかります。',
@@ -356,8 +358,9 @@ const HUMIDITY_ROUNDS: HumidityWorkbenchRound[] = [
     id: 'humidity-2',
     kind: 'earth-humidity',
     prompt: '空気 1m3 に 17.3g の水蒸気があります。露点に合わせよう。',
-    supportText: '飽和水蒸気量と同じになる温度が露点です。',
+    supportText: '温度を下げるほど、空気中に入れておける水蒸気の限界は小さくなります。',
     vaporAmount: 17.3,
+    startVaporAmount: 9.4,
     startTemperature: 40,
     targetTemperature: 20,
     hint: '17.3g にぴったり重なる温度をグラフで探そう。',
@@ -367,8 +370,9 @@ const HUMIDITY_ROUNDS: HumidityWorkbenchRound[] = [
     id: 'humidity-3',
     kind: 'earth-humidity',
     prompt: '空気 1m3 に 30.4g の水蒸気があります。露点に合わせよう。',
-    supportText: '高温ほど空気中に多くの水蒸気を含めます。',
+    supportText: '水蒸気量が多いほど、交点はグラフの上側へ動きます。',
     vaporAmount: 30.4,
+    startVaporAmount: 17.3,
     startTemperature: 20,
     targetTemperature: 30,
     hint: '30℃ では飽和水蒸気量が 30.4g あります。',
@@ -378,8 +382,9 @@ const HUMIDITY_ROUNDS: HumidityWorkbenchRound[] = [
     id: 'humidity-4',
     kind: 'earth-humidity',
     prompt: '空気 1m3 に 4.8g の水蒸気があります。露点に合わせよう。',
-    supportText: '寒い空気ほど、入れておける水蒸気の量が少なくなります。',
+    supportText: '冷たい空気は、水蒸気をあまり多くふくめません。',
     vaporAmount: 4.8,
+    startVaporAmount: 9.4,
     startTemperature: 20,
     targetTemperature: 0,
     hint: '0℃ の飽和水蒸気量は 4.8g です。',

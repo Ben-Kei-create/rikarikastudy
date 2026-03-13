@@ -36,6 +36,7 @@ type SessionMode =
   | 'chemistry_density_lab'
   | 'chemistry_concentration_lab'
   | 'chemistry_battery_lab'
+  | 'chemistry_humidity_lab'
   | 'biology_organ_pairs'
   | 'earth_rock_pairs'
   | 'earth_humidity_lab'

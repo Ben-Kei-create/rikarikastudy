@@ -111,6 +111,11 @@ export interface TextBlankPrompt {
 
 const INLINE_BLANK = '＿＿＿＿'
 
+interface NumericAnswerDescriptor {
+  rawToken: string
+  comparableValue: number
+}
+
 function uniqueNormalizedStrings(values: string[]) {
   const seen = new Set<string>()
   const result: string[] = []
@@ -123,6 +128,55 @@ function uniqueNormalizedStrings(values: string[]) {
   }
 
   return result
+}
+
+function parseComparableNumber(token: string) {
+  const compact = token.replace(/\s+/g, '')
+  if (!compact) return null
+
+  if (compact.includes('/')) {
+    const [numeratorText, denominatorText] = compact.split('/')
+    const numerator = Number.parseFloat(numeratorText)
+    const denominator = Number.parseFloat(denominatorText)
+    if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return null
+    return numerator / denominator
+  }
+
+  const parsed = Number.parseFloat(compact)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function getNumericAnswerDescriptor(value: string): NumericAnswerDescriptor | null {
+  const compact = normalizeAnswer(value)
+    .replace(/[,\s]/g, '')
+    .replace(/[。｡、､]+$/g, '')
+
+  const match = compact.match(/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:\/[+-]?(?:\d+(?:\.\d+)?|\.\d+))?/)
+  if (!match) return null
+
+  const rawToken = match[0]
+  const remainder = compact.slice(rawToken.length)
+
+  if (remainder) {
+    // `2h2o` のような化学式は除外し、`20cm3` や `3m/s2` のような単位付き数値だけを緩和対象にする。
+    if (/[=<>+]/.test(remainder) || /\d+[a-zぁ-んァ-ヶ一-龠々]/.test(remainder)) {
+      return null
+    }
+  }
+
+  const comparableValue = parseComparableNumber(rawToken)
+  if (comparableValue === null) return null
+
+  return { rawToken, comparableValue }
+}
+
+function isSameNumericAnswer(left: string, right: string) {
+  const leftDescriptor = getNumericAnswerDescriptor(left)
+  const rightDescriptor = getNumericAnswerDescriptor(right)
+
+  if (!leftDescriptor || !rightDescriptor) return false
+
+  return Math.abs(leftDescriptor.comparableValue - rightDescriptor.comparableValue) < 1e-9
 }
 
 function getConfiguredTextKeywords(keywords?: string[] | null) {
@@ -203,6 +257,7 @@ export function buildTextBlankPrompt(
   const normalizedTarget = normalizeAnswer(target)
   const configuredKeywords = getConfiguredTextKeywords(keywords)
   const usesConfiguredKeyword = configuredKeywords.length > 0
+  const acceptsNumericWithoutUnit = Boolean(getNumericAnswerDescriptor(target || trimmedAnswer))
   const usesInlineBlank = Boolean(
     target
     && normalizedTarget
@@ -223,8 +278,10 @@ export function buildTextBlankPrompt(
     label: usesInlineBlank ? '模範解答の穴埋め' : '答えに入る語句',
     helperText: usesConfiguredKeyword
       ? '空欄に入る理科用語だけを入力してください。文章全体は打たなくて大丈夫です。'
-      : '空欄に入る語句や式だけを短く入力してください。',
-    placeholder: usesConfiguredKeyword ? '空欄に入る理科用語' : '空欄に入る答え',
+      : acceptsNumericWithoutUnit
+        ? '空欄に入る数字や式を入力してください。単位は省略しても正解になります。'
+        : '空欄に入る語句や式だけを短く入力してください。',
+    placeholder: usesConfiguredKeyword ? '空欄に入る理科用語' : acceptsNumericWithoutUnit ? '数字だけでもOK' : '空欄に入る答え',
     usesInlineBlank,
   }
 }
@@ -238,16 +295,22 @@ export function evaluateTextAnswer(
   const normalizedStudentAnswer = normalizeAnswer(studentAnswer)
   if (!normalizedStudentAnswer) return 'incorrect'
 
-  const candidates = getTextExactCandidates(correctAnswer, acceptAnswers, keywords).map(normalizeAnswer)
-  if (candidates.includes(normalizedStudentAnswer)) {
+  const exactCandidates = getTextExactCandidates(correctAnswer, acceptAnswers, keywords)
+  const normalizedCandidates = exactCandidates.map(normalizeAnswer)
+
+  if (normalizedCandidates.includes(normalizedStudentAnswer)) {
     return 'exact'
   }
 
-  if (candidates.some(candidate => normalizedStudentAnswer.includes(candidate))) {
+  if (exactCandidates.some(candidate => isSameNumericAnswer(studentAnswer, candidate))) {
     return 'exact'
   }
 
-  if (candidates.some(candidate => candidate.includes(normalizedStudentAnswer))) {
+  if (normalizedCandidates.some(candidate => normalizedStudentAnswer.includes(candidate))) {
+    return 'exact'
+  }
+
+  if (normalizedCandidates.some(candidate => candidate.includes(normalizedStudentAnswer))) {
     return 'keyword'
   }
 
