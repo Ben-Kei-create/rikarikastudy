@@ -13,6 +13,8 @@ import {
   getQuestionInquirySchemaErrorMessage,
   QUESTION_INQUIRY_CATEGORY_OPTIONS,
   QuestionInquiryCategory,
+  QuestionInquiryRow,
+  QUESTION_INQUIRY_STATUS_META,
 } from '@/lib/questionInquiry'
 import { hasCompletedDailyChallenge, recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
 import {
@@ -156,6 +158,8 @@ export default function QuizPage({
   const [inquiryMessage, setInquiryMessage] = useState('')
   const [inquiryStatus, setInquiryStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [inquirySending, setInquirySending] = useState(false)
+  const [recentInquiries, setRecentInquiries] = useState<QuestionInquiryRow[]>([])
+  const [inquiryHistoryLoading, setInquiryHistoryLoading] = useState(false)
   const startedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -269,15 +273,55 @@ export default function QuizPage({
     setFavoriteIds(readFavoriteQuestionIds(studentId))
   }, [studentId])
 
+  const q = questions[current]
+
   useEffect(() => {
     setInquiryOpen(false)
     setInquiryCategory('question_content')
     setInquiryMessage('')
     setInquiryStatus(null)
     setInquirySending(false)
+    setRecentInquiries([])
+    setInquiryHistoryLoading(false)
   }, [current])
 
-  const q = questions[current]
+  useEffect(() => {
+    if (!inquiryOpen || !q || !studentId) return
+
+    let active = true
+
+    const loadRecentInquiries = async () => {
+      setInquiryHistoryLoading(true)
+
+      const { data, error } = await supabase
+        .from('question_inquiries')
+        .select('*')
+        .eq('student_id', studentId)
+        .eq('question_id', q.id)
+        .order('created_at', { ascending: false })
+        .limit(3)
+
+      if (!active) return
+
+      if (error) {
+        setRecentInquiries([])
+        setInquiryStatus({
+          type: 'error',
+          text: getQuestionInquirySchemaErrorMessage(error.message),
+        })
+      } else {
+        setRecentInquiries((data || []) as QuestionInquiryRow[])
+      }
+
+      setInquiryHistoryLoading(false)
+    }
+
+    void loadRecentInquiries()
+
+    return () => {
+      active = false
+    }
+  }, [inquiryOpen, q, studentId])
   const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
   const isFavorite = !!q && favoriteIds.has(q.id)
   const questionImageDisplay = q ? getQuestionImageDisplaySize(q) : null
@@ -342,21 +386,25 @@ export default function QuizPage({
       setInquirySending(true)
       setInquiryStatus(null)
 
-      const { error } = await supabase.from('question_inquiries').insert({
-        student_id: studentId,
-        student_nickname: nickname ?? `ID ${studentId}`,
-        question_id: q.id,
-        category: inquiryCategory,
-        message: inquiryMessage.trim(),
-        field: q.field as '生物' | '化学' | '物理' | '地学',
-        unit: q.unit,
-        question_text: q.question,
-        question_type: q.type,
-        choices: q.choices,
-        answer_text: q.answer,
-        explanation_text: q.explanation,
-        image_url: q.image_url,
-      })
+      const { data, error } = await supabase
+        .from('question_inquiries')
+        .insert({
+          student_id: studentId,
+          student_nickname: nickname ?? `ID ${studentId}`,
+          question_id: q.id,
+          category: inquiryCategory,
+          message: inquiryMessage.trim(),
+          field: q.field as '生物' | '化学' | '物理' | '地学',
+          unit: q.unit,
+          question_text: q.question,
+          question_type: q.type,
+          choices: q.choices,
+          answer_text: q.answer,
+          explanation_text: q.explanation,
+          image_url: q.image_url,
+        })
+        .select('*')
+        .single()
 
       if (error) {
         throw new Error(getQuestionInquirySchemaErrorMessage(error.message))
@@ -364,10 +412,9 @@ export default function QuizPage({
 
       setInquiryStatus({ type: 'success', text: '管理者に問い合わせを送信しました。' })
       setInquiryMessage('')
-      window.setTimeout(() => {
-        setInquiryOpen(false)
-        setInquiryStatus(null)
-      }, 900)
+      if (data) {
+        setRecentInquiries(current => [data as QuestionInquiryRow, ...current].slice(0, 3))
+      }
     } catch (error) {
       setInquiryStatus({
         type: 'error',
@@ -825,6 +872,53 @@ export default function QuizPage({
                 {inquiryStatus.text}
               </div>
             )}
+
+            <div className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-950/35 px-4 py-4">
+              <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">この問題のやり取り</div>
+              {inquiryHistoryLoading ? (
+                <div className="mt-3 text-sm text-slate-400">読み込み中...</div>
+              ) : recentInquiries.length === 0 ? (
+                <div className="mt-3 text-sm text-slate-500">まだこの問題の問い合わせはありません。</div>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {recentInquiries.map(inquiry => {
+                    const statusMeta = QUESTION_INQUIRY_STATUS_META[inquiry.status]
+                    return (
+                      <div key={inquiry.id} className="rounded-2xl border border-slate-800 bg-slate-950/55 px-3 py-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                            style={{ background: statusMeta.background, color: statusMeta.color }}
+                          >
+                            {statusMeta.label}
+                          </span>
+                          <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                            {QUESTION_INQUIRY_CATEGORY_OPTIONS.find(option => option.value === inquiry.category)?.label ?? 'その他'}
+                          </span>
+                        </div>
+                        <div className="mt-2 text-xs text-slate-500">
+                          送信: {new Date(inquiry.created_at).toLocaleString('ja-JP')}
+                        </div>
+                        <div className="mt-2 text-sm leading-6 text-slate-200">
+                          {inquiry.message || '追加メッセージなし'}
+                        </div>
+                        {inquiry.admin_reply.trim() && (
+                          <div className="mt-3 rounded-xl border border-sky-500/18 bg-sky-500/8 px-3 py-3">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-sky-200">管理者からの返信</div>
+                            <div className="mt-2 text-sm leading-6 text-slate-100">{inquiry.admin_reply}</div>
+                            {inquiry.replied_at && (
+                              <div className="mt-2 text-[11px] text-slate-500">
+                                返信: {new Date(inquiry.replied_at).toLocaleString('ja-JP')}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

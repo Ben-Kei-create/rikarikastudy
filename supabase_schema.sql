@@ -153,8 +153,10 @@ CREATE TABLE IF NOT EXISTS question_inquiries (
   explanation_text TEXT DEFAULT NULL,
   image_url TEXT DEFAULT NULL,
   admin_note TEXT NOT NULL DEFAULT '',
+  admin_reply TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
+  replied_at TIMESTAMPTZ DEFAULT NULL,
   resolved_at TIMESTAMPTZ DEFAULT NULL
 );
 
@@ -173,7 +175,9 @@ ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS answer_text TEXT;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS explanation_text TEXT DEFAULT NULL;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS admin_note TEXT NOT NULL DEFAULT '';
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS admin_reply TEXT NOT NULL DEFAULT '';
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ DEFAULT NULL;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ DEFAULT NULL;
 
 -- 理科辞典テーブル

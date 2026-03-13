@@ -72,6 +72,7 @@ export function getQuestionInquirySchemaErrorMessage(message: string) {
     || message.includes('question_type')
     || message.includes('answer_text')
     || message.includes('admin_note')
+    || message.includes('admin_reply')
   ) {
     return 'Supabase に question_inquiries テーブルがありません。最新の supabase_schema.sql を SQL Editor で実行してください。'
   }

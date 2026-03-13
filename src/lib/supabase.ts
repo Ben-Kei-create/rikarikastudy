@@ -276,8 +276,10 @@ export type Database = {
           explanation_text: string | null
           image_url: string | null
           admin_note: string
+          admin_reply: string
           created_at: string
           updated_at: string
+          replied_at: string | null
           resolved_at: string | null
         }
         Insert: {
@@ -297,8 +299,10 @@ export type Database = {
           explanation_text?: string | null
           image_url?: string | null
           admin_note?: string
+          admin_reply?: string
           created_at?: string
           updated_at?: string
+          replied_at?: string | null
           resolved_at?: string | null
         }
         Update: {
@@ -317,8 +321,10 @@ export type Database = {
           explanation_text?: string | null
           image_url?: string | null
           admin_note?: string
+          admin_reply?: string
           created_at?: string
           updated_at?: string
+          replied_at?: string | null
           resolved_at?: string | null
         }
       }

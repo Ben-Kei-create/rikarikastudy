@@ -582,6 +582,7 @@ function getRestoreErrorMessage(message: string) {
     || message.includes('science_glossary_entries')
     || message.includes('short_description')
     || message.includes('admin_note')
+    || message.includes('admin_reply')
     || message.includes('question_text')
   ) {
     return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
@@ -603,6 +604,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [questionInquiryLoadError, setQuestionInquiryLoadError] = useState('')
   const [questionInquiryActionId, setQuestionInquiryActionId] = useState<string | null>(null)
   const [questionInquiryNoteDrafts, setQuestionInquiryNoteDrafts] = useState<Record<string, string>>({})
+  const [questionInquiryReplyDrafts, setQuestionInquiryReplyDrafts] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [bulkInput, setBulkInput] = useState(BULK_JSON_EXAMPLE)
   const [bulkMsg, setBulkMsg] = useState('')
@@ -844,6 +846,16 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       })
       return next
     })
+
+    setQuestionInquiryReplyDrafts(current => {
+      const next = { ...current }
+      questionInquiries.forEach(inquiry => {
+        if (next[inquiry.id] === undefined) {
+          next[inquiry.id] = inquiry.admin_reply ?? ''
+        }
+      })
+      return next
+    })
   }, [questionInquiries])
 
   const handleQuestionInquiryStatusChange = async (inquiry: QuestionInquiryRow, status: QuestionInquiryStatus) => {
@@ -896,6 +908,35 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       } as QuestionInquiryRow : item))
     } catch (error) {
       alert(error instanceof Error ? error.message : '対応メモの保存に失敗しました。')
+    } finally {
+      setQuestionInquiryActionId(null)
+    }
+  }
+
+  const handleSaveQuestionInquiryReply = async (inquiryId: string) => {
+    try {
+      setQuestionInquiryActionId(inquiryId)
+
+      const replyText = questionInquiryReplyDrafts[inquiryId] ?? ''
+      const payload: Database['public']['Tables']['question_inquiries']['Update'] = {
+        admin_reply: replyText,
+        updated_at: new Date().toISOString(),
+        replied_at: replyText.trim() ? new Date().toISOString() : null,
+      }
+
+      const { error } = await supabase
+        .from('question_inquiries')
+        .update(payload)
+        .eq('id', inquiryId)
+
+      if (error) throw new Error(getQuestionInquirySchemaErrorMessage(error.message))
+
+      setQuestionInquiries(current => current.map(item => item.id === inquiryId ? {
+        ...item,
+        ...payload,
+      } as QuestionInquiryRow : item))
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '返信の保存に失敗しました。')
     } finally {
       setQuestionInquiryActionId(null)
     }
@@ -2064,6 +2105,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 const statusMeta = QUESTION_INQUIRY_STATUS_META[inquiry.status]
                 const isBusy = questionInquiryActionId === inquiry.id
                 const noteDirty = (questionInquiryNoteDrafts[inquiry.id] ?? '') !== (inquiry.admin_note ?? '')
+                const replyDirty = (questionInquiryReplyDrafts[inquiry.id] ?? '') !== (inquiry.admin_reply ?? '')
 
                 return (
                   <div key={inquiry.id} className="card">
@@ -2173,6 +2215,37 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                               </div>
                             </div>
                           )}
+
+                          <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">生徒への返信</div>
+                              {inquiry.replied_at && (
+                                <div className="text-[11px] text-slate-500">
+                                  {format(new Date(inquiry.replied_at), 'M/d HH:mm', { locale: ja })}
+                                </div>
+                              )}
+                            </div>
+                            <textarea
+                              value={questionInquiryReplyDrafts[inquiry.id] ?? ''}
+                              onChange={event => {
+                                const value = event.target.value
+                                setQuestionInquiryReplyDrafts(current => ({ ...current, [inquiry.id]: value }))
+                              }}
+                              rows={5}
+                              className="input-surface mt-3 resize-y text-sm"
+                              placeholder="生徒に見せる返信を書けます。空にすると返信なしになります。"
+                            />
+                            <button
+                              onClick={() => {
+                                void handleSaveQuestionInquiryReply(inquiry.id)
+                              }}
+                              className="btn-primary mt-3 w-full text-sm"
+                              disabled={isBusy || !replyDirty}
+                              style={{ opacity: isBusy || !replyDirty ? 0.7 : 1 }}
+                            >
+                              {isBusy ? '保存中...' : '返信を保存'}
+                            </button>
+                          </div>
 
                           <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
                             <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">対応メモ</div>
