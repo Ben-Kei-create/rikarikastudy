@@ -61,3 +61,5 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-13: `QuizPage.tsx` と `ChemistryPracticePage.tsx` の結果画面に XP 内訳カードを追加し、レベルアップ時はレベルバッジが光る `level-up` アニメーションを `globals.css` に追加した。
 - 2026-03-13: `HomePage.tsx` と `MyPage.tsx` に XP / レベル表示を追加。ゲスト XP は `guestStudy` の保存値ではなく、ローカルのセッション合計から再計算するように更新した。`npm run build` 成功。
 - 2026-03-13: Phase 2 として `HomePage.tsx` に「今週のランキング」を追加。今週の `quiz_sessions` を月曜 00:00 JST 以降で集計し、週XP・ニックネーム・レベル付きで表示するようにした。自分の行は色を変えて強調し、圏外でも見えるように末尾へ差し込む。`npm run build` 成功。
+- 2026-03-13: Phase 3 として `HomePage.tsx` の daily challenge 導線を専用カード化。ランキング直下へ移動し、完了時刻表示・完了時の無効化・金色グロー演出を追加した。
+- 2026-03-13: `app/page.tsx` と `QuizPage.tsx` に `quickStartDaily` フラグを追加。daily challenge はホーム直帰の特別モードとして扱い、`studyRewards.ts` では `challenge_date` を含む保存と旧 schema 向け fallback upsert を実装した。`npm run build` 成功。

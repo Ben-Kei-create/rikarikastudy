@@ -101,45 +101,35 @@ export function pickCustomQuizQuestions<T extends QuizQuestionLike>(
   return shuffleArray(filtered).slice(0, count)
 }
 
-function getDailyChallengeWeight(questionId: string, historyMap: Map<string, { attempts: number; wrong: number }>) {
-  const history = historyMap.get(questionId)
-  if (!history) return 4
-  if (history.wrong > 0) return 6 + history.wrong
-  return 2
-}
-
 export function pickDailyChallengeQuestions<T extends QuizQuestionLike>(
   pool: T[],
   history: QuestionHistoryLike[],
   count = 5,
 ) {
   const historyMap = buildQuestionPriorityMap(history)
-  const weighted = shuffleArray(pool)
-    .map(question => ({
-      question,
-      weight: getDailyChallengeWeight(question.id, historyMap),
-      tieBreaker: Math.random(),
-    }))
-    .sort((a, b) => {
-      if (b.weight !== a.weight) return b.weight - a.weight
-      return b.tieBreaker - a.tieBreaker
-    })
-
   const picked: T[] = []
-  const usedFields = new Set<string>()
+  const usedIds = new Set<string>()
 
-  for (const row of weighted) {
-    if (picked.length >= count) break
-    if (usedFields.has(row.question.field) && picked.length < CORE_FIELDS.length) continue
-    picked.push(row.question)
-    usedFields.add(row.question.field)
+  const wrongQuestions = shuffleArray(
+    pool.filter(question => (historyMap.get(question.id)?.wrong ?? 0) > 0),
+  )
+  const unseenQuestions = shuffleArray(
+    pool.filter(question => !historyMap.has(question.id)),
+  )
+  const fallbackQuestions = shuffleArray(pool)
+
+  const pushFrom = (source: T[]) => {
+    for (const question of source) {
+      if (picked.length >= count) break
+      if (usedIds.has(question.id)) continue
+      picked.push(question)
+      usedIds.add(question.id)
+    }
   }
 
-  for (const row of weighted) {
-    if (picked.length >= count) break
-    if (picked.some(question => question.id === row.question.id)) continue
-    picked.push(row.question)
-  }
+  pushFrom(wrongQuestions)
+  pushFrom(unseenQuestions)
+  pushFrom(fallbackQuestions)
 
   return picked.slice(0, count)
 }

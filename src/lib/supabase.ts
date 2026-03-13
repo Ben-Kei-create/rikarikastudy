@@ -457,18 +457,23 @@ export type Database = {
       }
       daily_challenges: {
         Row: {
+          id: string | null
           student_id: number
           date: string
+          challenge_date: string | null
           session_id: string
           completed_at: string
         }
         Insert: {
+          id?: string | null
           student_id: number
           date: string
+          challenge_date?: string | null
           session_id: string
           completed_at?: string
         }
         Update: {
+          challenge_date?: string | null
           session_id?: string
           completed_at?: string
         }

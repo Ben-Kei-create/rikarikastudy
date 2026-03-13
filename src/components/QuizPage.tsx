@@ -130,6 +130,7 @@ export default function QuizPage({
   unit,
   isDrill = false,
   quickStartAll = false,
+  quickStartDaily = false,
   dailyChallenge = false,
   customOptions,
   onBack,
@@ -138,6 +139,7 @@ export default function QuizPage({
   unit: string
   isDrill?: boolean
   quickStartAll?: boolean
+  quickStartDaily?: boolean
   dailyChallenge?: boolean
   customOptions?: CustomQuizOptions
   onBack: () => void
@@ -562,7 +564,7 @@ export default function QuizPage({
 
   if (phase === 'finished') {
     const rate = Math.round((score / questions.length) * 100)
-    const backLabel = isDrill ? 'マイページへ' : quickStartAll || dailyChallenge ? 'ホームへ' : '分野選択へ'
+    const backLabel = isDrill ? 'マイページへ' : quickStartAll || quickStartDaily || dailyChallenge ? 'ホームへ' : '分野選択へ'
     const message = buildFinishMessage(rate, dailyChallenge)
     const levelInfo = rewardSummary ? getLevelInfo(rewardSummary.totalXp) : null
 

@@ -294,6 +294,14 @@ CREATE TABLE IF NOT EXISTS daily_challenges (
   PRIMARY KEY (student_id, date)
 );
 
+ALTER TABLE daily_challenges ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid();
+ALTER TABLE daily_challenges ADD COLUMN IF NOT EXISTS challenge_date DATE;
+UPDATE daily_challenges
+SET challenge_date = date
+WHERE challenge_date IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_challenges_student_challenge_date
+  ON daily_challenges(student_id, challenge_date);
+
 CREATE TABLE IF NOT EXISTS badges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   key TEXT NOT NULL UNIQUE,

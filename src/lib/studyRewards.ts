@@ -60,6 +60,11 @@ export interface StudyRewardSummary {
   periodicCardReward: PeriodicCardReward | null
 }
 
+export interface DailyChallengeStatus {
+  completed: boolean
+  completedAt: string | null
+}
+
 interface TimeAttackLeader {
   studentId: number
   nickname: string
@@ -198,42 +203,73 @@ function resolveNewBadges(badgeKeys: string[]) {
     .filter((badge): badge is BadgeDefinition => badge !== null)
 }
 
-export async function hasCompletedDailyChallenge(studentId: number | null) {
-  if (studentId === null) return false
-  if (isGuestStudentId(studentId)) return hasGuestDailyChallengeCompleted()
+export async function loadDailyChallengeStatus(studentId: number | null): Promise<DailyChallengeStatus> {
+  if (studentId === null) return { completed: false, completedAt: null }
+  if (isGuestStudentId(studentId)) {
+    const store = loadGuestStudyStore()
+    const completed = hasGuestDailyChallengeCompleted()
+    return {
+      completed,
+      completedAt: completed ? store.dailyChallenge.completed_at : null,
+    }
+  }
 
   const todayKey = getJstDateKey()
   const { data, error } = await supabase
     .from('daily_challenges')
-    .select('date')
+    .select('date, challenge_date, completed_at')
     .eq('student_id', studentId)
     .eq('date', todayKey)
     .maybeSingle()
 
   if (error) {
     console.error('[engagement] failed to load daily_challenges', error)
-    return false
+    return { completed: false, completedAt: null }
   }
 
-  return Boolean(data)
+  return {
+    completed: Boolean(data),
+    completedAt: data?.completed_at ?? null,
+  }
+}
+
+export async function hasCompletedDailyChallenge(studentId: number | null) {
+  const status = await loadDailyChallengeStatus(studentId)
+  return status.completed
 }
 
 async function markDailyChallengeCompleted(studentId: number, sessionId: string) {
   const todayKey = getJstDateKey()
+  const completedAt = new Date().toISOString()
   const { error } = await supabase
     .from('daily_challenges')
     .upsert(
       {
         student_id: studentId,
         date: todayKey,
+        challenge_date: todayKey,
         session_id: sessionId,
-        completed_at: new Date().toISOString(),
+        completed_at: completedAt,
       },
       { onConflict: 'student_id,date' },
     )
 
-  if (error) {
-    console.error('[engagement] failed to save daily_challenges', error)
+  if (!error) return
+
+  const fallback = await supabase
+    .from('daily_challenges')
+    .upsert(
+      {
+        student_id: studentId,
+        date: todayKey,
+        session_id: sessionId,
+        completed_at: completedAt,
+      },
+      { onConflict: 'student_id,date' },
+    )
+
+  if (fallback.error) {
+    console.error('[engagement] failed to save daily_challenges', fallback.error)
   }
 }
 

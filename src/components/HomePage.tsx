@@ -7,7 +7,7 @@ import { PeriodicCardRewardModal } from '@/components/PeriodicCard'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
 import { calculateQuizXp, getJstWeekRange, getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
-import { hasCompletedDailyChallenge } from '@/lib/studyRewards'
+import { DailyChallengeStatus, loadDailyChallengeStatus } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
 const FIELDS = [
@@ -50,7 +50,7 @@ export default function HomePage({
   const [scienceNews, setScienceNews] = useState<ScienceNewsResponse>(FALLBACK_SCIENCE_NEWS_RESPONSE)
   const [onlineCount, setOnlineCount] = useState<number | null>(null)
   const [totalXp, setTotalXp] = useState(0)
-  const [dailyCompleted, setDailyCompleted] = useState(false)
+  const [dailyStatus, setDailyStatus] = useState<DailyChallengeStatus>({ completed: false, completedAt: null })
   const [menuExpanded, setMenuExpanded] = useState(false)
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<WeeklyLeaderboardEntry[]>([])
   const [weeklyLeaderboardLoading, setWeeklyLeaderboardLoading] = useState(true)
@@ -63,6 +63,7 @@ export default function HomePage({
   const nextUnlock = getNextLevelUnlock(levelInfo.level)
   const unlockedRewards = getUnlockedLevelRewards(levelInfo.level)
   const currentWeekRange = useMemo(() => getJstWeekRange(), [])
+  const dailyCompleted = dailyStatus.completed
 
   useEffect(() => {
     if (studentId === null) return
@@ -80,11 +81,14 @@ export default function HomePage({
 
         setStats(guestStats)
         setTotalXp(getTotalXpFromSessions(store.sessions))
-        setDailyCompleted(store.dailyChallenge.date === store.dayKey)
+        setDailyStatus({
+          completed: store.dailyChallenge.date === store.dayKey,
+          completedAt: store.dailyChallenge.completed_at,
+        })
         return
       }
 
-      const [sessionsResponse, studentXpResponse, dailyCompletedValue] = await Promise.all([
+      const [sessionsResponse, studentXpResponse, dailyChallengeStatus] = await Promise.all([
         supabase
           .from('quiz_sessions')
           .select('field, total_questions, correct_count')
@@ -94,7 +98,7 @@ export default function HomePage({
           .select('student_xp')
           .eq('id', studentId)
           .single(),
-        hasCompletedDailyChallenge(studentId),
+        loadDailyChallengeStatus(studentId),
       ])
 
       const nextStats: FieldStats = {}
@@ -106,7 +110,7 @@ export default function HomePage({
 
       setStats(nextStats)
       setTotalXp(studentXpResponse.data?.student_xp ?? 0)
-      setDailyCompleted(dailyCompletedValue)
+      setDailyStatus(dailyChallengeStatus)
     }
 
     void load()
@@ -237,10 +241,21 @@ export default function HomePage({
     }),
     [],
   )
+  const timeFormatter = useMemo(
+    () => new Intl.DateTimeFormat('ja-JP', {
+      hour: 'numeric',
+      minute: '2-digit',
+    }),
+    [],
+  )
   const weekRangeLabel = useMemo(() => {
     const endDate = new Date(currentWeekRange.endDate.getTime() - 1)
     return `${newsDateFormatter.format(currentWeekRange.startDate)} 〜 ${newsDateFormatter.format(endDate)}`
   }, [currentWeekRange.endDate, currentWeekRange.startDate, newsDateFormatter])
+  const dailyCompletionLabel = useMemo(() => {
+    if (!dailyStatus.completedAt) return '今日はクリアずみ'
+    return `${timeFormatter.format(new Date(dailyStatus.completedAt))} にクリア`
+  }, [dailyStatus.completedAt, timeFormatter])
 
   return (
     <div className="page-shell page-shell-dashboard">
@@ -380,34 +395,6 @@ export default function HomePage({
             >
               <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">すぐはじめる</div>
               <div className="mt-3 grid gap-3">
-                <button
-                  onClick={onDailyChallenge}
-                  disabled={dailyCompleted}
-                  className="card mobile-action-card text-left transition-all disabled:opacity-70"
-                  style={{
-                    padding: '16px 18px',
-                    borderColor: dailyCompleted ? 'rgba(34, 197, 94, 0.24)' : 'rgba(245, 158, 11, 0.24)',
-                    background: dailyCompleted
-                      ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(15, 23, 42, 0.82))'
-                      : 'linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(15, 23, 42, 0.82))',
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase sm:text-[11px]">
-                        Daily Challenge
-                      </div>
-                      <div className="mt-1 font-display text-lg text-white sm:text-xl">今日のチャレンジ</div>
-                      <div className="mt-1 text-[11px] text-slate-300 sm:text-xs">
-                        5問 / XP×2
-                      </div>
-                    </div>
-                    <div className={`text-xl sm:text-2xl ${dailyCompleted ? 'text-emerald-300' : 'text-amber-200'}`}>
-                      {dailyCompleted ? '✅' : '☀️'}
-                    </div>
-                  </div>
-                </button>
-
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <button
                     onClick={onQuickStartAll}
@@ -574,6 +561,46 @@ export default function HomePage({
           </div>
         )}
       </div>
+
+      <button
+        onClick={onDailyChallenge}
+        disabled={dailyCompleted}
+        className={`card mb-4 w-full text-left transition-all sm:mb-5 ${dailyCompleted ? '' : 'daily-challenge-cta'}`}
+        style={{
+          padding: '18px 20px',
+          borderColor: dailyCompleted ? 'rgba(34, 197, 94, 0.24)' : 'rgba(245, 158, 11, 0.34)',
+          background: dailyCompleted
+            ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(15, 23, 42, 0.82))'
+            : 'linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.08), rgba(15, 23, 42, 0.84))',
+          opacity: dailyCompleted ? 0.84 : 1,
+        }}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className={`text-[11px] font-semibold tracking-[0.18em] uppercase ${dailyCompleted ? 'text-emerald-200' : 'text-amber-200'}`}>
+              本日の5問
+            </div>
+            <div className="mt-2 flex items-center gap-3 flex-wrap">
+              <div className="font-display text-2xl text-white sm:text-[1.8rem]">今日のチャレンジ</div>
+              <span
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{
+                  background: dailyCompleted ? 'rgba(34, 197, 94, 0.14)' : 'rgba(251, 191, 36, 0.14)',
+                  color: dailyCompleted ? '#86efac' : '#fde68a',
+                }}
+              >
+                5問 / XP×2
+              </span>
+            </div>
+            <div className="mt-2 text-sm text-slate-300">
+              {dailyCompleted ? dailyCompletionLabel : '苦手 → まだ解いていない問題 → ランダム の順で出題'}
+            </div>
+          </div>
+          <div className={`text-3xl sm:text-4xl ${dailyCompleted ? 'text-emerald-300' : 'text-amber-200'}`}>
+            {dailyCompleted ? '✅' : '☀️'}
+          </div>
+        </div>
+      </button>
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-slate-100">分野を選ぶ</h2>
