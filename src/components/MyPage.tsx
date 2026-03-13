@@ -4,6 +4,7 @@ import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/theme'
 import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
+import { FIELD_COLORS, FIELD_EMOJI, FIELDS } from '@/lib/constants'
 import { getLevelInfo, getTotalXpFromSessions } from '@/lib/engagement'
 import { format, subDays, startOfDay, eachDayOfInterval, differenceInCalendarDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
@@ -39,16 +40,6 @@ import {
 } from '@/lib/scienceGlossary'
 import { PeriodicCardSurface, PeriodicCardViewer } from '@/components/PeriodicCard'
 
-const FIELD_COLORS: Record<string, string> = {
-  '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
-  '4分野総合': '#38bdf8',
-}
-const FIELD_EMOJI: Record<string, string> = {
-  '生物': '🌿', '化学': '⚗️', '物理': '⚡', '地学': '🌏',
-  '4分野総合': '🔬',
-}
-const FIELDS = ['生物', '化学', '物理', '地学']
-
 interface Session {
   id: string; field: string; unit: string
   total_questions: number; correct_count: number; duration_seconds: number; created_at: string
@@ -56,6 +47,11 @@ interface Session {
 interface AnswerLog {
   question_id: string; is_correct: boolean
   questions: { unit: string; field: string } | null
+}
+interface AnswerLogQueryRow {
+  question_id: string
+  is_correct: boolean
+  questions: { unit: string; field: string } | Array<{ unit: string; field: string }> | null
 }
 type QuestionRow = Database['public']['Tables']['questions']['Row']
 type GlossaryRow = Database['public']['Tables']['science_glossary_entries']['Row']
@@ -130,6 +126,22 @@ function toGlossaryEntry(row: GlossaryRow): ScienceGlossaryEntry {
   }
 }
 
+function normalizeAnswerLogs(rows: AnswerLogQueryRow[] | null | undefined): AnswerLog[] {
+  return (rows || []).map(row => ({
+    question_id: row.question_id,
+    is_correct: row.is_correct,
+    questions: Array.isArray(row.questions) ? row.questions[0] ?? null : row.questions,
+  }))
+}
+
+function getFieldColor(field: string) {
+  return FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
+}
+
+function getFieldEmoji(field: string) {
+  return FIELD_EMOJI[field as keyof typeof FIELD_EMOJI] ?? '🔬'
+}
+
 type Tab = 'overview' | 'history' | 'weak' | 'badges' | 'cards' | 'glossary' | 'questions' | 'account'
 
 export default function MyPage({
@@ -197,7 +209,7 @@ export default function MyPage({
       ])
 
       const sData = sessionsResponse.data
-      const aData = answerLogsResponse.data
+      const aData = answerLogsResponse.data as AnswerLogQueryRow[] | null
       let qData = questionResponse.data
 
       if (questionResponse.error && isMissingColumnError(questionResponse.error, 'created_by_student_id')) {
@@ -208,7 +220,7 @@ export default function MyPage({
       }
 
       setSessions(sData || [])
-      setAnswerLogs((aData as any) || [])
+      setAnswerLogs(normalizeAnswerLogs(aData))
       setMyQuestions((qData as QuestionRow[]) || [])
       setStudentXp(studentResponse.data?.student_xp ?? 0)
       setEarnedBadges(badgeResponse)
@@ -789,12 +801,12 @@ export default function MyPage({
                 {FIELDS.map(f => {
                   const s = byField[f]
                   const rate = s && s.total > 0 ? Math.round((s.correct / s.total) * 100) : null
-                  const color = FIELD_COLORS[f]
+                  const color = getFieldColor(f)
                   return (
                     <div key={f}>
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
-                          <span style={{ fontSize: 16 }}>{FIELD_EMOJI[f]}</span>
+                          <span style={{ fontSize: 16 }}>{getFieldEmoji(f)}</span>
                           <span className="text-sm font-bold" style={{ color }}>{f}</span>
                           {s && <span className="text-slate-600 text-xs">{s.total}問</span>}
                         </div>
@@ -888,12 +900,12 @@ export default function MyPage({
                 </div>
               ) : historySessions.slice(0, 50).map(s => {
               const rate = Math.round((s.correct_count / s.total_questions) * 100)
-              const color = FIELD_COLORS[s.field] ?? '#38bdf8'
+              const color = getFieldColor(s.field)
               const dateStr = format(new Date(s.created_at), 'M月d日(E) HH:mm', { locale: ja })
               return (
                 <div key={s.id} className="subcard p-4">
                   <div className="flex items-start gap-3">
-                    <span style={{ fontSize: 24, flexShrink: 0 }}>{FIELD_EMOJI[s.field] ?? '🔬'}</span>
+                    <span style={{ fontSize: 24, flexShrink: 0 }}>{getFieldEmoji(s.field)}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-sm" style={{ color }}>{s.field}</span>
@@ -932,7 +944,7 @@ export default function MyPage({
             ) : (
               <div className="grid gap-3 lg:grid-cols-2">
                 {weakUnits.map((u, i) => {
-                  const color = FIELD_COLORS[u.field]
+                  const color = getFieldColor(u.field)
                   const medal = i === 0 ? '🚨' : i === 1 ? '⚠️' : i === 2 ? '📌' : '📍'
                   return (
                     <div key={`${u.field}-${u.unit}`} className="subcard p-4"
@@ -1221,7 +1233,7 @@ export default function MyPage({
                     {SCIENCE_GLOSSARY_FIELDS.map(fieldOption => {
                       const active = glossaryField === fieldOption
                       const label = fieldOption === 'all' ? 'すべて' : fieldOption
-                      const color = fieldOption === 'all' ? '#38bdf8' : FIELD_COLORS[fieldOption]
+                      const color = fieldOption === 'all' ? '#38bdf8' : getFieldColor(fieldOption)
                       return (
                         <button
                           key={fieldOption}
@@ -1276,7 +1288,7 @@ export default function MyPage({
                   <div className="space-y-2">
                     {glossaryEntries.map(entry => {
                       const active = selectedGlossaryEntry?.id === entry.id
-                      const color = FIELD_COLORS[entry.field]
+                      const color = getFieldColor(entry.field)
                       return (
                         <button
                           key={entry.id}
@@ -1323,8 +1335,8 @@ export default function MyPage({
                       <span
                         className="rounded-full px-3 py-1.5 text-sm font-semibold"
                         style={{
-                          background: `${FIELD_COLORS[selectedGlossaryEntry.field]}18`,
-                          color: FIELD_COLORS[selectedGlossaryEntry.field],
+                          background: `${getFieldColor(selectedGlossaryEntry.field)}18`,
+                          color: getFieldColor(selectedGlossaryEntry.field),
                         }}
                       >
                         {selectedGlossaryEntry.field}
@@ -1369,9 +1381,9 @@ export default function MyPage({
                               onClick={() => handleGlossaryJump(item)}
                               className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:-translate-y-0.5"
                               style={{
-                                borderColor: `${FIELD_COLORS[linkedEntry.field]}55`,
-                                background: `${FIELD_COLORS[linkedEntry.field]}18`,
-                                color: FIELD_COLORS[linkedEntry.field],
+                                borderColor: `${getFieldColor(linkedEntry.field)}55`,
+                                background: `${getFieldColor(linkedEntry.field)}18`,
+                                color: getFieldColor(linkedEntry.field),
                               }}
                             >
                               {item}
@@ -1521,7 +1533,7 @@ export default function MyPage({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
                             className="px-2 py-1 rounded-full text-xs font-bold"
-                            style={{ background: `${FIELD_COLORS[question.field]}20`, color: FIELD_COLORS[question.field] }}
+                            style={{ background: `${getFieldColor(question.field)}20`, color: getFieldColor(question.field) }}
                           >
                             {question.field}
                           </span>

@@ -183,7 +183,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           pendingLoginCardReward: null,
         })
         return
-      } catch {}
+      } catch (error) {
+        console.warn('[auth] failed to restore session from storage', error)
+      }
 
       sessionStorage.removeItem(STORAGE_KEY)
       if (!cancelled) {

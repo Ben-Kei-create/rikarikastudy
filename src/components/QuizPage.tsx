@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { buildTextBlankPrompt, evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
 import { getBadgeRarityLabel } from '@/lib/badges'
+import { FIELD_COLORS } from '@/lib/constants'
 import { CustomQuizOptions, getCustomQuizSessionLabel, getCustomQuizSummaryParts } from '@/lib/customQuiz'
 import { getLevelInfo } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
@@ -31,13 +32,6 @@ import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import SuccessBurst from '@/components/SuccessBurst'
 
-const FIELD_COLORS: Record<string, string> = {
-  '生物': '#22c55e',
-  '化学': '#f97316',
-  '物理': '#3b82f6',
-  '地学': '#a855f7',
-  'all': '#38bdf8',
-}
 const FAVORITE_STORAGE_KEY = 'rika_favorite_questions_v1'
 
 function readFavoriteQuestionIds(studentId: number | null) {
@@ -62,6 +56,10 @@ function writeFavoriteQuestionIds(studentId: number | null, ids: Set<string>) {
     parsed[String(studentId)] = Array.from(ids)
     window.localStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(parsed))
   } catch {}
+}
+
+function getFieldColor(field: string) {
+  return FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
 }
 
 interface Question {
@@ -148,7 +146,7 @@ export default function QuizPage({
   onBack: () => void
 }) {
   const { studentId, nickname, logout } = useAuth()
-  const color = FIELD_COLORS[field] ?? '#38bdf8'
+  const color = getFieldColor(field)
   const isGuest = isGuestStudentId(studentId)
   const isCustom = Boolean(customOptions)
 

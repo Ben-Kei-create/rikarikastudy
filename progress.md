@@ -72,3 +72,5 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-13: Phase 6 として `UnitSelectPage.tsx` に出題数セレクタを追加。`5 / 10 / 15 / 全問` を選べるようにし、`page.tsx` と `QuizPage.tsx` を通して選択値を渡す構成へ変更した。
 - 2026-03-13: `questionPicker.ts` を更新し、通常クイズとカスタムクイズが `QuizQuestionCount` を受け取れるようにした。`全問` のときは slice せず、そのまま出題する。
 - 2026-03-13: `QuizPage.tsx` の結果画面に「間違えた問題を確認」を追加。誤答一覧から問題を開いて、自分の答え・正解・解説を見られるようにし、そのまま `間違えた問題だけ再チャレンジ` で再出題できるようにした。daily challenge からの再挑戦は通常の再挑戦扱いに切り替え、`npm run build` 成功。
+- 2026-03-13: Phase 7 として `src/lib/constants.ts` を追加し、`FIELD_COLORS / FIELD_EMOJI / FIELDS` を共通化。`HomePage.tsx`、`QuizPage.tsx`、`MyPage.tsx`、`UnitSelectPage.tsx` に加えて管理画面側の色定義も shared constants を使うように整理し、物理の色を `#4da2ff` に統一した。
+- 2026-03-13: `HomePage.tsx`、`auth.tsx`、`guestStudy.ts` の空 catch を `console.warn` 付きに変更。`MyPage.tsx` では `answer_logs` のレスポンス型を `AnswerLogQueryRow` と `normalizeAnswerLogs` で正しく扱うようにし、不要な `any` cast を削除した。`npm run build` 成功。

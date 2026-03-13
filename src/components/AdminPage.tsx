@@ -30,15 +30,9 @@ import {
   QuestionInquiryStatus,
 } from '@/lib/questionInquiry'
 import { buildGlossaryEntryId, ScienceGlossaryField } from '@/lib/scienceGlossary'
+import { FIELD_COLORS, FIELDS } from '@/lib/constants'
 
 const ADMIN_PW = 'rikaadmin2026'
-const FIELDS = ['生物', '化学', '物理', '地学'] as const
-const FIELD_COLORS: Record<string, string> = {
-  '生物': '#22c55e',
-  '化学': '#f97316',
-  '物理': '#3b82f6',
-  '地学': '#a855f7',
-}
 const BULK_INSERT_CHUNK_SIZE = 100
 const BULK_JSON_EXAMPLE = `[
   {
@@ -152,6 +146,10 @@ const BADGE_RARITY_STYLES = {
     textColor: '#ddd6fe',
   },
 } as const
+
+function getFieldColor(field: string) {
+  return FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#64748b'
+}
 
 function buildBinaryChoices(choices: string[] | null, answer: string, seed: string) {
   if (!choices || choices.length === 0) return null
@@ -1859,7 +1857,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                               <span className="text-slate-500 text-xs">ID {inquiry.student_id}</span>
                               <span
                                 className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                                style={{ background: `${FIELD_COLORS[inquiry.field] ?? '#64748b'}20`, color: FIELD_COLORS[inquiry.field] ?? '#cbd5e1' }}
+                                style={{ background: `${getFieldColor(inquiry.field)}20`, color: getFieldColor(inquiry.field) }}
                               >
                                 {inquiry.field}
                               </span>
@@ -1920,7 +1918,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                           <span className="text-slate-500 text-xs">ID {log.student_id}</span>
                           <span
                             className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                            style={{ background: `${FIELD_COLORS[log.field] ?? '#64748b'}20`, color: FIELD_COLORS[log.field] ?? '#cbd5e1' }}
+                            style={{ background: `${getFieldColor(log.field)}20`, color: getFieldColor(log.field) }}
                           >
                             {log.field}
                           </span>
@@ -2057,7 +2055,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                             <div className="text-xs text-slate-500 mb-1">{field}</div>
                             {fieldRate !== null ? (
                               <>
-                                <div className="text-sm font-bold" style={{ color: FIELD_COLORS[field] }}>{fieldRate}%</div>
+                                <div className="text-sm font-bold" style={{ color: getFieldColor(field) }}>{fieldRate}%</div>
                                 <div className="text-xs text-slate-600">{current!.total}問</div>
                               </>
                             ) : (
@@ -2131,7 +2129,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                             <span className="text-slate-500 text-xs">ID {inquiry.student_id}</span>
                             <span
                               className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                              style={{ background: `${FIELD_COLORS[inquiry.field] ?? '#64748b'}20`, color: FIELD_COLORS[inquiry.field] ?? '#cbd5e1' }}
+                              style={{ background: `${getFieldColor(inquiry.field)}20`, color: getFieldColor(inquiry.field) }}
                             >
                               {inquiry.field}
                             </span>
@@ -2338,7 +2336,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       <div className="flex flex-wrap items-center gap-2">
                         <span
                           className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
-                          style={{ background: `${FIELD_COLORS[question.field]}20`, color: FIELD_COLORS[question.field] }}
+                          style={{ background: `${getFieldColor(question.field)}20`, color: getFieldColor(question.field) }}
                         >
                           {question.field}
                         </span>

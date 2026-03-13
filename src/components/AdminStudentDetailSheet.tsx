@@ -1,27 +1,14 @@
 'use client'
 
 import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
+import { FIELD_COLORS, FIELD_EMOJI, FIELDS } from '@/lib/constants'
 import { getLevelInfo } from '@/lib/engagement'
 import { Database } from '@/lib/supabase'
 import { differenceInCalendarDays, eachDayOfInterval, format, startOfDay, subDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { useMemo } from 'react'
 
-const FIELD_COLORS: Record<string, string> = {
-  '生物': '#22c55e',
-  '化学': '#f97316',
-  '物理': '#3b82f6',
-  '地学': '#a855f7',
-  '4分野総合': '#38bdf8',
-}
-
-const FIELD_EMOJI: Record<string, string> = {
-  '生物': '🌿',
-  '化学': '⚗️',
-  '物理': '⚡',
-  '地学': '🌏',
-  '4分野総合': '🔬',
-}
+const DETAIL_FIELDS = [...FIELDS, '4分野総合'] as const
 
 type QuizSessionRow = Database['public']['Tables']['quiz_sessions']['Row']
 type StudentBadgeRow = Database['public']['Tables']['student_badges']['Row']
@@ -56,6 +43,14 @@ function formatStudyTime(totalSeconds: number) {
   if (hours > 0) return `${hours}時間${minutes}分`
   if (minutes > 0) return `${minutes}分`
   return `${seconds}秒`
+}
+
+function getFieldColor(field: string) {
+  return FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
+}
+
+function getFieldEmoji(field: string) {
+  return FIELD_EMOJI[field as keyof typeof FIELD_EMOJI] ?? '🔬'
 }
 
 export default function AdminStudentDetailSheet({
@@ -277,10 +272,11 @@ export default function AdminStudentDetailSheet({
                 <div className="card">
                   <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">分野別正答率</h3>
                   <div className="space-y-3">
-                    {Object.entries(FIELD_EMOJI).map(([field, emoji]) => {
+                    {DETAIL_FIELDS.map(field => {
                       const current = byField[field]
                       const rate = current && current.total > 0 ? Math.round((current.correct / current.total) * 100) : null
-                      const color = FIELD_COLORS[field] ?? '#38bdf8'
+                      const color = getFieldColor(field)
+                      const emoji = getFieldEmoji(field)
                       return (
                         <div key={field}>
                           <div className="mb-1.5 flex items-center justify-between">
@@ -380,11 +376,11 @@ export default function AdminStudentDetailSheet({
                       </div>
                     ) : sessions.slice(0, 20).map(session => {
                       const rate = Math.round((session.correct_count / session.total_questions) * 100)
-                      const color = FIELD_COLORS[session.field] ?? '#38bdf8'
+                      const color = getFieldColor(session.field)
                       return (
                         <div key={session.id} className="subcard p-4">
                           <div className="flex items-start gap-3">
-                            <span style={{ fontSize: 24, flexShrink: 0 }}>{FIELD_EMOJI[session.field] ?? '🔬'}</span>
+                            <span style={{ fontSize: 24, flexShrink: 0 }}>{getFieldEmoji(session.field)}</span>
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-sm font-bold" style={{ color }}>{session.field}</span>
@@ -419,7 +415,7 @@ export default function AdminStudentDetailSheet({
                           まだ弱点分析に十分な記録がありません。
                         </div>
                       ) : weakUnits.map(unit => {
-                        const color = FIELD_COLORS[unit.field] ?? '#38bdf8'
+                        const color = getFieldColor(unit.field)
                         return (
                           <div key={`${unit.field}-${unit.unit}`} className="rounded-2xl border p-4" style={{ borderColor: `${color}26`, background: `${color}10` }}>
                             <div className="flex items-center justify-between gap-3">

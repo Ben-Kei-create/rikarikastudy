@@ -6,16 +6,17 @@ import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { PeriodicCardRewardModal } from '@/components/PeriodicCard'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
+import { FIELD_COLORS, FIELD_EMOJI, FIELDS as CORE_FIELDS } from '@/lib/constants'
 import { calculateQuizXp, getJstWeekRange, getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
 import { DailyChallengeStatus, loadDailyChallengeStatus, loadTimeAttackBest } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
-const FIELDS = [
-  { name: '生物', emoji: '🌿', color: '#22c55e', desc: '細胞・遺伝・消化' },
-  { name: '化学', emoji: '⚗️', color: '#f97316', desc: '原子・イオン・化学変化' },
-  { name: '物理', emoji: '⚡', color: '#4da2ff', desc: '力・電気・エネルギー' },
-  { name: '地学', emoji: '🌏', color: '#8b7cff', desc: '地震・天気・宇宙' },
-]
+const FIELD_DESCRIPTIONS: Record<(typeof CORE_FIELDS)[number], string> = {
+  '生物': '細胞・遺伝・消化',
+  '化学': '原子・イオン・化学変化',
+  '物理': '力・電気・エネルギー',
+  '地学': '地震・天気・宇宙',
+}
 
 interface FieldStats {
   [field: string]: { total: number; correct: number }
@@ -237,7 +238,9 @@ export default function HomePage({
         if (!response.ok) return
         const payload = await response.json() as ScienceNewsResponse
         if (active && payload.item) setScienceNews(payload)
-      } catch {}
+      } catch (error) {
+        console.warn('[home] failed to load science news', error)
+      }
     }
 
     void loadNews()
@@ -254,7 +257,9 @@ export default function HomePage({
       try {
         const count = await countActiveStudents()
         if (active) setOnlineCount(count)
-      } catch {}
+      } catch (error) {
+        console.warn('[home] failed to load online count', error)
+      }
     }
 
     void loadOnlineCount()
@@ -668,14 +673,16 @@ export default function HomePage({
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {FIELDS.map((field, index) => {
-          const stat = stats[field.name]
+        {CORE_FIELDS.map((fieldName, index) => {
+          const stat = stats[fieldName]
           const rate = stat && stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : null
+          const color = FIELD_COLORS[fieldName]
+          const emoji = FIELD_EMOJI[fieldName]
 
           return (
             <button
-              key={field.name}
-              onClick={() => onSelectField(field.name)}
+              key={fieldName}
+              onClick={() => onSelectField(fieldName)}
               className="card mobile-mini-card anim-fade-up text-left"
               style={{
                 animationDelay: `${index * 0.08}s`,
@@ -683,18 +690,18 @@ export default function HomePage({
                 transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                 position: 'relative',
                 overflow: 'hidden',
-                borderColor: `${field.color}30`,
+                borderColor: `${color}30`,
                 padding: '18px 18px 16px',
               }}
               onMouseEnter={event => {
                 const element = event.currentTarget
-                element.style.borderColor = `${field.color}70`
+                element.style.borderColor = `${color}70`
                 element.style.transform = 'translateY(-2px)'
-                element.style.boxShadow = `0 20px 34px ${field.color}20`
+                element.style.boxShadow = `0 20px 34px ${color}20`
               }}
               onMouseLeave={event => {
                 const element = event.currentTarget
-                element.style.borderColor = `${field.color}30`
+                element.style.borderColor = `${color}30`
                 element.style.transform = ''
                 element.style.boxShadow = ''
               }}
@@ -706,31 +713,31 @@ export default function HomePage({
                   top: -30,
                   width: 120,
                   height: 120,
-                  background: `radial-gradient(circle, ${field.color}18, transparent 66%)`,
+                  background: `radial-gradient(circle, ${color}18, transparent 66%)`,
                   borderRadius: '50%',
                 }}
               />
               <div className="relative z-[1] flex items-start gap-2.5 sm:items-center sm:gap-3">
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-[14px] text-lg sm:h-12 sm:w-12 sm:rounded-[16px] sm:text-xl"
-                  style={{ background: `${field.color}18`, border: `1px solid ${field.color}26` }}
+                  style={{ background: `${color}18`, border: `1px solid ${color}26` }}
                 >
-                  {field.emoji}
+                  {emoji}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <div className="font-display text-[1.15rem] sm:text-[1.35rem]" style={{ color: field.color }}>{field.name}</div>
+                    <div className="font-display text-[1.15rem] sm:text-[1.35rem]" style={{ color }}>{fieldName}</div>
                     <span
                       className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]"
                       style={{
-                        background: rate === null ? `${field.color}16` : 'rgba(148, 163, 184, 0.12)',
-                        color: rate === null ? field.color : 'var(--text-muted)',
+                        background: rate === null ? `${color}16` : 'rgba(148, 163, 184, 0.12)',
+                        color: rate === null ? color : 'var(--text-muted)',
                       }}
                     >
                       {rate === null ? 'はじめる' : `${stat?.total}問`}
                     </span>
                   </div>
-                  <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">{field.desc}</div>
+                  <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">{FIELD_DESCRIPTIONS[fieldName]}</div>
                 </div>
                 {rate !== null && (
                   <div className="text-right">
@@ -747,7 +754,7 @@ export default function HomePage({
                     style={{
                       width: `${rate}%`,
                       height: '100%',
-                      background: `linear-gradient(90deg, ${field.color}, ${field.color}80)`,
+                      background: `linear-gradient(90deg, ${color}, ${color}80)`,
                       borderRadius: 999,
                       transition: 'width 1s ease',
                     }}

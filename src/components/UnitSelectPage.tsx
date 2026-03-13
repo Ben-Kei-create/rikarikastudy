@@ -30,20 +30,8 @@ import {
   markColumnMissing,
   markColumnSupported,
 } from '@/lib/schemaCompat'
+import { FIELD_COLORS, FIELD_EMOJI } from '@/lib/constants'
 import { QuizQuestionCount } from '@/lib/questionPicker'
-
-const FIELD_COLORS: Record<string, string> = {
-  '生物': '#22c55e',
-  '化学': '#f97316',
-  '物理': '#4da2ff',
-  '地学': '#8b7cff',
-}
-const FIELD_EMOJI: Record<string, string> = {
-  '生物': '🌿',
-  '化学': '⚗️',
-  '物理': '⚡',
-  '地学': '🌏',
-}
 
 interface UnitStat {
   unit: string
@@ -81,7 +69,7 @@ export default function UnitSelectPage({
   const [showCustomPanel, setShowCustomPanel] = useState(false)
   const [customOptions, setCustomOptions] = useState<CustomQuizOptions>(DEFAULT_CUSTOM_QUIZ_OPTIONS)
   const [questionCount, setQuestionCount] = useState<QuizQuestionCount>(10)
-  const color = FIELD_COLORS[field]
+  const color = FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
   const totalQuestionCount = units.reduce((sum, item) => sum + item.questionCount, 0)
   const isGuest = isGuestStudentId(studentId)
 
@@ -189,7 +177,7 @@ export default function UnitSelectPage({
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] text-[1.45rem] sm:h-14 sm:w-14 sm:rounded-[20px] sm:text-[1.7rem]"
               style={{ background: `${color}18`, border: `1px solid ${color}26` }}
             >
-              {FIELD_EMOJI[field]}
+              {FIELD_EMOJI[field as keyof typeof FIELD_EMOJI] ?? '🔬'}
             </div>
             <div className="min-w-0">
               <div className="mb-1 text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
