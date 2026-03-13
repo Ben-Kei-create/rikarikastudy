@@ -21,6 +21,7 @@ import { ScienceWorkbenchMode, SCIENCE_WORKBENCH_MODE_META } from '@/lib/science
 import ScienceChatPage from '@/components/ScienceChatPage'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { CustomQuizOptions } from '@/lib/customQuiz'
+import { QuizQuestionCount } from '@/lib/questionPicker'
 
 type Screen =
   | 'home'
@@ -28,7 +29,7 @@ type Screen =
   | 'time-attack'
   | 'online-lab'
   | { type: 'unit'; field: string }
-  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; customOptions?: CustomQuizOptions }
+  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; customOptions?: CustomQuizOptions; questionCount?: QuizQuestionCount }
   | { type: 'biology-practice'; mode: BiologyPracticeMode }
   | { type: 'chemistry-practice'; mode: ChemistryPracticeMode }
   | { type: 'earth-practice'; mode: EarthSciencePracticeMode }
@@ -73,8 +74,8 @@ function App() {
     content = (
       <UnitSelectPage
         field={screen.field}
-        onSelect={unit => setScreen({ type: 'quiz', field: screen.field, unit })}
-        onStartCustomQuiz={options => setScreen({ type: 'quiz', field: screen.field, unit: options.unit, customOptions: options })}
+        onSelect={(unit, questionCount) => setScreen({ type: 'quiz', field: screen.field, unit, questionCount })}
+        onStartCustomQuiz={(options, questionCount) => setScreen({ type: 'quiz', field: screen.field, unit: options.unit, customOptions: options, questionCount })}
         onSelectBiologyMode={mode => setScreen({ type: 'biology-practice', mode })}
         onSelectSpecialMode={mode => setScreen({ type: 'chemistry-practice', mode })}
         onSelectEarthMode={mode => setScreen({ type: 'earth-practice', mode })}
@@ -128,6 +129,7 @@ function App() {
         quickStartDaily={screen.quickStartDaily}
         dailyChallenge={screen.dailyChallenge}
         customOptions={screen.customOptions}
+        questionCount={screen.questionCount}
         onBack={() => setScreen(
           screen.isDrill
             ? 'mypage'

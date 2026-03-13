@@ -3,6 +3,7 @@
 import { CustomQuizOptions } from '@/lib/customQuiz'
 
 const CORE_FIELDS = ['生物', '化学', '物理', '地学']
+export type QuizQuestionCount = 5 | 10 | 15 | 'all'
 
 export interface QuizQuestionLike {
   id: string
@@ -27,12 +28,19 @@ export function shuffleArray<T>(items: T[]) {
   return shuffled
 }
 
-export function pickStandardQuizQuestions<T extends QuizQuestionLike>(pool: T[], field: string) {
+export function pickStandardQuizQuestions<T extends QuizQuestionLike>(
+  pool: T[],
+  field: string,
+  count: QuizQuestionCount = 10,
+) {
   const shuffled = shuffleArray(pool)
+  const targetCount = count === 'all' ? shuffled.length : count
 
   if (field !== 'all') {
-    return shuffled.slice(0, 10)
+    return shuffled.slice(0, targetCount)
   }
+
+  if (count === 'all') return shuffled
 
   const picked: T[] = []
   const usedIds = new Set<string>()
@@ -48,10 +56,10 @@ export function pickStandardQuizQuestions<T extends QuizQuestionLike>(pool: T[],
     if (usedIds.has(question.id)) continue
     picked.push(question)
     usedIds.add(question.id)
-    if (picked.length >= 10) break
+    if (picked.length >= targetCount) break
   }
 
-  return picked.slice(0, 10)
+  return picked.slice(0, targetCount)
 }
 
 export function buildQuestionPriorityMap(history: QuestionHistoryLike[]) {
@@ -87,7 +95,7 @@ export function pickCustomQuizQuestions<T extends QuizQuestionLike>(
   pool: T[],
   history: QuestionHistoryLike[],
   options: CustomQuizOptions,
-  count = 10,
+  count: QuizQuestionCount = 10,
 ) {
   const historyMap = buildQuestionPriorityMap(history)
   const filtered = pool.filter(question => {
@@ -98,7 +106,8 @@ export function pickCustomQuizQuestions<T extends QuizQuestionLike>(
     return matchesCustomHistoryFilter(question.id, historyMap, options.historyFilter)
   })
 
-  return shuffleArray(filtered).slice(0, count)
+  const shuffled = shuffleArray(filtered)
+  return count === 'all' ? shuffled : shuffled.slice(0, count)
 }
 
 export function pickDailyChallengeQuestions<T extends QuizQuestionLike>(

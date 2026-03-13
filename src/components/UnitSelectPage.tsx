@@ -30,6 +30,7 @@ import {
   markColumnMissing,
   markColumnSupported,
 } from '@/lib/schemaCompat'
+import { QuizQuestionCount } from '@/lib/questionPicker'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e',
@@ -51,6 +52,8 @@ interface UnitStat {
   questionCount: number
 }
 
+const QUESTION_COUNT_OPTIONS: QuizQuestionCount[] = [5, 10, 15, 'all']
+
 export default function UnitSelectPage({
   field,
   onSelect,
@@ -63,8 +66,8 @@ export default function UnitSelectPage({
   onBack,
 }: {
   field: string
-  onSelect: (unit: string) => void
-  onStartCustomQuiz: (options: CustomQuizOptions) => void
+  onSelect: (unit: string, questionCount: QuizQuestionCount) => void
+  onStartCustomQuiz: (options: CustomQuizOptions, questionCount: QuizQuestionCount) => void
   onSelectBiologyMode: (mode: BiologyPracticeMode) => void
   onSelectSpecialMode: (mode: ChemistryPracticeMode) => void
   onSelectEarthMode: (mode: EarthSciencePracticeMode) => void
@@ -77,6 +80,7 @@ export default function UnitSelectPage({
   const [loading, setLoading] = useState(true)
   const [showCustomPanel, setShowCustomPanel] = useState(false)
   const [customOptions, setCustomOptions] = useState<CustomQuizOptions>(DEFAULT_CUSTOM_QUIZ_OPTIONS)
+  const [questionCount, setQuestionCount] = useState<QuizQuestionCount>(10)
   const color = FIELD_COLORS[field]
   const totalQuestionCount = units.reduce((sum, item) => sum + item.questionCount, 0)
   const isGuest = isGuestStudentId(studentId)
@@ -594,7 +598,7 @@ export default function UnitSelectPage({
       )}
 
       <button
-        onClick={() => onSelect('all')}
+        onClick={() => onSelect('all', questionCount)}
         className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
         style={{
           borderColor: `${color}40`,
@@ -624,6 +628,30 @@ export default function UnitSelectPage({
           </div>
         </div>
       </button>
+
+      <div className="card mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題数</div>
+            <div className="mt-1 text-sm text-slate-300">5 / 10 / 15 / 全問</div>
+          </div>
+          <div className="segment-bar sm:w-auto">
+            {QUESTION_COUNT_OPTIONS.map(option => {
+              const active = questionCount === option
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setQuestionCount(option)}
+                  className={`segment-button ${active ? 'is-active' : ''}`}
+                >
+                  {option === 'all' ? '全問' : option}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
 
       <div
         className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
@@ -746,7 +774,7 @@ export default function UnitSelectPage({
                 リセット
               </button>
               <button
-                onClick={() => onStartCustomQuiz(customOptions)}
+                onClick={() => onStartCustomQuiz(customOptions, questionCount)}
                 className="btn-primary"
               >
                 この条件で開始
@@ -765,7 +793,7 @@ export default function UnitSelectPage({
             return (
               <button
                 key={unitItem.unit}
-                onClick={() => onSelect(unitItem.unit)}
+                onClick={() => onSelect(unitItem.unit, questionCount)}
                 className="card mobile-mini-card anim-fade-up text-left h-full"
                 style={{
                   animationDelay: `${(index + 1) * 0.07}s`,
