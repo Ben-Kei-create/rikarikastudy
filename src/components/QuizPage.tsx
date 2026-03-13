@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { buildTextBlankPrompt, evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
@@ -9,7 +9,7 @@ import { getLevelInfo } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
-import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions } from '@/lib/questionPicker'
+import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions, QuizQuestionCount } from '@/lib/questionPicker'
 import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
 import { calculateQuizXp as calculateQuizXpBreakdown } from '@/lib/xp'
 import {
@@ -134,6 +134,7 @@ export default function QuizPage({
   quickStartDaily = false,
   dailyChallenge = false,
   customOptions,
+  questionCount = 10,
   onBack,
 }: {
   field: string
@@ -143,6 +144,7 @@ export default function QuizPage({
   quickStartDaily?: boolean
   dailyChallenge?: boolean
   customOptions?: CustomQuizOptions
+  questionCount?: QuizQuestionCount
   onBack: () => void
 }) {
   const { studentId, nickname, logout } = useAuth()
@@ -163,6 +165,9 @@ export default function QuizPage({
   const [comboStreak, setComboStreak] = useState(0)
   const [bestCombo, setBestCombo] = useState(0)
   const [celebration, setCelebration] = useState<SuccessCelebrationContent | null>(null)
+  const [retryWrongOnly, setRetryWrongOnly] = useState(false)
+  const [reviewExpanded, setReviewExpanded] = useState(false)
+  const [selectedReviewQuestionId, setSelectedReviewQuestionId] = useState<string | null>(null)
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
   const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
   const [inquiryOpen, setInquiryOpen] = useState(false)
@@ -173,6 +178,7 @@ export default function QuizPage({
   const [recentInquiries, setRecentInquiries] = useState<QuestionInquiryRow[]>([])
   const [inquiryHistoryLoading, setInquiryHistoryLoading] = useState(false)
   const startedAtRef = useRef<number | null>(null)
+  const activeDailyChallenge = dailyChallenge && !retryWrongOnly
 
   useEffect(() => {
     let active = true
@@ -190,6 +196,9 @@ export default function QuizPage({
       setComboStreak(0)
       setBestCombo(0)
       setCelebration(null)
+      setRetryWrongOnly(false)
+      setReviewExpanded(false)
+      setSelectedReviewQuestionId(null)
       setRewardSummary(null)
       setDailyLocked(false)
       startedAtRef.current = null
@@ -271,9 +280,9 @@ export default function QuizPage({
         setQuestions(pickDailyChallengeQuestions(pool, history, 5))
       } else if (customOptions) {
         if (!active) return
-        setQuestions(pickCustomQuizQuestions(pool, history, customOptions, 10))
+        setQuestions(pickCustomQuizQuestions(pool, history, customOptions, questionCount))
       } else {
-        setQuestions(pickStandardQuizQuestions(pool, field))
+        setQuestions(pickStandardQuizQuestions(pool, field, questionCount))
       }
 
       startedAtRef.current = Date.now()
@@ -284,7 +293,7 @@ export default function QuizPage({
     return () => {
       active = false
     }
-  }, [customOptions, dailyChallenge, field, isCustom, isGuest, studentId, unit])
+  }, [customOptions, dailyChallenge, field, isCustom, isGuest, questionCount, studentId, unit])
 
   useEffect(() => {
     setFavoriteIds(readFavoriteQuestionIds(studentId))
@@ -345,6 +354,39 @@ export default function QuizPage({
   const textBlankPrompt = q?.type === 'text'
     ? buildTextBlankPrompt(q.answer, q.accept_answers, q.keywords)
     : null
+  const wrongReviewItems = useMemo(() => {
+    return questions
+      .map((question, index) => {
+        const log = answerLogs[index]
+        if (!log || log.correct) return null
+        const prompt = question.type === 'text'
+          ? buildTextBlankPrompt(question.answer, question.accept_answers, question.keywords)
+          : null
+        return {
+          id: question.id,
+          index,
+          question,
+          studentAnswer: log.answer,
+          correctAnswer: prompt?.target ?? question.answer,
+        }
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null)
+  }, [answerLogs, questions])
+  const selectedReviewItem = useMemo(
+    () => wrongReviewItems.find(item => item.id === selectedReviewQuestionId) ?? wrongReviewItems[0] ?? null,
+    [selectedReviewQuestionId, wrongReviewItems],
+  )
+
+  useEffect(() => {
+    if (!reviewExpanded) return
+    if (wrongReviewItems.length === 0) {
+      if (selectedReviewQuestionId !== null) setSelectedReviewQuestionId(null)
+      return
+    }
+    if (!selectedReviewQuestionId || !wrongReviewItems.some(item => item.id === selectedReviewQuestionId)) {
+      setSelectedReviewQuestionId(wrongReviewItems[0].id)
+    }
+  }, [reviewExpanded, selectedReviewQuestionId, wrongReviewItems])
 
   const handleChoice = (choice: string) => {
     if (phase !== 'answering' || !q) return
@@ -477,16 +519,18 @@ export default function QuizPage({
 
       const reward = await recordStudySession({
         studentId,
-        field: getSessionFieldLabel(field, quickStartAll, dailyChallenge),
-        unit: customOptions
-          ? getCustomQuizSessionLabel(customOptions)
-          : getSessionUnitLabel(unit, quickStartAll, dailyChallenge),
+        field: retryWrongOnly ? field : getSessionFieldLabel(field, quickStartAll, activeDailyChallenge),
+        unit: retryWrongOnly
+          ? 'まちがえた問題の再挑戦'
+          : customOptions
+            ? getCustomQuizSessionLabel(customOptions)
+            : getSessionUnitLabel(unit, quickStartAll, activeDailyChallenge),
         totalQuestions: questions.length,
         correctCount: score,
         durationSeconds,
         answerLogs,
-        sessionMode: buildSessionMode({ isDrill, quickStartAll, dailyChallenge, isCustom }),
-        xpMultiplier: dailyChallenge ? 2 : 1,
+        sessionMode: retryWrongOnly ? 'drill' : buildSessionMode({ isDrill, quickStartAll, dailyChallenge: activeDailyChallenge, isCustom }),
+        xpMultiplier: activeDailyChallenge ? 2 : 1,
         xpBreakdown,
       })
 
@@ -515,6 +559,29 @@ export default function QuizPage({
     setComboStreak(0)
     setBestCombo(0)
     setCelebration(null)
+    setRetryWrongOnly(false)
+    setReviewExpanded(false)
+    setSelectedReviewQuestionId(null)
+    setRewardSummary(null)
+  }
+
+  const retryWrongQuestions = () => {
+    if (wrongReviewItems.length === 0) return
+    startedAtRef.current = Date.now()
+    setQuestions(wrongReviewItems.map(item => item.question))
+    setCurrent(0)
+    setPhase('answering')
+    setScore(0)
+    setSelected(null)
+    setTextInput('')
+    setAnswerResult(null)
+    setAnswerLogs([])
+    setComboStreak(0)
+    setBestCombo(0)
+    setCelebration(null)
+    setRetryWrongOnly(true)
+    setReviewExpanded(false)
+    setSelectedReviewQuestionId(null)
     setRewardSummary(null)
   }
 
@@ -566,7 +633,7 @@ export default function QuizPage({
   if (phase === 'finished') {
     const rate = Math.round((score / questions.length) * 100)
     const backLabel = isDrill ? 'マイページへ' : quickStartAll || quickStartDaily || dailyChallenge ? 'ホームへ' : '分野選択へ'
-    const message = buildFinishMessage(rate, dailyChallenge)
+    const message = buildFinishMessage(rate, activeDailyChallenge)
     const levelInfo = rewardSummary ? getLevelInfo(rewardSummary.totalXp) : null
 
     return (
@@ -589,7 +656,7 @@ export default function QuizPage({
             </div>
           )}
 
-          <div className="text-5xl mb-4">{dailyChallenge ? '☀️' : rate >= 70 ? '🏆' : '📚'}</div>
+          <div className="text-5xl mb-4">{activeDailyChallenge ? '☀️' : retryWrongOnly ? '🔁' : rate >= 70 ? '🏆' : '📚'}</div>
           <div className="font-display text-4xl mb-2" style={{ color }}>
             {score} / {questions.length}
           </div>
@@ -652,7 +719,7 @@ export default function QuizPage({
                   )}
                 </div>
                 <div className="mt-3 text-xs text-slate-500">
-                  {dailyChallenge ? '今日のチャレンジボーナス込み' : '今回の学習で加算'}
+                  {activeDailyChallenge ? '今日のチャレンジボーナス込み' : retryWrongOnly ? '再挑戦ぶんの結果' : '今回の学習で加算'}
                 </div>
               </div>
               {levelInfo && (
@@ -731,8 +798,74 @@ export default function QuizPage({
             </div>
           )}
 
-          <div className={`grid gap-3 ${dailyChallenge ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
-            {!dailyChallenge && (
+          {wrongReviewItems.length > 0 && (
+            <div className="mb-6 rounded-[26px] border border-white/10 bg-slate-950/28 p-4 text-left sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-sm font-semibold text-white">間違えた問題を確認</div>
+                  <div className="mt-1 text-xs text-slate-400">{wrongReviewItems.length}問</div>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button onClick={() => setReviewExpanded(current => !current)} className="btn-secondary text-sm !py-2.5">
+                    {reviewExpanded ? '閉じる' : '開く'}
+                  </button>
+                  <button onClick={retryWrongQuestions} className="btn-primary text-sm !py-2.5">
+                    間違えた問題だけ再チャレンジ
+                  </button>
+                </div>
+              </div>
+
+              {reviewExpanded && (
+                <div className="mt-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+                  <div className="space-y-2">
+                    {wrongReviewItems.map(item => (
+                      <button
+                        key={`review-${item.id}`}
+                        onClick={() => setSelectedReviewQuestionId(item.id)}
+                        className="w-full rounded-[18px] border px-3.5 py-3 text-left transition-all"
+                        style={{
+                          borderColor: selectedReviewItem?.id === item.id ? 'rgba(56, 189, 248, 0.3)' : 'rgba(148, 163, 184, 0.14)',
+                          background: selectedReviewItem?.id === item.id ? 'rgba(56, 189, 248, 0.08)' : 'rgba(15, 23, 42, 0.48)',
+                        }}
+                      >
+                        <div className="text-xs text-slate-500">#{item.index + 1}</div>
+                        <div className="mt-1 line-clamp-2 text-sm font-semibold text-white">{item.question.question}</div>
+                        <div className="mt-2 text-xs text-slate-400">あなた: {item.studentAnswer || '未入力'}</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {selectedReviewItem && (
+                    <div className="rounded-[20px] border border-white/10 bg-slate-950/36 p-4">
+                      <div className="text-xs text-slate-500">問題 {selectedReviewItem.index + 1}</div>
+                      <div className="mt-2 text-base font-semibold leading-7 text-white">
+                        {selectedReviewItem.question.question}
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-[18px] border border-red-400/18 bg-red-500/8 px-3.5 py-3">
+                          <div className="text-xs font-semibold tracking-[0.16em] text-red-200">あなたの答え</div>
+                          <div className="mt-2 text-sm leading-6 text-slate-100">{selectedReviewItem.studentAnswer || '未入力'}</div>
+                        </div>
+                        <div className="rounded-[18px] border border-emerald-400/18 bg-emerald-500/8 px-3.5 py-3">
+                          <div className="text-xs font-semibold tracking-[0.16em] text-emerald-200">正解</div>
+                          <div className="mt-2 text-sm leading-6 text-slate-100">{selectedReviewItem.correctAnswer}</div>
+                        </div>
+                      </div>
+                      {selectedReviewItem.question.explanation && (
+                        <div className="mt-4 rounded-[18px] border border-white/8 bg-slate-950/45 px-3.5 py-3">
+                          <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">解説</div>
+                          <div className="mt-2 text-sm leading-7 text-slate-200">{selectedReviewItem.question.explanation}</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className={`grid gap-3 ${activeDailyChallenge ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+            {!activeDailyChallenge && (
               <button onClick={restart} className="btn-secondary !px-0 !py-3">
                 もう一度
               </button>
@@ -764,8 +897,10 @@ export default function QuizPage({
           <div className="flex-1 min-w-0">
             <div className="flex justify-between text-xs text-slate-400 mb-2">
               <span>
-                {dailyChallenge
+                {activeDailyChallenge
                   ? '今日のチャレンジ'
+                  : retryWrongOnly
+                    ? 'まちがえた問題の再挑戦'
                   : isDrill
                     ? `復習: ${field} / ${unit}`
                     : customOptions
@@ -783,7 +918,7 @@ export default function QuizPage({
                 style={{
                   width: `${progress}%`,
                   height: '100%',
-                  background: dailyChallenge
+                  background: activeDailyChallenge
                     ? 'linear-gradient(90deg, #f59e0b, #f97316)'
                     : `linear-gradient(90deg, ${color}, ${color}80)`,
                   borderRadius: 999,
@@ -793,7 +928,7 @@ export default function QuizPage({
             </div>
           </div>
           <div className="flex items-center justify-between gap-3 sm:justify-end">
-            <div className="text-sm font-semibold" style={{ color: dailyChallenge ? '#f59e0b' : color }}>
+            <div className="text-sm font-semibold" style={{ color: activeDailyChallenge ? '#f59e0b' : retryWrongOnly ? '#38bdf8' : color }}>
               {score}正解
             </div>
             <button onClick={() => logout()} className="btn-ghost hidden text-sm !px-4 !py-2.5 sm:inline-flex">
@@ -806,9 +941,13 @@ export default function QuizPage({
       <div key={current} className="card anim-fade-up mb-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex flex-wrap items-center gap-2">
-            {dailyChallenge ? (
+            {activeDailyChallenge ? (
               <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f59e0b20', color: '#fbbf24' }}>
                 今日のチャレンジ
+              </span>
+            ) : retryWrongOnly ? (
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#38bdf820', color: '#7dd3fc' }}>
+                再チャレンジ
               </span>
             ) : customOptions ? (
               <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#38bdf820', color: '#7dd3fc' }}>

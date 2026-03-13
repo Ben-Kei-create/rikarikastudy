@@ -69,3 +69,6 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-13: Phase 5 として `HomePage.tsx` に「タイムアタック」専用カードを追加。daily challenge の下に移し、自己ベスト・全体ベスト・解放条件を表示するようにした。
 - 2026-03-13: `studyRewards.ts` と `supabase_schema.sql` / `supabase.ts` で `time_attack_records` を新しい `score` 形式へ寄せつつ、旧 `best_score` 形式も fallback で読めるように更新。新記録時だけ保存し、旧 schema では従来 upsert に戻る互換を入れた。
 - 2026-03-13: `TimeAttackPage.tsx` と `globals.css` を更新し、`timer-pulse / correct-flash / wrong-shake / new-record` の演出を追加。タイムアタックの結果画面では自己ベスト更新時に `NEW RECORD` と比較表示が出るようにした。`npm run build` 成功。
+- 2026-03-13: Phase 6 として `UnitSelectPage.tsx` に出題数セレクタを追加。`5 / 10 / 15 / 全問` を選べるようにし、`page.tsx` と `QuizPage.tsx` を通して選択値を渡す構成へ変更した。
+- 2026-03-13: `questionPicker.ts` を更新し、通常クイズとカスタムクイズが `QuizQuestionCount` を受け取れるようにした。`全問` のときは slice せず、そのまま出題する。
+- 2026-03-13: `QuizPage.tsx` の結果画面に「間違えた問題を確認」を追加。誤答一覧から問題を開いて、自分の答え・正解・解説を見られるようにし、そのまま `間違えた問題だけ再チャレンジ` で再出題できるようにした。daily challenge からの再挑戦は通常の再挑戦扱いに切り替え、`npm run build` 成功。
