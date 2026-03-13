@@ -5,6 +5,7 @@ import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { getLevelInfo } from '@/lib/engagement'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
+import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import {
   CHEMISTRY_WORKBENCH_MODES,
   EARTH_WORKBENCH_MODES,
@@ -1191,9 +1192,8 @@ export default function ScienceWorkbenchPage({
   const [history, setHistory] = useState<boolean[]>([])
   const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
   const [visualClock, setVisualClock] = useState(0)
-  const [animationEnabled, setAnimationEnabled] = useState(true)
-  const [animationSpeed, setAnimationSpeed] = useState(1)
-  const [visualIntensity, setVisualIntensity] = useState(1)
+  const animationSpeed = 1
+  const visualIntensity = 1
 
   const round = rounds[current]
   const progress = rounds.length > 0 ? (current / rounds.length) * 100 : 0
@@ -1249,8 +1249,6 @@ export default function ScienceWorkbenchPage({
   }, [meta, round, state, visualClock, visualIntensity])
 
   useEffect(() => {
-    if (!animationEnabled) return
-
     let rafId = 0
     let last = performance.now()
 
@@ -1265,7 +1263,7 @@ export default function ScienceWorkbenchPage({
     return () => {
       window.cancelAnimationFrame(rafId)
     }
-  }, [animationEnabled, animationSpeed])
+  }, [animationSpeed])
 
   useEffect(() => {
     window.render_game_to_text = () => {
@@ -1282,11 +1280,6 @@ export default function ScienceWorkbenchPage({
         supportText: currentRound.supportText,
         state: currentState,
         feedback: feedbackRef.current,
-        visuals: {
-          animationEnabled,
-          animationSpeed,
-          visualIntensity,
-        },
       }
       return JSON.stringify(payload, null, 2)
     }
@@ -1310,7 +1303,7 @@ export default function ScienceWorkbenchPage({
       delete window.render_game_to_text
       delete window.advanceTime
     }
-  }, [animationEnabled, animationSpeed, current, meta.field, mode, rounds.length, visualIntensity])
+  }, [animationSpeed, current, meta.field, mode, rounds.length])
 
   const updateState = (updater: (currentState: WorkbenchState) => WorkbenchState) => {
     if (phase !== 'adjusting') return
@@ -1421,45 +1414,6 @@ export default function ScienceWorkbenchPage({
       <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
-      </div>
-    </div>
-  )
-
-  const renderVisualPanel = () => (
-    <div className="card anim-fade-up">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="text-sm font-semibold text-slate-200">表示パラメータ</div>
-          <p className="mt-1 text-xs leading-6 text-slate-500">アニメーションの速さと強調を調整できます。</p>
-        </div>
-        <button
-          onClick={() => setAnimationEnabled(currentValue => !currentValue)}
-          className={animationEnabled ? 'btn-secondary text-sm !px-4 !py-2.5' : 'btn-ghost text-sm !px-4 !py-2.5'}
-        >
-          {animationEnabled ? '動きON' : '動きOFF'}
-        </button>
-      </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {renderRangeField(
-          'アニメ速度',
-          roundTo(animationSpeed, 1),
-          0.5,
-          2,
-          0.1,
-          'x',
-          next => setAnimationSpeed(next),
-          '流れや点滅の速さ',
-        )}
-        {renderRangeField(
-          '見やすさ強調',
-          roundTo(visualIntensity, 1),
-          0.6,
-          1.8,
-          0.1,
-          'x',
-          next => setVisualIntensity(next),
-          '波や粒の動きの大きさ',
-        )}
       </div>
     </div>
   )
@@ -1873,6 +1827,9 @@ export default function ScienceWorkbenchPage({
           )}
 
           <LevelUnlockNotice rewardSummary={rewardSummary} />
+          {rewardSummary?.periodicCardReward && (
+            <PeriodicCardRewardPanel reward={rewardSummary.periodicCardReward} />
+          )}
 
           {rewardSummary?.newBadges.length ? (
             <div className="mt-6 grid gap-3 sm:grid-cols-2 text-left">
@@ -1973,8 +1930,6 @@ export default function ScienceWorkbenchPage({
             <div className="text-sm font-semibold text-slate-200">{round.prompt}</div>
             <p className="mt-2 text-sm leading-7 text-slate-400">{round.supportText}</p>
           </div>
-
-          {state.kind !== 'earth-humidity' && renderVisualPanel()}
 
           <div className={`card anim-fade-up ${disabled ? 'opacity-90' : ''}`}>
             {renderControls()}

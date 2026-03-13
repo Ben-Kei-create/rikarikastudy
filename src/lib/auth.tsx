@@ -187,7 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       sessionStorage.removeItem(STORAGE_KEY)
       if (!cancelled) {
-        setState(prev => ({ ...prev, studentId: null, nickname: null }))
+        setState(prev => ({ ...prev, studentId: null, nickname: null, pendingLoginCardReward: null }))
       }
     }
 

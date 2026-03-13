@@ -172,7 +172,7 @@ export default function LoginPage({
               className="info-banner text-sm mb-3"
               style={{ background: 'rgba(56, 189, 248, 0.12)', borderColor: 'rgba(56, 189, 248, 0.22)', color: '#bae6fd' }}
             >
-              ゲストはパスワード不要です。正答率などの成績は毎日リセットされます。
+              ゲストは PW なし / 記録は毎日リセット
             </div>
           ) : (
             <div key={shakeKey} className={error ? 'anim-shake' : ''}>
@@ -236,9 +236,7 @@ export default function LoginPage({
                   閉じる
                 </button>
               </div>
-              <p className="mt-3 text-sm leading-7 text-slate-300">
-                ユーザ確認のため、オンラインでは毎回 <span className="font-semibold text-white">ID とパスワード</span> を入力して入室します。
-              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-300">毎回 ID / PW で入室</p>
 
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {onlineStudents.map(student => {

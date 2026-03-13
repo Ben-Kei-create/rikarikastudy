@@ -202,11 +202,10 @@ export default function HomePage({
                       <div className="text-2xl">{nextUnlock.emoji}</div>
                       <div>
                         <div className="font-semibold text-white">{nextUnlock.title}</div>
-                        <div className="text-xs leading-6 text-slate-400">{nextUnlock.description}</div>
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-2 text-sm text-emerald-300">主要なレベル報酬はすべて解放済みです。</div>
+                    <div className="mt-2 text-sm text-emerald-300">解放ずみ</div>
                   )}
                 </div>
                 {nextUnlock && (
@@ -235,7 +234,7 @@ export default function HomePage({
             </div>
             {isGuest && (
               <p className="mt-4 text-sm leading-6 text-sky-200">
-                ゲストモードの成績と XP は当日分だけ保存され、日付が変わるとリセットされます。
+                ゲストは毎日リセット
               </p>
             )}
           </div>
@@ -279,7 +278,7 @@ export default function HomePage({
                       </div>
                       <div className="mt-1 font-display text-lg text-white sm:text-xl">今日のチャレンジ</div>
                       <div className="mt-1 text-[11px] text-slate-300 sm:text-xs">
-                        5問 / 2x XP / 今日1回
+                        5問 / XP×2
                       </div>
                     </div>
                     <div className={`text-xl sm:text-2xl ${dailyCompleted ? 'text-emerald-300' : 'text-amber-200'}`}>
@@ -300,7 +299,7 @@ export default function HomePage({
                   >
                     <div className="text-[10px] font-semibold tracking-[0.18em] text-sky-200 uppercase sm:text-[11px]">Quick</div>
                     <div className="mt-1 font-display text-base text-white sm:text-lg">4分野10問</div>
-                    <div className="mt-1 text-[11px] leading-5 text-slate-400 sm:text-xs">短時間で全体を確認</div>
+                    <div className="mt-1 text-[11px] leading-5 text-slate-400 sm:text-xs">総合</div>
                   </button>
                   <button
                     onClick={onTimeAttack}
@@ -353,7 +352,7 @@ export default function HomePage({
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">その他メニュー</div>
-                    <div className="mt-1 text-sm text-slate-300">ニュースやログアウトはこちらに収納しています。</div>
+                    <div className="mt-1 text-sm text-slate-300">ニュース / ログアウト</div>
                   </div>
                   <button onClick={() => logout()} className="btn-ghost whitespace-nowrap text-sm">
                     ログアウト

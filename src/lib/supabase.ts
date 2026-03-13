@@ -329,6 +329,49 @@ export type Database = {
           resolved_at?: string | null
         }
       }
+      admin_messages: {
+        Row: {
+          id: string
+          student_id: number
+          student_nickname: string
+          status: 'open' | 'reviewing' | 'resolved'
+          category: 'request' | 'update' | 'other'
+          message: string
+          admin_note: string
+          admin_reply: string
+          created_at: string
+          updated_at: string
+          replied_at: string | null
+          resolved_at: string | null
+        }
+        Insert: {
+          id?: string
+          student_id: number
+          student_nickname: string
+          status?: 'open' | 'reviewing' | 'resolved'
+          category: 'request' | 'update' | 'other'
+          message: string
+          admin_note?: string
+          admin_reply?: string
+          created_at?: string
+          updated_at?: string
+          replied_at?: string | null
+          resolved_at?: string | null
+        }
+        Update: {
+          student_id?: number
+          student_nickname?: string
+          status?: 'open' | 'reviewing' | 'resolved'
+          category?: 'request' | 'update' | 'other'
+          message?: string
+          admin_note?: string
+          admin_reply?: string
+          created_at?: string
+          updated_at?: string
+          replied_at?: string | null
+          resolved_at?: string | null
+        }
+      }
       science_glossary_entries: {
         Row: {
           id: string

@@ -26,6 +26,7 @@ import {
   markColumnSupported,
 } from '@/lib/schemaCompat'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
+import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import SuccessBurst from '@/components/SuccessBurst'
 
 const FIELD_COLORS: Record<string, string> = {
@@ -110,17 +111,17 @@ function buildSessionMode({
 
 function buildFinishMessage(rate: number, dailyChallenge: boolean) {
   if (dailyChallenge) {
-    if (rate === 100) return '今日のチャレンジを完全制覇しました。'
-    if (rate >= 80) return '今日のチャレンジをしっかりクリアできています。'
-    if (rate >= 60) return 'あと少しで今日のチャレンジを攻略できます。'
-    return '明日また再挑戦して、少しずつ積み上げていきましょう。'
+    if (rate === 100) return '今日のチャレンジクリア！'
+    if (rate >= 80) return 'かなりいい'
+    if (rate >= 60) return 'あと少し'
+    return 'またやろう'
   }
 
-  if (rate === 100) return '🎉 完璧！全問正解です！'
-  if (rate >= 90) return '🎉 すごい！ほぼ完璧です！'
-  if (rate >= 70) return '👍 よくできました！'
-  if (rate >= 50) return '😊 もう少しがんばろう！'
-  return '💪 復習してみよう！'
+  if (rate === 100) return '完璧！'
+  if (rate >= 90) return 'すごい！'
+  if (rate >= 70) return 'いい感じ'
+  if (rate >= 50) return 'あと少し'
+  return 'もう一回'
 }
 
 export default function QuizPage({
@@ -671,6 +672,9 @@ export default function QuizPage({
           )}
 
           <LevelUnlockNotice rewardSummary={rewardSummary} />
+          {rewardSummary?.periodicCardReward && (
+            <PeriodicCardRewardPanel reward={rewardSummary.periodicCardReward} />
+          )}
 
           {rewardSummary && rewardSummary.newBadges.length > 0 && (
             <div className="mb-6 text-left">
@@ -696,10 +700,6 @@ export default function QuizPage({
                 ))}
               </div>
             </div>
-          )}
-
-          {answerLogs.some(log => log.result === 'keyword') && (
-            <p className="text-xs text-slate-500 mb-6">▲ は空欄の答えを途中まで入力できています。あと少しで正解です。</p>
           )}
 
           <div className={`grid gap-3 ${dailyChallenge ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
@@ -1016,14 +1016,8 @@ export default function QuizPage({
               background: 'rgba(15, 23, 42, 0.62)',
             }}
           >
-            <div className="text-[11px] font-semibold tracking-[0.18em] text-sky-200">
-              {textBlankPrompt?.label ?? '穴埋め入力'}
-            </div>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              {textBlankPrompt?.helperText ?? '空欄に入る答えを入力してください。'}
-            </p>
             <div
-              className="mt-3 rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
+              className="rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
               style={{
                 borderColor: 'rgba(56, 189, 248, 0.16)',
                 background: 'rgba(2, 8, 23, 0.32)',
@@ -1042,7 +1036,7 @@ export default function QuizPage({
               }
             }}
             disabled={phase === 'result'}
-            placeholder={textBlankPrompt?.placeholder ?? '空欄に入る答え'}
+            placeholder={textBlankPrompt?.placeholder ?? '答え'}
             enterKeyHint="done"
             autoCapitalize="none"
             autoCorrect="off"
@@ -1058,7 +1052,7 @@ export default function QuizPage({
           {phase === 'answering' && (
             <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
               <button onClick={handleTextSubmit} disabled={!textInput.trim()} className="btn-primary w-full">
-                答えを提出
+                決定
               </button>
               <button onClick={handleDontKnow} className="btn-secondary w-full sm:w-auto">
                 わからない
@@ -1095,15 +1089,17 @@ export default function QuizPage({
               </div>
               {currentResult !== 'exact' && (
                 <>
-                  <p className="text-slate-200 text-sm mb-2">空欄の答え: {textBlankPrompt?.target ?? q.answer}</p>
-                  <p className="text-slate-300 text-xs mb-2">模範解答: {q.answer}</p>
+                  <p className="text-slate-200 text-sm mb-2">答え: {textBlankPrompt?.target ?? q.answer}</p>
+                  {(textBlankPrompt?.target ?? q.answer) !== q.answer && (
+                    <p className="text-slate-300 text-xs mb-2">{q.answer}</p>
+                  )}
                 </>
               )}
               {currentResult !== 'exact' && q.keywords && q.keywords.length > 0 && (
-                <p className="text-slate-300 text-xs mb-2">正解キーワード例: {q.keywords.join(' / ')}</p>
+                <p className="text-slate-300 text-xs mb-2">キーワード: {q.keywords.join(' / ')}</p>
               )}
               {currentResult === 'keyword' && (
-                <p className="text-amber-200 text-xs mb-2">空欄の答えの途中まで合っています。もう少し入力すると正解になります。</p>
+                <p className="text-amber-200 text-xs mb-2">おしい</p>
               )}
               {q.explanation && (
                 <p className="text-slate-300 text-sm leading-relaxed">{q.explanation}</p>

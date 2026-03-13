@@ -193,6 +193,38 @@ CREATE TABLE IF NOT EXISTS science_glossary_entries (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 周期表カード所持テーブル
+CREATE TABLE IF NOT EXISTS student_element_cards (
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  card_key TEXT NOT NULL,
+  obtain_count INTEGER NOT NULL DEFAULT 1,
+  first_obtained_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_obtained_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_source TEXT NOT NULL DEFAULT 'login' CHECK (last_source IN ('login', 'perfect_clear', 'level_up')),
+  PRIMARY KEY (student_id, card_key)
+);
+
+ALTER TABLE student_element_cards ADD COLUMN IF NOT EXISTS obtain_count INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE student_element_cards ADD COLUMN IF NOT EXISTS first_obtained_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE student_element_cards ADD COLUMN IF NOT EXISTS last_obtained_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE student_element_cards ADD COLUMN IF NOT EXISTS last_source TEXT NOT NULL DEFAULT 'login';
+
+-- 周期表カード獲得ログ
+CREATE TABLE IF NOT EXISTS element_card_rewards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  card_key TEXT NOT NULL,
+  source TEXT NOT NULL CHECK (source IN ('login', 'perfect_clear', 'level_up')),
+  reward_date DATE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE element_card_rewards ADD COLUMN IF NOT EXISTS student_id INTEGER REFERENCES students(id) ON DELETE CASCADE;
+ALTER TABLE element_card_rewards ADD COLUMN IF NOT EXISTS card_key TEXT;
+ALTER TABLE element_card_rewards ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'login';
+ALTER TABLE element_card_rewards ADD COLUMN IF NOT EXISTS reward_date DATE;
+ALTER TABLE element_card_rewards ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
 -- 旧質問DM機能は廃止
 DROP TABLE IF EXISTS student_questions;
 
@@ -212,6 +244,11 @@ CREATE INDEX IF NOT EXISTS idx_question_inquiries_status ON question_inquiries(s
 CREATE INDEX IF NOT EXISTS idx_question_inquiries_created_at ON question_inquiries(created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_science_glossary_field_term ON science_glossary_entries(field, term);
 CREATE INDEX IF NOT EXISTS idx_science_glossary_reading ON science_glossary_entries(reading);
+CREATE INDEX IF NOT EXISTS idx_student_element_cards_student ON student_element_cards(student_id);
+CREATE INDEX IF NOT EXISTS idx_element_card_rewards_student ON element_card_rewards(student_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_element_card_rewards_daily_login
+  ON element_card_rewards(student_id, source, reward_date)
+  WHERE source = 'login';
 
 -- RLS（Row Level Security）を無効に（塾内利用のため簡略化）
 ALTER TABLE students DISABLE ROW LEVEL SECURITY;
@@ -223,6 +260,8 @@ ALTER TABLE online_lab_rooms DISABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_guard_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE question_inquiries DISABLE ROW LEVEL SECURITY;
 ALTER TABLE science_glossary_entries DISABLE ROW LEVEL SECURITY;
+ALTER TABLE student_element_cards DISABLE ROW LEVEL SECURITY;
+ALTER TABLE element_card_rewards DISABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
@@ -281,16 +320,30 @@ INSERT INTO badges (key, name, description, icon_emoji, rarity, condition_type) 
   ('chem_debut', '化学デビュー', '化学の問題を初めて解いた', '⚗️', 'common', 'field_debut'),
   ('phys_debut', '物理デビュー', '物理の問題を初めて解いた', '⚡', 'common', 'field_debut'),
   ('earth_debut', '地学デビュー', '地学の問題を初めて解いた', '🌏', 'common', 'field_debut'),
+  ('total_30', '30問スタート', '合計30問以上に挑戦した', '🎒', 'common', 'total_questions'),
+  ('bio_50', '生物ノート', '生物を50問以上解いた', '🍃', 'common', 'field_total'),
+  ('chem_50', '化学ノート', '化学を50問以上解いた', '🧴', 'common', 'field_total'),
+  ('phys_50', '物理ノート', '物理を50問以上解いた', '🧲', 'common', 'field_total'),
+  ('earth_50', '地学ノート', '地学を50問以上解いた', '🪐', 'common', 'field_total'),
   ('perfect_score', '全問正解', '1回の学習で全問正解した', '💯', 'rare', 'perfect'),
   ('streak_7', '7日連続', '7日連続で学習した', '🏅', 'rare', 'streak'),
   ('total_100', '100問突破', '合計100問以上に挑戦した', '📚', 'rare', 'total_questions'),
   ('speed_star', 'スピードスター', '60秒未満で1セットをクリアした', '💨', 'rare', 'speed'),
   ('daily_perfect', 'デイリーパーフェクト', '今日のチャレンジを全問正解した', '☀️', 'rare', 'daily_challenge'),
   ('level_10', '研究者見習い', 'レベル10に到達した', '🧪', 'rare', 'level'),
+  ('daily_3', '朝チャレ名人', 'デイリーチャレンジを3回全問正解した', '🌅', 'rare', 'daily_challenge'),
+  ('time_attack_10', '10カウント', 'タイムアタックで10点以上を取った', '⏱️', 'rare', 'time_attack'),
+  ('streak_mode_5', '5連の壁', '連続正解モードで5問連続正解した', '🔥', 'rare', 'streak_mode'),
+  ('test_80', '80点ライン', 'テストモードで80点以上を取った', '📝', 'rare', 'test_mode'),
+  ('lab_explorer', 'ラボ探検隊', '4種類以上のラボや特別モードを遊んだ', '🧭', 'rare', 'lab_modes'),
+  ('streak_14', '14日連続', '14日連続で学習した', '📆', 'rare', 'streak'),
+  ('total_300', '300問通過', '合計300問以上に挑戦した', '📘', 'rare', 'total_questions'),
+  ('level_20', '理科マスター', 'レベル20に到達した', '🎓', 'rare', 'level'),
   ('streak_30', '30日連続', '30日連続で学習した', '👑', 'legendary', 'streak'),
   ('all_fields_day', '全分野制覇', '1日のうちに4分野すべてを解いた', '🛰️', 'legendary', 'all_fields_day'),
   ('total_1000', '1000問の壁', '合計1000問以上に挑戦した', '🚀', 'legendary', 'total_questions'),
-  ('level_50', '天才科学者', 'レベル50に到達した', '🧠', 'legendary', 'level')
+  ('level_50', '天才科学者', 'レベル50に到達した', '🧠', 'legendary', 'level'),
+  ('level_75', '銀河級リサーチャー', 'レベル75に到達した', '🌌', 'legendary', 'level')
 ON CONFLICT (key) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,

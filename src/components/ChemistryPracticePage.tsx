@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { getLevelInfo } from '@/lib/engagement'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
+import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import {
   CHEMISTRY_MODE_META,
@@ -232,6 +233,9 @@ export default function ChemistryPracticePage({
           )}
 
           <LevelUnlockNotice rewardSummary={rewardSummary} />
+          {rewardSummary?.periodicCardReward && (
+            <PeriodicCardRewardPanel reward={rewardSummary.periodicCardReward} />
+          )}
 
           {rewardSummary?.newBadges.length ? (
             <div className="mt-6 grid gap-3 sm:grid-cols-2 text-left">

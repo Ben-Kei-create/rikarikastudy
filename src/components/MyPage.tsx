@@ -4,7 +4,7 @@ import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/theme'
 import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
-import { getLevelInfo, getNextLevelUnlock, getUnlockedLevelRewards, getXpFloorForLevel } from '@/lib/engagement'
+import { getLevelInfo } from '@/lib/engagement'
 import { format, subDays, startOfDay, eachDayOfInterval, differenceInCalendarDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
@@ -157,6 +157,7 @@ export default function MyPage({
   const [savingQuestion, setSavingQuestion] = useState(false)
   const [studentXp, setStudentXp] = useState(0)
   const [earnedBadges, setEarnedBadges] = useState<Array<{ badge_key: string; earned_at: string }>>([])
+  const [selectedBadgeKey, setSelectedBadgeKey] = useState<string | null>(BADGE_DEFINITIONS[0]?.key ?? null)
   const [customGlossaryEntries, setCustomGlossaryEntries] = useState<ScienceGlossaryEntry[]>([])
   const [glossaryQuery, setGlossaryQuery] = useState('')
   const [glossaryField, setGlossaryField] = useState<ScienceGlossaryField | 'all'>('all')
@@ -284,14 +285,24 @@ export default function MyPage({
   const totalStudySeconds = sessions.reduce((a, s) => a + (s.duration_seconds ?? 0), 0)
   const overallRate = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : 0
   const levelInfo = useMemo(() => getLevelInfo(studentXp), [studentXp])
-  const nextUnlock = getNextLevelUnlock(levelInfo.level)
-  const unlockedRewards = getUnlockedLevelRewards(levelInfo.level)
   const periodicUnlocked = isPeriodicCardUnlockedAtLevel(levelInfo.level)
   const periodicOwnedCount = periodicCards.length
   const periodicTotalCount = PERIODIC_ELEMENT_CARDS.length
   const periodicCollectionMap = useMemo(
     () => new Map(periodicCards.map(card => [card.cardKey, card])),
     [periodicCards],
+  )
+  const earnedBadgeMap = useMemo(
+    () => new Map(earnedBadges.map(badge => [badge.badge_key, badge])),
+    [earnedBadges],
+  )
+  const secretBadgeCount = useMemo(
+    () => BADGE_DEFINITIONS.filter(badge => badge.isSecret).length,
+    [],
+  )
+  const selectedBadge = useMemo(
+    () => BADGE_DEFINITIONS.find(badge => badge.key === selectedBadgeKey) ?? BADGE_DEFINITIONS[0] ?? null,
+    [selectedBadgeKey],
   )
 
   const byField = useMemo(() => {
@@ -319,7 +330,7 @@ export default function MyPage({
       .map(([key, v]) => ({ unit: key.split('::')[1], field: v.field, total: v.total, correct: v.correct, rate: Math.round((v.correct / v.total) * 100) }))
       .filter(u => u.total >= 3)
       .sort((a, b) => a.rate - b.rate)
-      .slice(0, 8)
+      .slice(0, 3)
   }, [answerLogs])
 
   const dailyData = useMemo(() => {
@@ -375,6 +386,10 @@ export default function MyPage({
 
   const weekData = dailyData.slice(-7)
   const weekMax = Math.max(...weekData.map(d => d.count), 1)
+  const historySessions = useMemo(() => {
+    const threshold = subDays(new Date(), 7)
+    return sessions.filter(session => new Date(session.created_at) >= threshold)
+  }, [sessions])
   const tabs = isGuest
     ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 周期表'], ['glossary', '📘 辞典'], ['account', '⚙️ 設定']] as const)
     : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 周期表'], ['glossary', '📘 辞典'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
@@ -382,6 +397,10 @@ export default function MyPage({
   const allGlossaryEntries = useMemo(
     () => mergeGlossaryEntries(SCIENCE_GLOSSARY, customGlossaryEntries),
     [customGlossaryEntries],
+  )
+  const glossaryTermMap = useMemo(
+    () => new Map(allGlossaryEntries.map(entry => [entry.term, entry])),
+    [allGlossaryEntries],
   )
 
   const normalizedGlossaryQuery = glossaryQuery.trim().toLowerCase()
@@ -449,6 +468,12 @@ export default function MyPage({
     if (!exists) setSelectedPeriodicCardKey(periodicCards[0].cardKey)
   }, [periodicCards, periodicUnlocked, selectedPeriodicCardKey])
 
+  useEffect(() => {
+    if (!selectedBadgeKey || !BADGE_DEFINITIONS.some(badge => badge.key === selectedBadgeKey)) {
+      setSelectedBadgeKey(BADGE_DEFINITIONS[0]?.key ?? null)
+    }
+  }, [selectedBadgeKey])
+
   const handleSaveNickname = async () => {
     setSaving('nickname')
     const result = await updateProfile({ nickname: nicknameInput })
@@ -471,6 +496,16 @@ export default function MyPage({
       setPasswordInput('')
       setPasswordConfirm('')
     }
+  }
+
+  const handleGlossaryJump = (term: string) => {
+    const target = glossaryTermMap.get(term)
+    if (!target) return
+
+    setGlossaryQuery('')
+    setGlossaryField(target.field)
+    setGlossaryIndex('all')
+    setSelectedGlossaryId(target.id)
   }
 
   const handleAddQuestion = async () => {
@@ -586,13 +621,47 @@ export default function MyPage({
                 {isGuest ? `${nickname}さんの当日成績` : `${nickname}さんの成績`}
               </p>
             </div>
-            {streak > 0 && (
-              <div className="flex w-fit items-center gap-2 rounded-[20px] px-4 py-3" style={{ background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
-                <span className="text-2xl">🔥</span>
-                <span className="font-display text-2xl text-orange-300">{streak}</span>
-                <span className="text-slate-400 text-xs">日連続</span>
+            <div className="grid gap-3 lg:min-w-[320px]">
+              <div className="rounded-[22px] border px-4 py-4" style={{
+                borderColor: 'rgba(56, 189, 248, 0.16)',
+                background: 'rgba(8, 13, 24, 0.48)',
+              }}>
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Level</div>
+                    <div className="mt-2 flex items-end gap-3">
+                      <div className="font-display text-4xl text-white">Lv.{levelInfo.level}</div>
+                      <div className="pb-1 text-sm font-semibold text-sky-200">{levelInfo.title}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-slate-500">XP</div>
+                    <div className="mt-2 font-display text-2xl text-sky-300">{levelInfo.totalXp}</div>
+                  </div>
+                </div>
+                <div className="mt-4 soft-track" style={{ height: 8 }}>
+                  <div
+                    style={{
+                      width: `${levelInfo.progressRate}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                      borderRadius: 999,
+                    }}
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
+                  <span>{levelInfo.progressXp} / {levelInfo.progressMax} XP</span>
+                  <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
+                </div>
               </div>
-            )}
+              {streak > 0 && (
+                <div className="flex w-fit items-center gap-2 rounded-[20px] px-4 py-3" style={{ background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
+                  <span className="text-2xl">🔥</span>
+                  <span className="font-display text-2xl text-orange-300">{streak}</span>
+                  <span className="text-slate-400 text-xs">日連続</span>
+                </div>
+              )}
+            </div>
           </div>
           {isGuest && (
             <div
@@ -635,110 +704,6 @@ export default function MyPage({
                   <div className="text-slate-500 text-xs mt-1">{item.label}</div>
                 </div>
               ))}
-            </div>
-
-            <div className="card">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Level Progress</div>
-                  <div className="mt-2 flex items-end gap-3">
-                    <div className="font-display text-4xl text-white">Lv.{levelInfo.level}</div>
-                    <div className="pb-1 text-sm font-semibold text-sky-200">{levelInfo.title}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-slate-500">TOTAL XP</div>
-                  <div className="mt-2 font-display text-3xl text-sky-300">{levelInfo.totalXp}</div>
-                </div>
-              </div>
-              <div className="mt-5 soft-track" style={{ height: 10 }}>
-                <div
-                  style={{
-                    width: `${levelInfo.progressRate}%`,
-                    height: '100%',
-                    background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
-                    borderRadius: 999,
-                  }}
-                />
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
-                <span>{levelInfo.progressXp} / {levelInfo.progressMax} XP</span>
-                <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="max-w-2xl">
-                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Level Unlocks</div>
-                  <div className="mt-2 text-lg font-semibold text-white">レベル報酬</div>
-                  <p className="mt-1 text-sm leading-6 text-slate-400">
-                    レベルが上がると、新しい機能やテーマが順番に解放されます。
-                  </p>
-                  {nextUnlock ? (
-                    <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
-                      borderColor: 'rgba(56, 189, 248, 0.18)',
-                      background: 'rgba(56, 189, 248, 0.06)',
-                    }}>
-                      <div className="text-xs font-semibold tracking-[0.18em] text-sky-200">NEXT REWARD</div>
-                      <div className="mt-2 flex items-center gap-3">
-                        <div className="text-2xl">{nextUnlock.emoji}</div>
-                        <div>
-                          <div className="font-semibold text-white">{nextUnlock.title}</div>
-                          <div className="text-xs leading-6 text-slate-400">{nextUnlock.description}</div>
-                        </div>
-                      </div>
-                      <div className="mt-3 text-xs text-slate-500">
-                        Lv.{nextUnlock.level} まであと {Math.max(0, getXpFloorForLevel(nextUnlock.level) - levelInfo.totalXp)} XP
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4 rounded-[20px] border px-4 py-4 text-sm text-emerald-300" style={{
-                      borderColor: 'rgba(34, 197, 94, 0.2)',
-                      background: 'rgba(34, 197, 94, 0.08)',
-                    }}>
-                      主要なレベル報酬はすべて解放済みです。
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid w-full gap-3 lg:max-w-md">
-                  {[
-                    ...unlockedRewards,
-                    ...(!nextUnlock ? [] : [nextUnlock]),
-                  ]
-                    .filter((reward, index, rewards) => rewards.findIndex(item => item.key === reward.key) === index)
-                    .map(reward => {
-                      const unlocked = reward.level <= levelInfo.level
-                      return (
-                        <div
-                          key={reward.key}
-                          className="rounded-[20px] border px-4 py-3"
-                          style={{
-                            borderColor: unlocked ? 'rgba(34, 197, 94, 0.18)' : 'var(--border)',
-                            background: unlocked ? 'rgba(34, 197, 94, 0.08)' : 'var(--surface-elevated)',
-                          }}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="text-2xl">{reward.emoji}</div>
-                              <div className="min-w-0">
-                                <div className="font-semibold text-white">{reward.title}</div>
-                                <div className="text-xs leading-6 text-slate-400">{reward.description}</div>
-                              </div>
-                            </div>
-                            <span className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{
-                              background: unlocked ? 'rgba(34, 197, 94, 0.14)' : 'rgba(148, 163, 184, 0.14)',
-                              color: unlocked ? '#86efac' : 'var(--text-muted)',
-                            }}>
-                              {unlocked ? '解放済み' : `Lv.${reward.level}`}
-                            </span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-              </div>
             </div>
 
             <div className="card">
@@ -901,11 +866,11 @@ export default function MyPage({
         {/* ===== 履歴タブ ===== */}
         {tab === 'history' && (
           <div className="space-y-2 anim-fade">
-            {sessions.length === 0 ? (
+            {historySessions.length === 0 ? (
                 <div className="card text-center text-slate-500 py-12">
-                  まだ問題を解いていないよ！<br />さっそく挑戦してみよう 🚀
+                  1週間以内の履歴はありません。
                 </div>
-              ) : sessions.slice(0, 50).map(s => {
+              ) : historySessions.slice(0, 50).map(s => {
               const rate = Math.round((s.correct_count / s.total_questions) * 100)
               const color = FIELD_COLORS[s.field] ?? '#38bdf8'
               const dateStr = format(new Date(s.created_at), 'M月d日(E) HH:mm', { locale: ja })
@@ -999,9 +964,7 @@ export default function MyPage({
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
                   <h3 className="text-slate-300 font-bold">バッジコレクション</h3>
-                  <p className="text-slate-500 text-xs mt-1">
-                    取ったバッジはカラー表示、未取得はシルエット表示です。
-                  </p>
+                  <div className="mt-1 text-xs text-slate-500">{secretBadgeCount}個はシークレット</div>
                 </div>
                 <div className="rounded-full bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-200">
                   {earnedBadges.length} / {BADGE_DEFINITIONS.length}
@@ -1009,51 +972,104 @@ export default function MyPage({
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {BADGE_DEFINITIONS.map(badge => {
-                const earned = earnedBadges.find(item => item.badge_key === badge.key)
-                const displayDescription = !earned && badge.rarity === 'legendary'
-                  ? '???'
-                  : badge.description
+            <div className="card">
+              <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-7">
+                {BADGE_DEFINITIONS.map(badge => {
+                  const earned = earnedBadgeMap.get(badge.key)
+                  const lockedSecret = !earned && badge.isSecret
+                  const selected = selectedBadge?.key === badge.key
+                  const accent = earned
+                    ? badge.rarity === 'legendary'
+                      ? 'rgba(245, 158, 11, 0.86)'
+                      : badge.rarity === 'rare'
+                        ? 'rgba(56, 189, 248, 0.82)'
+                        : 'rgba(34, 197, 94, 0.78)'
+                    : 'rgba(148, 163, 184, 0.28)'
 
-                return (
-                  <div
-                    key={badge.key}
-                    className={`card ${earned ? '' : 'badge-card--locked'}`}
-                    style={{
-                      borderColor: earned
-                        ? badge.rarity === 'legendary'
-                          ? 'rgba(245, 158, 11, 0.34)'
-                          : badge.rarity === 'rare'
-                            ? 'rgba(56, 189, 248, 0.3)'
-                            : 'rgba(34, 197, 94, 0.24)'
-                        : 'var(--surface-elevated-border)',
-                      background: earned
-                        ? badge.rarity === 'legendary'
-                          ? 'linear-gradient(180deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.86))'
-                          : badge.rarity === 'rare'
-                            ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.86))'
-                            : 'linear-gradient(180deg, rgba(34, 197, 94, 0.1), rgba(15, 23, 42, 0.86))'
-                        : 'var(--card-bg)',
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className={`text-4xl ${earned ? '' : 'grayscale opacity-45'}`}>
-                        {earned ? badge.iconEmoji : '🏷️'}
-                      </div>
-                      <div className="text-[10px] tracking-[0.18em] text-slate-500">
-                        {getBadgeRarityLabel(badge.rarity)}
-                      </div>
-                    </div>
-                    <div className="mt-4 font-bold text-white">{badge.name}</div>
-                    <div className="mt-2 text-sm leading-6 text-slate-400">{displayDescription}</div>
-                    <div className="mt-4 text-xs text-slate-500">
-                      {earned ? `獲得日: ${format(new Date(earned.earned_at), 'M月d日(E)', { locale: ja })}` : '未獲得'}
-                    </div>
-                  </div>
-                )
-              })}
+                  return (
+                    <button
+                      key={badge.key}
+                      type="button"
+                      onClick={() => setSelectedBadgeKey(badge.key)}
+                      className="mx-auto flex aspect-square w-full max-w-[76px] items-center justify-center rounded-full border transition-transform duration-150 hover:-translate-y-0.5"
+                      style={{
+                        borderColor: selected ? accent : 'rgba(148, 163, 184, 0.18)',
+                        background: earned
+                          ? badge.rarity === 'legendary'
+                            ? 'radial-gradient(circle at 30% 25%, rgba(253, 230, 138, 0.42), rgba(120, 53, 15, 0.95))'
+                            : badge.rarity === 'rare'
+                              ? 'radial-gradient(circle at 30% 25%, rgba(125, 211, 252, 0.38), rgba(8, 47, 73, 0.95))'
+                              : 'radial-gradient(circle at 30% 25%, rgba(134, 239, 172, 0.34), rgba(20, 83, 45, 0.95))'
+                          : 'radial-gradient(circle at 30% 25%, rgba(71, 85, 105, 0.4), rgba(15, 23, 42, 0.94))',
+                        boxShadow: selected ? '0 0 0 3px rgba(148, 163, 184, 0.18)' : 'none',
+                      }}
+                      aria-label={lockedSecret ? 'シークレットバッジ' : badge.name}
+                    >
+                      <span className={`text-[1.7rem] ${earned ? '' : 'opacity-55 grayscale'}`}>
+                        {lockedSecret ? '❔' : earned ? badge.iconEmoji : '○'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
+
+            {selectedBadge && (
+              <div className="card">
+                {(() => {
+                  const earned = earnedBadgeMap.get(selectedBadge.key)
+                  const lockedSecret = !earned && selectedBadge.isSecret
+                  const displayName = lockedSecret ? '???' : selectedBadge.name
+                  const displayDescription = lockedSecret ? '???' : selectedBadge.description
+                  const displayEmoji = lockedSecret ? '❔' : earned ? selectedBadge.iconEmoji : '○'
+
+                  return (
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="flex h-20 w-20 items-center justify-center rounded-full border text-4xl"
+                          style={{
+                            borderColor: earned
+                              ? selectedBadge.rarity === 'legendary'
+                                ? 'rgba(245, 158, 11, 0.42)'
+                                : selectedBadge.rarity === 'rare'
+                                  ? 'rgba(56, 189, 248, 0.34)'
+                                  : 'rgba(34, 197, 94, 0.28)'
+                              : 'rgba(148, 163, 184, 0.18)',
+                            background: earned
+                              ? selectedBadge.rarity === 'legendary'
+                                ? 'linear-gradient(180deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.9))'
+                                : selectedBadge.rarity === 'rare'
+                                  ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.9))'
+                                  : 'linear-gradient(180deg, rgba(34, 197, 94, 0.1), rgba(15, 23, 42, 0.9))'
+                              : 'rgba(15, 23, 42, 0.72)',
+                          }}
+                        >
+                          <span className={earned ? '' : 'opacity-55 grayscale'}>{displayEmoji}</span>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="font-bold text-white">{displayName}</div>
+                            <div className="rounded-full bg-slate-900/70 px-2.5 py-1 text-[10px] tracking-[0.16em] text-slate-300">
+                              {getBadgeRarityLabel(selectedBadge.rarity)}
+                            </div>
+                            {selectedBadge.isSecret && !earned ? (
+                              <div className="rounded-full bg-slate-900/70 px-2.5 py-1 text-[10px] tracking-[0.16em] text-amber-200">
+                                SECRET
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="mt-2 text-sm leading-6 text-slate-400">{displayDescription}</div>
+                        </div>
+                      </div>
+                      <div className="text-sm text-slate-400 md:text-right">
+                        {earned ? `獲得日 ${format(new Date(earned.earned_at), 'M月d日(E)', { locale: ja })}` : '未獲得'}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
           </div>
         )}
 
@@ -1350,14 +1366,36 @@ export default function MyPage({
                     <div className="mt-5">
                       <div className="text-slate-400 text-xs mb-2">関連語</div>
                       <div className="flex flex-wrap gap-2">
-                        {selectedGlossaryEntry.related.map(item => (
-                          <span
-                            key={item}
-                            className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300"
-                          >
-                            {item}
-                          </span>
-                        ))}
+                        {selectedGlossaryEntry.related.map(item => {
+                          const linkedEntry = glossaryTermMap.get(item)
+
+                          if (!linkedEntry) {
+                            return (
+                              <span
+                                key={item}
+                                className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300"
+                              >
+                                {item}
+                              </span>
+                            )
+                          }
+
+                          return (
+                            <button
+                              key={item}
+                              type="button"
+                              onClick={() => handleGlossaryJump(item)}
+                              className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:-translate-y-0.5"
+                              style={{
+                                borderColor: `${FIELD_COLORS[linkedEntry.field]}55`,
+                                background: `${FIELD_COLORS[linkedEntry.field]}18`,
+                                color: FIELD_COLORS[linkedEntry.field],
+                              }}
+                            >
+                              {item}
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
                   </>

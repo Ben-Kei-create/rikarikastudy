@@ -543,7 +543,7 @@ export default function UnitSelectPage({
                 {field}について質問する
               </div>
               <div className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">
-                ゲストモードでは Gemini などの質問機能は使えません。
+                ゲストは使えません
               </div>
             </div>
             <div
@@ -581,7 +581,7 @@ export default function UnitSelectPage({
                 {field}について質問する
               </div>
               <div className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">
-                この分野だけに絞って、要点を3行以内でざっくり聞けます。
+                すぐ聞ける
               </div>
             </div>
             <div
@@ -612,10 +612,10 @@ export default function UnitSelectPage({
         }}
       >
         <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="font-semibold text-base sm:text-lg" style={{ color }}>全単元ランダム</div>
-            <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">この分野の問題をまとめて解きます</div>
-          </div>
+            <div>
+              <div className="font-semibold text-base sm:text-lg" style={{ color }}>全単元ランダム</div>
+              <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">まとめて解く</div>
+            </div>
           <div
             className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] sm:px-3 sm:text-xs"
             style={{ background: `${color}18`, color }}
@@ -642,7 +642,7 @@ export default function UnitSelectPage({
               カスタム
             </div>
             <div className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">
-              記述のみ、選択肢のみ、未回答、苦手だけなどに絞って出題できます。
+              しぼって出す
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {getCustomQuizSummaryParts(customOptions).map(part => (
@@ -660,7 +660,7 @@ export default function UnitSelectPage({
             onClick={() => setShowCustomPanel(current => !current)}
             className="btn-secondary whitespace-nowrap"
           >
-            {showCustomPanel ? '閉じる' : '条件をえらぶ'}
+            {showCustomPanel ? '閉じる' : '条件'}
           </button>
         </div>
 

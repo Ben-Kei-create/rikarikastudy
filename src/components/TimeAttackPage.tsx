@@ -28,6 +28,7 @@ import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
+import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import SuccessBurst from '@/components/SuccessBurst'
 
 type ChallengeMode = 'time_attack' | 'test_mode' | 'streak_mode'
@@ -77,26 +78,26 @@ const CHALLENGE_MODE_META: Record<ChallengeMode, {
 }> = {
   time_attack: {
     label: 'タイムアタック',
-    badge: 'Time Attack',
+    badge: '30秒',
     emoji: '⏱️',
     accent: '#38bdf8',
-    description: '30秒でどこまで伸ばせるか挑戦。正解で +0.5 秒。',
+    description: '30秒 / 正解で +0.5秒',
     startLabel: 'タイムアタック開始',
   },
   test_mode: {
     label: 'テストモード',
-    badge: 'Test Mode',
+    badge: '100点',
     emoji: '📝',
     accent: '#f59e0b',
-    description: `${TEST_MODE_QUESTION_COUNT}問 × ${TEST_MODE_POINT_PER_QUESTION}点。100点満点の入試意識モード。`,
+    description: `${TEST_MODE_QUESTION_COUNT}問 / 100点`,
     startLabel: 'テスト開始',
   },
   streak_mode: {
     label: '連続正解モード',
-    badge: 'Streak Mode',
+    badge: '10秒',
     emoji: '🔥',
     accent: '#22c55e',
-    description: '各問題10秒以内に何問連続で正解できるか挑戦。正解で次の10秒へ進みます。',
+    description: '1問10秒 / 正解で10秒もどる',
     startLabel: '連続正解に挑戦',
   },
 }
@@ -142,21 +143,21 @@ function getModeProgressLabel(mode: ChallengeMode, currentIndex: number, total: 
 function getModeSummaryMessage(mode: ChallengeMode, rawScore: number) {
   if (mode === 'test_mode') {
     const pointScore = getDisplayScore(mode, rawScore)
-    if (pointScore === 100) return '100点満点！入試セットを完璧に解き切れました。'
-    if (pointScore >= 80) return '入試を意識したセットをかなり安定して解けています。'
-    if (pointScore >= 60) return 'あと少しで高得点圏です。弱い単元を詰めれば伸ばせます。'
-    return 'もう一度挑戦して、得点源になる単元を増やしていきましょう。'
+    if (pointScore === 100) return '100点！'
+    if (pointScore >= 80) return 'かなりいい'
+    if (pointScore >= 60) return 'あと少し'
+    return 'もう一回'
   }
 
   if (mode === 'streak_mode') {
-    if (rawScore >= 10) return 'かなり鋭い反応です。この集中力は強いです。'
-    if (rawScore >= 5) return '連続正解がしっかり伸びています。'
-    return 'まずは3連続を目標に、テンポよく積み上げていきましょう。'
+    if (rawScore >= 10) return 'すごい'
+    if (rawScore >= 5) return 'いい感じ'
+    return 'もう一回'
   }
 
-  if (rawScore >= 15) return 'かなり速く正確に解けています。'
-  if (rawScore >= 8) return 'テンポよく得点できています。'
-  return '次は正解数をもう少し伸ばしていきましょう。'
+  if (rawScore >= 15) return 'すごい'
+  if (rawScore >= 8) return 'いい感じ'
+  return 'もう一回'
 }
 
 async function loadSessionModeSummary(
@@ -683,10 +684,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
         <div className="card w-full max-w-xl text-center">
           <div className="text-5xl mb-4">🔒</div>
           <div className="font-display text-3xl text-white">チャレンジモードは Lv.{TIME_ATTACK_UNLOCK_LEVEL} で解放</div>
-          <p className="mt-3 text-sm leading-7 text-slate-300">
-            現在は Lv.{currentLevelInfo.level} です。あと {unlockXpLeft} XP ためると
-            タイムアタック、テストモード、連続正解モードに挑戦できます。
-          </p>
+          <p className="mt-3 text-sm leading-7 text-slate-300">Lv.{currentLevelInfo.level} / あと {unlockXpLeft} XP</p>
           <div className="mt-6 soft-track" style={{ height: 8 }}>
             <div
               style={{
@@ -713,12 +711,8 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     return (
       <div className="page-shell page-shell-dashboard">
         <div className="hero-card science-surface p-6 sm:p-7">
-          <div className="text-xs font-semibold tracking-[0.2em] text-sky-200 uppercase">Challenge Modes</div>
+          <div className="text-xs font-semibold tracking-[0.2em] text-sky-200 uppercase">Challenge</div>
           <h1 className="font-display mt-3 text-4xl text-white">チャレンジモード</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-            タイムアタック、テストモード、連続正解モードから今の気分に合わせて挑戦できます。
-          </p>
-
           <div className="mt-6 grid gap-3 lg:grid-cols-3">
             {(Object.keys(CHALLENGE_MODE_META) as ChallengeMode[]).map(mode => {
               const meta = CHALLENGE_MODE_META[mode]
@@ -753,7 +747,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-300">{meta.description}</p>
                   <div className="mt-4 text-xs text-slate-500">
-                    ベスト: {mode === 'test_mode' ? `${personalBest} / 100` : mode === 'streak_mode' ? `${personalBest}問` : `${personalBest} point`}
+                    ベスト: {mode === 'test_mode' ? `${personalBest} / 100` : mode === 'streak_mode' ? `${personalBest}問` : `${personalBest}`}
                   </div>
                 </button>
               )
@@ -787,14 +781,12 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     <div className="mt-2 font-display text-2xl text-amber-200">
                       {otherLeader ? otherLeader.nickname : '—'}
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {otherLeader ? `${otherLeader.nickname} / ${otherLeader.score} point` : 'まだ記録なし'}
-                    </div>
+                    <div className="mt-1 text-xs text-slate-500">{otherLeader ? `${otherLeader.score}` : '—'}</div>
                   </div>
                   <div className="subcard p-4">
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題</div>
                     <div className="mt-2 font-display text-3xl text-sky-300">{choiceQuestions.length}</div>
-                    <div className="mt-1 text-xs text-slate-500">choice only</div>
+                    <div className="mt-1 text-xs text-slate-500">4択</div>
                   </div>
                 </div>
               )}
@@ -826,17 +818,17 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   <div className="subcard p-4">
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">自己ベスト</div>
                     <div className="mt-2 font-display text-3xl text-white">{streakSummary.personalBest}</div>
-                    <div className="mt-1 text-xs text-slate-500">連続正解</div>
+                    <div className="mt-1 text-xs text-slate-500">問</div>
                   </div>
                   <div className="subcard p-4">
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">制限時間</div>
                     <div className="mt-2 font-display text-3xl text-emerald-300">10秒</div>
-                    <div className="mt-1 text-xs text-slate-500">各問題ごとにリセット</div>
+                    <div className="mt-1 text-xs text-slate-500">1問ごと</div>
                   </div>
                   <div className="subcard p-4">
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題</div>
                     <div className="mt-2 font-display text-3xl text-sky-300">{choiceQuestions.length}</div>
-                    <div className="mt-1 text-xs text-slate-500">choice only</div>
+                    <div className="mt-1 text-xs text-slate-500">4択</div>
                   </div>
                 </div>
               )}
@@ -847,10 +839,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                 <>
                   <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ベストスコア</div>
                   <div className="mt-2 font-display text-4xl text-white">{testSummary.personalBest}</div>
-                  <div className="mt-1 text-sm text-slate-400">100点満点</div>
-                  <p className="mt-5 text-sm leading-7 text-slate-300">
-                    テストモードでは他ユーザ名は表示せず、自分の得点だけを見ながら伸ばせます。
-                  </p>
+                  <div className="mt-1 text-sm text-slate-400">/ 100</div>
                 </>
               ) : selectedMode === 'streak_mode' ? (
                 <>
@@ -936,6 +925,9 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
           )}
 
           <LevelUnlockNotice rewardSummary={rewardSummary} />
+          {rewardSummary?.periodicCardReward && (
+            <PeriodicCardRewardPanel reward={rewardSummary.periodicCardReward} />
+          )}
 
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <div className="subcard p-4">
@@ -1019,10 +1011,6 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
           )}
 
           {renderRewardStrip()}
-
-          {selectedMode === 'test_mode' && answerLogs.some(log => log.result === 'keyword') && (
-            <p className="text-xs text-slate-500 mt-5">▲ は空欄の答えを途中まで入力できています。あと少しで正解です。</p>
-          )}
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <button onClick={startRun} className="btn-primary sm:col-span-2">
@@ -1158,14 +1146,8 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     background: 'rgba(15, 23, 42, 0.68)',
                   }}
                 >
-                  <div className="text-[11px] font-semibold tracking-[0.18em] text-amber-200">
-                    {textBlankPrompt?.label ?? '穴埋め入力'}
-                  </div>
-                  <div className="mt-2 text-sm leading-6 text-slate-300">
-                    {textBlankPrompt?.helperText ?? '空欄に入る答えを入力してください。'}
-                  </div>
                   <div
-                    className="mt-3 rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
+                    className="rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
                     style={{
                       borderColor: 'rgba(245, 158, 11, 0.2)',
                       background: 'rgba(2, 8, 23, 0.32)',
@@ -1184,7 +1166,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     }
                   }}
                   disabled={testModeAnswered}
-                  placeholder={textBlankPrompt?.placeholder ?? '空欄に入る答え'}
+                  placeholder={textBlankPrompt?.placeholder ?? '答え'}
                   enterKeyHint="done"
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -1192,7 +1174,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                 />
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <button onClick={handleTestTextSubmit} disabled={testModeAnswered || !textInput.trim()} className="btn-primary disabled:opacity-60">
-                    回答する
+                    決定
                   </button>
                   <button onClick={handleTestDontKnow} disabled={testModeAnswered} className="btn-secondary disabled:opacity-60">
                     わからない
@@ -1224,20 +1206,18 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   {answerResult === 'exact' ? '○ 正解' : answerResult === 'keyword' ? '△ あと少し' : '× 不正解'}
                 </div>
                 <div className="mt-2 text-sm leading-7 text-slate-300">
-                  空欄の答え: {textBlankPrompt?.target ?? currentQuestion.answer}
+                  答え: {textBlankPrompt?.target ?? currentQuestion.answer}
                 </div>
-                <div className="mt-1 text-xs leading-6 text-slate-400">
-                  模範解答: {currentQuestion.answer}
-                </div>
+                {(textBlankPrompt?.target ?? currentQuestion.answer) !== currentQuestion.answer && (
+                  <div className="mt-1 text-xs leading-6 text-slate-400">{currentQuestion.answer}</div>
+                )}
                 {answerResult !== 'exact' && currentQuestion.keywords && currentQuestion.keywords.length > 0 && (
                   <div className="mt-2 text-xs leading-6 text-slate-400">
-                    正解キーワード例: {currentQuestion.keywords.join(' / ')}
+                    キーワード: {currentQuestion.keywords.join(' / ')}
                   </div>
                 )}
                 {answerResult === 'keyword' && (
-                  <div className="mt-2 text-xs leading-6 text-amber-200">
-                    空欄の答えの途中まで合っています。もう少し入力すると正解になります。
-                  </div>
+                  <div className="mt-2 text-xs leading-6 text-amber-200">おしい</div>
                 )}
                 {currentQuestion.explanation && (
                   <div className="mt-2 text-sm leading-7 text-slate-300">{currentQuestion.explanation}</div>

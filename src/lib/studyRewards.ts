@@ -125,8 +125,30 @@ async function fetchStudentSessions(studentId: number) {
   return (data || []) as BadgeSessionRow[]
 }
 
+async function ensureBadgeDefinitionsSeeded() {
+  const { error } = await supabase
+    .from('badges')
+    .upsert(
+      BADGE_DEFINITIONS.map(badge => ({
+        key: badge.key,
+        name: badge.name,
+        description: badge.description,
+        icon_emoji: badge.iconEmoji,
+        rarity: badge.rarity,
+        condition_type: badge.conditionType,
+      })),
+      { onConflict: 'key' },
+    )
+
+  if (error) {
+    console.error('[engagement] failed to seed badges', error)
+  }
+}
+
 async function insertStudentBadges(studentId: number, badgeKeys: string[]) {
   if (badgeKeys.length === 0) return
+
+  await ensureBadgeDefinitionsSeeded()
 
   const { error } = await supabase
     .from('student_badges')

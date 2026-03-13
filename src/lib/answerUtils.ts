@@ -189,6 +189,34 @@ function replaceFirstOccurrence(text: string, target: string, replacement: strin
   return `${text.slice(0, index)}${replacement}${text.slice(index + target.length)}`
 }
 
+function resolveInlineBlankTarget(answer: string, target: string) {
+  const trimmedAnswer = answer.trim()
+  const trimmedTarget = target.trim()
+  if (!trimmedAnswer || !trimmedTarget) return ''
+  if (trimmedAnswer.includes(trimmedTarget)) return trimmedTarget
+
+  const normalizedTarget = normalizeAnswer(trimmedTarget)
+  if (!normalizedTarget) return ''
+
+  const chunks = trimmedAnswer.match(/[一-龠々]+|[ぁ-んー]+|[ァ-ヶー]+|[A-Za-z0-9⁺⁻₊₋₀₁₂₃₄₅₆₇₈₉]+/g) ?? []
+  return chunks.find(chunk => normalizeAnswer(chunk) === normalizedTarget) ?? ''
+}
+
+function buildWrappedBlankSentence(answer: string) {
+  const trimmedAnswer = answer.trim()
+  if (!trimmedAnswer) return INLINE_BLANK
+
+  if (getNumericAnswerDescriptor(trimmedAnswer)) {
+    return `答えの数値は ${INLINE_BLANK} です。`
+  }
+
+  if (/[=＝→⇒+\-*/]/.test(trimmedAnswer)) {
+    return `答えの式は ${INLINE_BLANK} です。`
+  }
+
+  return `答えは「${INLINE_BLANK}」です。`
+}
+
 function getTrailingFormulaPart(answer: string) {
   const arrowMatch = answer.match(/(?:→|->|⇒)\s*(.+)$/)
   if (arrowMatch?.[1]?.trim()) return arrowMatch[1].trim()
@@ -254,34 +282,29 @@ export function buildTextBlankPrompt(
   const trimmedAnswer = correctAnswer.trim()
   const target = getPrimaryBlankTarget(trimmedAnswer, keywords)
   const normalizedAnswer = normalizeAnswer(trimmedAnswer)
-  const normalizedTarget = normalizeAnswer(target)
+  const inlineTarget = resolveInlineBlankTarget(trimmedAnswer, target)
+  const normalizedTarget = normalizeAnswer(inlineTarget || target)
   const configuredKeywords = getConfiguredTextKeywords(keywords)
   const usesConfiguredKeyword = configuredKeywords.length > 0
   const acceptsNumericWithoutUnit = Boolean(getNumericAnswerDescriptor(target || trimmedAnswer))
   const usesInlineBlank = Boolean(
-    target
+    inlineTarget
     && normalizedTarget
     && normalizedTarget !== normalizedAnswer
-    && trimmedAnswer.includes(target)
+    && trimmedAnswer.includes(inlineTarget)
   )
 
-  let promptText = INLINE_BLANK
+  let promptText = buildWrappedBlankSentence(trimmedAnswer)
   if (usesInlineBlank) {
-    promptText = replaceFirstOccurrence(trimmedAnswer, target, INLINE_BLANK)
-  } else if (target && normalizedTarget !== normalizedAnswer && trimmedAnswer.length <= 8) {
-    promptText = `${trimmedAnswer} = ${INLINE_BLANK}`
+    promptText = replaceFirstOccurrence(trimmedAnswer, inlineTarget, INLINE_BLANK)
   }
 
   return {
     promptText,
     target: target || trimmedAnswer,
-    label: usesInlineBlank ? '模範解答の穴埋め' : '答えに入る語句',
-    helperText: usesConfiguredKeyword
-      ? '空欄に入る理科用語だけを入力してください。文章全体は打たなくて大丈夫です。'
-      : acceptsNumericWithoutUnit
-        ? '空欄に入る数字や式を入力してください。単位は省略しても正解になります。'
-        : '空欄に入る語句や式だけを短く入力してください。',
-    placeholder: usesConfiguredKeyword ? '空欄に入る理科用語' : acceptsNumericWithoutUnit ? '数字だけでもOK' : '空欄に入る答え',
+    label: '',
+    helperText: '',
+    placeholder: usesConfiguredKeyword ? '答え' : acceptsNumericWithoutUnit ? '数字' : '答え',
     usesInlineBlank,
   }
 }
