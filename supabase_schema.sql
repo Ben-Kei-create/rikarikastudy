@@ -135,6 +135,47 @@ CREATE TABLE IF NOT EXISTS chat_guard_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 問題問い合わせテーブル
+CREATE TABLE IF NOT EXISTS question_inquiries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id INTEGER NOT NULL,
+  student_nickname TEXT NOT NULL,
+  question_id UUID REFERENCES questions(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'reviewing', 'resolved')),
+  category TEXT NOT NULL DEFAULT 'question_content' CHECK (category IN ('question_content', 'answer_content', 'other')),
+  message TEXT NOT NULL DEFAULT '',
+  field TEXT NOT NULL CHECK (field IN ('生物', '化学', '物理', '地学')),
+  unit TEXT NOT NULL,
+  question_text TEXT NOT NULL,
+  question_type TEXT NOT NULL CHECK (question_type IN ('choice', 'text')),
+  choices JSONB DEFAULT NULL,
+  answer_text TEXT NOT NULL,
+  explanation_text TEXT DEFAULT NULL,
+  image_url TEXT DEFAULT NULL,
+  admin_note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ DEFAULT NULL
+);
+
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS student_id INTEGER;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS student_nickname TEXT;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS question_id UUID REFERENCES questions(id) ON DELETE SET NULL;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'open';
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'question_content';
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS message TEXT NOT NULL DEFAULT '';
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS field TEXT;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS unit TEXT;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS question_text TEXT;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS question_type TEXT;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS choices JSONB DEFAULT NULL;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS answer_text TEXT;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS explanation_text TEXT DEFAULT NULL;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS admin_note TEXT NOT NULL DEFAULT '';
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ DEFAULT NULL;
+
 -- 理科辞典テーブル
 CREATE TABLE IF NOT EXISTS science_glossary_entries (
   id TEXT PRIMARY KEY,
@@ -162,6 +203,9 @@ CREATE INDEX IF NOT EXISTS idx_active_sessions_last_seen ON active_sessions(last
 CREATE INDEX IF NOT EXISTS idx_online_lab_rooms_updated_at ON online_lab_rooms(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_student ON chat_guard_logs(student_id);
 CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_created_at ON chat_guard_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_question_inquiries_student ON question_inquiries(student_id);
+CREATE INDEX IF NOT EXISTS idx_question_inquiries_status ON question_inquiries(status);
+CREATE INDEX IF NOT EXISTS idx_question_inquiries_created_at ON question_inquiries(created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_science_glossary_field_term ON science_glossary_entries(field, term);
 CREATE INDEX IF NOT EXISTS idx_science_glossary_reading ON science_glossary_entries(reading);
 
@@ -173,6 +217,7 @@ ALTER TABLE answer_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE active_sessions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE online_lab_rooms DISABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_guard_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE question_inquiries DISABLE ROW LEVEL SECURITY;
 ALTER TABLE science_glossary_entries DISABLE ROW LEVEL SECURITY;
 
 DO $$

@@ -49,6 +49,11 @@ export interface RoundFeedback {
   detail: string
 }
 
+export interface WorkbenchVisualOptions {
+  clockMs?: number
+  intensity?: number
+}
+
 export const CANVAS_WIDTH = 900
 export const CANVAS_HEIGHT = 560
 
@@ -84,6 +89,78 @@ function createGradient(ctx: CanvasRenderingContext2D, x: number, y: number, wid
   gradient.addColorStop(0, from)
   gradient.addColorStop(1, to)
   return gradient
+}
+
+function drawLiquidFill(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  fillHeight: number,
+  colors: { from: string; to: string; highlight: string },
+  visuals?: WorkbenchVisualOptions,
+) {
+  const clock = (visuals?.clockMs ?? 0) / 1000
+  const intensity = visuals?.intensity ?? 1
+  const waveAmplitude = Math.max(3, Math.min(10, 6 * intensity))
+  const topY = y + height - fillHeight
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(x, y, width, height)
+  ctx.clip()
+
+  const gradient = ctx.createLinearGradient(x, topY, x, y + height)
+  gradient.addColorStop(0, colors.from)
+  gradient.addColorStop(1, colors.to)
+  ctx.fillStyle = gradient
+  ctx.beginPath()
+  ctx.moveTo(x, y + height)
+  ctx.lineTo(x, topY)
+  for (let offset = 0; offset <= width; offset += 12) {
+    const wave = Math.sin(clock * 2.4 + offset / 28) * waveAmplitude
+    ctx.lineTo(x + offset, topY + wave)
+  }
+  ctx.lineTo(x + width, y + height)
+  ctx.closePath()
+  ctx.fill()
+
+  ctx.strokeStyle = colors.highlight
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(x, topY)
+  for (let offset = 0; offset <= width; offset += 12) {
+    const wave = Math.sin(clock * 2.4 + offset / 28) * waveAmplitude
+    ctx.lineTo(x + offset, topY + wave)
+  }
+  ctx.stroke()
+  ctx.restore()
+}
+
+function drawFlowDots(
+  ctx: CanvasRenderingContext2D,
+  fromX: number,
+  toX: number,
+  y: number,
+  color: string,
+  visuals?: WorkbenchVisualOptions,
+) {
+  const clock = (visuals?.clockMs ?? 0) / 1000
+  const intensity = visuals?.intensity ?? 1
+  const width = toX - fromX
+
+  ctx.save()
+  ctx.fillStyle = color
+  for (let index = 0; index < 5; index += 1) {
+    const progress = ((clock * 0.8 * intensity + index * 0.19) % 1 + 1) % 1
+    const x = fromX + width * progress
+    const bob = Math.sin(clock * 3 + index) * 4
+    ctx.beginPath()
+    ctx.arc(x, y + bob, 4.5, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.restore()
 }
 
 function drawBackground(ctx: CanvasRenderingContext2D, meta: ScienceWorkbenchMeta) {
@@ -295,12 +372,15 @@ function drawDensityScene(
   ctx: CanvasRenderingContext2D,
   round: Extract<ScienceWorkbenchRound, { kind: 'chem-density' }>,
   state: Extract<WorkbenchState, { kind: 'chem-density' }>,
-  accent: string
+  accent: string,
+  visuals?: WorkbenchVisualOptions,
 ) {
+  const clock = (visuals?.clockMs ?? 0) / 1000
+  const intensity = visuals?.intensity ?? 1
   const density = getCurrentDensity(state)
   const blockSize = clamp(70 + state.volume * 2.2, 96, 190)
   const blockX = 110
-  const blockY = 196
+  const blockY = 196 + Math.sin(clock * 2.2) * 6 * intensity
   const cylinderX = 510
   const cylinderY = 170
   const cylinderHeight = 250
@@ -335,9 +415,28 @@ function drawDensityScene(
   ctx.lineWidth = 4
   drawRoundedRect(ctx, cylinderX, cylinderY, 150, cylinderHeight, 28)
   ctx.stroke()
-  ctx.fillStyle = 'rgba(96, 165, 250, 0.36)'
-  drawRoundedRect(ctx, cylinderX + 8, cylinderY + cylinderHeight - waterHeight - 8, 134, waterHeight, 22)
-  ctx.fill()
+  drawLiquidFill(
+    ctx,
+    cylinderX + 8,
+    cylinderY + 8,
+    134,
+    cylinderHeight - 16,
+    waterHeight,
+    {
+      from: 'rgba(147, 197, 253, 0.58)',
+      to: 'rgba(37, 99, 235, 0.34)',
+      highlight: 'rgba(219, 234, 254, 0.8)',
+    },
+    visuals,
+  )
+  for (let index = 0; index < 5; index += 1) {
+    const bubbleX = cylinderX + 26 + index * 20 + Math.sin(clock * 1.6 + index) * 4
+    const bubbleY = cylinderY + cylinderHeight - ((clock * 42 + index * 36) % Math.max(54, waterHeight - 8))
+    ctx.fillStyle = 'rgba(219, 234, 254, 0.52)'
+    ctx.beginPath()
+    ctx.arc(bubbleX, bubbleY, 4 + (index % 2), 0, Math.PI * 2)
+    ctx.fill()
+  }
   ctx.fillStyle = '#dbeafe'
   ctx.font = '700 18px "Zen Kaku Gothic New", sans-serif'
   ctx.fillText('体積メモリ', cylinderX + 182, cylinderY + 24)
@@ -357,14 +456,34 @@ function drawDensityScene(
   ctx.fillText(`目標 ${formatNumber(round.targetDensity)} g/cm3`, 80, 132)
   ctx.fillStyle = '#ffffff'
   ctx.fillText(`現在 ${formatNumber(density)} g/cm3`, 478, 134)
+
+  const gaugeX = 96
+  const gaugeY = 468
+  const gaugeWidth = 702
+  ctx.fillStyle = 'rgba(255,255,255,0.08)'
+  drawRoundedRect(ctx, gaugeX, gaugeY, gaugeWidth, 24, 12)
+  ctx.fill()
+  ctx.fillStyle = createGradient(ctx, gaugeX, gaugeY, gaugeWidth, 24, '#fdba74', '#fb923c')
+  drawRoundedRect(ctx, gaugeX, gaugeY, clamp((density / 4) * gaugeWidth, 40, gaugeWidth), 24, 12)
+  ctx.fill()
+  const targetX = gaugeX + (round.targetDensity / 4) * gaugeWidth
+  ctx.strokeStyle = '#fff7ed'
+  ctx.lineWidth = 3
+  ctx.beginPath()
+  ctx.moveTo(targetX, gaugeY - 8)
+  ctx.lineTo(targetX, gaugeY + 32)
+  ctx.stroke()
 }
 
 function drawConcentrationScene(
   ctx: CanvasRenderingContext2D,
   round: Extract<ScienceWorkbenchRound, { kind: 'chem-concentration' }>,
   state: Extract<WorkbenchState, { kind: 'chem-concentration' }>,
-  accent: string
+  accent: string,
+  visuals?: WorkbenchVisualOptions,
 ) {
+  const clock = (visuals?.clockMs ?? 0) / 1000
+  const intensity = visuals?.intensity ?? 1
   const concentration = getCurrentConcentration(state)
   const total = state.soluteMass + state.waterMass
   const fillHeight = clamp((total / 130) * 210, 40, 220)
@@ -387,17 +506,37 @@ function drawConcentrationScene(
   ctx.lineWidth = 4
   drawRoundedRect(ctx, 485, 158, 190, 240, 34)
   ctx.stroke()
-  ctx.fillStyle = 'rgba(125, 211, 252, 0.28)'
-  drawRoundedRect(ctx, 495, 388 - fillHeight, 170, fillHeight, 28)
-  ctx.fill()
+  drawLiquidFill(
+    ctx,
+    495,
+    166,
+    170,
+    224,
+    fillHeight,
+    {
+      from: 'rgba(186, 230, 253, 0.6)',
+      to: 'rgba(59, 130, 246, 0.24)',
+      highlight: 'rgba(224, 242, 254, 0.8)',
+    },
+    visuals,
+  )
   ctx.fillStyle = 'rgba(251, 113, 133, 0.8)'
-  for (let index = 0; index < Math.max(4, Math.round(soluteRatio * 30)); index += 1) {
-    const x = 515 + (index % 6) * 24
-    const y = 370 - (index * 11) % Math.max(34, fillHeight - 20)
+  for (let index = 0; index < Math.max(8, Math.round(soluteRatio * 42)); index += 1) {
+    const orbit = 18 + (index % 5) * 18
+    const x = 580 + Math.cos(clock * (0.7 + soluteRatio) + index) * orbit + Math.sin(clock * 0.9 + index) * 10
+    const y = 340 - ((index * 19 + clock * 48 * intensity) % Math.max(36, fillHeight - 10))
     ctx.beginPath()
-    ctx.arc(x, y, 6, 0, Math.PI * 2)
+    ctx.arc(x, y, 4 + ((index + 1) % 3), 0, Math.PI * 2)
     ctx.fill()
   }
+  ctx.strokeStyle = `${accent}88`
+  ctx.setLineDash([8, 6])
+  ctx.beginPath()
+  const ratioY = 388 - clamp(soluteRatio * fillHeight, 0, fillHeight)
+  ctx.moveTo(470, ratioY)
+  ctx.lineTo(690, ratioY)
+  ctx.stroke()
+  ctx.setLineDash([])
 
   ctx.fillStyle = '#ffffff'
   ctx.font = '700 24px "Zen Kaku Gothic New", sans-serif'
@@ -409,6 +548,9 @@ function drawConcentrationScene(
   ctx.fillText(`溶質 ${state.soluteMass}g`, 98, 252)
   ctx.fillText(`水 ${state.waterMass}g`, 98, 296)
   ctx.fillText(`溶液 ${total}g`, 98, 340)
+  ctx.fillStyle = '#fecdd3'
+  ctx.font = '500 14px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText('ピンク粒が多いほど濃く見えます', 98, 386)
 }
 
 function drawArrow(
@@ -505,13 +647,18 @@ function drawBatteryScene(
   ctx: CanvasRenderingContext2D,
   round: Extract<ScienceWorkbenchRound, { kind: 'chem-battery' }>,
   state: Extract<WorkbenchState, { kind: 'chem-battery' }>,
-  accent: string
+  accent: string,
+  visuals?: WorkbenchVisualOptions,
 ) {
+  const clock = (visuals?.clockMs ?? 0) / 1000
+  const intensity = visuals?.intensity ?? 1
   const leftPlateX = 246
   const rightPlateX = 584
   const plateY = 196
   const plateHeight = 190
   const topWireY = 128
+  const activeFlow = state.negativeElectrode === 'zinc' && state.electronDirection === 'zinc-to-copper'
+  const bulbGlow = activeFlow ? 0.7 + Math.sin(clock * 5) * 0.15 * intensity : 0.18
 
   ctx.fillStyle = 'rgba(255,255,255,0.08)'
   drawRoundedRect(ctx, 64, 112, 772, 332, 28)
@@ -537,6 +684,10 @@ function drawBatteryScene(
   ctx.lineTo(rightPlateX + 22, plateY)
   ctx.stroke()
 
+  ctx.fillStyle = `rgba(251, 191, 36, ${bulbGlow})`
+  ctx.beginPath()
+  ctx.arc(450, 126, 66, 0, Math.PI * 2)
+  ctx.fill()
   ctx.fillStyle = createGradient(ctx, 380, 92, 140, 70, '#fde68a', '#f59e0b')
   drawRoundedRect(ctx, 380, 92, 140, 70, 20)
   ctx.fill()
@@ -575,14 +726,18 @@ function drawBatteryScene(
 
   if (state.electronDirection === 'zinc-to-copper') {
     drawArrow(ctx, 280, topWireY - 12, 620, topWireY - 12, '#f8fafc')
+    drawFlowDots(ctx, 290, 610, topWireY - 12, '#f8fafc', visuals)
   } else if (state.electronDirection === 'copper-to-zinc') {
     drawArrow(ctx, 620, topWireY - 12, 280, topWireY - 12, '#f8fafc')
+    drawFlowDots(ctx, 610, 290, topWireY - 12, '#f8fafc', visuals)
   }
 
   if (state.currentDirection === 'zinc-to-copper') {
     drawArrow(ctx, 620, topWireY + 18, 280, topWireY + 18, '#93c5fd', true)
+    drawFlowDots(ctx, 610, 290, topWireY + 18, 'rgba(147, 197, 253, 0.92)', visuals)
   } else if (state.currentDirection === 'copper-to-zinc') {
     drawArrow(ctx, 280, topWireY + 18, 620, topWireY + 18, '#93c5fd', true)
+    drawFlowDots(ctx, 290, 610, topWireY + 18, 'rgba(147, 197, 253, 0.92)', visuals)
   }
 
   ctx.fillStyle = '#e2e8f0'
@@ -592,15 +747,18 @@ function drawBatteryScene(
 
   ctx.fillStyle = 'rgba(147, 197, 253, 0.9)'
   if (state.zincChange === 'dissolve') {
-    for (let index = 0; index < 5; index += 1) {
+    for (let index = 0; index < 6; index += 1) {
       ctx.beginPath()
-      ctx.arc(320 + index * 18, 248 + (index % 2) * 18, 7, 0, Math.PI * 2)
+      const ionX = 302 + index * 20 + Math.sin(clock * 1.8 + index) * 10
+      const ionY = 242 + ((clock * 28 + index * 26) % 92)
+      ctx.arc(ionX, ionY, 7, 0, Math.PI * 2)
       ctx.fill()
     }
     ctx.fillText('Zn2+ が溶液へ', 200, 414)
   } else if (state.zincChange === 'attach') {
     for (let index = 0; index < 4; index += 1) {
-      ctx.fillRect(leftPlateX - 10 - index * 8, 230 + index * 28, 10, 16)
+      const wobble = Math.sin(clock * 4 + index) * 2
+      ctx.fillRect(leftPlateX - 10 - index * 8, 230 + index * 28 + wobble, 10, 16)
     }
     ctx.fillText('Zn が板につく', 200, 414)
   }
@@ -608,13 +766,16 @@ function drawBatteryScene(
   ctx.fillStyle = 'rgba(251, 146, 60, 0.92)'
   if (state.copperChange === 'attach') {
     for (let index = 0; index < 4; index += 1) {
-      ctx.fillRect(rightPlateX + 48 + index * 8, 226 + index * 30, 10, 16)
+      const wobble = Math.sin(clock * 4 + index) * 2
+      ctx.fillRect(rightPlateX + 48 + index * 8, 226 + index * 30 + wobble, 10, 16)
     }
     ctx.fillText('Cu が板につく', 542, 414)
   } else if (state.copperChange === 'dissolve') {
-    for (let index = 0; index < 5; index += 1) {
+    for (let index = 0; index < 6; index += 1) {
       ctx.beginPath()
-      ctx.arc(532 - index * 18, 250 + (index % 2) * 18, 7, 0, Math.PI * 2)
+      const ionX = 580 - index * 20 + Math.sin(clock * 1.8 + index) * 10
+      const ionY = 244 + ((clock * 28 + index * 24) % 92)
+      ctx.arc(ionX, ionY, 7, 0, Math.PI * 2)
       ctx.fill()
     }
     ctx.fillText('Cu2+ が溶液へ', 524, 414)
@@ -631,8 +792,11 @@ function drawColumnScene(
   ctx: CanvasRenderingContext2D,
   round: Extract<ScienceWorkbenchRound, { kind: 'earth-column' }>,
   state: Extract<WorkbenchState, { kind: 'earth-column' }>,
-  accent: string
+  accent: string,
+  visuals?: WorkbenchVisualOptions,
 ) {
+  const clock = (visuals?.clockMs ?? 0) / 1000
+  const intensity = visuals?.intensity ?? 1
   const columnX = 136
   const columnY = 156
   const slotHeight = 92
@@ -656,6 +820,20 @@ function drawColumnScene(
     drawRoundedRect(ctx, columnX, y, slotWidth, slotHeight - 10, 20)
     ctx.fill()
     if (option) fillPattern(ctx, columnX, y, slotWidth, slotHeight - 10, option.pattern)
+    if (state.activeSlot === index) {
+      ctx.fillStyle = `rgba(45, 212, 191, ${0.1 + (Math.sin(clock * 3.2) + 1) * 0.08 * intensity})`
+      drawRoundedRect(ctx, columnX, y, slotWidth, slotHeight - 10, 20)
+      ctx.fill()
+      for (let grain = 0; grain < 10; grain += 1) {
+        const progress = ((clock * 0.55 + grain * 0.1) % 1 + 1) % 1
+        const grainX = columnX + 18 + (grain % 5) * 38 + Math.sin(clock * 2 + grain) * 4
+        const grainY = y - 20 + progress * (slotHeight + 14)
+        ctx.fillStyle = 'rgba(226, 232, 240, 0.6)'
+        ctx.beginPath()
+        ctx.arc(grainX, grainY, 3.2, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
     ctx.strokeStyle = state.activeSlot === index ? accent : 'rgba(255,255,255,0.16)'
     ctx.lineWidth = state.activeSlot === index ? 3 : 2
     drawRoundedRect(ctx, columnX, y, slotWidth, slotHeight - 10, 20)
@@ -672,6 +850,9 @@ function drawColumnScene(
   ctx.fillStyle = '#f0fdfa'
   ctx.font = '600 15px "Zen Kaku Gothic New", sans-serif'
   ctx.fillText('手がかり', 508, 150)
+  ctx.fillStyle = '#99f6e4'
+  ctx.font = '500 14px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText('上ほど新しい地層', 246, 132)
   round.options.forEach((option, index) => {
     const boxY = 166 + index * 92
     ctx.fillStyle = option.color
@@ -695,8 +876,11 @@ function drawHumidityScene(
   ctx: CanvasRenderingContext2D,
   round: Extract<ScienceWorkbenchRound, { kind: 'earth-humidity' }>,
   state: Extract<WorkbenchState, { kind: 'earth-humidity' }>,
-  accent: string
+  accent: string,
+  visuals?: WorkbenchVisualOptions,
 ) {
+  const clock = (visuals?.clockMs ?? 0) / 1000
+  const intensity = visuals?.intensity ?? 1
   const graphX = 86
   const graphY = 132
   const graphWidth = 520
@@ -752,18 +936,42 @@ function drawHumidityScene(
   ctx.stroke()
   ctx.setLineDash([])
 
+  for (let index = 0; index < 16; index += 1) {
+    const progress = ((clock * 0.22 * intensity + index * 0.07) % 1 + 1) % 1
+    const x = 692 + (index % 4) * 34 + Math.sin(clock * 2 + index) * 5
+    const y = 392 - progress * 120
+    ctx.fillStyle = cloudReady ? 'rgba(191, 219, 254, 0.36)' : 'rgba(125, 211, 252, 0.24)'
+    ctx.beginPath()
+    ctx.arc(x, y, 4, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
   ctx.fillStyle = cloudReady ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.28)'
   ctx.beginPath()
-  ctx.arc(742, 262, 34, Math.PI * 0.9, Math.PI * 1.9)
-  ctx.arc(782, 242, 40, Math.PI, Math.PI * 2)
-  ctx.arc(816, 266, 28, Math.PI * 1.1, Math.PI * 1.95)
+  ctx.arc(742, 262, 34 + Math.sin(clock * 1.8) * 3, Math.PI * 0.9, Math.PI * 1.9)
+  ctx.arc(782, 242, 40 + Math.sin(clock * 1.8 + 0.6) * 4, Math.PI, Math.PI * 2)
+  ctx.arc(816, 266, 28 + Math.sin(clock * 1.8 + 1.4) * 2, Math.PI * 1.1, Math.PI * 1.95)
   ctx.closePath()
   ctx.fill()
+  if (cloudReady) {
+    ctx.strokeStyle = 'rgba(196, 181, 253, 0.78)'
+    ctx.lineWidth = 2.5
+    for (let index = 0; index < 4; index += 1) {
+      const rainX = 726 + index * 28 + Math.sin(clock * 3 + index) * 3
+      const rainY = 300 + ((clock * 120 + index * 34) % 78)
+      ctx.beginPath()
+      ctx.moveTo(rainX, rainY)
+      ctx.lineTo(rainX - 8, rainY + 18)
+      ctx.stroke()
+    }
+  }
   ctx.fillStyle = cloudReady ? '#e9d5ff' : '#bfdbfe'
   ctx.font = '700 18px "Zen Kaku Gothic New", sans-serif'
   ctx.fillText(cloudReady ? 'くもり始める' : 'まだ余裕あり', 694, 334)
   ctx.font = '500 15px "Zen Kaku Gothic New", sans-serif'
   ctx.fillText(`飽和水蒸気量 ${formatNumber(currentSaturation)}g`, 686, 364)
+  ctx.fillStyle = '#c4b5fd'
+  ctx.fillText(`実際の水蒸気量 ${formatNumber(round.vaporAmount)}g`, 686, 388)
 }
 
 function drawGraphAxes(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, xLabel: string, yLabel: string) {
@@ -784,8 +992,11 @@ function drawMotionScene(
   ctx: CanvasRenderingContext2D,
   round: Extract<ScienceWorkbenchRound, { kind: 'physics-motion-graph' }>,
   state: Extract<WorkbenchState, { kind: 'physics-motion-graph' }>,
-  accent: string
+  accent: string,
+  visuals?: WorkbenchVisualOptions,
 ) {
+  const clock = (visuals?.clockMs ?? 0) / 1000
+  const intensity = visuals?.intensity ?? 1
   const { currentPosition, currentVelocity } = describeMotion(round, state)
   const trackX = 78
   const trackY = 150
@@ -814,6 +1025,24 @@ function drawMotionScene(
   ctx.arc(cartX + 22, trackY, 10, 0, Math.PI * 2)
   ctx.arc(cartX + 68, trackY, 10, 0, Math.PI * 2)
   ctx.fill()
+  const wheelRotation = clock * (0.8 + Math.abs(currentVelocity) * 0.2)
+  ctx.strokeStyle = 'rgba(191, 219, 254, 0.88)'
+  ctx.lineWidth = 2
+  ;[cartX + 22, cartX + 68].forEach(centerX => {
+    ctx.beginPath()
+    ctx.moveTo(centerX, trackY)
+    ctx.lineTo(centerX + Math.cos(wheelRotation) * 10, trackY + Math.sin(wheelRotation) * 10)
+    ctx.moveTo(centerX, trackY)
+    ctx.lineTo(centerX + Math.cos(wheelRotation + Math.PI / 2) * 10, trackY + Math.sin(wheelRotation + Math.PI / 2) * 10)
+    ctx.stroke()
+  })
+  ctx.strokeStyle = accent
+  ctx.lineWidth = 3
+  ctx.beginPath()
+  ctx.moveTo(cartX + 45, trackY - 70)
+  ctx.lineTo(cartX + 45 + clamp(currentVelocity * 10, -30, 70), trackY - 70)
+  ctx.stroke()
+  drawArrow(ctx, cartX + 45, trackY - 70, cartX + 45 + clamp(currentVelocity * 10, -30, 70), trackY - 70, accent)
 
   ctx.fillStyle = '#ffffff'
   ctx.font = '700 24px "Zen Kaku Gothic New", sans-serif'
@@ -854,38 +1083,53 @@ function drawMotionScene(
   const playhead1Y = graphY + graphHeight - clamp(currentPosition / 28, 0, 1) * graphHeight
   const playhead2X = graph2X + (state.time / 4) * graphWidth
   const playhead2Y = graphY + graphHeight - clamp(currentVelocity / 12, 0, 1) * graphHeight
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)'
+  ctx.setLineDash([6, 8])
+  ctx.beginPath()
+  ctx.moveTo(playhead1X, graphY)
+  ctx.lineTo(playhead1X, graphY + graphHeight)
+  ctx.moveTo(playhead2X, graphY)
+  ctx.lineTo(playhead2X, graphY + graphHeight)
+  ctx.stroke()
+  ctx.setLineDash([])
   ctx.fillStyle = '#f8fafc'
   ctx.beginPath()
   ctx.arc(playhead1X, playhead1Y, 6, 0, Math.PI * 2)
   ctx.arc(playhead2X, playhead2Y, 6, 0, Math.PI * 2)
   ctx.fill()
+  ctx.fillStyle = 'rgba(147, 197, 253, 0.6)'
+  for (let index = 0; index < 3; index += 1) {
+    const trailX = cartX - index * 28 - ((clock * 42 * intensity) % 28)
+    ctx.fillRect(trailX, trackY - 38, 18, 4)
+  }
 }
 
 export function drawWorkbenchScene(
   ctx: CanvasRenderingContext2D,
   meta: ScienceWorkbenchMeta,
   round: ScienceWorkbenchRound,
-  state: WorkbenchState
+  state: WorkbenchState,
+  visuals?: WorkbenchVisualOptions,
 ) {
   drawBackground(ctx, meta)
   switch (round.kind) {
     case 'chem-density':
-      if (state.kind === round.kind) drawDensityScene(ctx, round, state, meta.accent)
+      if (state.kind === round.kind) drawDensityScene(ctx, round, state, meta.accent, visuals)
       break
     case 'chem-concentration':
-      if (state.kind === round.kind) drawConcentrationScene(ctx, round, state, meta.accent)
+      if (state.kind === round.kind) drawConcentrationScene(ctx, round, state, meta.accent, visuals)
       break
     case 'chem-battery':
-      if (state.kind === round.kind) drawBatteryScene(ctx, round, state, meta.accent)
+      if (state.kind === round.kind) drawBatteryScene(ctx, round, state, meta.accent, visuals)
       break
     case 'earth-humidity':
-      if (state.kind === round.kind) drawHumidityScene(ctx, round, state, meta.accent)
+      if (state.kind === round.kind) drawHumidityScene(ctx, round, state, meta.accent, visuals)
       break
     case 'earth-column':
-      if (state.kind === round.kind) drawColumnScene(ctx, round, state, meta.accent)
+      if (state.kind === round.kind) drawColumnScene(ctx, round, state, meta.accent, visuals)
       break
     case 'physics-motion-graph':
-      if (state.kind === round.kind) drawMotionScene(ctx, round, state, meta.accent)
+      if (state.kind === round.kind) drawMotionScene(ctx, round, state, meta.accent, visuals)
       break
     default:
       break
@@ -917,6 +1161,10 @@ export default function ScienceWorkbenchPage({
   const [feedback, setFeedback] = useState<RoundFeedback | null>(null)
   const [history, setHistory] = useState<boolean[]>([])
   const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
+  const [visualClock, setVisualClock] = useState(0)
+  const [animationEnabled, setAnimationEnabled] = useState(true)
+  const [animationSpeed, setAnimationSpeed] = useState(1)
+  const [visualIntensity, setVisualIntensity] = useState(1)
 
   const round = rounds[current]
   const progress = rounds.length > 0 ? (current / rounds.length) * 100 : 0
@@ -937,6 +1185,7 @@ export default function ScienceWorkbenchPage({
     setFeedback(null)
     setHistory([])
     setRewardSummary(null)
+    setVisualClock(0)
   }, [mode, rounds])
 
   useEffect(() => {
@@ -964,8 +1213,30 @@ export default function ScienceWorkbenchPage({
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    drawWorkbenchScene(ctx, meta, round, state)
-  }, [meta, round, state])
+    drawWorkbenchScene(ctx, meta, round, state, {
+      clockMs: visualClock,
+      intensity: visualIntensity,
+    })
+  }, [meta, round, state, visualClock, visualIntensity])
+
+  useEffect(() => {
+    if (!animationEnabled) return
+
+    let rafId = 0
+    let last = performance.now()
+
+    const tick = (now: number) => {
+      const delta = now - last
+      last = now
+      setVisualClock(currentClock => currentClock + delta * animationSpeed)
+      rafId = window.requestAnimationFrame(tick)
+    }
+
+    rafId = window.requestAnimationFrame(tick)
+    return () => {
+      window.cancelAnimationFrame(rafId)
+    }
+  }, [animationEnabled, animationSpeed])
 
   useEffect(() => {
     window.render_game_to_text = () => {
@@ -982,6 +1253,11 @@ export default function ScienceWorkbenchPage({
         supportText: currentRound.supportText,
         state: currentState,
         feedback: feedbackRef.current,
+        visuals: {
+          animationEnabled,
+          animationSpeed,
+          visualIntensity,
+        },
       }
       return JSON.stringify(payload, null, 2)
     }
@@ -998,13 +1274,14 @@ export default function ScienceWorkbenchPage({
           time: clamp(roundTo(currentState.time + ms / 1000, 1), 0, 4),
         }
       })
+      setVisualClock(currentClock => currentClock + ms * animationSpeed)
     }
 
     return () => {
       delete window.render_game_to_text
       delete window.advanceTime
     }
-  }, [current, meta.field, mode, rounds.length])
+  }, [animationEnabled, animationSpeed, current, meta.field, mode, rounds.length, visualIntensity])
 
   const updateState = (updater: (currentState: WorkbenchState) => WorkbenchState) => {
     if (phase !== 'adjusting') return
@@ -1078,31 +1355,95 @@ export default function ScienceWorkbenchPage({
     setFeedback(null)
     setHistory([])
     setRewardSummary(null)
+    setVisualClock(0)
   }
+
+  const renderRangeField = (
+    label: string,
+    value: number,
+    min: number,
+    max: number,
+    step: number,
+    unit: string,
+    onChange: (next: number) => void,
+    hint?: string,
+  ) => (
+    <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <div className="text-xs tracking-[0.18em] text-slate-400">{label}</div>
+          {hint && <div className="mt-1 text-[11px] leading-5 text-slate-500">{hint}</div>}
+        </div>
+        <div className="text-xl font-bold text-white">
+          {value}
+          <span className="ml-1 text-sm text-slate-400">{unit}</span>
+        </div>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={event => onChange(Number(event.target.value))}
+        className="mt-3 w-full"
+        style={{ accentColor: meta.accent }}
+      />
+      <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
+        <span>{min}{unit}</span>
+        <span>{max}{unit}</span>
+      </div>
+    </div>
+  )
+
+  const renderVisualPanel = () => (
+    <div className="card anim-fade-up">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold text-slate-200">表示パラメータ</div>
+          <p className="mt-1 text-xs leading-6 text-slate-500">アニメーションの速さと強調を調整できます。</p>
+        </div>
+        <button
+          onClick={() => setAnimationEnabled(currentValue => !currentValue)}
+          className={animationEnabled ? 'btn-secondary text-sm !px-4 !py-2.5' : 'btn-ghost text-sm !px-4 !py-2.5'}
+        >
+          {animationEnabled ? '動きON' : '動きOFF'}
+        </button>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {renderRangeField(
+          'アニメ速度',
+          roundTo(animationSpeed, 1),
+          0.5,
+          2,
+          0.1,
+          'x',
+          next => setAnimationSpeed(next),
+          '流れや点滅の速さ',
+        )}
+        {renderRangeField(
+          '見やすさ強調',
+          roundTo(visualIntensity, 1),
+          0.6,
+          1.8,
+          0.1,
+          'x',
+          next => setVisualIntensity(next),
+          '波や粒の動きの大きさ',
+        )}
+      </div>
+    </div>
+  )
 
   const renderControls = () => {
     if (state.kind === 'chem-density') {
       const density = getCurrentDensity(state)
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">調整</div>
+          <div className="text-sm font-semibold text-slate-200">パラメータ調整</div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
-              <div className="text-xs tracking-[0.18em] text-slate-400">質量</div>
-              <div className="mt-1 text-2xl font-bold text-white">{state.mass} g</div>
-              <div className="mt-3 flex gap-2">
-                <button onClick={() => updateState(currentState => currentState.kind !== 'chem-density' ? currentState : ({ ...currentState, mass: clamp(currentState.mass - 10, 10, 120) }))} className="btn-ghost !px-4 !py-2">-10</button>
-                <button onClick={() => updateState(currentState => currentState.kind !== 'chem-density' ? currentState : ({ ...currentState, mass: clamp(currentState.mass + 10, 10, 120) }))} className="btn-secondary !px-4 !py-2">+10</button>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
-              <div className="text-xs tracking-[0.18em] text-slate-400">体積</div>
-              <div className="mt-1 text-2xl font-bold text-white">{state.volume} cm3</div>
-              <div className="mt-3 flex gap-2">
-                <button onClick={() => updateState(currentState => currentState.kind !== 'chem-density' ? currentState : ({ ...currentState, volume: clamp(currentState.volume - 5, 5, 60) }))} className="btn-ghost !px-4 !py-2">-5</button>
-                <button onClick={() => updateState(currentState => currentState.kind !== 'chem-density' ? currentState : ({ ...currentState, volume: clamp(currentState.volume + 5, 5, 60) }))} className="btn-secondary !px-4 !py-2">+5</button>
-              </div>
-            </div>
+            {renderRangeField('質量', state.mass, 10, 120, 10, 'g', next => updateState(currentState => currentState.kind !== 'chem-density' ? currentState : ({ ...currentState, mass: next })), '重さを変える')}
+            {renderRangeField('体積', state.volume, 5, 60, 5, 'cm3', next => updateState(currentState => currentState.kind !== 'chem-density' ? currentState : ({ ...currentState, volume: next })), '大きさを変える')}
           </div>
           <div className="rounded-2xl border border-orange-400/20 bg-orange-500/10 p-3 text-sm text-orange-100">
             現在の密度: <span className="font-bold">{formatNumber(density)} g/cm3</span>
@@ -1116,24 +1457,10 @@ export default function ScienceWorkbenchPage({
       const total = state.soluteMass + state.waterMass
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">調整</div>
+          <div className="text-sm font-semibold text-slate-200">パラメータ調整</div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
-              <div className="text-xs tracking-[0.18em] text-slate-400">溶質</div>
-              <div className="mt-1 text-2xl font-bold text-white">{state.soluteMass} g</div>
-              <div className="mt-3 flex gap-2">
-                <button onClick={() => updateState(currentState => currentState.kind !== 'chem-concentration' ? currentState : ({ ...currentState, soluteMass: clamp(currentState.soluteMass - 5, 5, 60) }))} className="btn-ghost !px-4 !py-2">-5</button>
-                <button onClick={() => updateState(currentState => currentState.kind !== 'chem-concentration' ? currentState : ({ ...currentState, soluteMass: clamp(currentState.soluteMass + 5, 5, 60) }))} className="btn-secondary !px-4 !py-2">+5</button>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
-              <div className="text-xs tracking-[0.18em] text-slate-400">水</div>
-              <div className="mt-1 text-2xl font-bold text-white">{state.waterMass} g</div>
-              <div className="mt-3 flex gap-2">
-                <button onClick={() => updateState(currentState => currentState.kind !== 'chem-concentration' ? currentState : ({ ...currentState, waterMass: clamp(currentState.waterMass - 5, 5, 120) }))} className="btn-ghost !px-4 !py-2">-5</button>
-                <button onClick={() => updateState(currentState => currentState.kind !== 'chem-concentration' ? currentState : ({ ...currentState, waterMass: clamp(currentState.waterMass + 5, 5, 120) }))} className="btn-secondary !px-4 !py-2">+5</button>
-              </div>
-            </div>
+            {renderRangeField('溶質', state.soluteMass, 5, 60, 5, 'g', next => updateState(currentState => currentState.kind !== 'chem-concentration' ? currentState : ({ ...currentState, soluteMass: next })), 'ピンク粒の量')}
+            {renderRangeField('水', state.waterMass, 5, 120, 5, 'g', next => updateState(currentState => currentState.kind !== 'chem-concentration' ? currentState : ({ ...currentState, waterMass: next })), '青い液体の量')}
           </div>
           <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">
             現在の濃度: <span className="font-bold">{formatNumber(concentration)}%</span> / 溶液 {total}g
@@ -1259,13 +1586,23 @@ export default function ScienceWorkbenchPage({
     if (state.kind === 'earth-humidity') {
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">温度を選ぶ</div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="text-sm font-semibold text-slate-200">パラメータ調整</div>
+          {renderRangeField(
+            '温度',
+            state.temperature,
+            0,
+            40,
+            10,
+            '℃',
+            next => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, temperature: next })),
+            '露点へ近づく温度',
+          )}
+          <div className="grid grid-cols-5 gap-2">
             {SATURATED_VAPOR_TABLE.map(item => (
               <button
                 key={item.temperature}
                 onClick={() => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, temperature: item.temperature }))}
-                className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
+                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
                   state.temperature === item.temperature
                     ? 'border-violet-300 bg-violet-500/20 text-white'
                     : 'border-white/10 bg-slate-950/30 text-slate-300'
@@ -1358,13 +1695,23 @@ export default function ScienceWorkbenchPage({
     if (state.kind === 'physics-motion-graph') {
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">加速度を選ぶ</div>
+          <div className="text-sm font-semibold text-slate-200">パラメータ調整</div>
+          {renderRangeField(
+            '加速度',
+            state.acceleration,
+            -1,
+            2,
+            1,
+            'm/s2',
+            next => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, acceleration: next })),
+            'グラフの傾きが変わる',
+          )}
           <div className="grid grid-cols-4 gap-2">
             {[-1, 0, 1, 2].map(value => (
               <button
                 key={value}
                 onClick={() => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, acceleration: value }))}
-                className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
+                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
                   state.acceleration === value
                     ? 'border-sky-300 bg-sky-500/20 text-white'
                     : 'border-white/10 bg-slate-950/30 text-slate-300'
@@ -1374,7 +1721,16 @@ export default function ScienceWorkbenchPage({
               </button>
             ))}
           </div>
-          <div className="text-sm font-semibold text-slate-200">時刻を見る</div>
+          {renderRangeField(
+            '時刻',
+            roundTo(state.time, 1),
+            0,
+            4,
+            0.1,
+            's',
+            next => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, time: next })),
+            '台車とグラフの位置が同期',
+          )}
           <div className="flex gap-2">
             <button onClick={() => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, time: clamp(currentState.time - 1, 0, 4) }))} className="btn-ghost !px-4 !py-2">-1秒</button>
             <button onClick={() => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, time: clamp(currentState.time + 1, 0, 4) }))} className="btn-secondary !px-4 !py-2">+1秒</button>
@@ -1552,6 +1908,8 @@ export default function ScienceWorkbenchPage({
             <div className="text-sm font-semibold text-slate-200">{round.prompt}</div>
             <p className="mt-2 text-sm leading-7 text-slate-400">{round.supportText}</p>
           </div>
+
+          {renderVisualPanel()}
 
           <div className={`card anim-fade-up ${disabled ? 'opacity-90' : ''}`}>
             {renderControls()}

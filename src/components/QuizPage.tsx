@@ -9,6 +9,11 @@ import { getLevelInfo } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions } from '@/lib/questionPicker'
+import {
+  getQuestionInquirySchemaErrorMessage,
+  QUESTION_INQUIRY_CATEGORY_OPTIONS,
+  QuestionInquiryCategory,
+} from '@/lib/questionInquiry'
 import { hasCompletedDailyChallenge, recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
 import {
   getCachedColumnSupport,
@@ -129,7 +134,7 @@ export default function QuizPage({
   customOptions?: CustomQuizOptions
   onBack: () => void
 }) {
-  const { studentId, logout } = useAuth()
+  const { studentId, nickname, logout } = useAuth()
   const color = FIELD_COLORS[field] ?? '#38bdf8'
   const isGuest = isGuestStudentId(studentId)
   const isCustom = Boolean(customOptions)
@@ -146,6 +151,11 @@ export default function QuizPage({
   const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string; result: TextAnswerResult }[]>([])
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
   const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
+  const [inquiryOpen, setInquiryOpen] = useState(false)
+  const [inquiryCategory, setInquiryCategory] = useState<QuestionInquiryCategory>('question_content')
+  const [inquiryMessage, setInquiryMessage] = useState('')
+  const [inquiryStatus, setInquiryStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [inquirySending, setInquirySending] = useState(false)
   const startedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -259,6 +269,14 @@ export default function QuizPage({
     setFavoriteIds(readFavoriteQuestionIds(studentId))
   }, [studentId])
 
+  useEffect(() => {
+    setInquiryOpen(false)
+    setInquiryCategory('question_content')
+    setInquiryMessage('')
+    setInquiryStatus(null)
+    setInquirySending(false)
+  }, [current])
+
   const q = questions[current]
   const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
   const isFavorite = !!q && favoriteIds.has(q.id)
@@ -304,6 +322,60 @@ export default function QuizPage({
       writeFavoriteQuestionIds(studentId, next)
       return next
     })
+  }
+
+  const handleOpenInquiry = () => {
+    setInquiryOpen(true)
+    setInquiryStatus(null)
+  }
+
+  const handleCloseInquiry = () => {
+    if (inquirySending) return
+    setInquiryOpen(false)
+    setInquiryStatus(null)
+  }
+
+  const handleSubmitInquiry = async () => {
+    if (!q || !studentId) return
+
+    try {
+      setInquirySending(true)
+      setInquiryStatus(null)
+
+      const { error } = await supabase.from('question_inquiries').insert({
+        student_id: studentId,
+        student_nickname: nickname ?? `ID ${studentId}`,
+        question_id: q.id,
+        category: inquiryCategory,
+        message: inquiryMessage.trim(),
+        field: q.field as '生物' | '化学' | '物理' | '地学',
+        unit: q.unit,
+        question_text: q.question,
+        question_type: q.type,
+        choices: q.choices,
+        answer_text: q.answer,
+        explanation_text: q.explanation,
+        image_url: q.image_url,
+      })
+
+      if (error) {
+        throw new Error(getQuestionInquirySchemaErrorMessage(error.message))
+      }
+
+      setInquiryStatus({ type: 'success', text: '管理者に問い合わせを送信しました。' })
+      setInquiryMessage('')
+      window.setTimeout(() => {
+        setInquiryOpen(false)
+        setInquiryStatus(null)
+      }, 900)
+    } catch (error) {
+      setInquiryStatus({
+        type: 'error',
+        text: error instanceof Error ? error.message : '問い合わせの送信に失敗しました。',
+      })
+    } finally {
+      setInquirySending(false)
+    }
   }
 
   const handleNext = async () => {
@@ -628,20 +700,35 @@ export default function QuizPage({
               {q.type === 'choice' ? `${q.choices?.length ?? 0}択` : '記述'}
             </span>
           </div>
-          <button
-            onClick={handleToggleFavorite}
-            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-all"
-            style={{
-              border: `1px solid ${isFavorite ? '#f59e0b55' : 'var(--surface-elevated-border)'}`,
-              background: isFavorite ? 'rgba(245, 158, 11, 0.14)' : 'var(--surface-elevated)',
-              color: isFavorite ? '#fbbf24' : 'var(--text-muted)',
-            }}
-            aria-pressed={isFavorite}
-            aria-label={isFavorite ? 'お気に入り解除' : 'お気に入り登録'}
-          >
-            <span aria-hidden="true">{isFavorite ? '★' : '☆'}</span>
-            <span>お気に入り</span>
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              onClick={handleToggleFavorite}
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-all"
+              style={{
+                border: `1px solid ${isFavorite ? '#f59e0b55' : 'var(--surface-elevated-border)'}`,
+                background: isFavorite ? 'rgba(245, 158, 11, 0.14)' : 'var(--surface-elevated)',
+                color: isFavorite ? '#fbbf24' : 'var(--text-muted)',
+              }}
+              aria-pressed={isFavorite}
+              aria-label={isFavorite ? 'お気に入り解除' : 'お気に入り登録'}
+            >
+              <span aria-hidden="true">{isFavorite ? '★' : '☆'}</span>
+              <span>お気に入り</span>
+            </button>
+            <button
+              onClick={handleOpenInquiry}
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-all"
+              style={{
+                border: '1px solid rgba(56, 189, 248, 0.24)',
+                background: inquiryOpen ? 'rgba(56, 189, 248, 0.14)' : 'var(--surface-elevated)',
+                color: inquiryOpen ? '#7dd3fc' : 'var(--text-muted)',
+              }}
+              aria-label="管理者へ問い合わせ"
+            >
+              <span aria-hidden="true">✉️</span>
+              <span>問い合わせ</span>
+            </button>
+          </div>
         </div>
         <p className="text-lg font-bold leading-relaxed sm:text-[1.35rem]" style={{ color: 'var(--text)' }}>{q.question}</p>
         {q.image_url && questionImageDisplay && (
@@ -661,6 +748,83 @@ export default function QuizPage({
                 loading="lazy"
               />
             </div>
+          </div>
+        )}
+        {inquiryOpen && (
+          <div
+            className="mt-4 rounded-[24px] border px-4 py-4"
+            style={{
+              borderColor: 'rgba(56, 189, 248, 0.2)',
+              background: 'rgba(15, 23, 42, 0.72)',
+            }}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.18em] text-sky-200">管理者へ問い合わせ</div>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  問題文・選択肢・正解・解説は自動で添付されます。必要なら気になった点もひとこと送れます。
+                </p>
+              </div>
+              <button onClick={handleCloseInquiry} className="btn-ghost text-sm !px-3 !py-2" disabled={inquirySending}>
+                閉じる
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              {QUESTION_INQUIRY_CATEGORY_OPTIONS.map(option => (
+                <button
+                  key={option.value}
+                  onClick={() => setInquiryCategory(option.value)}
+                  className="rounded-2xl border px-3 py-3 text-left transition-all"
+                  style={{
+                    borderColor: inquiryCategory === option.value ? 'rgba(56, 189, 248, 0.38)' : 'rgba(148, 163, 184, 0.16)',
+                    background: inquiryCategory === option.value ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.42)',
+                  }}
+                >
+                  <div className="text-sm font-semibold text-white">{option.label}</div>
+                  <div className="mt-1 text-xs leading-5 text-slate-400">{option.description}</div>
+                </button>
+              ))}
+            </div>
+
+            <label className="mt-4 block">
+              <span className="text-xs text-slate-400">追加メッセージ（任意）</span>
+              <textarea
+                value={inquiryMessage}
+                onChange={event => setInquiryMessage(event.target.value)}
+                rows={3}
+                className="input-surface mt-2 resize-y text-sm"
+                placeholder="どこが気になったかを短く書けます。空でも送信できます。"
+              />
+            </label>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => {
+                  void handleSubmitInquiry()
+                }}
+                className="btn-primary"
+                disabled={inquirySending}
+              >
+                {inquirySending ? '送信中...' : '管理者へ送る'}
+              </button>
+              <span className="text-xs text-slate-500">
+                送信者: {nickname ?? `ID ${studentId ?? '不明'}`}
+              </span>
+            </div>
+
+            {inquiryStatus && (
+              <div
+                className="mt-3 rounded-2xl px-4 py-3 text-sm"
+                style={{
+                  background: inquiryStatus.type === 'success' ? '#052e16' : '#450a0a',
+                  border: `1px solid ${inquiryStatus.type === 'success' ? '#166534' : '#991b1b'}`,
+                  color: inquiryStatus.type === 'success' ? '#86efac' : '#fca5a5',
+                }}
+              >
+                {inquiryStatus.text}
+              </div>
+            )}
           </div>
         )}
       </div>

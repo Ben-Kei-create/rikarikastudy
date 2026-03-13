@@ -7,9 +7,11 @@ import { getStudentAvatarMeta } from '@/lib/studentAvatar'
 
 export default function LoginPage({
   onDone,
+  onOnline,
   onAdmin,
 }: {
   onDone: () => void
+  onOnline: () => void
   onAdmin: () => void
 }) {
   const { login, notice } = useAuth()
@@ -19,6 +21,11 @@ export default function LoginPage({
   const [error, setError] = useState('')
   const [shakeKey, setShakeKey] = useState(0)
   const [submitting, setSubmitting] = useState(false)
+  const [onlineOpen, setOnlineOpen] = useState(false)
+  const [onlineStudentId, setOnlineStudentId] = useState(1)
+  const [onlinePw, setOnlinePw] = useState('')
+  const [onlineError, setOnlineError] = useState('')
+  const [onlineSubmitting, setOnlineSubmitting] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -49,6 +56,24 @@ export default function LoginPage({
       setPw('')
     }
   }
+
+  const handleOnlineLogin = async () => {
+    setOnlineSubmitting(true)
+    const result = await login(onlineStudentId, onlinePw)
+    setOnlineSubmitting(false)
+
+    if (result.ok) {
+      setOnlineError('')
+      setOnlinePw('')
+      setOnlineOpen(false)
+      onOnline()
+      return
+    }
+
+    setOnlineError(result.message)
+  }
+
+  const onlineStudents = students.filter(student => student.id !== GUEST_STUDENT_ID)
 
   return (
     <div className="page-shell page-shell-dashboard flex min-h-screen items-center justify-center">
@@ -186,12 +211,109 @@ export default function LoginPage({
           </button>
 
           <button
-            disabled
+            onClick={() => {
+              setOnlineStudentId(studentId === GUEST_STUDENT_ID ? 1 : studentId)
+              setOnlinePw('')
+              setOnlineError('')
+              setOnlineOpen(true)
+            }}
             className="btn-ghost w-full mt-3"
-            style={{ opacity: 0.5, cursor: 'not-allowed' }}
           >
             オンライン
           </button>
+
+          {onlineOpen && (
+            <div className="mt-4 rounded-[28px] border border-sky-300/16 bg-slate-950/45 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold tracking-[0.18em] uppercase text-sky-200">Online Lab</div>
+                  <div className="mt-2 font-display text-2xl text-white">オンライン入室</div>
+                </div>
+                <button
+                  onClick={() => setOnlineOpen(false)}
+                  className="btn-ghost !px-4 !py-2"
+                >
+                  閉じる
+                </button>
+              </div>
+              <p className="mt-3 text-sm leading-7 text-slate-300">
+                ユーザ確認のため、オンラインでは毎回 <span className="font-semibold text-white">ID とパスワード</span> を入力して入室します。
+              </p>
+
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {onlineStudents.map(student => {
+                  const checked = onlineStudentId === student.id
+                  const avatar = getStudentAvatarMeta(student.id)
+                  return (
+                    <label
+                      key={`online-${student.id}`}
+                      className="rounded-[22px] p-3 transition-all"
+                      style={{
+                        border: checked ? '1px solid rgba(86, 168, 255, 0.5)' : '1px solid var(--surface-elevated-border)',
+                        background: checked
+                          ? 'linear-gradient(180deg, rgba(10, 132, 255, 0.22), rgba(10, 132, 255, 0.14))'
+                          : 'var(--surface-elevated)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="onlineStudentId"
+                        value={student.id}
+                        checked={checked}
+                        onChange={() => setOnlineStudentId(student.id)}
+                        className="sr-only"
+                      />
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex h-10 w-10 items-center justify-center rounded-full text-lg"
+                          style={{
+                            background: avatar.background,
+                            border: `1px solid ${checked ? 'rgba(191, 219, 254, 0.48)' : avatar.borderColor}`,
+                            boxShadow: checked ? '0 12px 26px rgba(59, 130, 246, 0.18)' : avatar.glow,
+                          }}
+                          aria-hidden="true"
+                        >
+                          {avatar.emoji}
+                        </div>
+                        <div className="text-xs text-slate-400">ID {student.id}</div>
+                      </div>
+                      <div className="mt-2 font-display text-xl text-white">{student.nickname}</div>
+                    </label>
+                  )
+                })}
+              </div>
+
+              <input
+                type="password"
+                value={onlinePw}
+                onChange={event => setOnlinePw(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') {
+                    void handleOnlineLogin()
+                  }
+                }}
+                placeholder="Password"
+                className="input-surface text-center text-xl tracking-[0.22em] mt-4"
+                autoFocus
+              />
+              {onlineError && <p className="mt-3 text-center text-sm text-red-400">{onlineError}</p>}
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <button
+                  onClick={() => void handleOnlineLogin()}
+                  className="btn-primary w-full"
+                  disabled={onlineSubmitting || !onlinePw.trim()}
+                  style={{ opacity: onlineSubmitting || !onlinePw.trim() ? 0.7 : 1 }}
+                >
+                  {onlineSubmitting ? '入室中...' : 'オンラインへ入る'}
+                </button>
+                <button onClick={() => setOnlineOpen(false)} className="btn-secondary w-full">
+                  キャンセル
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

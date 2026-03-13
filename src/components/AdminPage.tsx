@@ -21,6 +21,14 @@ import {
   QUESTION_IMAGE_MAX_DISPLAY_SIZE,
   QUESTION_IMAGE_MIN_DISPLAY_SIZE,
 } from '@/lib/questionImages'
+import {
+  getQuestionInquiryCategoryLabel,
+  getQuestionInquirySchemaErrorMessage,
+  isQuestionInquiryTableMissing,
+  QUESTION_INQUIRY_STATUS_META,
+  QuestionInquiryRow,
+  QuestionInquiryStatus,
+} from '@/lib/questionInquiry'
 import { buildGlossaryEntryId, ScienceGlossaryField } from '@/lib/scienceGlossary'
 
 const ADMIN_PW = 'rikaadmin2026'
@@ -202,13 +210,14 @@ interface BulkGlossaryPayload {
   tags: string[]
 }
 
-type AdminTab = 'overview' | 'questions' | 'add' | 'bulk'
+type AdminTab = 'overview' | 'inquiries' | 'questions' | 'add' | 'bulk'
 
 interface RestoreSnapshot {
   format: string
   students: StudentInsert[]
   questions: QuestionRow[]
   glossaryEntries: GlossaryRow[]
+  questionInquiries: QuestionInquiryRow[]
   quizSessions: QuizSessionRow[]
   answerLogs: AnswerLogRow[]
   chatGuardLogs: ChatGuardLogRow[]
@@ -219,6 +228,7 @@ interface RestoreSnapshot {
   hasChatGuardLogs: boolean
   hasEngagementTables: boolean
   hasGlossaryEntries: boolean
+  hasQuestionInquiries: boolean
   defaultPasswordCount: number
 }
 
@@ -458,6 +468,10 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
   const glossaryEntries = hasGlossaryEntries
     ? parsed.scienceGlossaryEntries as GlossaryRow[]
     : []
+  const hasQuestionInquiries = Array.isArray(parsed.questionInquiries)
+  const questionInquiries = hasQuestionInquiries
+    ? parsed.questionInquiries as QuestionInquiryRow[]
+    : []
   const rawStudents = Array.isArray(parsed.students)
     ? parsed.students as Array<Record<string, unknown>>
     : []
@@ -519,6 +533,7 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
     students,
     questions: questionCatalog,
     glossaryEntries,
+    questionInquiries,
     quizSessions,
     answerLogs,
     chatGuardLogs,
@@ -529,12 +544,13 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
     hasChatGuardLogs,
     hasEngagementTables,
     hasGlossaryEntries,
+    hasQuestionInquiries,
     defaultPasswordCount,
   }
 }
 
 async function insertRowsInChunks(
-  table: 'questions' | 'science_glossary_entries' | 'quiz_sessions' | 'answer_logs' | 'chat_guard_logs' | 'daily_challenges' | 'badges' | 'student_badges' | 'time_attack_records',
+  table: 'questions' | 'science_glossary_entries' | 'question_inquiries' | 'quiz_sessions' | 'answer_logs' | 'chat_guard_logs' | 'daily_challenges' | 'badges' | 'student_badges' | 'time_attack_records',
   rows: Record<string, unknown>[]
 ) {
   if (rows.length === 0) return
@@ -558,12 +574,15 @@ function getRestoreErrorMessage(message: string) {
   }
   if (
     message.includes('chat_guard_logs')
+    || message.includes('question_inquiries')
     || message.includes('daily_challenges')
     || message.includes('student_badges')
     || message.includes('time_attack_records')
     || message.includes('badges')
     || message.includes('science_glossary_entries')
     || message.includes('short_description')
+    || message.includes('admin_note')
+    || message.includes('question_text')
   ) {
     return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
@@ -580,6 +599,10 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [questions, setQuestions] = useState<QuestionRow[]>([])
   const [activeStudents, setActiveStudents] = useState<ActiveStudentStatus[]>([])
   const [chatGuardLogs, setChatGuardLogs] = useState<ChatGuardLogRow[]>([])
+  const [questionInquiries, setQuestionInquiries] = useState<QuestionInquiryRow[]>([])
+  const [questionInquiryLoadError, setQuestionInquiryLoadError] = useState('')
+  const [questionInquiryActionId, setQuestionInquiryActionId] = useState<string | null>(null)
+  const [questionInquiryNoteDrafts, setQuestionInquiryNoteDrafts] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [bulkInput, setBulkInput] = useState(BULK_JSON_EXAMPLE)
   const [bulkMsg, setBulkMsg] = useState('')
@@ -659,11 +682,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     setLoading(true)
 
     if (tab === 'overview') {
-      const [students, { data: sessions }, activeSessionRows, chatGuardLogsResponse] = await Promise.all([
+      const [students, { data: sessions }, activeSessionRows, chatGuardLogsResponse, questionInquiriesResponse] = await Promise.all([
         fetchStudents(),
         supabase.from('quiz_sessions').select('*'),
         fetchActiveSessions(),
         supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }).limit(20),
+        supabase.from('question_inquiries').select('*').order('created_at', { ascending: false }).limit(20),
       ])
       setStudentsList(students)
       setStats(buildStudentStats(students, (sessions || []) as QuizSessionRow[]))
@@ -697,6 +721,31 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         setChatGuardLogs([])
       } else {
         setChatGuardLogs((chatGuardLogsResponse.data || []) as ChatGuardLogRow[])
+      }
+      if (questionInquiriesResponse.error) {
+        if (!isQuestionInquiryTableMissing(questionInquiriesResponse.error)) {
+          console.error(questionInquiriesResponse.error)
+          setQuestionInquiryLoadError(questionInquiriesResponse.error.message)
+        } else {
+          setQuestionInquiryLoadError('')
+        }
+        setQuestionInquiries([])
+      } else {
+        setQuestionInquiries((questionInquiriesResponse.data || []) as QuestionInquiryRow[])
+        setQuestionInquiryLoadError('')
+      }
+    } else if (tab === 'inquiries') {
+      const { data, error } = await supabase
+        .from('question_inquiries')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        setQuestionInquiries([])
+        setQuestionInquiryLoadError(getQuestionInquirySchemaErrorMessage(error.message))
+      } else {
+        setQuestionInquiries((data || []) as QuestionInquiryRow[])
+        setQuestionInquiryLoadError('')
       }
     } else if (tab === 'questions') {
       const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false })
@@ -783,6 +832,75 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     }
   }, [authed, selectedStudentId, tab])
 
+  useEffect(() => {
+    if (questionInquiries.length === 0) return
+
+    setQuestionInquiryNoteDrafts(current => {
+      const next = { ...current }
+      questionInquiries.forEach(inquiry => {
+        if (next[inquiry.id] === undefined) {
+          next[inquiry.id] = inquiry.admin_note ?? ''
+        }
+      })
+      return next
+    })
+  }, [questionInquiries])
+
+  const handleQuestionInquiryStatusChange = async (inquiry: QuestionInquiryRow, status: QuestionInquiryStatus) => {
+    try {
+      setQuestionInquiryActionId(inquiry.id)
+
+      const payload: Database['public']['Tables']['question_inquiries']['Update'] = {
+        status,
+        updated_at: new Date().toISOString(),
+        resolved_at: status === 'resolved' ? new Date().toISOString() : null,
+      }
+
+      const { error } = await supabase
+        .from('question_inquiries')
+        .update(payload)
+        .eq('id', inquiry.id)
+
+      if (error) throw new Error(getQuestionInquirySchemaErrorMessage(error.message))
+
+      setQuestionInquiries(current => current.map(item => item.id === inquiry.id ? {
+        ...item,
+        ...payload,
+      } as QuestionInquiryRow : item))
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '問い合わせの更新に失敗しました。')
+    } finally {
+      setQuestionInquiryActionId(null)
+    }
+  }
+
+  const handleSaveQuestionInquiryNote = async (inquiryId: string) => {
+    try {
+      setQuestionInquiryActionId(inquiryId)
+
+      const payload: Database['public']['Tables']['question_inquiries']['Update'] = {
+        admin_note: questionInquiryNoteDrafts[inquiryId] ?? '',
+        updated_at: new Date().toISOString(),
+      }
+
+      const { error } = await supabase
+        .from('question_inquiries')
+        .update(payload)
+        .eq('id', inquiryId)
+
+      if (error) throw new Error(getQuestionInquirySchemaErrorMessage(error.message))
+
+      setQuestionInquiries(current => current.map(item => item.id === inquiryId ? {
+        ...item,
+        ...payload,
+      } as QuestionInquiryRow : item))
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '対応メモの保存に失敗しました。')
+    } finally {
+      setQuestionInquiryActionId(null)
+    }
+  }
+
   const handleDownloadAllPerformance = async () => {
     try {
       setExportLoading(true)
@@ -795,6 +913,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         questionsResponse,
         glossaryResponse,
         chatGuardLogsResponse,
+        questionInquiriesResponse,
         dailyChallengesResponse,
         badgesResponse,
         studentBadgesResponse,
@@ -806,6 +925,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         supabase.from('questions').select('*').order('created_at', { ascending: false }),
         supabase.from('science_glossary_entries').select('*').order('reading', { ascending: true }).order('term', { ascending: true }),
         supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }),
+        supabase.from('question_inquiries').select('*').order('created_at', { ascending: false }),
         supabase.from('daily_challenges').select('*').order('completed_at', { ascending: false }),
         supabase.from('badges').select('*').order('created_at', { ascending: false }),
         supabase.from('student_badges').select('*').order('earned_at', { ascending: false }),
@@ -821,6 +941,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       if (chatGuardLogsResponse.error && !isMissingRelationError(chatGuardLogsResponse.error, 'chat_guard_logs')) {
         throw new Error(chatGuardLogsResponse.error.message)
       }
+      if (questionInquiriesResponse.error && !isQuestionInquiryTableMissing(questionInquiriesResponse.error)) {
+        throw new Error(questionInquiriesResponse.error.message)
+      }
       if (dailyChallengesResponse.error) throw new Error(dailyChallengesResponse.error.message)
       if (badgesResponse.error) throw new Error(badgesResponse.error.message)
       if (studentBadgesResponse.error) throw new Error(studentBadgesResponse.error.message)
@@ -832,6 +955,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       const glossaryEntries = (glossaryResponse.data || []) as GlossaryRow[]
       const hasGlossaryTable = !glossaryResponse.error
       const chatGuardLogs = (chatGuardLogsResponse.data || []) as ChatGuardLogRow[]
+      const questionInquiries = (questionInquiriesResponse.data || []) as QuestionInquiryRow[]
+      const hasQuestionInquiryTable = !questionInquiriesResponse.error
       const dailyChallenges = (dailyChallengesResponse.data || []) as DailyChallengeRow[]
       const badges = (badgesResponse.data || []) as BadgeRow[]
       const studentBadges = (studentBadgesResponse.data || []) as StudentBadgeRow[]
@@ -840,11 +965,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       const payload = {
         exportedAt: new Date().toISOString(),
-        format: 'rikarikastudy-admin-export/v5',
+        format: 'rikarikastudy-admin-export/v6',
         restoreHint: 'テーブルが消えている場合は、先に supabase_schema.sql を SQL Editor で実行してから復元してください。',
         questionCatalog: questions,
         ...(hasGlossaryTable ? { scienceGlossaryEntries: glossaryEntries } : {}),
         chatGuardLogs,
+        ...(hasQuestionInquiryTable ? { questionInquiries } : {}),
         dailyChallenges,
         badges,
         studentBadges,
@@ -1091,6 +1217,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         `生徒: ${snapshot.students.length}件`,
         `問題: ${snapshot.questions.length}件`,
         ...(snapshot.hasGlossaryEntries ? [`辞書: ${snapshot.glossaryEntries.length}件`] : []),
+        ...(snapshot.hasQuestionInquiries ? [`問い合わせ: ${snapshot.questionInquiries.length}件`] : []),
         `クイズ履歴: ${snapshot.quizSessions.length}件`,
         `解答ログ: ${snapshot.answerLogs.length}件`,
         ...(snapshot.hasChatGuardLogs ? [`チャット警告: ${snapshot.chatGuardLogs.length}件`] : []),
@@ -1100,7 +1227,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           `タイムアタック記録: ${snapshot.timeAttackRecords.length}件`,
         ] : []),
         '',
-        `questions${snapshot.hasGlossaryEntries ? ' / science_glossary_entries' : ''} / quiz_sessions / answer_logs は入れ替えになります。続けますか？`,
+        `questions${snapshot.hasGlossaryEntries ? ' / science_glossary_entries' : ''}${snapshot.hasQuestionInquiries ? ' / question_inquiries' : ''} / quiz_sessions / answer_logs は入れ替えになります。続けますか？`,
       ].join('\n')
 
       if (!confirm(confirmMessage)) return
@@ -1138,6 +1265,14 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           .delete()
           .not('id', 'is', null)
         if (deleteGlossaryError) throw new Error(deleteGlossaryError.message)
+      }
+
+      if (snapshot.hasQuestionInquiries) {
+        const { error: deleteQuestionInquiriesError } = await supabase
+          .from('question_inquiries')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteQuestionInquiriesError) throw new Error(deleteQuestionInquiriesError.message)
       }
 
       if (snapshot.hasChatGuardLogs) {
@@ -1178,6 +1313,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       if (snapshot.hasGlossaryEntries) {
         await insertRowsInChunks('science_glossary_entries', snapshot.glossaryEntries as unknown as Record<string, unknown>[])
       }
+      if (snapshot.hasQuestionInquiries) {
+        await insertRowsInChunks('question_inquiries', snapshot.questionInquiries as unknown as Record<string, unknown>[])
+      }
       await insertRowsInChunks('quiz_sessions', snapshot.quizSessions as unknown as Record<string, unknown>[])
       await insertRowsInChunks('answer_logs', snapshot.answerLogs as unknown as Record<string, unknown>[])
       if (snapshot.hasChatGuardLogs) {
@@ -1193,6 +1331,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       setRestoreMsg(
         `✅ 復元しました。問題${snapshot.questions.length}件 / 履歴${snapshot.quizSessions.length}件 / 解答ログ${snapshot.answerLogs.length}件`
         + (snapshot.hasGlossaryEntries ? ` / 辞書${snapshot.glossaryEntries.length}件` : '')
+        + (snapshot.hasQuestionInquiries ? ` / 問い合わせ${snapshot.questionInquiries.length}件` : '')
         + (snapshot.hasChatGuardLogs ? ` / チャット警告${snapshot.chatGuardLogs.length}件` : '')
         + (snapshot.hasEngagementTables ? ` / デイリー${snapshot.dailyChallenges.length}件 / バッジ${snapshot.studentBadges.length}件 / タイムアタック${snapshot.timeAttackRecords.length}件` : '')
         + ' を反映しました。'
@@ -1469,7 +1608,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="segment-bar">
-            {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録']] as const).map(([currentTab, label]) => (
+            {([['overview', '📊 生徒データ'], ['inquiries', '📨 問い合わせ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録']] as const).map(([currentTab, label]) => (
               <button
                 key={currentTab}
                 onClick={() => setTab(currentTab)}
@@ -1533,7 +1672,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     <div>
                       <div className="text-white font-bold">全成績データをダウンロード</div>
                       <div className="text-slate-400 text-sm mt-1">
-                      生徒情報、問題、辞書、履歴、解答ログ、チャット警告ログを復元用JSONとしてまとめて保存します。
+                      生徒情報、問題、辞書、問い合わせ、履歴、解答ログ、チャット警告ログを復元用JSONとしてまとめて保存します。
                       </div>
                     {exportMsg && (
                       <div
@@ -1636,6 +1775,74 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <div className="card">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
+                    <div className="text-white font-bold">問題問い合わせ</div>
+                    <div className="text-slate-400 text-sm mt-1">
+                      生徒が問題文や解答について送ってきた連絡をここで確認できます。
+                    </div>
+                  </div>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.22)' }}>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">OPEN</div>
+                    <div className="mt-2 font-display text-3xl text-white">
+                      {questionInquiries.filter(inquiry => inquiry.status !== 'resolved').length}件
+                    </div>
+                  </div>
+                </div>
+
+                {questionInquiryLoadError ? (
+                  <div className="mt-4 rounded-2xl border border-rose-500/18 bg-rose-500/6 px-4 py-5 text-sm text-rose-200">
+                    {questionInquiryLoadError}
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    {questionInquiries.length > 0 ? questionInquiries.slice(0, 6).map(inquiry => {
+                      const statusMeta = QUESTION_INQUIRY_STATUS_META[inquiry.status]
+                      return (
+                        <div key={inquiry.id} className="rounded-2xl border border-sky-500/18 bg-sky-500/6 px-4 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-white">{inquiry.student_nickname}</span>
+                              <span className="text-slate-500 text-xs">ID {inquiry.student_id}</span>
+                              <span
+                                className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                style={{ background: `${FIELD_COLORS[inquiry.field] ?? '#64748b'}20`, color: FIELD_COLORS[inquiry.field] ?? '#cbd5e1' }}
+                              >
+                                {inquiry.field}
+                              </span>
+                              <span
+                                className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                style={{ background: statusMeta.background, color: statusMeta.color }}
+                              >
+                                {statusMeta.label}
+                              </span>
+                              <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                                {getQuestionInquiryCategoryLabel(inquiry.category)}
+                              </span>
+                            </div>
+                            <div className="text-slate-500 text-xs">
+                              {format(new Date(inquiry.created_at), 'M/d HH:mm', { locale: ja })}
+                            </div>
+                          </div>
+                          <div className="mt-3 text-sm leading-6 text-slate-200">
+                            {inquiry.message || '追加メッセージなし'}
+                          </div>
+                          <div className="mt-3 rounded-xl bg-slate-950/40 px-3 py-3 text-xs leading-6 text-slate-300">
+                            <div className="font-semibold text-white">{inquiry.unit}</div>
+                            <div className="mt-1">{inquiry.question_text}</div>
+                          </div>
+                        </div>
+                      )
+                    }) : (
+                      <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-5 text-sm text-slate-400">
+                        まだ問題問い合わせはありません。
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="card">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
                     <div className="text-white font-bold">チャット警告</div>
                     <div className="text-slate-400 text-sm mt-1">
                       悪口や下ネタを含む入力を検知すると、ここに記録します。
@@ -1705,7 +1912,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <div className="card">
                 <div className="text-white font-bold">バックアップJSONから復元</div>
                 <div className="text-slate-400 text-sm mt-1 leading-6">
-                  管理画面から保存したバックアップJSONを読み込んで、問題・辞書・履歴・解答ログ・チャット警告ログを復元します。
+                  管理画面から保存したバックアップJSONを読み込んで、問題・辞書・問い合わせ・履歴・解答ログ・チャット警告ログを復元します。
                   テーブル自体が消えている場合は、先に `supabase_schema.sql` を SQL Editor で実行してください。
                 </div>
                 <div className="flex flex-wrap gap-3 mt-4">
@@ -1820,6 +2027,182 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 )
               })}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'inquiries' && (
+        <div>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-slate-400">
+                {questionInquiries.length}件の問い合わせ
+                {questionInquiries.length > 0 && (
+                  <span className="ml-2 text-slate-500 text-sm">
+                    未対応 {questionInquiries.filter(inquiry => inquiry.status !== 'resolved').length}件
+                  </span>
+                )}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                問題文・選択肢・正解・解説は、生徒が送信した時点の内容を自動添付しています。
+              </p>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-slate-400 text-center py-12">読み込み中...</div>
+          ) : questionInquiryLoadError ? (
+            <div className="card text-red-300">{questionInquiryLoadError}</div>
+          ) : questionInquiries.length === 0 ? (
+            <div className="card text-slate-400 text-center py-12">
+              まだ問い合わせはありません。
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {questionInquiries.map(inquiry => {
+                const statusMeta = QUESTION_INQUIRY_STATUS_META[inquiry.status]
+                const isBusy = questionInquiryActionId === inquiry.id
+                const noteDirty = (questionInquiryNoteDrafts[inquiry.id] ?? '') !== (inquiry.admin_note ?? '')
+
+                return (
+                  <div key={inquiry.id} className="card">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-white">{inquiry.student_nickname}</span>
+                            <span className="text-slate-500 text-xs">ID {inquiry.student_id}</span>
+                            <span
+                              className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                              style={{ background: `${FIELD_COLORS[inquiry.field] ?? '#64748b'}20`, color: FIELD_COLORS[inquiry.field] ?? '#cbd5e1' }}
+                            >
+                              {inquiry.field}
+                            </span>
+                            <span
+                              className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                              style={{ background: statusMeta.background, color: statusMeta.color }}
+                            >
+                              {statusMeta.label}
+                            </span>
+                            <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                              {getQuestionInquiryCategoryLabel(inquiry.category)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            受信: {format(new Date(inquiry.created_at), 'yyyy/M/d HH:mm', { locale: ja })}
+                            {inquiry.resolved_at ? ` / 対応完了: ${format(new Date(inquiry.resolved_at), 'M/d HH:mm', { locale: ja })}` : ''}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {(['open', 'reviewing', 'resolved'] as const).map(status => (
+                            <button
+                              key={status}
+                              onClick={() => {
+                                void handleQuestionInquiryStatusChange(inquiry, status)
+                              }}
+                              className="btn-secondary text-sm"
+                              disabled={isBusy || inquiry.status === status}
+                              style={{
+                                opacity: isBusy || inquiry.status === status ? 0.7 : 1,
+                                borderColor: inquiry.status === status ? statusMeta.color : undefined,
+                              }}
+                            >
+                              {QUESTION_INQUIRY_STATUS_META[status].label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-sky-500/14 bg-slate-950/35 px-4 py-3">
+                        <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">生徒メッセージ</div>
+                        <div className="mt-2 text-sm leading-6 text-slate-100">
+                          {inquiry.message || '追加メッセージなし'}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                          <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">自動添付された問題内容</div>
+                          <div className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
+                            <div>
+                              <div className="text-xs text-slate-500">単元</div>
+                              <div className="mt-1 text-white">{inquiry.unit}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-slate-500">問題文</div>
+                              <div className="mt-1 text-white">{inquiry.question_text}</div>
+                            </div>
+                            {inquiry.choices && inquiry.choices.length > 0 && (
+                              <div>
+                                <div className="text-xs text-slate-500">選択肢</div>
+                                <div className="mt-1 flex flex-wrap gap-2">
+                                  {inquiry.choices.map(choice => (
+                                    <span key={`${inquiry.id}-${choice}`} className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-200">
+                                      {choice}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-xs text-slate-500">正解</div>
+                              <div className="mt-1 text-emerald-300">{inquiry.answer_text}</div>
+                            </div>
+                            {inquiry.explanation_text && (
+                              <div>
+                                <div className="text-xs text-slate-500">解説</div>
+                                <div className="mt-1">{inquiry.explanation_text}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          {inquiry.image_url && (
+                            <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                              <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">問題画像</div>
+                              <div className="mt-3 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/50">
+                                <img
+                                  src={inquiry.image_url}
+                                  alt={`${inquiry.question_text} の画像`}
+                                  className="block max-h-72 w-full object-contain"
+                                  loading="lazy"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">対応メモ</div>
+                            <textarea
+                              value={questionInquiryNoteDrafts[inquiry.id] ?? ''}
+                              onChange={event => {
+                                const value = event.target.value
+                                setQuestionInquiryNoteDrafts(current => ({ ...current, [inquiry.id]: value }))
+                              }}
+                              rows={5}
+                              className="input-surface mt-3 resize-y text-sm"
+                              placeholder="管理側メモを残せます。"
+                            />
+                            <button
+                              onClick={() => {
+                                void handleSaveQuestionInquiryNote(inquiry.id)
+                              }}
+                              className="btn-secondary mt-3 w-full text-sm"
+                              disabled={isBusy || !noteDirty}
+                              style={{ opacity: isBusy || !noteDirty ? 0.7 : 1 }}
+                            >
+                              {isBusy ? '保存中...' : 'メモを保存'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

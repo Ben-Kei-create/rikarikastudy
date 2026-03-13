@@ -258,6 +258,70 @@ export type Database = {
           source?: 'draft' | 'send'
         }
       }
+      question_inquiries: {
+        Row: {
+          id: string
+          student_id: number
+          student_nickname: string
+          question_id: string | null
+          status: 'open' | 'reviewing' | 'resolved'
+          category: 'question_content' | 'answer_content' | 'other'
+          message: string
+          field: '生物' | '化学' | '物理' | '地学'
+          unit: string
+          question_text: string
+          question_type: 'choice' | 'text'
+          choices: string[] | null
+          answer_text: string
+          explanation_text: string | null
+          image_url: string | null
+          admin_note: string
+          created_at: string
+          updated_at: string
+          resolved_at: string | null
+        }
+        Insert: {
+          id?: string
+          student_id: number
+          student_nickname: string
+          question_id?: string | null
+          status?: 'open' | 'reviewing' | 'resolved'
+          category: 'question_content' | 'answer_content' | 'other'
+          message?: string
+          field: '生物' | '化学' | '物理' | '地学'
+          unit: string
+          question_text: string
+          question_type: 'choice' | 'text'
+          choices?: string[] | null
+          answer_text: string
+          explanation_text?: string | null
+          image_url?: string | null
+          admin_note?: string
+          created_at?: string
+          updated_at?: string
+          resolved_at?: string | null
+        }
+        Update: {
+          student_id?: number
+          student_nickname?: string
+          question_id?: string | null
+          status?: 'open' | 'reviewing' | 'resolved'
+          category?: 'question_content' | 'answer_content' | 'other'
+          message?: string
+          field?: '生物' | '化学' | '物理' | '地学'
+          unit?: string
+          question_text?: string
+          question_type?: 'choice' | 'text'
+          choices?: string[] | null
+          answer_text?: string
+          explanation_text?: string | null
+          image_url?: string | null
+          admin_note?: string
+          created_at?: string
+          updated_at?: string
+          resolved_at?: string | null
+        }
+      }
       science_glossary_entries: {
         Row: {
           id: string

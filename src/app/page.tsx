@@ -13,6 +13,7 @@ import ChemistryPracticePage from '@/components/ChemistryPracticePage'
 import EarthSciencePracticePage from '@/components/EarthSciencePracticePage'
 import ScienceWorkbenchPage from '@/components/ScienceWorkbenchPage'
 import TimeAttackPage from '@/components/TimeAttackPage'
+import OnlineLabPage from '@/components/OnlineLabPage'
 import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
@@ -25,6 +26,7 @@ type Screen =
   | 'home'
   | 'mypage'
   | 'time-attack'
+  | 'online-lab'
   | { type: 'unit'; field: string }
   | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; dailyChallenge?: boolean; customOptions?: CustomQuizOptions }
   | { type: 'biology-practice'; mode: BiologyPracticeMode }
@@ -60,11 +62,13 @@ function App() {
   let content
 
   if (!studentId) {
-    content = <LoginPage onDone={() => setScreen('home')} onAdmin={() => setAdminOpen(true)} />
+    content = <LoginPage onDone={() => setScreen('home')} onOnline={() => setScreen('online-lab')} onAdmin={() => setAdminOpen(true)} />
   } else if (screen === 'mypage') {
     content = <MyPage onBack={() => setScreen('home')} onStartDrill={(field, unit) => setScreen({ type: 'quiz', field, unit, isDrill: true })} />
   } else if (screen === 'time-attack') {
     content = <TimeAttackPage onBack={() => setScreen('home')} />
+  } else if (screen === 'online-lab') {
+    content = <OnlineLabPage onBack={() => setScreen('home')} />
   } else if (typeof screen === 'object' && screen.type === 'unit') {
     content = (
       <UnitSelectPage
