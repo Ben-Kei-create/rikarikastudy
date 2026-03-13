@@ -1,12 +1,12 @@
 'use client'
-import { useAuth } from '@/lib/auth'
+import { fetchStudents, useAuth } from '@/lib/auth'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { PeriodicCardRewardModal } from '@/components/PeriodicCard'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
-import { getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
+import { calculateQuizXp, getJstWeekRange, getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
 import { hasCompletedDailyChallenge } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
@@ -19,6 +19,16 @@ const FIELDS = [
 
 interface FieldStats {
   [field: string]: { total: number; correct: number }
+}
+
+interface WeeklyLeaderboardEntry {
+  studentId: number
+  nickname: string
+  weeklyXp: number
+  level: number
+  title: string
+  rank: number
+  isCurrentUser: boolean
 }
 
 export default function HomePage({
@@ -42,6 +52,8 @@ export default function HomePage({
   const [totalXp, setTotalXp] = useState(0)
   const [dailyCompleted, setDailyCompleted] = useState(false)
   const [menuExpanded, setMenuExpanded] = useState(false)
+  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<WeeklyLeaderboardEntry[]>([])
+  const [weeklyLeaderboardLoading, setWeeklyLeaderboardLoading] = useState(true)
   const totalQuestions = Object.values(stats).reduce((sum, field) => sum + field.total, 0)
   const totalCorrect = Object.values(stats).reduce((sum, field) => sum + field.correct, 0)
   const overallRate = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null
@@ -50,6 +62,7 @@ export default function HomePage({
   const timeAttackUnlockXpLeft = Math.max(0, getXpFloorForLevel(TIME_ATTACK_UNLOCK_LEVEL) - levelInfo.totalXp)
   const nextUnlock = getNextLevelUnlock(levelInfo.level)
   const unlockedRewards = getUnlockedLevelRewards(levelInfo.level)
+  const currentWeekRange = useMemo(() => getJstWeekRange(), [])
 
   useEffect(() => {
     if (studentId === null) return
@@ -102,6 +115,86 @@ export default function HomePage({
   useEffect(() => {
     let active = true
 
+    const loadWeeklyLeaderboard = async () => {
+      setWeeklyLeaderboardLoading(true)
+      const [students, sessionsResponse] = await Promise.all([
+        fetchStudents(),
+        supabase
+          .from('quiz_sessions')
+          .select('student_id, correct_count, total_questions, duration_seconds')
+          .gte('created_at', currentWeekRange.startDate.toISOString()),
+      ])
+
+      if (!active) return
+
+      if (sessionsResponse.error) {
+        console.error('[home] failed to load weekly leaderboard', sessionsResponse.error)
+        setWeeklyLeaderboard([])
+        setWeeklyLeaderboardLoading(false)
+        return
+      }
+
+      const studentMap = new Map(students.map(student => [student.id, student]))
+      const aggregateMap = new Map<number, { correct: number; total: number; duration: number }>()
+
+      for (const row of sessionsResponse.data || []) {
+        if (!row.student_id || row.student_id === 5) continue
+        const current = aggregateMap.get(row.student_id) ?? { correct: 0, total: 0, duration: 0 }
+        current.correct += row.correct_count
+        current.total += row.total_questions
+        current.duration += row.duration_seconds
+        aggregateMap.set(row.student_id, current)
+      }
+
+      const ranked = Array.from(aggregateMap.entries())
+        .map(([currentStudentId, aggregate]) => {
+          const weeklyXp = calculateQuizXp({
+            correctCount: aggregate.correct,
+            totalQuestions: aggregate.total,
+            durationSeconds: aggregate.duration,
+          })
+          const student = studentMap.get(currentStudentId)
+          const currentLevel = getLevelInfo(student?.student_xp ?? 0)
+
+          return {
+            studentId: currentStudentId,
+            nickname: student?.nickname ?? `ID ${currentStudentId}`,
+            weeklyXp,
+            level: currentLevel.level,
+            title: currentLevel.title,
+            total: aggregate.total,
+            isCurrentUser: currentStudentId === studentId,
+          }
+        })
+        .sort((left, right) => {
+          if (right.weeklyXp !== left.weeklyXp) return right.weeklyXp - left.weeklyXp
+          return right.total - left.total
+        })
+        .map((entry, index) => ({
+          ...entry,
+          rank: index + 1,
+        }))
+
+      const topEntries = ranked.slice(0, 7)
+      const currentUserEntry = ranked.find(entry => entry.studentId === studentId) ?? null
+      const nextEntries = currentUserEntry && !topEntries.some(entry => entry.studentId === currentUserEntry.studentId)
+        ? [...topEntries, currentUserEntry]
+        : topEntries
+
+      setWeeklyLeaderboard(nextEntries.map(({ total: _total, ...entry }) => entry))
+      setWeeklyLeaderboardLoading(false)
+    }
+
+    void loadWeeklyLeaderboard()
+
+    return () => {
+      active = false
+    }
+  }, [currentWeekRange.startDate, studentId])
+
+  useEffect(() => {
+    let active = true
+
     const loadNews = async () => {
       try {
         const response = await fetch('/api/science-news')
@@ -144,6 +237,10 @@ export default function HomePage({
     }),
     [],
   )
+  const weekRangeLabel = useMemo(() => {
+    const endDate = new Date(currentWeekRange.endDate.getTime() - 1)
+    return `${newsDateFormatter.format(currentWeekRange.startDate)} 〜 ${newsDateFormatter.format(endDate)}`
+  }, [currentWeekRange.endDate, currentWeekRange.startDate, newsDateFormatter])
 
   return (
     <div className="page-shell page-shell-dashboard">
@@ -416,6 +513,66 @@ export default function HomePage({
             )}
           </div>
         </div>
+      </div>
+
+      <div className="card mb-4 sm:mb-5">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="text-lg font-semibold text-white">今週のランキング</h2>
+            <div className="mt-1 text-xs text-slate-500">{weekRangeLabel}</div>
+          </div>
+          <div className="rounded-full bg-sky-300/10 px-3 py-1.5 text-xs font-semibold text-sky-200">
+            Weekly XP
+          </div>
+        </div>
+
+        {weeklyLeaderboardLoading ? (
+          <div className="mt-4 rounded-[20px] border border-white/8 bg-slate-950/24 px-4 py-5 text-sm text-slate-400">
+            ランキングを読み込み中...
+          </div>
+        ) : weeklyLeaderboard.length === 0 ? (
+          <div className="mt-4 rounded-[20px] border border-white/8 bg-slate-950/24 px-4 py-5 text-sm text-slate-300">
+            まだ今週の記録はありません。最初の1セットを解いてみよう。
+          </div>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {weeklyLeaderboard.map((entry, index) => {
+              const medal = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}`
+              return (
+                <div
+                  key={`${entry.studentId}-${entry.rank}`}
+                  className="anim-fade-up flex items-center justify-between gap-3 rounded-[20px] border px-4 py-3"
+                  style={{
+                    animationDelay: `${index * 0.06}s`,
+                    borderColor: entry.isCurrentUser ? 'rgba(56, 189, 248, 0.28)' : 'rgba(255, 255, 255, 0.08)',
+                    background: entry.isCurrentUser
+                      ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.82))'
+                      : 'rgba(15, 23, 42, 0.3)',
+                  }}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900/60 text-base font-semibold text-white">
+                      {medal}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="truncate font-semibold text-white">{entry.nickname}</div>
+                        <div className="rounded-full border border-sky-300/15 bg-sky-300/10 px-2.5 py-1 text-[10px] font-semibold text-sky-100">
+                          Lv.{entry.level}
+                        </div>
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">{entry.title}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-display text-2xl text-sky-300">{entry.weeklyXp}</div>
+                    <div className="text-[11px] text-slate-500">XP</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between mb-4">

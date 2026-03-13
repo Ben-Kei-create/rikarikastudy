@@ -60,3 +60,4 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-13: Phase 1 として `src/lib/xp.ts` を追加。クイズ XP の内訳、レベル計算、称号、レベル進捗を共通化し、`engagement.ts` からも同じ式を使うように整理した。
 - 2026-03-13: `QuizPage.tsx` と `ChemistryPracticePage.tsx` の結果画面に XP 内訳カードを追加し、レベルアップ時はレベルバッジが光る `level-up` アニメーションを `globals.css` に追加した。
 - 2026-03-13: `HomePage.tsx` と `MyPage.tsx` に XP / レベル表示を追加。ゲスト XP は `guestStudy` の保存値ではなく、ローカルのセッション合計から再計算するように更新した。`npm run build` 成功。
+- 2026-03-13: Phase 2 として `HomePage.tsx` に「今週のランキング」を追加。今週の `quiz_sessions` を月曜 00:00 JST 以降で集計し、週XP・ニックネーム・レベル付きで表示するようにした。自分の行は色を変えて強調し、圏外でも見えるように末尾へ差し込む。`npm run build` 成功。
