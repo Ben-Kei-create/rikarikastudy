@@ -269,12 +269,14 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
   const [bestCombo, setBestCombo] = useState(0)
   const [celebration, setCelebration] = useState<SuccessCelebrationContent | null>(null)
   const [timeAttackBest, setTimeAttackBest] = useState(0)
+  const [previousTimeAttackBest, setPreviousTimeAttackBest] = useState(0)
   const [otherLeader, setOtherLeader] = useState<{ studentId: number; nickname: string; score: number } | null>(null)
   const [testSummary, setTestSummary] = useState<SessionModeSummary>({ personalBest: 0, leaderboard: [] })
   const [streakSummary, setStreakSummary] = useState<SessionModeSummary>({ personalBest: 0, leaderboard: [] })
   const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
   const [answerLogs, setAnswerLogs] = useState<Array<{ qId: string; correct: boolean; answer: string; result?: TextAnswerResult }>>([])
   const [totalXp, setTotalXp] = useState(0)
+  const [newRecord, setNewRecord] = useState(false)
   const startedAtRef = useRef<number | null>(null)
   const deadlineRef = useRef<number>(0)
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -397,6 +399,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     setBestCombo(0)
     setCelebration(null)
     setAnswerLogs([])
+    setNewRecord(false)
   }
 
   const resetStreakTimer = () => {
@@ -460,6 +463,12 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
           ? 30
           : 0
     const xpEarned = getModeXp(selectedMode, score)
+    const beatTimeAttackRecord = selectedMode === 'time_attack' && score > timeAttackBest
+
+    if (selectedMode === 'time_attack') {
+      setPreviousTimeAttackBest(timeAttackBest)
+      setNewRecord(beatTimeAttackRecord)
+    }
 
     const saveRecordPromise = selectedMode === 'time_attack'
       ? saveTimeAttackBest(studentId, score)
@@ -937,8 +946,13 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">獲得XP</div>
               <div className="mt-2 font-display text-3xl text-sky-300">+{getModeXp(selectedMode, score)}</div>
             </div>
-            <div className="subcard p-4">
+            <div className={`subcard p-4 ${selectedMode === 'time_attack' && newRecord ? 'time-attack-record-card is-new-record' : ''}`}>
               <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">自己ベスト</div>
+              {selectedMode === 'time_attack' && newRecord && (
+                <div className="mt-2 inline-flex rounded-full bg-amber-300/18 px-2.5 py-1 text-[10px] font-semibold tracking-[0.18em] text-amber-100">
+                  NEW RECORD
+                </div>
+              )}
               <div className="mt-2 font-display text-3xl text-white">
                 {selectedMode === 'time_attack'
                   ? timeAttackBest
@@ -949,6 +963,11 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               <div className="mt-1 text-xs text-slate-500">
                 {selectedMode === 'test_mode' ? '/ 100' : selectedMode === 'streak_mode' ? '連続正解' : 'best score'}
               </div>
+              {selectedMode === 'time_attack' && (
+                <div className="mt-2 text-xs text-slate-400">
+                  {newRecord ? `${previousTimeAttackBest} → ${timeAttackBest}` : `前回ベスト ${previousTimeAttackBest}`}
+                </div>
+              )}
             </div>
             <div className="subcard p-4">
               {selectedMode === 'test_mode' ? (

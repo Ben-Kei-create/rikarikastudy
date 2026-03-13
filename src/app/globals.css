@@ -208,12 +208,29 @@ body {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.34); }
   50% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
 }
+@keyframes timer-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.34); }
+  50% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}
 @keyframes successFlash {
   0% { box-shadow: inset 0 0 0 0 rgba(34, 197, 94, 0); }
   25% { box-shadow: inset 0 0 0 999px rgba(34, 197, 94, 0.12); }
   100% { box-shadow: inset 0 0 0 0 rgba(34, 197, 94, 0); }
 }
+@keyframes correct-flash {
+  0% { box-shadow: inset 0 0 0 0 rgba(34, 197, 94, 0); }
+  25% { box-shadow: inset 0 0 0 999px rgba(34, 197, 94, 0.12); }
+  100% { box-shadow: inset 0 0 0 0 rgba(34, 197, 94, 0); }
+}
 @keyframes wrongFlash {
+  0% { transform: translateX(0); box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); box-shadow: inset 0 0 0 999px rgba(239, 68, 68, 0.1); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+  100% { transform: translateX(0); box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+@keyframes wrong-shake {
   0% { transform: translateX(0); box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0); }
   20% { transform: translateX(-6px); }
   40% { transform: translateX(6px); box-shadow: inset 0 0 0 999px rgba(239, 68, 68, 0.1); }
@@ -245,6 +262,11 @@ body {
   40% { transform: scale(1.12); box-shadow: 0 0 0 14px rgba(56, 189, 248, 0); }
   70% { transform: scale(1.04); box-shadow: 0 0 22px rgba(125, 211, 252, 0.28); }
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+}
+@keyframes new-record {
+  0% { transform: scale(0.96); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.28); }
+  45% { transform: scale(1.04); box-shadow: 0 0 0 16px rgba(251, 191, 36, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 24px rgba(251, 191, 36, 0.2); }
 }
 @keyframes daily-challenge-glow {
   0%, 100% {
@@ -821,11 +843,11 @@ body {
 }
 
 .time-attack-shell.is-correct {
-  animation: successFlash 0.28s ease;
+  animation: correct-flash 0.28s ease;
 }
 
 .time-attack-shell.is-wrong {
-  animation: wrongFlash 0.34s ease;
+  animation: wrong-shake 0.34s ease;
 }
 
 .time-attack-timer {
@@ -844,7 +866,12 @@ body {
 .time-attack-timer.is-danger {
   color: #fca5a5;
   border-color: rgba(239, 68, 68, 0.32);
-  animation: timerDangerPulse 0.8s ease infinite;
+  animation: timer-pulse 0.8s ease infinite;
+}
+
+.time-attack-record-card.is-new-record {
+  border-color: rgba(251, 191, 36, 0.38);
+  animation: new-record 0.9s ease both;
 }
 
 @media (min-width: 640px) {

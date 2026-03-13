@@ -76,6 +76,7 @@ interface TimeAttackLeader {
 interface TimeAttackBestSummary {
   personalBest: number
   allTimeBest: number
+  allTimeLeader: TimeAttackLeader | null
   otherLeader: TimeAttackLeader | null
 }
 
@@ -494,22 +495,62 @@ export async function loadEarnedBadgeRecords(studentId: number | null) {
 
 export async function loadTimeAttackBest(studentId: number | null): Promise<TimeAttackBestSummary> {
   const guestBest = studentId !== null && isGuestStudentId(studentId) ? getGuestTimeAttackBest() : 0
-  const [students, recordsResponse, personalResponse] = await Promise.all([
-    fetchStudents(),
-    supabase
-      .from('time_attack_records')
-      .select('student_id, best_score')
-      .order('best_score', { ascending: false }),
-    studentId === null || isGuestStudentId(studentId)
-      ? Promise.resolve({ data: null, error: null })
-      : supabase.from('time_attack_records').select('best_score').eq('student_id', studentId).maybeSingle(),
-  ])
+  const students = await fetchStudents()
 
-  const records = (recordsResponse.data || [])
-    .filter(record => record.student_id !== 5)
-    .sort((left, right) => right.best_score - left.best_score)
+  const scoreResponse = await supabase
+    .from('time_attack_records')
+    .select('student_id, score, achieved_at')
+    .order('score', { ascending: false })
+
+  const legacyResponse = scoreResponse.error
+    ? await supabase
+        .from('time_attack_records')
+        .select('student_id, best_score, achieved_at')
+        .order('best_score', { ascending: false })
+    : null
+
+  const normalizedRecords = (scoreResponse.error ? (legacyResponse?.data || []) : (scoreResponse.data || []))
+    .map(record => {
+      const scoreValue = 'score' in record && typeof record.score === 'number'
+        ? record.score
+        : 'best_score' in record && typeof record.best_score === 'number'
+          ? record.best_score
+          : 0
+
+      return {
+        student_id: record.student_id,
+        score: scoreValue,
+        achieved_at: record.achieved_at,
+      }
+    })
+    .filter(record => record.student_id !== 5 && record.score > 0)
+
+  const bestByStudent = new Map<number, { score: number; achievedAt: string }>()
+
+  for (const record of normalizedRecords) {
+    const current = bestByStudent.get(record.student_id)
+    if (!current || record.score > current.score || (record.score === current.score && record.achieved_at > current.achievedAt)) {
+      bestByStudent.set(record.student_id, {
+        score: record.score,
+        achievedAt: record.achieved_at,
+      })
+    }
+  }
+
+  const records = Array.from(bestByStudent.entries())
+    .map(([currentStudentId, record]) => ({
+      student_id: currentStudentId,
+      score: record.score,
+      achieved_at: record.achievedAt,
+    }))
+    .sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score
+      return left.achieved_at < right.achieved_at ? 1 : -1
+    })
 
   const studentMap = new Map(students.map(student => [student.id, student.nickname]))
+  const currentRecord = records.find(record => record.student_id === studentId) ?? null
+  const allTimeLeaderRow = records[0] ?? null
   const otherLeaderRow = records.find(record => record.student_id !== studentId)
 
   return {
@@ -517,14 +558,21 @@ export async function loadTimeAttackBest(studentId: number | null): Promise<Time
       ? 0
       : isGuestStudentId(studentId)
         ? guestBest
-        : personalResponse.data?.best_score ?? 0,
-    allTimeBest: records[0]?.best_score ?? guestBest,
+        : currentRecord?.score ?? 0,
+    allTimeBest: allTimeLeaderRow?.score ?? 0,
+    allTimeLeader: allTimeLeaderRow
+      ? {
+          studentId: allTimeLeaderRow.student_id,
+          nickname: studentMap.get(allTimeLeaderRow.student_id) ?? `ID ${allTimeLeaderRow.student_id}`,
+          score: allTimeLeaderRow.score,
+        }
+      : null,
     otherLeader: otherLeaderRow
       ? {
-          studentId: otherLeaderRow.student_id,
-          nickname: studentMap.get(otherLeaderRow.student_id) ?? `ID ${otherLeaderRow.student_id}`,
-          score: otherLeaderRow.best_score,
-        }
+        studentId: otherLeaderRow.student_id,
+        nickname: studentMap.get(otherLeaderRow.student_id) ?? `ID ${otherLeaderRow.student_id}`,
+        score: otherLeaderRow.score,
+      }
       : null,
   }
 }
@@ -540,7 +588,21 @@ export async function saveTimeAttackBest(studentId: number | null, score: number
   const current = await loadTimeAttackBest(studentId)
   const nextBest = Math.max(current.personalBest, score)
 
+  if (nextBest <= current.personalBest) {
+    return current.personalBest
+  }
+
   const { error } = await supabase
+    .from('time_attack_records')
+    .insert({
+      student_id: studentId,
+      score: nextBest,
+      achieved_at: new Date().toISOString(),
+    })
+
+  if (!error) return nextBest
+
+  const fallback = await supabase
     .from('time_attack_records')
     .upsert(
       {
@@ -551,8 +613,8 @@ export async function saveTimeAttackBest(studentId: number | null, score: number
       { onConflict: 'student_id' },
     )
 
-  if (error) {
-    console.error('[engagement] failed to save time_attack_records', error)
+  if (fallback.error) {
+    console.error('[engagement] failed to save time_attack_records', fallback.error)
   }
 
   return nextBest

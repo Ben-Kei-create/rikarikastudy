@@ -7,7 +7,7 @@ import { PeriodicCardRewardModal } from '@/components/PeriodicCard'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
 import { calculateQuizXp, getJstWeekRange, getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
-import { DailyChallengeStatus, loadDailyChallengeStatus } from '@/lib/studyRewards'
+import { DailyChallengeStatus, loadDailyChallengeStatus, loadTimeAttackBest } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
 const FIELDS = [
@@ -31,6 +31,12 @@ interface WeeklyLeaderboardEntry {
   isCurrentUser: boolean
 }
 
+interface HomeTimeAttackSummary {
+  personalBest: number
+  allTimeBest: number
+  allTimeLeaderName: string | null
+}
+
 export default function HomePage({
   onSelectField,
   onQuickStartAll,
@@ -51,6 +57,11 @@ export default function HomePage({
   const [onlineCount, setOnlineCount] = useState<number | null>(null)
   const [totalXp, setTotalXp] = useState(0)
   const [dailyStatus, setDailyStatus] = useState<DailyChallengeStatus>({ completed: false, completedAt: null })
+  const [timeAttackSummary, setTimeAttackSummary] = useState<HomeTimeAttackSummary>({
+    personalBest: 0,
+    allTimeBest: 0,
+    allTimeLeaderName: null,
+  })
   const [menuExpanded, setMenuExpanded] = useState(false)
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<WeeklyLeaderboardEntry[]>([])
   const [weeklyLeaderboardLoading, setWeeklyLeaderboardLoading] = useState(true)
@@ -195,6 +206,27 @@ export default function HomePage({
       active = false
     }
   }, [currentWeekRange.startDate, studentId])
+
+  useEffect(() => {
+    if (studentId === null) return
+    let active = true
+
+    const loadBestSummary = async () => {
+      const summary = await loadTimeAttackBest(studentId)
+      if (!active) return
+      setTimeAttackSummary({
+        personalBest: summary.personalBest,
+        allTimeBest: summary.allTimeBest,
+        allTimeLeaderName: summary.allTimeLeader?.nickname ?? null,
+      })
+    }
+
+    void loadBestSummary()
+
+    return () => {
+      active = false
+    }
+  }, [studentId])
 
   useEffect(() => {
     let active = true
@@ -395,44 +427,19 @@ export default function HomePage({
             >
               <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">すぐはじめる</div>
               <div className="mt-3 grid gap-3">
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <button
-                    onClick={onQuickStartAll}
-                    className="subcard mobile-action-card text-left transition-all"
-                    style={{
-                      padding: '16px',
-                      borderColor: 'rgba(56, 189, 248, 0.22)',
-                      background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(34, 197, 94, 0.08) 64%, rgba(15, 23, 42, 0.84))',
-                    }}
-                  >
-                    <div className="text-[10px] font-semibold tracking-[0.18em] text-sky-200 uppercase sm:text-[11px]">Quick</div>
-                    <div className="mt-1 font-display text-base text-white sm:text-lg">4分野10問</div>
-                    <div className="mt-1 text-[11px] leading-5 text-slate-400 sm:text-xs">総合</div>
-                  </button>
-                  <button
-                    onClick={onTimeAttack}
-                    disabled={!timeAttackUnlocked}
-                    className="subcard mobile-action-card text-left transition-all disabled:opacity-60"
-                    style={{
-                      padding: '16px',
-                      cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
-                      borderColor: timeAttackUnlocked ? 'rgba(168, 85, 247, 0.22)' : 'rgba(148, 163, 184, 0.12)',
-                      background: timeAttackUnlocked
-                        ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.14), rgba(15, 23, 42, 0.84))'
-                        : 'rgba(15, 23, 42, 0.58)',
-                    }}
-                  >
-                    <div className="text-[10px] font-semibold tracking-[0.18em] uppercase sm:text-[11px]" style={{ color: timeAttackUnlocked ? 'var(--earth-dark)' : 'var(--text-muted)' }}>
-                      Challenge
-                    </div>
-                    <div className="mt-1 font-display text-base text-white sm:text-lg">チャレンジ</div>
-                    <div className="mt-1 text-[11px] leading-5 text-slate-400 sm:text-xs">
-                      {timeAttackUnlocked
-                        ? 'TA / テスト / 連続正解'
-                        : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}まであと ${timeAttackUnlockXpLeft} XP`}
-                    </div>
-                  </button>
-                </div>
+                <button
+                  onClick={onQuickStartAll}
+                  className="subcard mobile-action-card text-left transition-all"
+                  style={{
+                    padding: '16px',
+                    borderColor: 'rgba(56, 189, 248, 0.22)',
+                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(34, 197, 94, 0.08) 64%, rgba(15, 23, 42, 0.84))',
+                  }}
+                >
+                  <div className="text-[10px] font-semibold tracking-[0.18em] text-sky-200 uppercase sm:text-[11px]">Quick</div>
+                  <div className="mt-1 font-display text-base text-white sm:text-lg">4分野10問</div>
+                  <div className="mt-1 text-[11px] leading-5 text-slate-400 sm:text-xs">総合</div>
+                </button>
               </div>
             </div>
 
@@ -598,6 +605,59 @@ export default function HomePage({
           </div>
           <div className={`text-3xl sm:text-4xl ${dailyCompleted ? 'text-emerald-300' : 'text-amber-200'}`}>
             {dailyCompleted ? '✅' : '☀️'}
+          </div>
+        </div>
+      </button>
+
+      <button
+        onClick={onTimeAttack}
+        disabled={!timeAttackUnlocked}
+        className="card mb-4 w-full text-left transition-all sm:mb-5 disabled:opacity-70"
+        style={{
+          padding: '18px 20px',
+          cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
+          borderColor: timeAttackUnlocked ? 'rgba(77, 162, 255, 0.32)' : 'rgba(148, 163, 184, 0.14)',
+          background: timeAttackUnlocked
+            ? 'linear-gradient(135deg, rgba(77, 162, 255, 0.18), rgba(14, 116, 144, 0.08), rgba(15, 23, 42, 0.84))'
+            : 'rgba(15, 23, 42, 0.62)',
+        }}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-sky-200">
+              30秒チャレンジ
+            </div>
+            <div className="mt-2 font-display text-2xl text-white sm:text-[1.8rem]">タイムアタック</div>
+            <div className="mt-2 text-sm text-slate-300">
+              {timeAttackUnlocked ? '30秒 / 正解で +0.5秒' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
+            </div>
+          </div>
+          <div className={`text-3xl sm:text-4xl ${timeAttackUnlocked ? 'text-sky-200' : 'text-slate-500'}`}>
+            ⏱️
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="subcard p-3.5">
+            <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">自己ベスト</div>
+            <div className="mt-2 font-display text-3xl text-white">
+              {timeAttackUnlocked ? timeAttackSummary.personalBest : '—'}
+            </div>
+          </div>
+          <div className="subcard p-3.5">
+            <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">全体ベスト</div>
+            <div className="mt-2 flex items-end justify-between gap-3">
+              <div className="font-display text-3xl text-sky-300">
+                {timeAttackUnlocked ? timeAttackSummary.allTimeBest : '—'}
+              </div>
+              <div className="text-right text-[11px] text-slate-500">
+                {timeAttackUnlocked && timeAttackSummary.allTimeLeaderName
+                  ? timeAttackSummary.allTimeLeaderName
+                  : timeAttackUnlocked
+                    ? 'まだ記録なし'
+                    : `あと ${timeAttackUnlockXpLeft} XP`}
+              </div>
+            </div>
           </div>
         </div>
       </button>

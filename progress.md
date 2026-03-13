@@ -66,3 +66,6 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-13: Phase 4 として `badges.ts` を20個の指定バッジ構成へ再編。`初クイズ / 出題者 / コレクター` までの common・rare・legendary を定義し、現在のセッション履歴から streak・分野・速度・正答率・daily challenge 回数・化学モード達成を判定する共通ロジックに整理した。
 - 2026-03-13: `BadgeEarnedToastStack` を追加し、結果画面で新バッジが上からスライドして4秒で消える通知に変更。`globals.css` のレアリティ色も common=青 / rare=金 / legendary=紫へ更新した。
 - 2026-03-13: `MyPage.tsx` のバッジタブを一覧カード型へ変更。取得済みは日付つき、未取得はグレー表示、legendary の未取得説明だけ `???` にした。`student_badges.id` を含む schema/type も更新し、`npm run build` 成功。
+- 2026-03-13: Phase 5 として `HomePage.tsx` に「タイムアタック」専用カードを追加。daily challenge の下に移し、自己ベスト・全体ベスト・解放条件を表示するようにした。
+- 2026-03-13: `studyRewards.ts` と `supabase_schema.sql` / `supabase.ts` で `time_attack_records` を新しい `score` 形式へ寄せつつ、旧 `best_score` 形式も fallback で読めるように更新。新記録時だけ保存し、旧 schema では従来 upsert に戻る互換を入れた。
+- 2026-03-13: `TimeAttackPage.tsx` と `globals.css` を更新し、`timer-pulse / correct-flash / wrong-shake / new-record` の演出を追加。タイムアタックの結果画面では自己ベスト更新時に `NEW RECORD` と比較表示が出るようにした。`npm run build` 成功。

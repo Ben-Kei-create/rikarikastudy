@@ -527,17 +527,23 @@ export type Database = {
       }
       time_attack_records: {
         Row: {
+          id: string | null
           student_id: number
-          best_score: number
+          score: number
+          best_score?: number | null
           achieved_at: string
         }
         Insert: {
+          id?: string | null
           student_id: number
-          best_score: number
+          score?: number
+          best_score?: number | null
           achieved_at?: string
         }
         Update: {
-          best_score?: number
+          id?: string | null
+          score?: number
+          best_score?: number | null
           achieved_at?: string
         }
       }

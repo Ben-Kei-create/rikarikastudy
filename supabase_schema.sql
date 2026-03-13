@@ -324,10 +324,18 @@ CREATE TABLE IF NOT EXISTS student_badges (
 ALTER TABLE student_badges ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid();
 
 CREATE TABLE IF NOT EXISTS time_attack_records (
-  student_id INTEGER PRIMARY KEY REFERENCES students(id) ON DELETE CASCADE,
-  best_score INTEGER NOT NULL DEFAULT 0,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL DEFAULT 0,
   achieved_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE time_attack_records ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid();
+ALTER TABLE time_attack_records ADD COLUMN IF NOT EXISTS score INTEGER NOT NULL DEFAULT 0;
+UPDATE time_attack_records
+SET score = best_score
+WHERE COALESCE(score, 0) = 0
+  AND COALESCE(best_score, 0) > 0;
 
 INSERT INTO badges (key, name, description, icon_emoji, rarity, condition_type) VALUES
   ('first_quiz', '初クイズ', 'はじめて問題を最後まで解いた。', '🌱', 'common', 'sessions'),
@@ -362,7 +370,7 @@ CREATE INDEX IF NOT EXISTS idx_quiz_sessions_mode ON quiz_sessions(session_mode)
 CREATE INDEX IF NOT EXISTS idx_daily_challenges_date ON daily_challenges(date DESC);
 CREATE INDEX IF NOT EXISTS idx_student_badges_student ON student_badges(student_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_student_badges_student_badge_key ON student_badges(student_id, badge_key);
-CREATE INDEX IF NOT EXISTS idx_time_attack_records_score ON time_attack_records(best_score DESC);
+CREATE INDEX IF NOT EXISTS idx_time_attack_records_score ON time_attack_records(score DESC);
 
 ALTER TABLE daily_challenges DISABLE ROW LEVEL SECURITY;
 ALTER TABLE badges DISABLE ROW LEVEL SECURITY;
