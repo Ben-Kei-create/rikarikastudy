@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { buildTextBlankPrompt, evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
+import { TextAnswerResult } from '@/lib/answerUtils'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { FIELD_COLORS } from '@/lib/constants'
 import { CustomQuizOptions, getCustomQuizSessionLabel, getCustomQuizSummaryParts } from '@/lib/customQuiz'
@@ -10,7 +10,9 @@ import { getLevelInfo } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
+import { evaluateQuestionAnswer, getQuestionBlankPrompt, QuestionSubmission } from '@/lib/questionEval'
 import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions, QuizQuestionCount } from '@/lib/questionPicker'
+import { getQuestionCorrectAnswerText, getQuestionTypeShortLabel, QuestionShape, normalizeQuestionRecord } from '@/lib/questionTypes'
 import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
 import { calculateQuizXp as calculateQuizXpBreakdown } from '@/lib/xp'
 import {
@@ -31,6 +33,13 @@ import BadgeEarnedToastStack from '@/components/BadgeEarnedToastStack'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import SuccessBurst from '@/components/SuccessBurst'
+import Choice4Question from '@/components/quiz/Choice4Question'
+import FillChoiceQuestion from '@/components/quiz/FillChoiceQuestion'
+import MatchQuestion from '@/components/quiz/MatchQuestion'
+import MultiSelectQuestion from '@/components/quiz/MultiSelectQuestion'
+import SortQuestion from '@/components/quiz/SortQuestion'
+import TrueFalseQuestion from '@/components/quiz/TrueFalseQuestion'
+import WordBankQuestion from '@/components/quiz/WordBankQuestion'
 
 const FAVORITE_STORAGE_KEY = 'rika_favorite_questions_v1'
 
@@ -62,21 +71,7 @@ function getFieldColor(field: string) {
   return FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
 }
 
-interface Question {
-  id: string
-  field: string
-  unit: string
-  question: string
-  type: 'choice' | 'text'
-  choices: string[] | null
-  answer: string
-  accept_answers: string[] | null
-  keywords: string[] | null
-  explanation: string | null
-  image_url: string | null
-  image_display_width: number | null
-  image_display_height: number | null
-}
+type Question = QuestionShape
 
 type Phase = 'answering' | 'result' | 'finished'
 
@@ -247,7 +242,9 @@ export default function QuizPage({
       }
 
       const pool = ((data || []) as Question[])
-        .map(question => normalizeQuestionChoices(question, { shuffleChoices: question.type === 'choice' }))
+        .map(question => normalizeQuestionChoices(normalizeQuestionRecord(question), {
+          shuffleChoices: question.type === 'choice' || question.type === 'choice4' || question.type === 'fill_choice' || question.type === 'multi_select',
+        }))
         .filter(question => hasValidChoiceAnswer(question))
       if (pool.length === 0) {
         if (active) setLoading(false)
@@ -349,23 +346,22 @@ export default function QuizPage({
   const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
   const isFavorite = !!q && favoriteIds.has(q.id)
   const questionImageDisplay = q ? getQuestionImageDisplaySize(q) : null
-  const textBlankPrompt = q?.type === 'text'
-    ? buildTextBlankPrompt(q.answer, q.accept_answers, q.keywords)
-    : null
+  const textBlankPrompt = q ? getQuestionBlankPrompt(q) : null
+  const correctAnswerText = q
+    ? (textBlankPrompt?.target ?? getQuestionCorrectAnswerText(q))
+    : ''
   const wrongReviewItems = useMemo(() => {
     return questions
       .map((question, index) => {
         const log = answerLogs[index]
         if (!log || log.correct) return null
-        const prompt = question.type === 'text'
-          ? buildTextBlankPrompt(question.answer, question.accept_answers, question.keywords)
-          : null
+        const prompt = getQuestionBlankPrompt(question)
         return {
           id: question.id,
           index,
           question,
           studentAnswer: log.answer,
-          correctAnswer: prompt?.target ?? question.answer,
+          correctAnswer: prompt?.target ?? getQuestionCorrectAnswerText(question),
         }
       })
       .filter((item): item is NonNullable<typeof item> => item !== null)
@@ -386,10 +382,10 @@ export default function QuizPage({
     }
   }, [reviewExpanded, selectedReviewQuestionId, wrongReviewItems])
 
-  const handleChoice = (choice: string) => {
-    if (phase !== 'answering' || !q) return
-    const result: TextAnswerResult = choice === q.answer ? 'exact' : 'incorrect'
-    if (result === 'exact') {
+  const applyEvaluatedAnswer = (result: { result: TextAnswerResult; studentAnswerText: string }) => {
+    if (!q) return
+
+    if (result.result === 'exact') {
       const nextCombo = comboStreak + 1
       const isPerfectRun = current + 1 >= questions.length && score + 1 === questions.length
       setComboStreak(nextCombo)
@@ -399,32 +395,33 @@ export default function QuizPage({
       setComboStreak(0)
       setCelebration(null)
     }
-    setSelected(choice)
-    setAnswerResult(result)
-    if (result === 'exact') setScore(currentScore => currentScore + 1)
-    setAnswerLogs(logs => [...logs, { qId: q.id, correct: result === 'exact', answer: choice, result }])
+    setAnswerResult(result.result)
+    if (result.result === 'exact') setScore(currentScore => currentScore + 1)
+    setAnswerLogs(logs => [...logs, {
+      qId: q.id,
+      correct: result.result === 'exact',
+      answer: result.studentAnswerText,
+      result: result.result,
+    }])
     setPhase('result')
+  }
+
+  const handleChoice = (choice: string) => {
+    if (phase !== 'answering' || !q) return
+    setSelected(choice)
+    applyEvaluatedAnswer(evaluateQuestionAnswer(q, { kind: 'single', value: choice }))
+  }
+
+  const handleStructuredSubmit = (submission: QuestionSubmission) => {
+    if (phase !== 'answering' || !q) return
+    applyEvaluatedAnswer(evaluateQuestionAnswer(q, submission))
   }
 
   const handleTextSubmit = () => {
     if (!q) return
     const answer = textInput.trim()
     if (!answer) return
-    const result = evaluateTextAnswer(answer, q.answer, q.accept_answers, q.keywords)
-    if (result === 'exact') {
-      const nextCombo = comboStreak + 1
-      const isPerfectRun = current + 1 >= questions.length && score + 1 === questions.length
-      setComboStreak(nextCombo)
-      setBestCombo(currentBest => Math.max(currentBest, nextCombo))
-      setCelebration(getSuccessCelebration(nextCombo, { perfect: isPerfectRun }))
-    } else {
-      setComboStreak(0)
-      setCelebration(null)
-    }
-    setAnswerResult(result)
-    if (result === 'exact') setScore(currentScore => currentScore + 1)
-    setAnswerLogs(logs => [...logs, { qId: q.id, correct: result === 'exact', answer, result }])
-    setPhase('result')
+    applyEvaluatedAnswer(evaluateQuestionAnswer(q, { kind: 'text', value: answer }))
   }
 
   const handleDontKnow = () => {
@@ -433,7 +430,12 @@ export default function QuizPage({
     setCelebration(null)
     setTextInput('わからない')
     setAnswerResult('incorrect')
-    setAnswerLogs(logs => [...logs, { qId: q.id, correct: false, answer: 'わからない', result: 'incorrect' }])
+    setAnswerLogs(logs => [...logs, {
+      qId: q.id,
+      correct: false,
+      answer: 'わからない',
+      result: 'incorrect',
+    }])
     setPhase('result')
   }
 
@@ -480,7 +482,12 @@ export default function QuizPage({
           question_text: q.question,
           question_type: q.type,
           choices: q.choices,
-          answer_text: q.answer,
+          match_pairs: q.match_pairs,
+          sort_items: q.sort_items,
+          correct_choices: q.correct_choices,
+          word_tokens: q.word_tokens,
+          distractor_tokens: q.distractor_tokens,
+          answer_text: getQuestionCorrectAnswerText(q),
           explanation_text: q.explanation,
           image_url: q.image_url,
         })
@@ -961,7 +968,7 @@ export default function QuizPage({
               </span>
             )}
             <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(148, 163, 184, 0.14)', color: 'var(--text-muted)' }}>
-              {q.type === 'choice' ? `${q.choices?.length ?? 0}択` : '記述'}
+              {getQuestionTypeShortLabel(q.type)}
             </span>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1140,93 +1147,146 @@ export default function QuizPage({
         )}
       </div>
 
-      {q.type === 'choice' ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          {q.choices?.map((choice, index) => {
-            let bg = 'var(--surface-elevated)'
-            let border = '1px solid var(--surface-elevated-border)'
-            let textColor = 'var(--text)'
+      {(() => {
+        if (q.type === 'choice' || q.type === 'choice4') {
+          return (
+            <Choice4Question
+              choices={q.choices ?? []}
+              selectedChoice={selected}
+              answer={q.answer}
+              answerResult={answerResult}
+              disabled={phase === 'result'}
+              onSelect={handleChoice}
+            />
+          )
+        }
 
-            if (phase === 'result') {
-              if (choice === q.answer) {
-                bg = '#14532d'
-                border = '2px solid #22c55e'
-                textColor = '#86efac'
-              } else if (choice === selected && answerResult === 'incorrect') {
-                bg = '#450a0a'
-                border = '2px solid #ef4444'
-                textColor = '#fca5a5'
-              }
-            }
+        if (q.type === 'true_false') {
+          return (
+            <TrueFalseQuestion
+              choices={q.choices ?? ['○', '×']}
+              selectedChoice={selected}
+              answer={q.answer}
+              answerResult={answerResult}
+              disabled={phase === 'result'}
+              onSelect={handleChoice}
+            />
+          )
+        }
 
-            return (
-              <button
-                key={choice}
-                onClick={() => handleChoice(choice)}
-                disabled={phase === 'result'}
-                className="min-h-[92px] rounded-xl p-4 text-left font-bold transition-all anim-fade-up"
-                style={{ animationDelay: `${index * 0.06}s`, background: bg, border, color: textColor }}
-              >
-                <span className="mr-3 opacity-50">{'ABCD'[index] ?? `${index + 1}` }.</span>
-                {choice}
-              </button>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="anim-fade-up">
-          <div
-            className="mb-3 rounded-[24px] border px-4 py-3"
-            style={{
-              borderColor: 'rgba(56, 189, 248, 0.18)',
-              background: 'rgba(15, 23, 42, 0.62)',
-            }}
-          >
+        if (q.type === 'fill_choice') {
+          return (
+            <FillChoiceQuestion
+              choices={q.choices ?? []}
+              selectedChoice={selected}
+              answer={q.answer}
+              answerResult={answerResult}
+              disabled={phase === 'result'}
+              onSelect={handleChoice}
+            />
+          )
+        }
+
+        if (q.type === 'match') {
+          return (
+            <MatchQuestion
+              questionId={q.id}
+              pairs={q.match_pairs ?? []}
+              disabled={phase === 'result'}
+              onSubmit={pairs => handleStructuredSubmit({ kind: 'match', pairs })}
+            />
+          )
+        }
+
+        if (q.type === 'sort') {
+          return (
+            <SortQuestion
+              questionId={q.id}
+              items={q.sort_items ?? []}
+              disabled={phase === 'result'}
+              onSubmit={items => handleStructuredSubmit({ kind: 'sort', items })}
+            />
+          )
+        }
+
+        if (q.type === 'multi_select') {
+          return (
+            <MultiSelectQuestion
+              questionId={q.id}
+              choices={q.choices ?? []}
+              disabled={phase === 'result'}
+              onSubmit={selectedChoices => handleStructuredSubmit({ kind: 'multi_select', selected: selectedChoices })}
+            />
+          )
+        }
+
+        if (q.type === 'word_bank') {
+          return (
+            <WordBankQuestion
+              questionId={q.id}
+              wordTokens={q.word_tokens ?? []}
+              distractorTokens={q.distractor_tokens ?? []}
+              disabled={phase === 'result'}
+              onSubmit={tokens => handleStructuredSubmit({ kind: 'word_bank', tokens })}
+            />
+          )
+        }
+
+        return (
+          <div className="anim-fade-up">
             <div
-              className="rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
+              className="mb-3 rounded-[24px] border px-4 py-3"
               style={{
-                borderColor: 'rgba(56, 189, 248, 0.16)',
-                background: 'rgba(2, 8, 23, 0.32)',
+                borderColor: 'rgba(56, 189, 248, 0.18)',
+                background: 'rgba(15, 23, 42, 0.62)',
               }}
             >
-              {textBlankPrompt?.promptText ?? '＿＿＿＿'}
+              <div
+                className="rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
+                style={{
+                  borderColor: 'rgba(56, 189, 248, 0.16)',
+                  background: 'rgba(2, 8, 23, 0.32)',
+                }}
+              >
+                {textBlankPrompt?.promptText ?? '＿＿＿＿'}
+              </div>
             </div>
+            <input
+              value={textInput}
+              onChange={event => setTextInput(event.target.value)}
+              onKeyDown={event => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  handleTextSubmit()
+                }
+              }}
+              disabled={phase === 'result'}
+              placeholder={textBlankPrompt?.placeholder ?? '答え'}
+              enterKeyHint="done"
+              autoCapitalize="none"
+              autoCorrect="off"
+              className="input-surface mb-3"
+              style={{
+                border:
+                  phase === 'result'
+                    ? `2px solid ${answerResult === 'exact' ? '#22c55e' : answerResult === 'keyword' ? '#f59e0b' : '#ef4444'}`
+                    : undefined,
+                fontSize: '1rem',
+              }}
+            />
+            {phase === 'answering' && (
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <button onClick={handleTextSubmit} disabled={!textInput.trim()} className="btn-primary w-full">
+                  決定
+                </button>
+                <button onClick={handleDontKnow} className="btn-secondary w-full sm:w-auto">
+                  わからない
+                </button>
+              </div>
+            )}
           </div>
-          <input
-            value={textInput}
-            onChange={event => setTextInput(event.target.value)}
-            onKeyDown={event => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                handleTextSubmit()
-              }
-            }}
-            disabled={phase === 'result'}
-            placeholder={textBlankPrompt?.placeholder ?? '答え'}
-            enterKeyHint="done"
-            autoCapitalize="none"
-            autoCorrect="off"
-            className="input-surface mb-3"
-            style={{
-              border:
-                phase === 'result'
-                  ? `2px solid ${answerResult === 'exact' ? '#22c55e' : answerResult === 'keyword' ? '#f59e0b' : '#ef4444'}`
-                  : undefined,
-              fontSize: '1rem',
-            }}
-          />
-          {phase === 'answering' && (
-            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-              <button onClick={handleTextSubmit} disabled={!textInput.trim()} className="btn-primary w-full">
-                決定
-              </button>
-              <button onClick={handleDontKnow} className="btn-secondary w-full sm:w-auto">
-                わからない
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+        )
+      })()}
 
       {phase === 'result' && (
         (() => {
@@ -1255,13 +1315,13 @@ export default function QuizPage({
               </div>
               {currentResult !== 'exact' && (
                 <>
-                  <p className="text-slate-200 text-sm mb-2">答え: {textBlankPrompt?.target ?? q.answer}</p>
-                  {(textBlankPrompt?.target ?? q.answer) !== q.answer && (
+                  <p className="text-slate-200 text-sm mb-2">答え: {correctAnswerText}</p>
+                  {correctAnswerText !== q.answer && q.answer && (
                     <p className="text-slate-300 text-xs mb-2">{q.answer}</p>
                   )}
                 </>
               )}
-              {currentResult !== 'exact' && q.keywords && q.keywords.length > 0 && (
+              {currentResult !== 'exact' && q.type === 'text' && q.keywords && q.keywords.length > 0 && (
                 <p className="text-slate-300 text-xs mb-2">キーワード: {q.keywords.join(' / ')}</p>
               )}
               {currentResult === 'keyword' && (

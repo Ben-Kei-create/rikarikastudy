@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { MatchPair, QuestionType } from '@/lib/questionTypes'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const supabaseKey =
@@ -78,11 +79,16 @@ export type Database = {
           field: string
           unit: string
           question: string
-          type: 'choice' | 'text'
+          type: QuestionType
           choices: string[] | null
           answer: string
           accept_answers: string[] | null
           keywords: string[] | null
+          match_pairs: MatchPair[] | null
+          sort_items: string[] | null
+          correct_choices: string[] | null
+          word_tokens: string[] | null
+          distractor_tokens: string[] | null
           created_by_student_id: number | null
           explanation: string | null
           image_url: string | null
@@ -96,11 +102,16 @@ export type Database = {
           field: string
           unit: string
           question: string
-          type: 'choice' | 'text'
+          type: QuestionType
           choices?: string[] | null
           answer: string
           accept_answers?: string[] | null
           keywords?: string[] | null
+          match_pairs?: MatchPair[] | null
+          sort_items?: string[] | null
+          correct_choices?: string[] | null
+          word_tokens?: string[] | null
+          distractor_tokens?: string[] | null
           created_by_student_id?: number | null
           explanation?: string | null
           image_url?: string | null
@@ -113,11 +124,16 @@ export type Database = {
           field?: string
           unit?: string
           question?: string
-          type?: 'choice' | 'text'
+          type?: QuestionType
           choices?: string[] | null
           answer?: string
           accept_answers?: string[] | null
           keywords?: string[] | null
+          match_pairs?: MatchPair[] | null
+          sort_items?: string[] | null
+          correct_choices?: string[] | null
+          word_tokens?: string[] | null
+          distractor_tokens?: string[] | null
           created_by_student_id?: number | null
           explanation?: string | null
           image_url?: string | null
@@ -274,8 +290,13 @@ export type Database = {
           field: '生物' | '化学' | '物理' | '地学'
           unit: string
           question_text: string
-          question_type: 'choice' | 'text'
+          question_type: QuestionType
           choices: string[] | null
+          match_pairs: MatchPair[] | null
+          sort_items: string[] | null
+          correct_choices: string[] | null
+          word_tokens: string[] | null
+          distractor_tokens: string[] | null
           answer_text: string
           explanation_text: string | null
           image_url: string | null
@@ -297,8 +318,13 @@ export type Database = {
           field: '生物' | '化学' | '物理' | '地学'
           unit: string
           question_text: string
-          question_type: 'choice' | 'text'
+          question_type: QuestionType
           choices?: string[] | null
+          match_pairs?: MatchPair[] | null
+          sort_items?: string[] | null
+          correct_choices?: string[] | null
+          word_tokens?: string[] | null
+          distractor_tokens?: string[] | null
           answer_text: string
           explanation_text?: string | null
           image_url?: string | null
@@ -319,8 +345,13 @@ export type Database = {
           field?: '生物' | '化学' | '物理' | '地学'
           unit?: string
           question_text?: string
-          question_type?: 'choice' | 'text'
+          question_type?: QuestionType
           choices?: string[] | null
+          match_pairs?: MatchPair[] | null
+          sort_items?: string[] | null
+          correct_choices?: string[] | null
+          word_tokens?: string[] | null
+          distractor_tokens?: string[] | null
           answer_text?: string
           explanation_text?: string | null
           image_url?: string | null

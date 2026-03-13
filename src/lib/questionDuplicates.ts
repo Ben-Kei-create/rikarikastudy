@@ -1,14 +1,20 @@
 'use client'
 
 import { supabase } from '@/lib/supabase'
+import { MatchPair, QuestionType } from '@/lib/questionTypes'
 
 export interface DuplicateQuestionCandidate {
   field: string
   unit: string
   question: string
-  type: 'choice' | 'text'
+  type: QuestionType
   choices: string[] | null
-  answer: string
+  answer: string | null
+  match_pairs?: MatchPair[] | null
+  sort_items?: string[] | null
+  correct_choices?: string[] | null
+  word_tokens?: string[] | null
+  distractor_tokens?: string[] | null
 }
 
 interface ExistingQuestionRow extends DuplicateQuestionCandidate {
@@ -24,14 +30,27 @@ function normalizeChoices(choices: string[] | null) {
   return choices.map(choice => normalizeText(choice)).filter(Boolean).sort()
 }
 
+function normalizeMatchPairs(pairs: MatchPair[] | null | undefined) {
+  if (!pairs || pairs.length === 0) return []
+  return pairs
+    .map(pair => `${normalizeText(pair.left)}=>${normalizeText(pair.right)}`)
+    .filter(Boolean)
+    .sort()
+}
+
 export function buildQuestionDuplicateKey(question: DuplicateQuestionCandidate) {
   return [
     normalizeText(question.field),
     normalizeText(question.unit),
     normalizeText(question.question),
     question.type,
-    normalizeText(question.answer),
+    normalizeText(question.answer ?? ''),
     JSON.stringify(normalizeChoices(question.choices)),
+    JSON.stringify(normalizeMatchPairs(question.match_pairs)),
+    JSON.stringify(normalizeChoices(question.sort_items ?? null)),
+    JSON.stringify(normalizeChoices(question.correct_choices ?? null)),
+    JSON.stringify(normalizeChoices(question.word_tokens ?? null)),
+    JSON.stringify(normalizeChoices(question.distractor_tokens ?? null)),
   ].join('||')
 }
 
@@ -43,7 +62,7 @@ function formatQuestionLabel(question: DuplicateQuestionCandidate) {
 async function fetchExistingQuestions() {
   const { data, error } = await supabase
     .from('questions')
-    .select('id, field, unit, question, type, choices, answer')
+    .select('id, field, unit, question, type, choices, answer, match_pairs, sort_items, correct_choices, word_tokens, distractor_tokens')
 
   if (error) {
     throw new Error(`既存問題の確認に失敗しました: ${error.message}`)

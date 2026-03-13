@@ -17,6 +17,7 @@ import {
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
 import { pickChallengeTestQuestions, pickTimeAttackQuestions, shuffleArray } from '@/lib/questionPicker'
+import { getQuestionTypeShortLabel, isChallengeSupportedQuestionType, isSingleChoiceQuestionType, normalizeQuestionRecord, QuestionShape } from '@/lib/questionTypes'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
@@ -37,21 +38,7 @@ type ChallengeMode = 'time_attack' | 'test_mode' | 'streak_mode'
 type LeaderboardMode = Extract<ChallengeMode, 'test_mode' | 'streak_mode'>
 type Phase = 'intro' | 'playing' | 'finished'
 
-interface Question {
-  id: string
-  field: string
-  unit: string
-  question: string
-  type: 'choice' | 'text'
-  choices: string[] | null
-  answer: string
-  accept_answers: string[] | null
-  keywords: string[] | null
-  explanation: string | null
-  image_url: string | null
-  image_display_width: number | null
-  image_display_height: number | null
-}
+type Question = QuestionShape
 
 interface LeaderboardEntry {
   studentId: number
@@ -349,9 +336,11 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
 
       const rawPool = (data || []) as Question[]
       const pool = rawPool
-        .map(question => normalizeQuestionChoices(question, { shuffleChoices: question.type === 'choice' }))
+        .map(question => normalizeQuestionChoices(normalizeQuestionRecord(question), {
+          shuffleChoices: question.type === 'choice' || question.type === 'choice4' || question.type === 'fill_choice' || question.type === 'multi_select',
+        }))
         .filter(question => hasValidChoiceAnswer(question))
-      setAllQuestions(pool)
+      setAllQuestions(pool.filter(question => isChallengeSupportedQuestionType(question.type)))
       setChoiceQuestions(pickTimeAttackQuestions(pool))
       setTimeAttackBest(best.personalBest)
       setOtherLeader(best.otherLeader)
@@ -1096,7 +1085,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   {currentQuestion.field} · {currentQuestion.unit}
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(148, 163, 184, 0.14)', color: 'var(--text-muted)' }}>
-                  {currentQuestion.type === 'choice' ? `${currentQuestion.choices?.length ?? 0}択` : '記述'}
+                  {getQuestionTypeShortLabel(currentQuestion.type)}
                 </span>
               </div>
               <div className="text-xs text-slate-500">{currentIndex + 1} / {questions.length}</div>
@@ -1124,7 +1113,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               </div>
             )}
 
-            {currentQuestion.type === 'choice' ? (
+            {isSingleChoiceQuestionType(currentQuestion.type) ? (
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {currentQuestion.choices?.map((choice, index) => {
                   const isCorrect = choice === currentQuestion.answer

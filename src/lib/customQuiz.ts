@@ -16,7 +16,7 @@ export const DEFAULT_CUSTOM_QUIZ_OPTIONS: CustomQuizOptions = {
 }
 
 export function getCustomQuizQuestionTypeLabel(questionType: CustomQuizQuestionType) {
-  if (questionType === 'choice') return '選択肢のみ'
+  if (questionType === 'choice') return 'タップ式のみ'
   if (questionType === 'text') return '記述のみ'
   return '形式すべて'
 }

@@ -1,5 +1,7 @@
 'use client'
 
+import { QuestionType } from '@/lib/questionTypes'
+
 const CHOICE_INDEX_BY_LABEL: Record<string, number> = {
   A: 0,
   B: 1,
@@ -13,9 +15,14 @@ const CHOICE_INDEX_BY_LABEL: Record<string, number> = {
 
 export interface ChoiceCompatibleQuestion {
   id: string
-  type: 'choice' | 'text'
+  type: QuestionType
   choices: string[] | null
   answer: string
+  match_pairs?: Array<{ left: string; right: string }> | null
+  sort_items?: string[] | null
+  correct_choices?: string[] | null
+  word_tokens?: string[] | null
+  distractor_tokens?: string[] | null
 }
 
 function shuffleItems<T>(items: T[]) {
@@ -62,32 +69,77 @@ function resolveChoiceAnswer(answer: string, choices: string[]) {
   return trimmedAnswer
 }
 
+function shouldShuffleChoices(type: QuestionType, options?: { shuffleChoices?: boolean }) {
+  if (options?.shuffleChoices === false) return false
+  return type === 'choice' || type === 'choice4' || type === 'fill_choice' || type === 'multi_select'
+}
+
 export function normalizeQuestionChoices<T extends ChoiceCompatibleQuestion>(
   question: T,
   options?: { shuffleChoices?: boolean },
 ): T {
-  if (question.type !== 'choice') return question
-
   const cleanedChoices = Array.isArray(question.choices)
     ? question.choices
         .map(choice => (typeof choice === 'string' ? choice.trim() : ''))
         .filter(Boolean)
     : []
 
-  const resolvedAnswer = resolveChoiceAnswer(question.answer, cleanedChoices)
-  const shuffledChoices = options?.shuffleChoices && cleanedChoices.length > 1
+  if (question.type === 'true_false') {
+    return {
+      ...question,
+      choices: ['○', '×'],
+      answer: normalizeChoiceText(question.answer) === '○' ? '○' : '×',
+    }
+  }
+
+  if (question.type !== 'choice' && question.type !== 'choice4' && question.type !== 'fill_choice' && question.type !== 'multi_select') {
+    return {
+      ...question,
+      choices: cleanedChoices.length > 0 ? cleanedChoices : null,
+    }
+  }
+
+  const resolvedAnswer = question.type === 'multi_select'
+    ? question.answer
+    : resolveChoiceAnswer(question.answer, cleanedChoices)
+  const normalizedChoices = shouldShuffleChoices(question.type, options) && cleanedChoices.length > 1
     ? shuffleItems(cleanedChoices)
     : cleanedChoices
 
   return {
     ...question,
-    choices: shuffledChoices,
+    choices: normalizedChoices.length > 0 ? normalizedChoices : null,
     answer: resolvedAnswer,
   }
 }
 
 export function hasValidChoiceAnswer<T extends ChoiceCompatibleQuestion>(question: T) {
-  if (question.type !== 'choice') return true
-  if (!Array.isArray(question.choices) || question.choices.length < 2) return false
-  return question.choices.includes(question.answer)
+  if (question.type === 'choice' || question.type === 'choice4' || question.type === 'fill_choice') {
+    if (!Array.isArray(question.choices) || question.choices.length < 2) return false
+    return question.choices.includes(question.answer)
+  }
+
+  if (question.type === 'true_false') {
+    return question.answer === '○' || question.answer === '×'
+  }
+
+  if (question.type === 'multi_select') {
+    if (!Array.isArray(question.choices) || question.choices.length < 4) return false
+    if (!Array.isArray(question.correct_choices) || question.correct_choices.length < 2) return false
+    return question.correct_choices.every(choice => question.choices?.includes(choice))
+  }
+
+  if (question.type === 'match') {
+    return Array.isArray(question.match_pairs) && question.match_pairs.length >= 2
+  }
+
+  if (question.type === 'sort') {
+    return Array.isArray(question.sort_items) && question.sort_items.length >= 3
+  }
+
+  if (question.type === 'word_bank') {
+    return Array.isArray(question.word_tokens) && question.word_tokens.length >= 2
+  }
+
+  return true
 }

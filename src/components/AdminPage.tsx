@@ -31,6 +31,17 @@ import {
 } from '@/lib/questionInquiry'
 import { buildGlossaryEntryId, ScienceGlossaryField } from '@/lib/scienceGlossary'
 import { FIELD_COLORS, FIELDS } from '@/lib/constants'
+import {
+  MatchPair,
+  QuestionShape,
+  QuestionType,
+  QUESTION_TYPES,
+  getQuestionCorrectAnswerText,
+  getQuestionTypeLabel,
+  normalizeMatchPairs,
+  normalizeQuestionRecord,
+  normalizeStringArray,
+} from '@/lib/questionTypes'
 
 const ADMIN_PW = 'rikaadmin2026'
 const BULK_INSERT_CHUNK_SIZE = 100
@@ -39,20 +50,21 @@ const BULK_JSON_EXAMPLE = `[
     "field": "生物",
     "unit": "植物のつくり",
     "question": "光合成を主に行う部分はどこ？",
-    "type": "choice",
-    "choices": ["葉", "根"],
+    "type": "choice4",
+    "choices": ["葉", "根", "茎", "花"],
     "answer": "葉",
     "explanation": "葉の葉緑体で光合成を行います。",
     "grade": "中1"
   },
   {
-    "field": "物理",
-    "unit": "電流",
-    "question": "電流の単位は何ですか？",
-    "type": "text",
-    "answer": "A",
-    "keywords": ["アンペア"],
-    "explanation": "電流の単位はアンペアです。",
+    "field": "化学",
+    "unit": "原子と分子",
+    "question": "次のうち、有機物をすべて選びなさい。",
+    "type": "multi_select",
+    "choices": ["デンプン", "食塩", "エタノール", "水"],
+    "correct_choices": ["デンプン", "エタノール"],
+    "answer": null,
+    "explanation": "有機物は炭素をふくみ、燃えると二酸化炭素と水ができます。",
     "grade": "中2"
   }
 ]`
@@ -203,10 +215,15 @@ interface BulkQuestionPayload {
   field: typeof FIELDS[number]
   unit: string
   question: string
-  type: 'choice' | 'text'
+  type: QuestionType
   choices: string[] | null
   answer: string
   keywords: string[] | null
+  match_pairs: MatchPair[] | null
+  sort_items: string[] | null
+  correct_choices: string[] | null
+  word_tokens: string[] | null
+  distractor_tokens: string[] | null
   explanation: string | null
   grade: string
 }
@@ -317,6 +334,30 @@ function parseKeywordInput(input: string) {
   return keywords.length > 0 ? keywords : null
 }
 
+function parseListInput(input: string) {
+  return input
+    .split(/\n|,|、/)
+    .map(item => item.trim())
+    .filter(Boolean)
+}
+
+function parseMatchPairsText(input: string) {
+  const pairs = input
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [left, right] = line.split(/\s*\|\s*/)
+      return {
+        left: (left ?? '').trim(),
+        right: (right ?? '').trim(),
+      }
+    })
+    .filter(pair => pair.left && pair.right)
+
+  return pairs.length > 0 ? pairs : null
+}
+
 function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
   const parsed = JSON.parse(jsonText)
   const items: unknown[] | null = Array.isArray(parsed)
@@ -335,7 +376,7 @@ function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
     const field = typeof row.field === 'string' ? row.field.trim() : ''
     const unit = typeof row.unit === 'string' ? row.unit.trim() : ''
     const question = typeof row.question === 'string' ? row.question.trim() : ''
-    const type = row.type
+    const type = typeof row.type === 'string' ? row.type.trim() as QuestionType : null
     const answer = typeof row.answer === 'string' ? row.answer.trim() : ''
     const explanation = typeof row.explanation === 'string' && row.explanation.trim()
       ? row.explanation.trim()
@@ -343,56 +384,131 @@ function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
     const grade = typeof row.grade === 'string' && row.grade.trim()
       ? row.grade.trim()
       : '中3'
-    const keywords = parseKeywordsArray(row.keywords)
+    const keywords = normalizeStringArray(row.keywords)
+    const choices = normalizeStringArray(row.choices)
+    const matchPairs = normalizeMatchPairs(row.match_pairs)
+    const sortItems = normalizeStringArray(row.sort_items)
+    const correctChoices = normalizeStringArray(row.correct_choices)
+    const wordTokens = normalizeStringArray(row.word_tokens)
+    const distractorTokens = normalizeStringArray(row.distractor_tokens)
 
     if (!FIELDS.includes(field as typeof FIELDS[number])) {
       throw new Error(`${prefix}: field は ${FIELDS.join(' / ')} のどれかにしてください。`)
     }
     if (!unit) throw new Error(`${prefix}: unit は必須です。`)
     if (!question) throw new Error(`${prefix}: question は必須です。`)
-    if (!answer) throw new Error(`${prefix}: answer は必須です。`)
-    if (type !== 'choice' && type !== 'text') {
-      throw new Error(`${prefix}: type は "choice" か "text" にしてください。`)
+    if (!type || !QUESTION_TYPES.includes(type)) {
+      throw new Error(`${prefix}: type は ${QUESTION_TYPES.join(' / ')} のどれかにしてください。`)
     }
 
-    if (type === 'choice') {
-      if (!Array.isArray(row.choices)) {
-        throw new Error(`${prefix}: choice 問題は choices 配列が必要です。`)
-      }
-      const choices = row.choices
-        .map((choice: unknown) => (typeof choice === 'string' ? choice.trim() : ''))
-        .filter(Boolean)
-
-      if (choices.length !== 2) {
-        throw new Error(`${prefix}: choice 問題の choices は2件にしてください。`)
-      }
-      if (!choices.includes(answer)) {
-        throw new Error(`${prefix}: answer は choices のどちらかと一致させてください。`)
-      }
-
-      return {
-        field: field as typeof FIELDS[number],
-        unit,
-        question,
-        type,
-        choices,
-        answer,
-        keywords: null,
-        explanation,
-        grade,
-      }
-    }
-
-    return {
+    const basePayload: BulkQuestionPayload = {
       field: field as typeof FIELDS[number],
       unit,
       question,
       type,
-      choices: null,
+      choices,
       answer,
       keywords,
+      match_pairs: matchPairs,
+      sort_items: sortItems,
+      correct_choices: correctChoices,
+      word_tokens: wordTokens,
+      distractor_tokens: distractorTokens,
       explanation,
       grade,
+    }
+
+    if (type === 'choice') {
+      if (!choices || choices.length !== 2) {
+        throw new Error(`${prefix}: choice は choices を2件にしてください。`)
+      }
+      if (!answer) {
+        throw new Error(`${prefix}: choice は answer が必須です。`)
+      }
+      if (!choices.includes(answer)) {
+        throw new Error(`${prefix}: choice の answer は choices と一致させてください。`)
+      }
+      return { ...basePayload, keywords: null }
+    }
+
+    if (type === 'choice4' || type === 'fill_choice') {
+      if (!choices || choices.length < 3 || choices.length > 4) {
+        throw new Error(`${prefix}: ${type} は choices を3〜4件にしてください。`)
+      }
+      if (!answer || !choices.includes(answer)) {
+        throw new Error(`${prefix}: ${type} の answer は choices と一致させてください。`)
+      }
+      if (type === 'fill_choice' && !question.includes('【')) {
+        throw new Error(`${prefix}: fill_choice の question には【　　】を入れてください。`)
+      }
+      return { ...basePayload, keywords: null }
+    }
+
+    if (type === 'true_false') {
+      if (!['○', '×'].includes(answer)) {
+        throw new Error(`${prefix}: true_false の answer は ○ か × にしてください。`)
+      }
+      return {
+        ...basePayload,
+        choices: ['○', '×'],
+        keywords: null,
+      }
+    }
+
+    if (type === 'match') {
+      if (!matchPairs || matchPairs.length < 2) {
+        throw new Error(`${prefix}: match は match_pairs を2組以上入れてください。`)
+      }
+      return { ...basePayload, choices: null, answer: '', keywords: null }
+    }
+
+    if (type === 'sort') {
+      if (!sortItems || sortItems.length < 3) {
+        throw new Error(`${prefix}: sort は sort_items を3件以上入れてください。`)
+      }
+      return { ...basePayload, choices: null, answer: '', keywords: null }
+    }
+
+    if (type === 'multi_select') {
+      if (!choices || choices.length < 4) {
+        throw new Error(`${prefix}: multi_select は choices を4件以上入れてください。`)
+      }
+      if (!correctChoices || correctChoices.length < 2) {
+        throw new Error(`${prefix}: multi_select は correct_choices を2件以上入れてください。`)
+      }
+      if (!correctChoices.every(choice => choices.includes(choice))) {
+        throw new Error(`${prefix}: multi_select の correct_choices は choices の中から選んでください。`)
+      }
+      return { ...basePayload, answer: '', keywords: null }
+    }
+
+    if (type === 'word_bank') {
+      if (!wordTokens || wordTokens.length < 2) {
+        throw new Error(`${prefix}: word_bank は word_tokens を2件以上入れてください。`)
+      }
+      if (!distractorTokens || distractorTokens.length < 1) {
+        throw new Error(`${prefix}: word_bank は distractor_tokens を1件以上入れてください。`)
+      }
+      return {
+        ...basePayload,
+        choices: null,
+        answer: answer || wordTokens.join(' '),
+        keywords: null,
+      }
+    }
+
+    if (!answer) {
+      throw new Error(`${prefix}: text は answer が必須です。`)
+    }
+
+    return {
+      ...basePayload,
+      choices: null,
+      match_pairs: null,
+      sort_items: null,
+      correct_choices: null,
+      word_tokens: null,
+      distractor_tokens: null,
     }
   })
 }
@@ -581,8 +697,15 @@ function getRestoreErrorMessage(message: string) {
   if (message.includes('password') || message.includes('duration_seconds') || message.includes('created_by_student_id') || message.includes('student_xp') || message.includes('xp_earned') || message.includes('session_mode') || message.includes('image_url') || message.includes('image_display_width') || message.includes('image_display_height')) {
     return 'Supabase の schema が古い可能性があります。最新の supabase_schema.sql を SQL Editor で実行してから復元してください。'
   }
-  if (message.includes('keywords')) {
-    return 'Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。'
+  if (
+    message.includes('keywords')
+    || message.includes('match_pairs')
+    || message.includes('sort_items')
+    || message.includes('correct_choices')
+    || message.includes('word_tokens')
+    || message.includes('distractor_tokens')
+  ) {
+    return 'Supabase の questions テーブルに新しい問題形式の列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。'
   }
   if (
     message.includes('chat_guard_logs')
@@ -634,10 +757,15 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     field: '生物' as typeof FIELDS[number],
     unit: '',
     question: '',
-    type: 'choice' as 'choice' | 'text',
-    choices: ['', ''],
+    type: 'choice' as QuestionType,
+    choices: ['', '', '', '', '', ''],
     answer: '',
     keywords: '',
+    matchPairsText: '',
+    sortItemsText: '',
+    correctChoicesText: '',
+    wordTokensText: '',
+    distractorTokensText: '',
     explanation: '',
     grade: '中3',
   })
@@ -1068,12 +1196,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
   const handleSeedQuestions = async () => {
     if (!confirm(`サンプル問題（${sampleQuestions.length}問）を追加しますか？`)) return
-    const toInsert = sampleQuestions.map(question => ({
-      ...question,
-      choices: question.type === 'choice'
-        ? buildBinaryChoices(question.choices, question.answer, question.question)
-        : null,
-    }))
+    const toInsert = sampleQuestions.map(question => normalizeQuestionRecord(question as Partial<QuestionRow>)) as Array<
+      Database['public']['Tables']['questions']['Insert'] & QuestionShape
+    >
     try {
       await ensureNoDuplicateQuestions(
         toInsert.map(question => ({
@@ -1083,6 +1208,11 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           type: question.type,
           choices: question.choices,
           answer: question.answer,
+          match_pairs: question.match_pairs,
+          sort_items: question.sort_items,
+          correct_choices: question.correct_choices,
+          word_tokens: question.word_tokens,
+          distractor_tokens: question.distractor_tokens,
         })),
       )
     } catch (error) {
@@ -1098,36 +1228,114 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   }
 
   const handleAddQuestion = async () => {
-    if (!form.unit || !form.question || !form.answer) {
-      setAddMsg('単元・問題・答えは必須です')
+    if (!form.unit || !form.question) {
+      setAddMsg('単元と問題文は必須です')
       return
     }
 
-    const payload: any = {
+    const payload: Database['public']['Tables']['questions']['Insert'] = {
       field: form.field,
       unit: form.unit,
       question: form.question,
       type: form.type,
-      answer: form.answer,
+      answer: form.answer.trim(),
       explanation: form.explanation || null,
       grade: form.grade,
+      choices: null,
+      keywords: null,
+      match_pairs: null,
+      sort_items: null,
+      correct_choices: null,
+      word_tokens: null,
+      distractor_tokens: null,
     }
 
     if (form.type === 'choice') {
-      const filled = form.choices.filter(choice => choice.trim())
+      const filled = form.choices.map(choice => choice.trim()).filter(Boolean)
       if (filled.length !== 2) {
-        setAddMsg('選択肢を2つ入力してください')
+        setAddMsg('2択は選択肢を2つ入力してください')
         return
       }
       if (!filled.includes(form.answer.trim())) {
-        setAddMsg('正解は選択肢AかBのどちらかと同じ内容にしてください')
+        setAddMsg('正解は選択肢のどちらかと同じ内容にしてください')
         return
       }
       payload.choices = filled
-    }
-
-    if (form.type === 'text') {
+    } else if (form.type === 'choice4' || form.type === 'fill_choice') {
+      const filled = form.choices.map(choice => choice.trim()).filter(Boolean)
+      if (filled.length < 3 || filled.length > 4) {
+        setAddMsg(`${getQuestionTypeLabel(form.type)} は選択肢を3〜4個入力してください`)
+        return
+      }
+      if (!filled.includes(form.answer.trim())) {
+        setAddMsg('正解は選択肢と同じ内容にしてください')
+        return
+      }
+      if (form.type === 'fill_choice' && !form.question.includes('【')) {
+        setAddMsg('穴埋め問題の問題文には【　　】を入れてください')
+        return
+      }
+      payload.choices = filled
+    } else if (form.type === 'true_false') {
+      if (form.answer !== '○' && form.answer !== '×') {
+        setAddMsg('○×問題の正解は ○ か × にしてください')
+        return
+      }
+      payload.choices = ['○', '×']
+    } else if (form.type === 'text') {
+      if (!form.answer.trim()) {
+        setAddMsg('記述問題は模範解答文が必要です')
+        return
+      }
       payload.keywords = parseKeywordInput(form.keywords)
+    } else if (form.type === 'match') {
+      const pairs = parseMatchPairsText(form.matchPairsText)
+      if (!pairs || pairs.length < 2) {
+        setAddMsg('マッチ問題は「左 | 右」を2組以上入力してください')
+        return
+      }
+      payload.match_pairs = pairs
+      payload.answer = ''
+    } else if (form.type === 'sort') {
+      const items = parseListInput(form.sortItemsText)
+      if (items.length < 3) {
+        setAddMsg('並べ替え問題は3件以上入力してください')
+        return
+      }
+      payload.sort_items = items
+      payload.answer = ''
+    } else if (form.type === 'multi_select') {
+      const choices = parseListInput(form.choices.join('\n'))
+      const correctChoices = parseListInput(form.correctChoicesText)
+      if (choices.length < 4) {
+        setAddMsg('複数選択は選択肢を4件以上入力してください')
+        return
+      }
+      if (correctChoices.length < 2) {
+        setAddMsg('複数選択の正解は2件以上入れてください')
+        return
+      }
+      if (!correctChoices.every(choice => choices.includes(choice))) {
+        setAddMsg('複数選択の正解は選択肢の中から入力してください')
+        return
+      }
+      payload.choices = choices
+      payload.correct_choices = correctChoices
+      payload.answer = ''
+    } else if (form.type === 'word_bank') {
+      const wordTokens = parseListInput(form.wordTokensText)
+      const distractorTokens = parseListInput(form.distractorTokensText)
+      if (wordTokens.length < 2) {
+        setAddMsg('語群問題は正解トークンを2件以上入力してください')
+        return
+      }
+      if (distractorTokens.length < 1) {
+        setAddMsg('語群問題はダミートークンを1件以上入力してください')
+        return
+      }
+      payload.word_tokens = wordTokens
+      payload.distractor_tokens = distractorTokens
+      payload.answer = form.answer.trim() || wordTokens.join(' ')
     }
 
     try {
@@ -1138,6 +1346,11 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         type: payload.type,
         choices: payload.choices ?? null,
         answer: payload.answer,
+        match_pairs: payload.match_pairs ?? null,
+        sort_items: payload.sort_items ?? null,
+        correct_choices: payload.correct_choices ?? null,
+        word_tokens: payload.word_tokens ?? null,
+        distractor_tokens: payload.distractor_tokens ?? null,
       }])
     } catch (error) {
       setAddMsg(`エラー: ${error instanceof Error ? error.message : '重複問題の確認に失敗しました。'}`)
@@ -1145,8 +1358,18 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     }
 
     const { error } = await supabase.from('questions').insert([payload])
-    if (error && isMissingColumnError(error, 'keywords')) {
-      setAddMsg('エラー: Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+    if (
+      error
+      && (
+        isMissingColumnError(error, 'keywords')
+        || isMissingColumnError(error, 'match_pairs')
+        || isMissingColumnError(error, 'sort_items')
+        || isMissingColumnError(error, 'correct_choices')
+        || isMissingColumnError(error, 'word_tokens')
+        || isMissingColumnError(error, 'distractor_tokens')
+      )
+    ) {
+      setAddMsg('エラー: Supabase の questions テーブルに新しい問題形式の列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
       return
     }
     if (error) {
@@ -1160,9 +1383,14 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       unit: '',
       question: '',
       type: 'choice',
-      choices: ['', ''],
+      choices: ['', '', '', '', '', ''],
       answer: '',
       keywords: '',
+      matchPairsText: '',
+      sortItemsText: '',
+      correctChoicesText: '',
+      wordTokensText: '',
+      distractorTokensText: '',
       explanation: '',
       grade: '中3',
     })
@@ -1201,14 +1429,29 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           type: question.type,
           choices: question.choices,
           answer: question.answer,
+          match_pairs: question.match_pairs,
+          sort_items: question.sort_items,
+          correct_choices: question.correct_choices,
+          word_tokens: question.word_tokens,
+          distractor_tokens: question.distractor_tokens,
         })),
       )
 
       for (let index = 0; index < payload.length; index += BULK_INSERT_CHUNK_SIZE) {
         const chunk = payload.slice(index, index + BULK_INSERT_CHUNK_SIZE)
         const { error } = await supabase.from('questions').insert(chunk)
-        if (error && isMissingColumnError(error, 'keywords')) {
-          throw new Error('Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+        if (
+          error
+          && (
+            isMissingColumnError(error, 'keywords')
+            || isMissingColumnError(error, 'match_pairs')
+            || isMissingColumnError(error, 'sort_items')
+            || isMissingColumnError(error, 'correct_choices')
+            || isMissingColumnError(error, 'word_tokens')
+            || isMissingColumnError(error, 'distractor_tokens')
+          )
+        ) {
+          throw new Error('Supabase の questions テーブルに新しい問題形式の列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
         }
         if (error) throw new Error(error.message)
       }
@@ -2350,6 +2593,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                         >
                           {question.created_by_student_id ? `ID ${question.created_by_student_id} 作成` : '共有問題'}
                         </span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0 bg-slate-800/80 text-slate-200">
+                          {getQuestionTypeLabel(question.type)}
+                        </span>
                         {question.image_url && (
                           <span
                             className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
@@ -2521,7 +2767,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-slate-500 text-xs">答え: {question.answer}</div>
+                  <div className="mt-3 text-slate-500 text-xs">答え: {getQuestionCorrectAnswerText(normalizeQuestionRecord(question))}</div>
                   {question.type === 'text' && question.keywords && question.keywords.length > 0 && (
                     <div className="mt-1 text-amber-300 text-xs">キーワード: {question.keywords.join(' / ')}</div>
                   )}
@@ -2554,11 +2800,14 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <label className="text-slate-400 text-xs mb-1 block">種別 *</label>
               <select
                 value={form.type}
-                onChange={e => setForm(current => ({ ...current, type: e.target.value as 'choice' | 'text' }))}
+                onChange={e => setForm(current => ({ ...current, type: e.target.value as QuestionType }))}
                 className="input-surface"
               >
-                <option value="choice">2択</option>
-                <option value="text">記述</option>
+                {QUESTION_TYPES.map(questionType => (
+                  <option key={questionType} value={questionType}>
+                    {getQuestionTypeLabel(questionType)}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -2596,11 +2845,15 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             />
           </div>
 
-          {form.type === 'choice' && (
+          {(form.type === 'choice' || form.type === 'choice4' || form.type === 'fill_choice' || form.type === 'multi_select') && (
             <div>
-              <label className="text-slate-400 text-xs mb-1 block">選択肢（A・B）</label>
+              <label className="text-slate-400 text-xs mb-1 block">
+                {form.type === 'multi_select' ? '選択肢' : '選択肢'}
+              </label>
               <div className="grid grid-cols-1 gap-2">
-                {form.choices.map((choice, index) => (
+                {form.choices
+                  .slice(0, form.type === 'choice' ? 2 : form.type === 'multi_select' ? 6 : 4)
+                  .map((choice, index) => (
                   <input
                     key={index}
                     value={choice}
@@ -2608,23 +2861,55 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       ...current,
                       choices: current.choices.map((currentChoice, currentIndex) => currentIndex === index ? e.target.value : currentChoice),
                     }))}
-                    placeholder={`${'AB'[index]}. 選択肢`}
+                    placeholder={`${'ABCDEF'[index]}. 選択肢`}
                     className="input-surface"
                   />
                 ))}
               </div>
+              {form.type === 'multi_select' && (
+                <p className="mt-2 text-xs text-slate-500">4〜6個まで。正解になるものは下の「複数選択の正解」に書きます。</p>
+              )}
             </div>
           )}
 
-          <div>
-            <label className="text-slate-400 text-xs mb-1 block">正解 *</label>
-            <input
-              value={form.answer}
-              onChange={e => setForm(current => ({ ...current, answer: e.target.value }))}
-              placeholder={form.type === 'choice' ? '正解をそのまま入力（AかBと同じ文）' : '模範解答文を入力'}
-              className="input-surface"
-            />
-          </div>
+          {(form.type === 'choice' || form.type === 'choice4' || form.type === 'fill_choice' || form.type === 'text' || form.type === 'word_bank') && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">正解 {form.type !== 'word_bank' && '*'}</label>
+              <input
+                value={form.answer}
+                onChange={e => setForm(current => ({ ...current, answer: e.target.value }))}
+                placeholder={
+                  form.type === 'text'
+                    ? '模範解答文を入力'
+                    : form.type === 'word_bank'
+                      ? '未入力なら正解トークンから自動生成'
+                      : '正解をそのまま入力'
+                }
+                className="input-surface"
+              />
+            </div>
+          )}
+
+          {form.type === 'true_false' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-2 block">正解 *</label>
+              <div className="grid grid-cols-2 gap-3">
+                {(['○', '×'] as const).map(mark => (
+                  <button
+                    key={mark}
+                    onClick={() => setForm(current => ({ ...current, answer: mark }))}
+                    className="rounded-[20px] border px-4 py-4 text-xl font-bold transition-all"
+                    style={{
+                      borderColor: form.answer === mark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(148, 163, 184, 0.16)',
+                      background: form.answer === mark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.48)',
+                    }}
+                  >
+                    {mark}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {form.type === 'text' && (
             <div>
@@ -2639,6 +2924,70 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 記述問題は、`answer` の模範解答文に対する穴埋めとして出題されます。ここに空欄にしたい理科キーワードを入れておくと、生徒はその語句だけ入力すれば正解になります。
               </p>
             </div>
+          )}
+
+          {form.type === 'match' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">マッチの組（1行1組 / 左 | 右）</label>
+              <textarea
+                value={form.matchPairsText}
+                onChange={e => setForm(current => ({ ...current, matchPairsText: e.target.value }))}
+                placeholder={'アミラーゼ | デンプン\nペプシン | タンパク質\nリパーゼ | 脂肪'}
+                rows={4}
+                className="input-surface resize-none"
+              />
+            </div>
+          )}
+
+          {form.type === 'sort' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">正しい順番（1行1項目）</label>
+              <textarea
+                value={form.sortItemsText}
+                onChange={e => setForm(current => ({ ...current, sortItemsText: e.target.value }))}
+                placeholder={'口\n食道\n胃\n小腸\n大腸'}
+                rows={5}
+                className="input-surface resize-none"
+              />
+            </div>
+          )}
+
+          {form.type === 'multi_select' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">複数選択の正解（1行1個）</label>
+              <textarea
+                value={form.correctChoicesText}
+                onChange={e => setForm(current => ({ ...current, correctChoicesText: e.target.value }))}
+                placeholder={'デンプン\nエタノール'}
+                rows={3}
+                className="input-surface resize-none"
+              />
+            </div>
+          )}
+
+          {form.type === 'word_bank' && (
+            <>
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">正解トークン（1行1個）</label>
+                <textarea
+                  value={form.wordTokensText}
+                  onChange={e => setForm(current => ({ ...current, wordTokensText: e.target.value }))}
+                  placeholder={'2Cu\n+\nO₂\n→\n2CuO'}
+                  rows={5}
+                  className="input-surface resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">ダミートークン（1行1個）</label>
+                <textarea
+                  value={form.distractorTokensText}
+                  onChange={e => setForm(current => ({ ...current, distractorTokensText: e.target.value }))}
+                  placeholder={'Cu₂\n2O₂\nCuO₂'}
+                  rows={3}
+                  className="input-surface resize-none"
+                />
+              </div>
+            </>
           )}
 
           <div>
@@ -2665,8 +3014,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 <h3 className="text-white font-bold mb-2">問題 JSON 一括追加</h3>
                 <p className="text-slate-400 text-sm leading-6">
                   JSON をそのまま貼り付けるか、`.json` ファイルを読み込んで一括追加できます。
-                  choice 問題は `choices` を2件、text 問題は `choices` なしで入力してください。
-                  記述問題では `answer` に模範解答文、`keywords` に空欄にしたい理科キーワードを入れると、穴埋め形式で出題できます。
+                  `choice / choice4 / true_false / fill_choice / match / sort / multi_select / word_bank / text`
+                  に対応しています。記述問題では `answer` に模範解答文、`keywords` に空欄にしたい理科キーワードを入れると、穴埋め形式で出題できます。
                 </p>
                 <div className="flex flex-wrap gap-3 mt-4">
                   <label className="btn-secondary text-sm cursor-pointer">

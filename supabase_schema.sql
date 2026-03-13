@@ -46,11 +46,16 @@ CREATE TABLE IF NOT EXISTS questions (
   field TEXT NOT NULL CHECK (field IN ('生物', '化学', '物理', '地学')),
   unit TEXT NOT NULL,
   question TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('choice', 'text')),
+  type TEXT NOT NULL CHECK (type IN ('choice', 'choice4', 'true_false', 'fill_choice', 'match', 'sort', 'multi_select', 'word_bank', 'text')),
   choices JSONB,
   answer TEXT NOT NULL,
   accept_answers JSONB DEFAULT NULL,
   keywords JSONB DEFAULT NULL,
+  match_pairs JSONB DEFAULT NULL,
+  sort_items JSONB DEFAULT NULL,
+  correct_choices JSONB DEFAULT NULL,
+  word_tokens JSONB DEFAULT NULL,
+  distractor_tokens JSONB DEFAULT NULL,
   created_by_student_id INTEGER REFERENCES students(id),
   explanation TEXT,
   image_url TEXT,
@@ -62,10 +67,18 @@ CREATE TABLE IF NOT EXISTS questions (
 
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS accept_answers JSONB DEFAULT NULL;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS keywords JSONB DEFAULT NULL;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS match_pairs JSONB DEFAULT NULL;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS sort_items JSONB DEFAULT NULL;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS correct_choices JSONB DEFAULT NULL;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS word_tokens JSONB DEFAULT NULL;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS distractor_tokens JSONB DEFAULT NULL;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS created_by_student_id INTEGER REFERENCES students(id);
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_display_width INTEGER;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_display_height INTEGER;
+ALTER TABLE questions DROP CONSTRAINT IF EXISTS questions_type_check;
+ALTER TABLE questions ADD CONSTRAINT questions_type_check
+  CHECK (type IN ('choice', 'choice4', 'true_false', 'fill_choice', 'match', 'sort', 'multi_select', 'word_bank', 'text'));
 
 -- クイズセッションテーブル
 CREATE TABLE IF NOT EXISTS quiz_sessions (
@@ -147,8 +160,13 @@ CREATE TABLE IF NOT EXISTS question_inquiries (
   field TEXT NOT NULL CHECK (field IN ('生物', '化学', '物理', '地学')),
   unit TEXT NOT NULL,
   question_text TEXT NOT NULL,
-  question_type TEXT NOT NULL CHECK (question_type IN ('choice', 'text')),
+  question_type TEXT NOT NULL CHECK (question_type IN ('choice', 'choice4', 'true_false', 'fill_choice', 'match', 'sort', 'multi_select', 'word_bank', 'text')),
   choices JSONB DEFAULT NULL,
+  match_pairs JSONB DEFAULT NULL,
+  sort_items JSONB DEFAULT NULL,
+  correct_choices JSONB DEFAULT NULL,
+  word_tokens JSONB DEFAULT NULL,
+  distractor_tokens JSONB DEFAULT NULL,
   answer_text TEXT NOT NULL,
   explanation_text TEXT DEFAULT NULL,
   image_url TEXT DEFAULT NULL,
@@ -171,6 +189,11 @@ ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS unit TEXT;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS question_text TEXT;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS question_type TEXT;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS choices JSONB DEFAULT NULL;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS match_pairs JSONB DEFAULT NULL;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS sort_items JSONB DEFAULT NULL;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS correct_choices JSONB DEFAULT NULL;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS word_tokens JSONB DEFAULT NULL;
+ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS distractor_tokens JSONB DEFAULT NULL;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS answer_text TEXT;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS explanation_text TEXT DEFAULT NULL;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL;
@@ -179,6 +202,9 @@ ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS admin_reply TEXT NOT NUL
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ DEFAULT NULL;
 ALTER TABLE question_inquiries ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE question_inquiries DROP CONSTRAINT IF EXISTS question_inquiries_question_type_check;
+ALTER TABLE question_inquiries ADD CONSTRAINT question_inquiries_question_type_check
+  CHECK (question_type IN ('choice', 'choice4', 'true_false', 'fill_choice', 'match', 'sort', 'multi_select', 'word_bank', 'text'));
 
 -- 理科辞典テーブル
 CREATE TABLE IF NOT EXISTS science_glossary_entries (

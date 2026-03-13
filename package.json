@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "questions:migrate-types": "node scripts/migrate_question_types.mjs",
     "questions:import": "node scripts/import_questions_supabase.mjs",
     "questions:sql": "node scripts/generate_questions_sql.mjs"
   },
