@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { evaluateTextAnswer, hasConfiguredTextKeywords, TextAnswerResult } from '@/lib/answerUtils'
+import { buildTextBlankPrompt, evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { CustomQuizOptions, getCustomQuizSessionLabel, getCustomQuizSummaryParts } from '@/lib/customQuiz'
 import { getLevelInfo } from '@/lib/engagement'
@@ -328,7 +328,9 @@ export default function QuizPage({
   const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
   const isFavorite = !!q && favoriteIds.has(q.id)
   const questionImageDisplay = q ? getQuestionImageDisplaySize(q) : null
-  const usesKeywordInput = q?.type === 'text' ? hasConfiguredTextKeywords(q.keywords) : false
+  const textBlankPrompt = q?.type === 'text'
+    ? buildTextBlankPrompt(q.answer, q.accept_answers, q.keywords)
+    : null
 
   const handleChoice = (choice: string) => {
     if (phase !== 'answering' || !q) return
@@ -968,12 +970,21 @@ export default function QuizPage({
               background: 'rgba(15, 23, 42, 0.62)',
             }}
           >
-            <div className="text-[11px] font-semibold tracking-[0.18em] text-sky-200">キーワード入力</div>
+            <div className="text-[11px] font-semibold tracking-[0.18em] text-sky-200">
+              {textBlankPrompt?.label ?? '穴埋め入力'}
+            </div>
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              {usesKeywordInput
-                ? '答えの文章を全部書かなくて大丈夫です。模範解答に入る理科キーワードを1つ入力してください。'
-                : '短く答えを入力してください。'}
+              {textBlankPrompt?.helperText ?? '空欄に入る答えを入力してください。'}
             </p>
+            <div
+              className="mt-3 rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
+              style={{
+                borderColor: 'rgba(56, 189, 248, 0.16)',
+                background: 'rgba(2, 8, 23, 0.32)',
+              }}
+            >
+              {textBlankPrompt?.promptText ?? '＿＿＿＿'}
+            </div>
           </div>
           <input
             value={textInput}
@@ -985,7 +996,7 @@ export default function QuizPage({
               }
             }}
             disabled={phase === 'result'}
-            placeholder={usesKeywordInput ? '理科キーワードを1つ入力' : '答えを入力'}
+            placeholder={textBlankPrompt?.placeholder ?? '空欄に入る答え'}
             enterKeyHint="done"
             autoCapitalize="none"
             autoCorrect="off"
@@ -1034,9 +1045,12 @@ export default function QuizPage({
                 </span>
               </div>
               {currentResult !== 'exact' && (
-                <p className="text-slate-200 text-sm mb-2">模範解答: {q.answer}</p>
+                <>
+                  <p className="text-slate-200 text-sm mb-2">空欄の答え: {textBlankPrompt?.target ?? q.answer}</p>
+                  <p className="text-slate-300 text-xs mb-2">模範解答: {q.answer}</p>
+                </>
               )}
-              {currentResult !== 'exact' && usesKeywordInput && q.keywords && q.keywords.length > 0 && (
+              {currentResult !== 'exact' && q.keywords && q.keywords.length > 0 && (
                 <p className="text-slate-300 text-xs mb-2">正解キーワード例: {q.keywords.join(' / ')}</p>
               )}
               {currentResult === 'keyword' && (

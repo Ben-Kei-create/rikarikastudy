@@ -1,6 +1,6 @@
 'use client'
 
-import { evaluateTextAnswer, hasConfiguredTextKeywords, TextAnswerResult } from '@/lib/answerUtils'
+import { buildTextBlankPrompt, evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
 import { fetchStudents, useAuth } from '@/lib/auth'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import {
@@ -279,7 +279,9 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     return questions[currentIndex] ?? null
   }, [currentIndex, questions])
   const currentQuestionImageDisplay = currentQuestion ? getQuestionImageDisplaySize(currentQuestion) : null
-  const usesKeywordInput = currentQuestion?.type === 'text' ? hasConfiguredTextKeywords(currentQuestion.keywords) : false
+  const textBlankPrompt = currentQuestion?.type === 'text'
+    ? buildTextBlankPrompt(currentQuestion.answer, currentQuestion.accept_answers, currentQuestion.keywords)
+    : null
   const testModeAnswered = selectedMode === 'test_mode' && answerResult !== null
   const testModeProgress = questions.length > 0 ? ((currentIndex + (testModeAnswered ? 1 : 0)) / questions.length) * 100 : 0
   const testModeQuestionReady = allQuestions.length >= TEST_MODE_QUESTION_COUNT
@@ -1103,11 +1105,20 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     background: 'rgba(15, 23, 42, 0.68)',
                   }}
                 >
-                  <div className="text-[11px] font-semibold tracking-[0.18em] text-amber-200">キーワード入力</div>
+                  <div className="text-[11px] font-semibold tracking-[0.18em] text-amber-200">
+                    {textBlankPrompt?.label ?? '穴埋め入力'}
+                  </div>
                   <div className="mt-2 text-sm leading-6 text-slate-300">
-                    {usesKeywordInput
-                      ? '答えの文章を全部打たなくてOKです。模範解答に入る理科キーワードを1つ入力してください。'
-                      : '短く答えを入力してください。'}
+                    {textBlankPrompt?.helperText ?? '空欄に入る答えを入力してください。'}
+                  </div>
+                  <div
+                    className="mt-3 rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
+                    style={{
+                      borderColor: 'rgba(245, 158, 11, 0.2)',
+                      background: 'rgba(2, 8, 23, 0.32)',
+                    }}
+                  >
+                    {textBlankPrompt?.promptText ?? '＿＿＿＿'}
                   </div>
                 </div>
                 <input
@@ -1120,7 +1131,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     }
                   }}
                   disabled={testModeAnswered}
-                  placeholder={usesKeywordInput ? '理科キーワードを1つ入力' : '答えを入力'}
+                  placeholder={textBlankPrompt?.placeholder ?? '空欄に入る答え'}
                   enterKeyHint="done"
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -1157,9 +1168,12 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   {answerResult === 'exact' ? '○ 正解' : answerResult === 'keyword' ? '△ あと少し' : '× 不正解'}
                 </div>
                 <div className="mt-2 text-sm leading-7 text-slate-300">
-                  正解: {currentQuestion.answer}
+                  空欄の答え: {textBlankPrompt?.target ?? currentQuestion.answer}
                 </div>
-                {answerResult !== 'exact' && usesKeywordInput && currentQuestion.keywords && currentQuestion.keywords.length > 0 && (
+                <div className="mt-1 text-xs leading-6 text-slate-400">
+                  模範解答: {currentQuestion.answer}
+                </div>
+                {answerResult !== 'exact' && currentQuestion.keywords && currentQuestion.keywords.length > 0 && (
                   <div className="mt-2 text-xs leading-6 text-slate-400">
                     正解キーワード例: {currentQuestion.keywords.join(' / ')}
                   </div>

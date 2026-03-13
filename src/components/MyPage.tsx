@@ -1189,11 +1189,11 @@ export default function MyPage({
                       type="text"
                       value={questionForm.keywords}
                       onChange={e => setQuestionForm(current => ({ ...current, keywords: e.target.value }))}
-                      placeholder="キーワード（任意 / カンマ区切り）"
+                      placeholder="空欄にしたいキーワード（任意 / カンマ区切り）"
                       className="input-surface"
                     />
                     <p className="text-slate-500 text-xs mt-2">
-                      このどれか1つの理科キーワードを入力できれば正解にします。
+                      `answer` の模範解答文に入る理科キーワードをここへ入れると、生徒はその空欄だけ入力する形になります。
                     </p>
                   </div>
                 )}

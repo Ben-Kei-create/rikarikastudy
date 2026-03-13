@@ -2624,7 +2624,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 className="input-surface"
               />
               <p className="text-slate-500 text-xs mt-2">
-                生徒がこのどれか1つの理科キーワードを入力できれば正解にします。長い文章を書かせたくない記述問題で使えます。
+                記述問題は、`answer` の模範解答文に対する穴埋めとして出題されます。ここに空欄にしたい理科キーワードを入れておくと、生徒はその語句だけ入力すれば正解になります。
               </p>
             </div>
           )}
@@ -2654,7 +2654,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 <p className="text-slate-400 text-sm leading-6">
                   JSON をそのまま貼り付けるか、`.json` ファイルを読み込んで一括追加できます。
                   choice 問題は `choices` を2件、text 問題は `choices` なしで入力してください。
-                  記述問題では `keywords` 配列を付けると、その理科キーワードを1語入力できれば正解になります。
+                  記述問題では `answer` に模範解答文、`keywords` に空欄にしたい理科キーワードを入れると、穴埋め形式で出題できます。
                 </p>
                 <div className="flex flex-wrap gap-3 mt-4">
                   <label className="btn-secondary text-sm cursor-pointer">
