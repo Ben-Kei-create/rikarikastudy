@@ -3,6 +3,7 @@ import { useAuth } from '@/lib/auth'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
+import { PeriodicCardRewardModal } from '@/components/PeriodicCard'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { countActiveStudents } from '@/lib/activeSessions'
 import { getLevelInfo, getNextLevelUnlock, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
@@ -33,7 +34,7 @@ export default function HomePage({
   onTimeAttack: () => void
   onMyPage: () => void
 }) {
-  const { nickname, studentId, logout } = useAuth()
+  const { nickname, studentId, logout, pendingLoginCardReward, dismissLoginCardReward } = useAuth()
   const isGuest = isGuestStudentId(studentId)
   const [stats, setStats] = useState<FieldStats>({})
   const [scienceNews, setScienceNews] = useState<ScienceNewsResponse>(FALLBACK_SCIENCE_NEWS_RESPONSE)
@@ -146,6 +147,12 @@ export default function HomePage({
 
   return (
     <div className="page-shell page-shell-dashboard">
+      {pendingLoginCardReward && (
+        <PeriodicCardRewardModal
+          reward={pendingLoginCardReward}
+          onClose={dismissLoginCardReward}
+        />
+      )}
       <div className="hero-card science-surface mb-5 p-4 sm:mb-6 sm:p-6 lg:p-8 anim-fade-up">
         <ScienceBackdrop />
         <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">

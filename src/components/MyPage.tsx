@@ -19,6 +19,17 @@ import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { loadEarnedBadgeRecords } from '@/lib/studyRewards'
 import {
+  getPeriodicCardSchemaErrorMessage,
+  loadPeriodicCardCollection,
+  PeriodicCardCollectionEntry,
+} from '@/lib/periodicCardCollection'
+import {
+  getPeriodicCardByKey,
+  getPeriodicCardUnlockText,
+  isPeriodicCardUnlockedAtLevel,
+  PERIODIC_ELEMENT_CARDS,
+} from '@/lib/periodicCards'
+import {
   mergeGlossaryEntries,
   getGlossaryIndexKey,
   SCIENCE_GLOSSARY,
@@ -26,6 +37,7 @@ import {
   ScienceGlossaryEntry,
   ScienceGlossaryField,
 } from '@/lib/scienceGlossary'
+import { PeriodicCardSurface, PeriodicCardViewer } from '@/components/PeriodicCard'
 
 const FIELD_COLORS: Record<string, string> = {
   '生物': '#22c55e', '化学': '#f97316', '物理': '#3b82f6', '地学': '#a855f7',
@@ -118,7 +130,7 @@ function toGlossaryEntry(row: GlossaryRow): ScienceGlossaryEntry {
   }
 }
 
-type Tab = 'overview' | 'history' | 'weak' | 'badges' | 'glossary' | 'questions' | 'account'
+type Tab = 'overview' | 'history' | 'weak' | 'badges' | 'cards' | 'glossary' | 'questions' | 'account'
 
 export default function MyPage({
   onBack,
@@ -150,6 +162,10 @@ export default function MyPage({
   const [glossaryField, setGlossaryField] = useState<ScienceGlossaryField | 'all'>('all')
   const [glossaryIndex, setGlossaryIndex] = useState<string>('all')
   const [selectedGlossaryId, setSelectedGlossaryId] = useState<string | null>(SCIENCE_GLOSSARY[0]?.id ?? null)
+  const [periodicCards, setPeriodicCards] = useState<PeriodicCardCollectionEntry[]>([])
+  const [periodicCardsLoading, setPeriodicCardsLoading] = useState(true)
+  const [periodicCardsSchemaMessage, setPeriodicCardsSchemaMessage] = useState<string | null>(null)
+  const [selectedPeriodicCardKey, setSelectedPeriodicCardKey] = useState<string | null>(null)
 
   useEffect(() => {
     if (studentId === null) return
@@ -232,6 +248,34 @@ export default function MyPage({
   }, [])
 
   useEffect(() => {
+    let active = true
+
+    const loadPeriodicCards = async () => {
+      if (studentId === null) {
+        if (!active) return
+        setPeriodicCards([])
+        setPeriodicCardsSchemaMessage(null)
+        setPeriodicCardsLoading(false)
+        return
+      }
+
+      setPeriodicCardsLoading(true)
+      const response = await loadPeriodicCardCollection(studentId)
+      if (!active) return
+
+      setPeriodicCards(response.entries)
+      setPeriodicCardsSchemaMessage(response.missingSchema ? getPeriodicCardSchemaErrorMessage('student_element_cards') : null)
+      setPeriodicCardsLoading(false)
+    }
+
+    void loadPeriodicCards()
+
+    return () => {
+      active = false
+    }
+  }, [studentId])
+
+  useEffect(() => {
     setNicknameInput(nickname || '')
   }, [nickname])
 
@@ -242,6 +286,13 @@ export default function MyPage({
   const levelInfo = useMemo(() => getLevelInfo(studentXp), [studentXp])
   const nextUnlock = getNextLevelUnlock(levelInfo.level)
   const unlockedRewards = getUnlockedLevelRewards(levelInfo.level)
+  const periodicUnlocked = isPeriodicCardUnlockedAtLevel(levelInfo.level)
+  const periodicOwnedCount = periodicCards.length
+  const periodicTotalCount = PERIODIC_ELEMENT_CARDS.length
+  const periodicCollectionMap = useMemo(
+    () => new Map(periodicCards.map(card => [card.cardKey, card])),
+    [periodicCards],
+  )
 
   const byField = useMemo(() => {
     const m: Record<string, { total: number; correct: number }> = {}
@@ -325,8 +376,8 @@ export default function MyPage({
   const weekData = dailyData.slice(-7)
   const weekMax = Math.max(...weekData.map(d => d.count), 1)
   const tabs = isGuest
-    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['glossary', '📘 辞典'], ['account', '⚙️ 設定']] as const)
-    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['glossary', '📘 辞典'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
+    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 周期表'], ['glossary', '📘 辞典'], ['account', '⚙️ 設定']] as const)
+    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 周期表'], ['glossary', '📘 辞典'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
 
   const allGlossaryEntries = useMemo(
     () => mergeGlossaryEntries(SCIENCE_GLOSSARY, customGlossaryEntries),
@@ -382,6 +433,21 @@ export default function MyPage({
     const exists = glossaryEntries.some(entry => entry.id === selectedGlossaryId)
     if (!exists) setSelectedGlossaryId(glossaryEntries[0].id)
   }, [glossaryEntries, selectedGlossaryId])
+
+  useEffect(() => {
+    if (!periodicUnlocked) {
+      if (selectedPeriodicCardKey !== null) setSelectedPeriodicCardKey(null)
+      return
+    }
+
+    if (periodicCards.length === 0) {
+      if (selectedPeriodicCardKey !== null) setSelectedPeriodicCardKey(null)
+      return
+    }
+
+    const exists = periodicCards.some(card => card.cardKey === selectedPeriodicCardKey)
+    if (!exists) setSelectedPeriodicCardKey(periodicCards[0].cardKey)
+  }, [periodicCards, periodicUnlocked, selectedPeriodicCardKey])
 
   const handleSaveNickname = async () => {
     setSaving('nickname')
@@ -675,6 +741,66 @@ export default function MyPage({
               </div>
             </div>
 
+            <div className="card">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-2xl">
+                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Periodic Table Map</div>
+                  <div className="mt-2 text-lg font-semibold text-white">周期表カードコレクション</div>
+                  <p className="mt-1 text-sm leading-6 text-slate-400">
+                    元素カードを集めると、周期表マップが少しずつ埋まっていきます。カードには特徴や雑学も入っています。
+                  </p>
+                  {periodicUnlocked ? (
+                    <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
+                      borderColor: 'rgba(56, 189, 248, 0.18)',
+                      background: 'rgba(56, 189, 248, 0.06)',
+                    }}>
+                      <div className="text-xs font-semibold tracking-[0.18em] text-sky-200">COLLECTION</div>
+                      <div className="mt-2 text-2xl font-display text-white">{periodicOwnedCount}<span className="text-base text-slate-500"> / {periodicTotalCount}</span></div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        {periodicCardsLoading ? 'コレクションを読み込み中...' : 'マイページの「周期表」タブでカードを開いて動かせます。'}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
+                      borderColor: 'rgba(148, 163, 184, 0.16)',
+                      background: 'rgba(15, 23, 42, 0.28)',
+                    }}>
+                      <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">LOCKED</div>
+                      <div className="mt-2 font-semibold text-white">{getPeriodicCardUnlockText()}</div>
+                      <div className="mt-1 text-xs leading-6 text-slate-400">
+                        Lv.{20} になると、ログインボーナスやパーフェクト報酬で元素カードを集められます。
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="w-full lg:max-w-md">
+                  {periodicUnlocked && periodicCards.length > 0 ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {periodicCards.slice(0, 2).map(entry => (
+                        <PeriodicCardSurface key={entry.cardKey} cardKey={entry.cardKey} entry={entry} compact />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-6 gap-2 rounded-[24px] border border-white/8 bg-slate-950/28 p-3">
+                      {PERIODIC_ELEMENT_CARDS.slice(0, 18).map(card => (
+                        <div
+                          key={card.key}
+                          className="aspect-square rounded-[14px] border border-dashed border-white/10 bg-slate-950/40"
+                          style={{ opacity: 0.65 }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {periodicCardsSchemaMessage && (
+                <div className="mt-4 rounded-[18px] border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                  {periodicCardsSchemaMessage}
+                </div>
+              )}
+            </div>
+
             {/* 分野別正答率バー */}
             <div className="card">
               <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">分野別正答率</h3>
@@ -928,6 +1054,141 @@ export default function MyPage({
                 )
               })}
             </div>
+          </div>
+        )}
+
+        {tab === 'cards' && (
+          <div className="anim-fade space-y-4">
+            <div className="card">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h3 className="text-slate-300 font-bold">周期表マップ</h3>
+                  <p className="text-slate-500 text-xs mt-1 leading-6">
+                    ログインボーナスやパーフェクト報酬で元素カードを集めて、周期表を埋めていきます。
+                  </p>
+                </div>
+                <div className="rounded-full bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-200">
+                  {periodicOwnedCount} / {periodicTotalCount}
+                </div>
+              </div>
+            </div>
+
+            {!periodicUnlocked ? (
+              <div className="card">
+                <div className="rounded-[24px] border px-5 py-6 text-center" style={{
+                  borderColor: 'rgba(148, 163, 184, 0.16)',
+                  background: 'rgba(15, 23, 42, 0.28)',
+                }}>
+                  <div className="text-4xl">🧪</div>
+                  <div className="mt-3 font-semibold text-white">{getPeriodicCardUnlockText()}</div>
+                  <p className="mt-2 text-sm leading-7 text-slate-400">
+                    Lv.20 になると周期表マップが開放され、元素カードを集められるようになります。
+                  </p>
+                </div>
+              </div>
+            ) : periodicCardsSchemaMessage ? (
+              <div className="card">
+                <div className="rounded-[24px] border border-amber-400/20 bg-amber-500/10 px-5 py-5 text-sm leading-7 text-amber-100">
+                  {periodicCardsSchemaMessage}
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                <div className="card overflow-x-auto">
+                  <div className="min-w-[980px]">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Collection Map</div>
+                      <div className="text-xs text-slate-500">手に入れたカードをタップすると詳細を見られます。</div>
+                    </div>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(18, minmax(0, 1fr))',
+                        gap: 10,
+                        alignItems: 'stretch',
+                      }}
+                    >
+                      {PERIODIC_ELEMENT_CARDS.map(card => {
+                        const ownedEntry = periodicCollectionMap.get(card.key) ?? null
+                        const selected = selectedPeriodicCardKey === card.key
+                        return (
+                          <button
+                            key={card.key}
+                            onClick={() => ownedEntry && setSelectedPeriodicCardKey(card.key)}
+                            disabled={!ownedEntry}
+                            className="rounded-[18px] border text-left transition-all"
+                            style={{
+                              gridColumn: card.group,
+                              gridRow: card.period,
+                              minHeight: 90,
+                              padding: 12,
+                              borderColor: ownedEntry
+                                ? selected
+                                  ? 'rgba(125, 211, 252, 0.55)'
+                                  : 'rgba(255,255,255,0.08)'
+                                : 'rgba(148, 163, 184, 0.12)',
+                              background: ownedEntry
+                                ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.82))'
+                                : 'rgba(15, 23, 42, 0.34)',
+                              opacity: ownedEntry ? 1 : 0.42,
+                              cursor: ownedEntry ? 'pointer' : 'default',
+                              boxShadow: selected ? '0 18px 32px rgba(56, 189, 248, 0.18)' : 'none',
+                            }}
+                          >
+                            <div className="text-[10px] font-semibold tracking-[0.18em] text-slate-500">No.{card.atomicNumber}</div>
+                            <div className="mt-2 font-display text-2xl text-white">{ownedEntry ? card.symbol : '—'}</div>
+                            <div className="mt-1 text-xs font-semibold text-slate-300">{ownedEntry ? card.nameJa : '未収集'}</div>
+                            <div className="mt-2 text-[10px] text-slate-500">
+                              {ownedEntry ? `${ownedEntry.obtainCount}枚` : `${card.period}周期 / ${card.group}族`}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card">
+                  {periodicCardsLoading ? (
+                    <div className="rounded-[24px] border border-dashed border-slate-700 px-4 py-8 text-sm text-slate-400">
+                      カードを読み込み中...
+                    </div>
+                  ) : selectedPeriodicCardKey ? (
+                    <div className="space-y-4">
+                      <div>
+                        <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Selected Card</div>
+                        <div className="mt-2 text-sm leading-6 text-slate-400">
+                          指でカードを動かすと、少し立体的に眺められます。
+                        </div>
+                      </div>
+                      <PeriodicCardViewer
+                        cardKey={selectedPeriodicCardKey}
+                        entry={periodicCollectionMap.get(selectedPeriodicCardKey) ?? null}
+                      />
+                      {(() => {
+                        const card = getPeriodicCardByKey(selectedPeriodicCardKey)
+                        const entry = periodicCollectionMap.get(selectedPeriodicCardKey)
+                        if (!card || !entry) return null
+                        return (
+                          <div className="rounded-[22px] border border-white/8 bg-slate-950/28 p-4">
+                            <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">コレクション情報</div>
+                            <div className="mt-3 grid gap-2 text-sm text-slate-300">
+                              <div>所持枚数: <span className="font-semibold text-white">{entry.obtainCount}枚</span></div>
+                              <div>初回入手: <span className="font-semibold text-white">{format(new Date(entry.firstObtainedAt), 'M月d日', { locale: ja })}</span></div>
+                              <div>最近の入手: <span className="font-semibold text-white">{format(new Date(entry.lastObtainedAt), 'M月d日 HH:mm', { locale: ja })}</span></div>
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="rounded-[24px] border border-dashed border-slate-700 px-4 py-8 text-sm text-slate-400">
+                      まだカードがありません。ログインボーナスやパーフェクト報酬でカードを集めてみよう。
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

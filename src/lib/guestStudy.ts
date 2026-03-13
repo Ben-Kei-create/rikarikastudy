@@ -39,6 +39,14 @@ export interface GuestBadgeRecord {
   earned_at: string
 }
 
+export interface GuestPeriodicCardRecord {
+  card_key: string
+  obtain_count: number
+  first_obtained_at: string
+  last_obtained_at: string
+  last_source: 'login' | 'perfect_clear' | 'level_up'
+}
+
 interface GuestDailyChallengeState {
   date: string | null
   session_id: string | null
@@ -51,6 +59,8 @@ export interface GuestStudyStore {
   sessions: GuestStudySession[]
   answerLogs: GuestStudyAnswerLog[]
   badges: GuestBadgeRecord[]
+  periodicCards: GuestPeriodicCardRecord[]
+  lastPeriodicLoginRewardDate: string | null
   dailyChallenge: GuestDailyChallengeState
   timeAttackBest: number
 }
@@ -85,6 +95,8 @@ function createEmptyStore(): GuestStudyStore {
     sessions: [],
     answerLogs: [],
     badges: [],
+    periodicCards: [],
+    lastPeriodicLoginRewardDate: null,
     dailyChallenge: {
       date: null,
       session_id: null,
@@ -110,6 +122,27 @@ function sanitizeBadgeRecords(input: unknown) {
     .filter((item): item is GuestBadgeRecord => item !== null)
 }
 
+function sanitizePeriodicCardRecords(input: unknown) {
+  if (!Array.isArray(input)) return []
+
+  return input
+    .map(item => {
+      if (!item || typeof item !== 'object') return null
+      const row = item as Partial<GuestPeriodicCardRecord>
+      if (typeof row.card_key !== 'string' || !row.card_key) return null
+      return {
+        card_key: row.card_key,
+        obtain_count: typeof row.obtain_count === 'number' ? Math.max(1, Math.floor(row.obtain_count)) : 1,
+        first_obtained_at: typeof row.first_obtained_at === 'string' ? row.first_obtained_at : new Date().toISOString(),
+        last_obtained_at: typeof row.last_obtained_at === 'string' ? row.last_obtained_at : new Date().toISOString(),
+        last_source: row.last_source === 'login' || row.last_source === 'perfect_clear' || row.last_source === 'level_up'
+          ? row.last_source
+          : 'login',
+      }
+    })
+    .filter((item): item is GuestPeriodicCardRecord => item !== null)
+}
+
 function sanitizeStore(input: unknown): GuestStudyStore {
   const todayKey = getTodayKey()
 
@@ -132,6 +165,8 @@ function sanitizeStore(input: unknown): GuestStudyStore {
       ? candidate.answerLogs.filter(log => log && typeof log === 'object') as GuestStudyAnswerLog[]
       : [],
     badges: sanitizeBadgeRecords(candidate.badges),
+    periodicCards: sanitizePeriodicCardRecords(candidate.periodicCards),
+    lastPeriodicLoginRewardDate: typeof candidate.lastPeriodicLoginRewardDate === 'string' ? candidate.lastPeriodicLoginRewardDate : null,
     dailyChallenge: candidate.dailyChallenge && typeof candidate.dailyChallenge === 'object'
       ? {
           date: typeof candidate.dailyChallenge.date === 'string' ? candidate.dailyChallenge.date : null,
@@ -254,6 +289,10 @@ export function saveGuestBadges(badgeKeys: string[]) {
 
 export function getGuestEarnedBadges() {
   return loadGuestStudyStore().badges
+}
+
+export function getGuestPeriodicCards() {
+  return loadGuestStudyStore().periodicCards
 }
 
 export function hasGuestDailyChallengeCompleted() {

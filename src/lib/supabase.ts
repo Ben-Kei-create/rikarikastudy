@@ -361,6 +361,54 @@ export type Database = {
           tags?: string[]
         }
       }
+      student_element_cards: {
+        Row: {
+          student_id: number
+          card_key: string
+          obtain_count: number
+          first_obtained_at: string
+          last_obtained_at: string
+          last_source: 'login' | 'perfect_clear' | 'level_up'
+        }
+        Insert: {
+          student_id: number
+          card_key: string
+          obtain_count?: number
+          first_obtained_at?: string
+          last_obtained_at?: string
+          last_source?: 'login' | 'perfect_clear' | 'level_up'
+        }
+        Update: {
+          obtain_count?: number
+          first_obtained_at?: string
+          last_obtained_at?: string
+          last_source?: 'login' | 'perfect_clear' | 'level_up'
+        }
+      }
+      element_card_rewards: {
+        Row: {
+          id: string
+          student_id: number
+          card_key: string
+          source: 'login' | 'perfect_clear' | 'level_up'
+          reward_date: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          student_id: number
+          card_key: string
+          source: 'login' | 'perfect_clear' | 'level_up'
+          reward_date: string
+          created_at?: string
+        }
+        Update: {
+          card_key?: string
+          source?: 'login' | 'perfect_clear' | 'level_up'
+          reward_date?: string
+          created_at?: string
+        }
+      }
       daily_challenges: {
         Row: {
           student_id: number

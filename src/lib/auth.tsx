@@ -7,7 +7,9 @@ import {
   removeActiveSession,
   upsertActiveSession,
 } from '@/lib/activeSessions'
-import { GUEST_STUDENT, GUEST_STUDENT_ID, isGuestStudentId } from '@/lib/guestStudy'
+import { GUEST_STUDENT, GUEST_STUDENT_ID, isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
+import { getLevelFromXp } from '@/lib/engagement'
+import { claimDailyLoginPeriodicCard, PeriodicCardReward } from '@/lib/periodicCardCollection'
 
 const STORAGE_KEY = 'rika_auth_v3'
 const LEGACY_DEVICE_LOCK_KEY = 'rika_device_lock_v1'
@@ -94,6 +96,7 @@ interface AuthState {
   nickname: string | null
   ready: boolean
   notice: string | null
+  pendingLoginCardReward: PeriodicCardReward | null
 }
 
 interface UpdateProfileInput {
@@ -111,6 +114,7 @@ interface AuthContextType extends AuthState {
   logout: (reason?: 'manual' | 'expired') => void
   refreshProfile: () => Promise<void>
   updateProfile: (updates: UpdateProfileInput) => Promise<UpdateProfileResult>
+  dismissLoginCardReward: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -128,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     nickname: null,
     ready: false,
     notice: null,
+    pendingLoginCardReward: null,
   })
 
   useEffect(() => {
@@ -157,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               studentId: null,
               nickname: null,
               notice: '10分操作がなかったため、ログアウトしました。',
+              pendingLoginCardReward: null,
             }))
           }
           return
@@ -174,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           nickname: student.nickname,
           ready: true,
           notice: null,
+          pendingLoginCardReward: null,
         })
         return
       } catch {}
@@ -222,11 +229,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastActivityAtRef.current = lastActivityAt
     sessionTokenRef.current = createSessionToken()
 
+    const currentLevel = isGuest
+      ? getLevelFromXp(loadGuestStudyStore().xp)
+      : getLevelFromXp(student.student_xp)
+    const pendingLoginCardReward = await claimDailyLoginPeriodicCard(student.id, currentLevel)
+
     const next = {
       studentId: student.id,
       nickname: student.nickname,
       ready: true,
       notice: null,
+      pendingLoginCardReward,
     }
     setState(next)
     persistSession(student.id, lastActivityAt, sessionTokenRef.current)
@@ -246,6 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       nickname: null,
       ready: true,
       notice: reason === 'expired' ? '10分操作がなかったため、ログアウトしました。' : null,
+      pendingLoginCardReward: null,
     }))
     sessionStorage.removeItem(STORAGE_KEY)
   }
@@ -363,7 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [state.studentId])
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshProfile, updateProfile }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refreshProfile, updateProfile, dismissLoginCardReward: () => setState(prev => ({ ...prev, pendingLoginCardReward: null })) }}>
       {children}
     </AuthContext.Provider>
   )

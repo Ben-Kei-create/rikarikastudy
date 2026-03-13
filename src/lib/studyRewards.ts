@@ -19,6 +19,7 @@ import {
   saveGuestQuizSession,
   saveGuestTimeAttackBest,
 } from '@/lib/guestStudy'
+import { claimStudyPeriodicCardReward, PeriodicCardReward } from '@/lib/periodicCardCollection'
 import { supabase } from '@/lib/supabase'
 
 interface AnswerLogInput {
@@ -49,6 +50,7 @@ export interface StudyRewardSummary {
   levelAfter: number
   leveledUp: boolean
   newBadges: BadgeDefinition[]
+  periodicCardReward: PeriodicCardReward | null
 }
 
 interface TimeAttackLeader {
@@ -208,6 +210,7 @@ export async function recordStudySession({
       levelAfter: 1,
       leveledUp: false,
       newBadges: [],
+      periodicCardReward: null,
     }
   }
 
@@ -256,6 +259,7 @@ export async function recordStudySession({
       levelAfter,
       leveledUp: levelAfter > levelBefore,
       newBadges: resolveNewBadges(newBadgeKeys),
+      periodicCardReward: await claimStudyPeriodicCardReward(studentId, levelBefore, levelAfter, totalQuestions, correctCount),
     }
   }
 
@@ -288,6 +292,7 @@ export async function recordStudySession({
       levelAfter: getLevelFromXp(previousXp),
       leveledUp: false,
       newBadges: [],
+      periodicCardReward: null,
     }
   }
 
@@ -330,6 +335,7 @@ export async function recordStudySession({
 
   const levelBefore = getLevelFromXp(previousXp)
   const levelAfter = getLevelFromXp(totalXp)
+  const periodicCardReward = await claimStudyPeriodicCardReward(studentId, levelBefore, levelAfter, totalQuestions, correctCount)
 
   return {
     sessionId: sessionData.id,
@@ -340,6 +346,7 @@ export async function recordStudySession({
     levelAfter,
     leveledUp: levelAfter > levelBefore,
     newBadges: resolveNewBadges(newBadgeKeys),
+    periodicCardReward,
   }
 }
 

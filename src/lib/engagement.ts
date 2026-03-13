@@ -39,7 +39,7 @@ export const TEST_MODE_QUESTION_COUNT = 25
 export const TEST_MODE_POINT_PER_QUESTION = 4
 
 export interface LevelUnlockReward {
-  key: 'challenge_mode' | 'light_theme' | 'cute_theme'
+  key: 'challenge_mode' | 'light_theme' | 'cute_theme' | 'periodic_table_map'
   level: number
   title: string
   description: string
@@ -67,6 +67,13 @@ export const LEVEL_UNLOCK_REWARDS: LevelUnlockReward[] = [
     title: 'かわいいテーマ',
     description: 'マイページでかわいいモードを選べるようになります。',
     emoji: '🎀',
+  },
+  {
+    key: 'periodic_table_map',
+    level: 20,
+    title: '周期表マップ',
+    description: 'マイページで元素カードを集める周期表マップが開放されます。',
+    emoji: '🧪',
   },
 ]
 
