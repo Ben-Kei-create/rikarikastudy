@@ -177,12 +177,12 @@ export default function UnitSelectPage({
 
   return (
     <div className="page-shell page-shell-dashboard">
-      <div className="hero-card science-surface mb-4 anim-fade-up px-4 py-4 sm:px-5 sm:py-5">
+      <div className="hero-card science-surface mb-4 anim-fade-up px-3.5 py-3.5 sm:px-5 sm:py-5">
         <ScienceBackdrop />
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
             <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] text-[1.7rem]"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] text-[1.45rem] sm:h-14 sm:w-14 sm:rounded-[20px] sm:text-[1.7rem]"
               style={{ background: `${color}18`, border: `1px solid ${color}26` }}
             >
               {FIELD_EMOJI[field]}
@@ -191,30 +191,30 @@ export default function UnitSelectPage({
               <div className="mb-1 text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
                 Unit Select
               </div>
-              <div className="font-display text-[2rem] leading-none sm:text-[2.35rem]" style={{ color }}>{field}</div>
-              <p className="mt-1 text-sm text-slate-400">単元を選んで、そのまま解き始められます。</p>
+              <div className="font-display text-[1.65rem] leading-none sm:text-[2.35rem]" style={{ color }}>{field}</div>
+              <p className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">単元を選んで、そのまま解き始められます。</p>
             </div>
           </div>
           <div className="flex flex-col gap-2 lg:min-w-[284px] lg:items-end">
-            <div className="grid grid-cols-2 gap-2 w-full lg:w-auto">
-              <div className="subcard px-4 py-3">
+            <div className="grid w-full grid-cols-2 gap-2 lg:w-auto">
+              <div className="subcard mobile-mini-card px-4 py-3">
                 <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">単元数</div>
                 <div className="mt-1 flex items-end gap-2">
-                  <div className="font-display text-[1.9rem] leading-none text-white">{units.length}</div>
+                  <div className="font-display text-[1.6rem] leading-none text-white sm:text-[1.9rem]">{units.length}</div>
                   <div className="pb-0.5 text-[11px] text-slate-500">units</div>
                 </div>
               </div>
-              <div className="subcard px-4 py-3">
+              <div className="subcard mobile-mini-card px-4 py-3">
                 <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">問題数</div>
                 <div className="mt-1 flex items-end gap-2">
-                  <div className="font-display text-[1.9rem] leading-none text-white">{totalQuestionCount}</div>
+                  <div className="font-display text-[1.6rem] leading-none text-white sm:text-[1.9rem]">{totalQuestionCount}</div>
                   <div className="pb-0.5 text-[11px] text-slate-500">questions</div>
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 w-full lg:w-[284px]">
-              <button onClick={onBack} className="btn-secondary w-full !py-3">もどる</button>
-              <button onClick={() => logout()} className="btn-ghost w-full !py-3">ログアウト</button>
+            <div className="grid w-full grid-cols-2 gap-2 lg:w-[284px]">
+              <button onClick={onBack} className="btn-secondary w-full !py-2.5 sm:!py-3">もどる</button>
+              <button onClick={() => logout()} className="btn-ghost w-full !py-2.5 sm:!py-3">ログアウト</button>
             </div>
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function UnitSelectPage({
                 <button
                   key={mode}
                   onClick={() => onSelectBiologyMode(mode)}
-                  className="card text-left"
+                  className="card mobile-mini-card text-left"
                   style={{
                     borderColor: `${meta.accent}3a`,
                     background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
@@ -287,7 +287,7 @@ export default function UnitSelectPage({
                 <button
                   key={mode}
                   onClick={() => onSelectSpecialMode(mode)}
-                  className="card text-left"
+                  className="card mobile-mini-card text-left"
                   style={{
                     borderColor: `${meta.accent}3a`,
                     background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
@@ -332,7 +332,7 @@ export default function UnitSelectPage({
                 <button
                   key={mode}
                   onClick={() => onSelectWorkbenchMode(mode)}
-                  className="card text-left"
+                  className="card mobile-mini-card text-left"
                   style={{
                     borderColor: `${meta.accent}3a`,
                     background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
@@ -386,7 +386,7 @@ export default function UnitSelectPage({
                 <button
                   key={mode}
                   onClick={() => onSelectWorkbenchMode(mode)}
-                  className="card text-left"
+                  className="card mobile-mini-card text-left"
                   style={{
                     borderColor: `${meta.accent}3a`,
                     background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
@@ -440,7 +440,7 @@ export default function UnitSelectPage({
                 <button
                   key={mode}
                   onClick={() => onSelectEarthMode(mode)}
-                  className="card text-left"
+                  className="card mobile-mini-card text-left"
                   style={{
                     borderColor: `${meta.accent}3a`,
                     background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
@@ -483,7 +483,7 @@ export default function UnitSelectPage({
                 <button
                   key={mode}
                   onClick={() => onSelectWorkbenchMode(mode)}
-                  className="card text-left"
+                  className="card mobile-mini-card text-left"
                   style={{
                     borderColor: `${meta.accent}3a`,
                     background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
@@ -526,7 +526,7 @@ export default function UnitSelectPage({
 
       {isGuest ? (
         <div
-          className="card w-full anim-fade-up mb-4 text-left"
+          className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
           style={{
             borderColor: 'rgba(148, 163, 184, 0.2)',
             background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), rgba(15, 23, 42, 0.82))',
@@ -539,15 +539,15 @@ export default function UnitSelectPage({
               <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">
                 Ask Gemini
               </div>
-              <div className="mt-2 font-display text-2xl text-slate-100">
+              <div className="mt-2 font-display text-xl text-slate-100 sm:text-2xl">
                 {field}について質問する
               </div>
-              <div className="mt-2 text-slate-400 text-sm leading-6">
+              <div className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">
                 ゲストモードでは Gemini などの質問機能は使えません。
               </div>
             </div>
             <div
-              className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-400"
+              className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-400 sm:px-4 sm:py-2 sm:text-sm"
             >
               利用不可
             </div>
@@ -556,7 +556,7 @@ export default function UnitSelectPage({
       ) : (
         <button
           onClick={() => onOpenChat(field as ScienceChatField)}
-          className="card w-full anim-fade-up mb-4 text-left"
+          className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
           style={{
             borderColor: `${color}40`,
             background: `linear-gradient(135deg, ${color}18, rgba(15, 23, 42, 0.82))`,
@@ -577,15 +577,15 @@ export default function UnitSelectPage({
               <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
                 Ask Gemini
               </div>
-              <div className="mt-2 font-display text-2xl text-white">
+              <div className="mt-2 font-display text-xl text-white sm:text-2xl">
                 {field}について質問する
               </div>
-              <div className="mt-2 text-slate-300 text-sm leading-6">
+              <div className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">
                 この分野だけに絞って、要点を3行以内でざっくり聞けます。
               </div>
             </div>
             <div
-              className="inline-flex items-center justify-center rounded-full border border-slate-600 bg-slate-800/70 px-4 py-2 text-sm font-semibold text-slate-100"
+              className="inline-flex items-center justify-center rounded-full border border-slate-600 bg-slate-800/70 px-3 py-1.5 text-xs font-semibold text-slate-100 sm:px-4 sm:py-2 sm:text-sm"
             >
               Geminiに聞く →
             </div>
@@ -595,7 +595,7 @@ export default function UnitSelectPage({
 
       <button
         onClick={() => onSelect('all')}
-        className="card w-full anim-fade-up mb-4 text-left"
+        className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
         style={{
           borderColor: `${color}40`,
           background: `linear-gradient(180deg, ${color}18, var(--surface-elevated))`,
@@ -613,11 +613,11 @@ export default function UnitSelectPage({
       >
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="font-semibold text-lg" style={{ color }}>全単元ランダム</div>
-            <div className="text-slate-400 text-sm mt-1">この分野の問題をまとめて解きます</div>
+            <div className="font-semibold text-base sm:text-lg" style={{ color }}>全単元ランダム</div>
+            <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">この分野の問題をまとめて解きます</div>
           </div>
           <div
-            className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]"
+            className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] sm:px-3 sm:text-xs"
             style={{ background: `${color}18`, color }}
           >
             quick start
@@ -626,7 +626,7 @@ export default function UnitSelectPage({
       </button>
 
       <div
-        className="card w-full anim-fade-up mb-4 text-left"
+        className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
         style={{
           borderColor: `${color}35`,
           background: `linear-gradient(180deg, ${color}14, rgba(15, 23, 42, 0.82))`,
@@ -638,10 +638,10 @@ export default function UnitSelectPage({
             <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
               Custom
             </div>
-            <div className="mt-2 font-display text-2xl text-white">
+            <div className="mt-2 font-display text-xl text-white sm:text-2xl">
               カスタム
             </div>
-            <div className="mt-2 text-slate-300 text-sm leading-6">
+            <div className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">
               記述のみ、選択肢のみ、未回答、苦手だけなどに絞って出題できます。
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -665,7 +665,7 @@ export default function UnitSelectPage({
         </div>
 
         {showCustomPanel && (
-          <div className="mt-5 rounded-[24px] border border-white/8 bg-slate-950/24 p-4 sm:p-5">
+            <div className="mt-4 rounded-[22px] border border-white/8 bg-slate-950/24 p-3.5 sm:mt-5 sm:rounded-[24px] sm:p-5">
             <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
                 <label className="text-slate-400 text-xs mb-2 block">対象単元</label>
@@ -766,7 +766,7 @@ export default function UnitSelectPage({
               <button
                 key={unitItem.unit}
                 onClick={() => onSelect(unitItem.unit)}
-                className="card anim-fade-up text-left h-full"
+                className="card mobile-mini-card anim-fade-up text-left h-full"
                 style={{
                   animationDelay: `${(index + 1) * 0.07}s`,
                   transition: 'transform 0.18s ease, border-color 0.18s ease',
@@ -782,7 +782,7 @@ export default function UnitSelectPage({
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="font-semibold text-white">{unitItem.unit}</div>
+                    <div className="font-semibold text-[15px] text-white sm:text-base">{unitItem.unit}</div>
                     <div className="text-slate-500 text-xs mt-1">{unitItem.questionCount}問</div>
                   </div>
                   {rate !== null && (

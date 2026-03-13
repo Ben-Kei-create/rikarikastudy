@@ -146,15 +146,15 @@ export default function HomePage({
 
   return (
     <div className="page-shell page-shell-dashboard">
-      <div className="hero-card science-surface p-5 sm:p-6 lg:p-8 mb-6 anim-fade-up">
+      <div className="hero-card science-surface mb-5 p-4 sm:mb-6 sm:p-6 lg:p-8 anim-fade-up">
         <ScienceBackdrop />
         <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
           <div className="max-w-2xl">
             <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-3">
               Home
             </div>
-            <div className="font-display text-3xl text-white sm:text-4xl">こんにちは、{nickname}さん</div>
-            <div className="mt-5 rounded-[24px] border border-sky-300/15 bg-sky-300/5 p-4">
+            <div className="font-display text-[1.9rem] leading-tight text-white sm:text-4xl">こんにちは、{nickname}さん</div>
+            <div className="mt-4 rounded-[22px] border border-sky-300/15 bg-sky-300/5 p-3.5 sm:mt-5 sm:rounded-[24px] sm:p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">レベル</div>
@@ -183,7 +183,7 @@ export default function HomePage({
                 <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
               </div>
             </div>
-            <div className="mt-4 rounded-[24px] border px-4 py-4" style={{
+            <div className="mt-3 rounded-[22px] border px-3.5 py-3.5 sm:mt-4 sm:rounded-[24px] sm:px-4 sm:py-4" style={{
               borderColor: 'rgba(255,255,255,0.08)',
               background: 'rgba(15, 23, 42, 0.28)',
             }}>
@@ -232,20 +232,20 @@ export default function HomePage({
               </p>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-3 lg:max-w-sm lg:ml-auto">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="subcard p-3.5">
+          <div className="grid grid-cols-1 gap-2.5 sm:gap-3 lg:max-w-sm lg:ml-auto">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <div className="subcard mobile-mini-card p-3.5">
                 <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">正答率</div>
                 <div className="mt-2 font-display text-xl text-white">{overallRate !== null ? `${overallRate}%` : 'START'}</div>
                 <div className="mt-1 text-xs text-slate-500">{totalQuestions > 0 ? `${totalQuestions}問解答` : 'まだ未学習'}</div>
               </div>
-              <div className="subcard p-3.5">
+              <div className="subcard mobile-mini-card p-3.5">
                 <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ログイン中</div>
                 <div className="mt-2 font-display text-xl text-white">{onlineCount !== null ? `${onlineCount}人` : '—'}</div>
               </div>
             </div>
             <div
-              className="rounded-[24px] border p-4"
+              className="rounded-[22px] border p-3.5 sm:rounded-[24px] sm:p-4"
               style={{
                 borderColor: 'rgba(255,255,255,0.08)',
                 background: 'rgba(15, 23, 42, 0.38)',
@@ -256,7 +256,7 @@ export default function HomePage({
                 <button
                   onClick={onDailyChallenge}
                   disabled={dailyCompleted}
-                  className="card text-left transition-all disabled:opacity-70"
+                  className="card mobile-action-card text-left transition-all disabled:opacity-70"
                   style={{
                     padding: '16px 18px',
                     borderColor: dailyCompleted ? 'rgba(34, 197, 94, 0.24)' : 'rgba(245, 158, 11, 0.24)',
@@ -267,38 +267,38 @@ export default function HomePage({
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-[11px] font-semibold tracking-[0.18em] text-amber-200 uppercase">
+                      <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase sm:text-[11px]">
                         Daily Challenge
                       </div>
-                      <div className="mt-1 font-display text-xl text-white">今日のチャレンジ</div>
-                      <div className="mt-1 text-xs text-slate-300">
+                      <div className="mt-1 font-display text-lg text-white sm:text-xl">今日のチャレンジ</div>
+                      <div className="mt-1 text-[11px] text-slate-300 sm:text-xs">
                         5問 / 2x XP / 今日1回
                       </div>
                     </div>
-                    <div className={`text-2xl ${dailyCompleted ? 'text-emerald-300' : 'text-amber-200'}`}>
+                    <div className={`text-xl sm:text-2xl ${dailyCompleted ? 'text-emerald-300' : 'text-amber-200'}`}>
                       {dailyCompleted ? '✅' : '☀️'}
                     </div>
                   </div>
                 </button>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <button
                     onClick={onQuickStartAll}
-                    className="subcard text-left transition-all"
+                    className="subcard mobile-action-card text-left transition-all"
                     style={{
                       padding: '16px',
                       borderColor: 'rgba(56, 189, 248, 0.22)',
                       background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(34, 197, 94, 0.08) 64%, rgba(15, 23, 42, 0.84))',
                     }}
                   >
-                    <div className="text-[11px] font-semibold tracking-[0.18em] text-sky-200 uppercase">Quick</div>
-                    <div className="mt-1 font-display text-lg text-white">4分野10問</div>
-                    <div className="mt-1 text-xs leading-5 text-slate-400">短時間で全体を確認</div>
+                    <div className="text-[10px] font-semibold tracking-[0.18em] text-sky-200 uppercase sm:text-[11px]">Quick</div>
+                    <div className="mt-1 font-display text-base text-white sm:text-lg">4分野10問</div>
+                    <div className="mt-1 text-[11px] leading-5 text-slate-400 sm:text-xs">短時間で全体を確認</div>
                   </button>
                   <button
                     onClick={onTimeAttack}
                     disabled={!timeAttackUnlocked}
-                    className="subcard text-left transition-all disabled:opacity-60"
+                    className="subcard mobile-action-card text-left transition-all disabled:opacity-60"
                     style={{
                       padding: '16px',
                       cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
@@ -308,11 +308,11 @@ export default function HomePage({
                         : 'rgba(15, 23, 42, 0.58)',
                     }}
                   >
-                    <div className="text-[11px] font-semibold tracking-[0.18em] uppercase" style={{ color: timeAttackUnlocked ? '#ddd6fe' : '#94a3b8' }}>
+                    <div className="text-[10px] font-semibold tracking-[0.18em] uppercase sm:text-[11px]" style={{ color: timeAttackUnlocked ? 'var(--earth-dark)' : 'var(--text-muted)' }}>
                       Challenge
                     </div>
-                    <div className="mt-1 font-display text-lg text-white">チャレンジ</div>
-                    <div className="mt-1 text-xs leading-5 text-slate-400">
+                    <div className="mt-1 font-display text-base text-white sm:text-lg">チャレンジ</div>
+                    <div className="mt-1 text-[11px] leading-5 text-slate-400 sm:text-xs">
                       {timeAttackUnlocked
                         ? 'TA / テスト / 連続正解'
                         : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}まであと ${timeAttackUnlockXpLeft} XP`}
@@ -322,7 +322,7 @@ export default function HomePage({
               </div>
             </div>
 
-            <div className="grid grid-cols-[1fr_auto] gap-3">
+            <div className="grid grid-cols-[1fr_auto] gap-2 sm:gap-3">
               <button onClick={onMyPage} className="btn-secondary w-full">
                 マイページ
               </button>
@@ -337,7 +337,7 @@ export default function HomePage({
 
             {menuExpanded && (
               <div
-                className="rounded-[22px] border px-4 py-4 anim-fade-up"
+                className="rounded-[22px] border px-3.5 py-3.5 anim-fade-up sm:px-4 sm:py-4"
                 style={{
                   borderColor: 'rgba(255,255,255,0.08)',
                   background: 'rgba(8, 13, 24, 0.62)',
@@ -357,7 +357,7 @@ export default function HomePage({
                   href={scienceNews.item.link}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 block rounded-[20px] border px-4 py-4 transition-all"
+                  className="mt-3 block rounded-[18px] border px-3.5 py-3.5 transition-all sm:mt-4 sm:rounded-[20px] sm:px-4 sm:py-4"
                   style={{
                     borderColor: 'rgba(245, 158, 11, 0.18)',
                     background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(15, 23, 42, 0.82) 58%, rgba(56, 189, 248, 0.08))',
@@ -402,7 +402,7 @@ export default function HomePage({
             <button
               key={field.name}
               onClick={() => onSelectField(field.name)}
-              className="card anim-fade-up text-left"
+              className="card mobile-mini-card anim-fade-up text-left"
               style={{
                 animationDelay: `${index * 0.08}s`,
                 cursor: 'pointer',
@@ -436,31 +436,31 @@ export default function HomePage({
                   borderRadius: '50%',
                 }}
               />
-              <div className="relative z-[1] flex items-start gap-3 sm:items-center">
+              <div className="relative z-[1] flex items-start gap-2.5 sm:items-center sm:gap-3">
                 <div
-                  className="flex h-12 w-12 items-center justify-center rounded-[16px] text-xl"
+                  className="flex h-10 w-10 items-center justify-center rounded-[14px] text-lg sm:h-12 sm:w-12 sm:rounded-[16px] sm:text-xl"
                   style={{ background: `${field.color}18`, border: `1px solid ${field.color}26` }}
                 >
                   {field.emoji}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <div className="font-display text-[1.35rem]" style={{ color: field.color }}>{field.name}</div>
+                    <div className="font-display text-[1.15rem] sm:text-[1.35rem]" style={{ color: field.color }}>{field.name}</div>
                     <span
                       className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]"
                       style={{
                         background: rate === null ? `${field.color}16` : 'rgba(148, 163, 184, 0.12)',
-                        color: rate === null ? field.color : '#94a3b8',
+                        color: rate === null ? field.color : 'var(--text-muted)',
                       }}
                     >
                       {rate === null ? 'はじめる' : `${stat?.total}問`}
                     </span>
                   </div>
-                  <div className="mt-1 text-sm leading-6 text-slate-400">{field.desc}</div>
+                  <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">{field.desc}</div>
                 </div>
                 {rate !== null && (
                   <div className="text-right">
-                    <div className="font-semibold text-lg" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
+                    <div className="font-semibold text-base sm:text-lg" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
                       {rate}%
                     </div>
                     <div className="text-slate-500 text-xs mt-1">正答率</div>

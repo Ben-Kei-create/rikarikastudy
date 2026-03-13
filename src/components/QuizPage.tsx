@@ -8,6 +8,7 @@ import { CustomQuizOptions, getCustomQuizSessionLabel, getCustomQuizSummaryParts
 import { getLevelInfo } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { getQuestionImageDisplaySize } from '@/lib/questionImages'
+import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
 import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions } from '@/lib/questionPicker'
 import {
   getQuestionInquirySchemaErrorMessage,
@@ -224,7 +225,9 @@ export default function QuizPage({
         return
       }
 
-      const pool = (data || []) as Question[]
+      const pool = ((data || []) as Question[])
+        .map(question => normalizeQuestionChoices(question, { shuffleChoices: question.type === 'choice' }))
+        .filter(question => hasValidChoiceAnswer(question))
       if (pool.length === 0) {
         if (active) setLoading(false)
         return

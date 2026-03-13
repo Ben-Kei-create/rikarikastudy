@@ -72,8 +72,8 @@
   --surface-soft: rgba(148, 163, 184, 0.12);
   --surface2: rgba(148, 163, 184, 0.16);
   --text: #0f172a;
-  --text-muted: #5b6b80;
-  --text-soft: #7f8ea3;
+  --text-muted: #425165;
+  --text-soft: #5c6d82;
   --border: rgba(15, 23, 42, 0.09);
   --border-strong: rgba(15, 23, 42, 0.16);
   --primary-soft: rgba(10, 132, 255, 0.12);
@@ -577,19 +577,43 @@ body {
 }
 
 [data-theme='light'] .text-slate-300 {
-  color: #334155 !important;
+  color: #263548 !important;
 }
 
 [data-theme='light'] .text-slate-400 {
-  color: #516074 !important;
+  color: #38475b !important;
 }
 
 [data-theme='light'] .text-slate-500 {
-  color: #708096 !important;
+  color: #506176 !important;
 }
 
 [data-theme='light'] .text-slate-600 {
-  color: #8a99ab !important;
+  color: #697a90 !important;
+}
+
+[data-theme='light'] .text-amber-100,
+[data-theme='light'] .text-amber-200 {
+  color: #9a3412 !important;
+}
+
+[data-theme='light'] .text-sky-200,
+[data-theme='light'] .text-sky-300 {
+  color: #075985 !important;
+}
+
+[data-theme='light'] .text-emerald-300 {
+  color: #047857 !important;
+}
+
+[data-theme='light'] .text-violet-100,
+[data-theme='light'] .text-violet-200,
+[data-theme='light'] .text-violet-300 {
+  color: #5b21b6 !important;
+}
+
+[data-theme='light'] .text-rose-200 {
+  color: #be123c !important;
 }
 
 [data-theme='cute'] .text-white,
@@ -722,6 +746,49 @@ body {
 }
 
 @media (max-width: 639px) {
+  .page-shell,
+  .page-shell-wide {
+    padding: 16px 12px 64px;
+  }
+
+  .card {
+    border-radius: 24px;
+    padding: 18px;
+  }
+
+  .hero-card {
+    border-radius: 28px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost {
+    min-height: 42px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 0.93rem;
+  }
+
+  .input-surface {
+    border-radius: 16px;
+    padding: 12px 14px;
+  }
+
+  .segment-button {
+    padding: 9px 12px;
+    font-size: 0.86rem;
+  }
+
+  .mobile-action-card {
+    border-radius: 20px !important;
+    padding: 14px !important;
+  }
+
+  .mobile-mini-card {
+    border-radius: 20px !important;
+    padding: 13px !important;
+  }
+
   .science-motif--chem {
     right: 44px;
   }

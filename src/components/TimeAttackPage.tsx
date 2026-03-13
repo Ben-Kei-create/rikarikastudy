@@ -14,6 +14,7 @@ import {
   TIME_ATTACK_UNLOCK_LEVEL,
 } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
+import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
 import { pickChallengeTestQuestions, pickTimeAttackQuestions, shuffleArray } from '@/lib/questionPicker'
 import {
   getCachedColumnSupport,
@@ -333,7 +334,10 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
       ])
       if (!active) return
 
-      const pool = (data || []) as Question[]
+      const rawPool = (data || []) as Question[]
+      const pool = rawPool
+        .map(question => normalizeQuestionChoices(question, { shuffleChoices: question.type === 'choice' }))
+        .filter(question => hasValidChoiceAnswer(question))
       setAllQuestions(pool)
       setChoiceQuestions(pickTimeAttackQuestions(pool))
       setTimeAttackBest(best.personalBest)
