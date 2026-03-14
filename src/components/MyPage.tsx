@@ -184,6 +184,7 @@ function getFieldEmoji(field: string) {
 }
 
 type Tab = 'overview' | 'history' | 'weak' | 'badges' | 'cards' | 'glossary' | 'questions' | 'account'
+const HISTORY_SESSION_LIMIT = 10
 
 export default function MyPage({
   onBack,
@@ -215,6 +216,7 @@ export default function MyPage({
   const [glossaryField, setGlossaryField] = useState<ScienceGlossaryField | 'all'>('all')
   const [glossaryIndex, setGlossaryIndex] = useState<string>('all')
   const [selectedGlossaryId, setSelectedGlossaryId] = useState<string | null>(SCIENCE_GLOSSARY[0]?.id ?? null)
+  const [glossaryModalOpen, setGlossaryModalOpen] = useState(false)
   const [periodicCards, setPeriodicCards] = useState<PeriodicCardCollectionEntry[]>([])
   const [periodicCardsLoading, setPeriodicCardsLoading] = useState(true)
   const [periodicCardsSchemaMessage, setPeriodicCardsSchemaMessage] = useState<string | null>(null)
@@ -434,10 +436,10 @@ export default function MyPage({
 
   const weekData = dailyData.slice(-7)
   const weekMax = Math.max(...weekData.map(d => d.count), 1)
-  const historySessions = useMemo(() => {
-    const threshold = subDays(new Date(), 7)
-    return sessions.filter(session => new Date(session.created_at) >= threshold)
-  }, [sessions])
+  const historySessions = useMemo(
+    () => sessions.slice(0, HISTORY_SESSION_LIMIT),
+    [sessions]
+  )
   const tabs = isGuest
     ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 周期表'], ['glossary', '📘 辞典'], ['account', '⚙️ 設定']] as const)
     : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 周期表'], ['glossary', '📘 辞典'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
@@ -494,12 +496,13 @@ export default function MyPage({
   useEffect(() => {
     if (glossaryEntries.length === 0) {
       if (selectedGlossaryId !== null) setSelectedGlossaryId(null)
+      if (glossaryModalOpen) setGlossaryModalOpen(false)
       return
     }
 
     const exists = glossaryEntries.some(entry => entry.id === selectedGlossaryId)
     if (!exists) setSelectedGlossaryId(glossaryEntries[0].id)
-  }, [glossaryEntries, selectedGlossaryId])
+  }, [glossaryEntries, glossaryModalOpen, selectedGlossaryId])
 
   useEffect(() => {
     if (!periodicUnlocked) {
@@ -515,6 +518,32 @@ export default function MyPage({
     const exists = periodicCards.some(card => card.cardKey === selectedPeriodicCardKey)
     if (!exists) setSelectedPeriodicCardKey(periodicCards[0].cardKey)
   }, [periodicCards, periodicUnlocked, selectedPeriodicCardKey])
+
+  useEffect(() => {
+    if (tab !== 'glossary' && glossaryModalOpen) {
+      setGlossaryModalOpen(false)
+    }
+  }, [glossaryModalOpen, tab])
+
+  useEffect(() => {
+    if (!glossaryModalOpen || !selectedGlossaryEntry || typeof window === 'undefined') return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setGlossaryModalOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [glossaryModalOpen, selectedGlossaryEntry])
 
   const handleSaveNickname = async () => {
     setSaving('nickname')
@@ -548,6 +577,16 @@ export default function MyPage({
     setGlossaryField(target.field)
     setGlossaryIndex('all')
     setSelectedGlossaryId(target.id)
+    setGlossaryModalOpen(true)
+  }
+
+  const handleOpenGlossaryEntry = (entryId: string) => {
+    setSelectedGlossaryId(entryId)
+    setGlossaryModalOpen(true)
+  }
+
+  const handleCloseGlossaryModal = () => {
+    setGlossaryModalOpen(false)
   }
 
   const handleTabChange = (nextTab: Tab) => {
@@ -1102,11 +1141,12 @@ export default function MyPage({
         {/* ===== 履歴タブ ===== */}
         {tab === 'history' && (
           <div className="space-y-2 anim-fade">
+            <p className="text-slate-500 text-xs mb-2">最新{HISTORY_SESSION_LIMIT}件だけ表示しています。</p>
             {historySessions.length === 0 ? (
                 <div className="card text-center text-slate-500 py-12">
-                  1週間以内の履歴はありません。
+                  履歴はまだありません。
                 </div>
-              ) : historySessions.slice(0, 50).map(s => {
+              ) : historySessions.map(s => {
               const rate = Math.round((s.correct_count / s.total_questions) * 100)
               const color = getFieldColor(s.field)
               const dateStr = format(new Date(s.created_at), 'M月d日(E) HH:mm', { locale: ja })
@@ -1485,127 +1525,149 @@ export default function MyPage({
               </div>
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-              <div className="card">
-                <div className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">用語一覧</div>
-                {glossaryEntries.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
-                    条件に合う用語が見つかりません。
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {glossaryEntries.map(entry => {
-                      const active = selectedGlossaryEntry?.id === entry.id
-                      const color = getFieldColor(entry.field)
-                      return (
-                        <button
-                          key={entry.id}
-                          onClick={() => setSelectedGlossaryId(entry.id)}
-                          className="w-full rounded-[22px] border px-4 py-3 text-left transition-all"
-                          style={{
-                            borderColor: active ? `${color}60` : 'var(--surface-elevated-border)',
-                            background: active ? `${color}14` : 'var(--surface-elevated)',
-                          }}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="font-semibold text-white">{entry.term}</div>
-                              <div className="text-xs text-slate-500 mt-1">{entry.reading}</div>
-                            </div>
-                            <span
-                              className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                              style={{ background: `${color}18`, color }}
-                            >
-                              {entry.field}
-                            </span>
-                          </div>
-                          <div className="mt-2 text-sm leading-6 text-slate-400 line-clamp-2">
-                            {entry.shortDescription}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
+            <div className="card">
+              <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">用語一覧</div>
+                <div className="text-xs text-slate-500">用語を押すとポップアップで詳細を開きます。</div>
               </div>
-
-              <div className="card">
-                {selectedGlossaryEntry ? (
-                  <>
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
-                      <div>
-                        <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">
-                          Science Word
-                        </div>
-                        <h3 className="font-display text-3xl text-white">{selectedGlossaryEntry.term}</h3>
-                        <div className="mt-2 text-sm text-slate-500">{selectedGlossaryEntry.reading}</div>
-                      </div>
-                      <span
-                        className="rounded-full px-3 py-1.5 text-sm font-semibold"
+              {glossaryEntries.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
+                  条件に合う用語が見つかりません。
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {glossaryEntries.map(entry => {
+                    const active = selectedGlossaryEntry?.id === entry.id
+                    const color = getFieldColor(entry.field)
+                    return (
+                      <button
+                        key={entry.id}
+                        onClick={() => handleOpenGlossaryEntry(entry.id)}
+                        className="w-full rounded-[22px] border px-4 py-3 text-left transition-all"
                         style={{
-                          background: `${getFieldColor(selectedGlossaryEntry.field)}18`,
-                          color: getFieldColor(selectedGlossaryEntry.field),
+                          borderColor: active ? `${color}60` : 'var(--surface-elevated-border)',
+                          background: active ? `${color}14` : 'var(--surface-elevated)',
                         }}
                       >
-                        {selectedGlossaryEntry.field}
-                      </span>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-white">{entry.term}</div>
+                            <div className="text-xs text-slate-500 mt-1">{entry.reading}</div>
+                          </div>
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                            style={{ background: `${color}18`, color }}
+                          >
+                            {entry.field}
+                          </span>
+                        </div>
+                        <div className="mt-2 text-sm leading-6 text-slate-400 line-clamp-2">
+                          {entry.shortDescription}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {glossaryModalOpen && selectedGlossaryEntry && (
+          <div
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/76 px-3 py-6 sm:px-5"
+            onClick={handleCloseGlossaryModal}
+          >
+            <div
+              className="hero-card science-surface relative w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-[30px] border border-white/10"
+              onClick={event => event.stopPropagation()}
+            >
+              <ScienceBackdrop />
+              <div className="relative z-[1] flex max-h-[88vh] flex-col">
+                <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-4 sm:px-6 sm:py-5">
+                  <div>
+                    <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">
+                      Science Word
                     </div>
+                    <h3 className="font-display text-[2rem] leading-none text-white sm:text-4xl">{selectedGlossaryEntry.term}</h3>
+                    <div className="mt-2 text-sm text-slate-500">{selectedGlossaryEntry.reading}</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="rounded-full px-3 py-1.5 text-sm font-semibold"
+                      style={{
+                        background: `${getFieldColor(selectedGlossaryEntry.field)}18`,
+                        color: getFieldColor(selectedGlossaryEntry.field),
+                      }}
+                    >
+                      {selectedGlossaryEntry.field}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCloseGlossaryModal}
+                      className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-slate-950/40 text-lg text-slate-300 transition-colors hover:bg-slate-900/70 hover:text-white"
+                      aria-label="辞典ポップアップを閉じる"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
 
-                    <div className="mt-5 rounded-[22px] border border-white/8 bg-slate-950/24 p-4">
-                      <div className="text-slate-300 font-semibold">ひとことで</div>
-                      <p className="mt-2 text-sm leading-7 text-slate-200">
-                        {selectedGlossaryEntry.shortDescription}
-                      </p>
-                    </div>
+                <div className="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+                  <div className="rounded-[22px] border border-white/8 bg-slate-950/24 p-4">
+                    <div className="text-slate-300 font-semibold">ひとことで</div>
+                    <p className="mt-2 text-sm leading-7 text-slate-200">
+                      {selectedGlossaryEntry.shortDescription}
+                    </p>
+                  </div>
 
-                    <div className="mt-4">
-                      <div className="text-slate-300 font-semibold">説明</div>
-                      <p className="mt-2 text-sm leading-8 text-slate-300">
-                        {selectedGlossaryEntry.description}
-                      </p>
-                    </div>
+                  <div className="mt-5">
+                    <div className="text-slate-300 font-semibold">説明</div>
+                    <p className="mt-2 text-sm leading-8 text-slate-300 whitespace-pre-wrap">
+                      {selectedGlossaryEntry.description}
+                    </p>
+                  </div>
 
-                    <div className="mt-5">
-                      <div className="text-slate-400 text-xs mb-2">関連語</div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedGlossaryEntry.related.map(item => {
-                          const linkedEntry = glossaryTermMap.get(item)
+                  <div className="mt-6">
+                    <div className="text-slate-400 text-xs mb-2">関連語</div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedGlossaryEntry.related.length > 0 ? selectedGlossaryEntry.related.map(item => {
+                        const linkedEntry = glossaryTermMap.get(item)
 
-                          if (!linkedEntry) {
-                            return (
-                              <span
-                                key={item}
-                                className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300"
-                              >
-                                {item}
-                              </span>
-                            )
-                          }
-
+                        if (!linkedEntry) {
                           return (
-                            <button
+                            <span
                               key={item}
-                              type="button"
-                              onClick={() => handleGlossaryJump(item)}
-                              className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:-translate-y-0.5"
-                              style={{
-                                borderColor: `${getFieldColor(linkedEntry.field)}55`,
-                                background: `${getFieldColor(linkedEntry.field)}18`,
-                                color: getFieldColor(linkedEntry.field),
-                              }}
+                              className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300"
                             >
                               {item}
-                            </button>
+                            </span>
                           )
-                        })}
-                      </div>
+                        }
+
+                        return (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => handleGlossaryJump(item)}
+                            className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:-translate-y-0.5"
+                            style={{
+                              borderColor: `${getFieldColor(linkedEntry.field)}55`,
+                              background: `${getFieldColor(linkedEntry.field)}18`,
+                              color: getFieldColor(linkedEntry.field),
+                            }}
+                          >
+                            {item}
+                          </button>
+                        )
+                      }) : (
+                        <span className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300">
+                          関連語はまだありません
+                        </span>
+                      )}
                     </div>
-                  </>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-8 text-sm text-slate-400">
-                    用語を選ぶと、ここに説明が表示されます。
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
