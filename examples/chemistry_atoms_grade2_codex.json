@@ -1,0 +1,275 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "化学変化によってそれ以上分けることができない小さな粒を何といいますか。",
+    "choices": ["原子", "分子", "細胞", "電子"],
+    "answer": "原子",
+    "keywords": null,
+    "explanation": "化学変化では、原子そのものの種類は変わりません。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "いくつかの原子が結びついてできた、物質の性質を示す最小の粒はどれですか。",
+    "choices": ["分子", "原子", "元素", "イオン"],
+    "answer": "分子",
+    "keywords": null,
+    "explanation": "分子は、その物質の性質を示す最小の粒です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "元素記号 H が表す元素は何ですか。",
+    "choices": ["水素", "ヘリウム", "炭素", "窒素"],
+    "answer": "水素",
+    "keywords": null,
+    "explanation": "H は水素を表す元素記号です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "化学式 CO2 が表す物質はどれですか。",
+    "choices": ["一酸化炭素", "二酸化炭素", "酸素", "炭酸カルシウム"],
+    "answer": "二酸化炭素",
+    "keywords": null,
+    "explanation": "CO2 は炭素1個と酸素2個からなる二酸化炭素を表します。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "1種類の原子だけでできている物質を何といいますか。",
+    "choices": ["単体", "化合物", "混合物", "分子"],
+    "answer": "単体",
+    "keywords": null,
+    "explanation": "酸素や鉄のように、1種類の原子だけでできている物質を単体といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "2種類以上の原子が結びついてできた物質を何といいますか。",
+    "choices": ["化合物", "単体", "混合物", "元素"],
+    "answer": "化合物",
+    "keywords": null,
+    "explanation": "水や二酸化炭素のような物質は化合物です。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "酸素は、酸素原子が2個結びついた分子として存在する。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "酸素は O2 で表される分子として存在します。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "すべての物質は、分子をつくっている。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "金属の銅など、分子をつくらない物質もあります。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "化学式 H2O は、水素原子2個と酸素原子1個からできていることを表す。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "H2O は水の分子のつくりを表した化学式です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "元素記号 O が表す元素は【　　】である。",
+    "choices": ["酸素", "水素", "炭素", "銀"],
+    "answer": "酸素",
+    "keywords": null,
+    "explanation": "O は酸素、H は水素、C は炭素を表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "水素原子2個が結びついた分子の化学式は【　　】である。",
+    "choices": ["H2", "H", "O2", "H2O"],
+    "answer": "H2",
+    "keywords": null,
+    "explanation": "水素は H2 の分子として存在します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "1種類の原子だけでできた物質を【　　】という。",
+    "choices": ["単体", "化合物", "混合物", "分子"],
+    "answer": "単体",
+    "keywords": null,
+    "explanation": "単体は、1種類の原子だけでできています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "二酸化炭素をつくっている原子の種類は炭素と【　　】である。",
+    "choices": ["酸素", "水素", "窒素", "鉄"],
+    "answer": "酸素",
+    "keywords": null,
+    "explanation": "二酸化炭素 CO2 は、炭素と酸素からできています。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "次の元素記号と、元素名を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "H", "right": "水素" },
+      { "left": "O", "right": "酸素" },
+      { "left": "C", "right": "炭素" },
+      { "left": "N", "right": "窒素" }
+    ],
+    "explanation": "元素記号と元素名は、化学式を読む基本です。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "次の物質と、分類を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "酸素", "right": "単体" },
+      { "left": "水", "right": "化合物" },
+      { "left": "鉄", "right": "単体" },
+      { "left": "二酸化炭素", "right": "化合物" }
+    ],
+    "explanation": "1種類の原子だけなら単体、2種類以上の原子からできていれば化合物です。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "水の分子のつくりとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "水素原子2個",
+      "酸素原子1個",
+      "水分子1個"
+    ],
+    "explanation": "水分子は、水素原子2個と酸素原子1個からできています。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "物質を分類するときの考え方として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "原子の種類を調べる",
+      "1種類か2種類以上かを確かめる",
+      "単体か化合物かを判断する"
+    ],
+    "explanation": "原子の種類の数に注目すると、単体か化合物かを判断できます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "次の物質の中から、化合物だけをすべて選びなさい。",
+    "choices": [
+      "水",
+      "酸素",
+      "二酸化炭素",
+      "鉄",
+      "アンモニア"
+    ],
+    "correct_choices": [
+      "水",
+      "二酸化炭素",
+      "アンモニア"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "化合物は、2種類以上の原子でできています。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "次の物質の中から、分子をつくるものをすべて選びなさい。",
+    "choices": [
+      "水素",
+      "酸素",
+      "水",
+      "銅",
+      "鉄"
+    ],
+    "correct_choices": [
+      "水素",
+      "酸素",
+      "水"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "水素、酸素、水は分子をつくります。銅や鉄は分子をつくりません。"
+  },
+  {
+    "type": "word_bank",
+    "field": "化学",
+    "unit": "原子と分子",
+    "grade": "中2",
+    "question": "水の化学式を完成させなさい。",
+    "choices": null,
+    "answer": "H2O",
+    "keywords": null,
+    "word_tokens": [
+      "H",
+      "2",
+      "O"
+    ],
+    "distractor_tokens": [
+      "Cl",
+      "3"
+    ],
+    "explanation": "水は水素原子2個と酸素原子1個からできているので H2O です。"
+  }
+]

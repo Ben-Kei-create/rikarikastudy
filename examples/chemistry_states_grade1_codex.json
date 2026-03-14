@@ -1,0 +1,276 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "固体が液体に変わる変化を何といいますか。",
+    "choices": ["融解", "凝固", "蒸発", "凝縮"],
+    "answer": "融解",
+    "keywords": null,
+    "explanation": "固体が熱を受けて液体になる変化を融解といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "液体が気体に変わる変化として正しいものはどれですか。",
+    "choices": ["蒸発", "融解", "凝固", "中和"],
+    "answer": "蒸発",
+    "keywords": null,
+    "explanation": "液体が気体になる変化には蒸発や沸騰があります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "水を冷やしていくと、0℃で起こる変化はどれですか。",
+    "choices": ["凝固", "融解", "蒸留", "中和"],
+    "answer": "凝固",
+    "keywords": null,
+    "explanation": "水は 0℃ で氷になり、液体から固体への凝固が起こります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "液体どうしを沸点のちがいを利用して分ける方法はどれですか。",
+    "choices": ["蒸留", "ろ過", "再結晶", "中和"],
+    "answer": "蒸留",
+    "keywords": null,
+    "explanation": "蒸留は沸点のちがいを利用して液体を分ける方法です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "同じ体積の物質Aと物質Bを比べたとき、質量が大きいほうは何が大きいといえますか。",
+    "choices": ["密度", "温度", "体積", "沸点"],
+    "answer": "密度",
+    "keywords": null,
+    "explanation": "密度は、一定の体積あたりの質量の大きさを表します。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "状態変化の前後で変わらないものとして正しいものはどれですか。",
+    "choices": ["物質そのもの", "色", "見た目の体積", "温度"],
+    "answer": "物質そのもの",
+    "keywords": null,
+    "explanation": "状態変化では別の物質になるわけではなく、物質そのものは変わりません。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "水が水蒸気になる変化は、化学変化ではなく状態変化である。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "水が水蒸気になっても、物質は同じ水のままです。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "蒸留は、液体どうしの沸点のちがいを利用して分ける方法である。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "蒸留では、先に気体になりやすい液体を取り出せます。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "物質が固体から液体になっても、質量は変わらない。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "状態変化では物質の量は変わらないので、質量も変わりません。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "気体が冷やされて液体になる変化を【　　】という。",
+    "choices": ["凝縮", "融解", "凝固", "蒸発"],
+    "answer": "凝縮",
+    "keywords": null,
+    "explanation": "気体が冷えて液体になる変化を凝縮といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "1cm3 あたりの質量で表される物質の性質を【　　】という。",
+    "choices": ["密度", "体積", "圧力", "温度"],
+    "answer": "密度",
+    "keywords": null,
+    "explanation": "密度は、物質1cm3あたりの質量で表されます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "液体が沸騰するときの温度をその物質の【　　】という。",
+    "choices": ["沸点", "融点", "密度", "体積"],
+    "answer": "沸点",
+    "keywords": null,
+    "explanation": "沸点は、液体が沸騰して気体になる温度です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "固体がとけて液体になる温度をその物質の【　　】という。",
+    "choices": ["融点", "沸点", "密度", "圧力"],
+    "answer": "融点",
+    "keywords": null,
+    "explanation": "融点は、固体が液体になる温度です。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "次の状態変化と、その説明を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "融解", "right": "固体が液体になる" },
+      { "left": "凝固", "right": "液体が固体になる" },
+      { "left": "蒸発", "right": "液体が気体になる" },
+      { "left": "凝縮", "right": "気体が液体になる" }
+    ],
+    "explanation": "状態変化には、それぞれ決まった名前があります。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "次の分け方と、利用する性質を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "蒸留", "right": "沸点のちがい" },
+      { "left": "ろ過", "right": "粒の大きさのちがい" },
+      { "left": "再結晶", "right": "とける量のちがい" }
+    ],
+    "explanation": "物質を分ける方法は、利用する性質によってちがいます。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "氷を加熱したときの変化として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "氷",
+      "水",
+      "水蒸気"
+    ],
+    "explanation": "氷は加熱されると水になり、さらに加熱されると水蒸気になります。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "密度を求めるときの手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "質量をはかる",
+      "体積を求める",
+      "質量を体積でわる"
+    ],
+    "explanation": "密度は、質量を体積でわって求めます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "次のうち、状態変化にあてはまるものをすべて選びなさい。",
+    "choices": [
+      "氷がとける",
+      "水がこおる",
+      "紙が燃える",
+      "水が蒸発する",
+      "鉄がさびる"
+    ],
+    "correct_choices": [
+      "氷がとける",
+      "水がこおる",
+      "水が蒸発する"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "状態変化では別の物質になりません。燃焼やさびは化学変化です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "次のうち、物質を分けるときに利用できる性質をすべて選びなさい。",
+    "choices": [
+      "沸点のちがい",
+      "粒の大きさのちがい",
+      "とける量のちがい",
+      "好きな色かどうか",
+      "名前の長さ"
+    ],
+    "correct_choices": [
+      "沸点のちがい",
+      "粒の大きさのちがい",
+      "とける量のちがい"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "物質の分け方は、観察できる性質のちがいを利用して考えます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "化学",
+    "unit": "物質のすがた",
+    "grade": "中1",
+    "question": "密度の求め方を完成させなさい。",
+    "choices": null,
+    "answer": "密度 = 質量 ÷ 体積",
+    "keywords": null,
+    "word_tokens": [
+      "密度",
+      "=",
+      "質量",
+      "÷",
+      "体積"
+    ],
+    "distractor_tokens": [
+      "×",
+      "温度"
+    ],
+    "explanation": "密度は、質量を体積でわって求めます。"
+  }
+]

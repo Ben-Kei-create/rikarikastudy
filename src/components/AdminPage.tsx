@@ -1,5 +1,5 @@
 'use client'
-import { ChangeEvent, useEffect, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import { Database, supabase } from '@/lib/supabase'
 import { DEFAULT_STUDENTS, fetchStudents } from '@/lib/auth'
 import { sampleQuestions } from '@/lib/sampleQuestions'
@@ -45,6 +45,8 @@ import {
 
 const ADMIN_PW = 'rikaadmin2026'
 const BULK_INSERT_CHUNK_SIZE = 100
+const QUESTION_LIST_PAGE_SIZE = 20
+const QUESTION_LIST_PAGE_WINDOW = 2
 const BULK_JSON_EXAMPLE = `[
   {
     "field": "生物",
@@ -201,6 +203,7 @@ type TimeAttackRecordRow = Database['public']['Tables']['time_attack_records']['
 type StudentInsert = Database['public']['Tables']['students']['Insert']
 type GlossaryRow = Database['public']['Tables']['science_glossary_entries']['Row']
 type GlossaryInsert = Database['public']['Tables']['science_glossary_entries']['Insert']
+type QuestionAccuracyAnswerLogRow = Pick<AnswerLogRow, 'question_id' | 'student_id' | 'is_correct' | 'created_at'>
 type AdminStudentDetailAnswerLogRow = Pick<AnswerLogRow, 'question_id' | 'is_correct' | 'created_at'> & {
   questions: Pick<QuestionRow, 'unit' | 'field'> | null
 }
@@ -209,6 +212,12 @@ interface AdminStudentDetailData {
   sessions: QuizSessionRow[]
   answerLogs: AdminStudentDetailAnswerLogRow[]
   studentBadges: StudentBadgeRow[]
+}
+
+interface QuestionAccuracySummary {
+  participantCount: number
+  correctCount: number
+  accuracyRate: number
 }
 
 interface BulkQuestionPayload {
@@ -293,6 +302,39 @@ function buildStudentStats(
   })
 
   return Object.values(statsMap)
+}
+
+function buildQuestionAccuracyMap(answerLogs: QuestionAccuracyAnswerLogRow[]) {
+  const perQuestion = new Map<string, Map<number, boolean>>()
+  const sortedLogs = [...answerLogs].sort((a, b) => a.created_at.localeCompare(b.created_at))
+
+  sortedLogs.forEach(log => {
+    if (!perQuestion.has(log.question_id)) {
+      perQuestion.set(log.question_id, new Map<number, boolean>())
+    }
+    const studentFirstAnswers = perQuestion.get(log.question_id)
+    if (!studentFirstAnswers || studentFirstAnswers.has(log.student_id)) return
+    studentFirstAnswers.set(log.student_id, log.is_correct)
+  })
+
+  const result: Record<string, QuestionAccuracySummary> = {}
+  perQuestion.forEach((studentFirstAnswers, questionId) => {
+    const participantCount = studentFirstAnswers.size
+    if (participantCount === 0) return
+
+    let correctCount = 0
+    studentFirstAnswers.forEach(isCorrect => {
+      if (isCorrect) correctCount += 1
+    })
+
+    result[questionId] = {
+      participantCount,
+      correctCount,
+      accuracyRate: Math.round((correctCount / participantCount) * 100),
+    }
+  })
+
+  return result
 }
 
 function downloadJsonFile(filename: string, payload: unknown) {
@@ -733,6 +775,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string; student_xp: number }>>([])
   const [stats, setStats] = useState<StudentStats[]>([])
   const [questions, setQuestions] = useState<QuestionRow[]>([])
+  const [questionAccuracyMap, setQuestionAccuracyMap] = useState<Record<string, QuestionAccuracySummary>>({})
+  const [questionSearch, setQuestionSearch] = useState('')
+  const [questionPage, setQuestionPage] = useState(1)
   const [activeStudents, setActiveStudents] = useState<ActiveStudentStatus[]>([])
   const [chatGuardLogs, setChatGuardLogs] = useState<ChatGuardLogRow[]>([])
   const [questionInquiries, setQuestionInquiries] = useState<QuestionInquiryRow[]>([])
@@ -820,6 +865,88 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     setSelectedStudentDetailError(null)
   }, [tab])
 
+  const normalizedQuestionSearch = questionSearch.trim().toLowerCase()
+
+  const studentCreatedQuestionCount = useMemo(
+    () => questions.filter(question => question.created_by_student_id !== null).length,
+    [questions],
+  )
+
+  const filteredQuestions = useMemo(() => {
+    if (!normalizedQuestionSearch) return questions
+
+    return questions.filter(question => {
+      const normalized = normalizeQuestionRecord(question)
+      const searchableText = [
+        question.field,
+        question.unit,
+        question.question,
+        question.grade,
+        question.type,
+        getQuestionTypeLabel(question.type),
+        getQuestionCorrectAnswerText(normalized),
+        question.created_by_student_id ? `id ${question.created_by_student_id}` : '',
+        question.created_by_student_id ? `作成者 ${question.created_by_student_id}` : '共有問題',
+        question.created_by_student_id ? '生徒作成' : '共有問題',
+        normalized.explanation ?? '',
+        normalized.keywords?.join(' ') ?? '',
+        normalized.choices?.join(' ') ?? '',
+        normalized.match_pairs?.flatMap(pair => [pair.left, pair.right]).join(' ') ?? '',
+        normalized.sort_items?.join(' ') ?? '',
+        normalized.correct_choices?.join(' ') ?? '',
+        normalized.word_tokens?.join(' ') ?? '',
+        normalized.distractor_tokens?.join(' ') ?? '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return searchableText.includes(normalizedQuestionSearch)
+    })
+  }, [questions, normalizedQuestionSearch])
+
+  const questionPageCount = Math.max(1, Math.ceil(filteredQuestions.length / QUESTION_LIST_PAGE_SIZE))
+
+  const paginatedQuestions = useMemo(() => {
+    const startIndex = (questionPage - 1) * QUESTION_LIST_PAGE_SIZE
+    return filteredQuestions.slice(startIndex, startIndex + QUESTION_LIST_PAGE_SIZE)
+  }, [filteredQuestions, questionPage])
+
+  const questionPageStart = filteredQuestions.length === 0
+    ? 0
+    : (questionPage - 1) * QUESTION_LIST_PAGE_SIZE + 1
+  const questionPageEnd = filteredQuestions.length === 0
+    ? 0
+    : questionPageStart + paginatedQuestions.length - 1
+
+  const questionPaginationItems = useMemo(() => {
+    const pages = new Set<number>([1, questionPageCount])
+    for (let offset = -QUESTION_LIST_PAGE_WINDOW; offset <= QUESTION_LIST_PAGE_WINDOW; offset += 1) {
+      const page = questionPage + offset
+      if (page >= 1 && page <= questionPageCount) pages.add(page)
+    }
+
+    const sortedPages = Array.from(pages).sort((a, b) => a - b)
+    const items: Array<number | 'ellipsis'> = []
+    let previousPage: number | null = null
+
+    sortedPages.forEach(page => {
+      if (previousPage !== null && page - previousPage > 1) items.push('ellipsis')
+      items.push(page)
+      previousPage = page
+    })
+
+    return items
+  }, [questionPage, questionPageCount])
+
+  useEffect(() => {
+    setQuestionPage(1)
+  }, [questionSearch])
+
+  useEffect(() => {
+    setQuestionPage(current => Math.min(current, questionPageCount))
+  }, [questionPageCount])
+
   const loadData = async () => {
     setLoading(true)
 
@@ -890,8 +1017,21 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         setQuestionInquiryLoadError('')
       }
     } else if (tab === 'questions') {
-      const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false })
-      setQuestions((data || []) as QuestionRow[])
+      const [questionsResponse, answerLogsResponse] = await Promise.all([
+        supabase.from('questions').select('*').order('created_at', { ascending: false }),
+        supabase.from('answer_logs').select('question_id, student_id, is_correct, created_at'),
+      ])
+
+      setQuestions((questionsResponse.data || []) as QuestionRow[])
+
+      if (answerLogsResponse.error) {
+        if (!isMissingRelationError(answerLogsResponse.error, 'answer_logs')) {
+          console.error(answerLogsResponse.error)
+        }
+        setQuestionAccuracyMap({})
+      } else {
+        setQuestionAccuracyMap(buildQuestionAccuracyMap((answerLogsResponse.data || []) as QuestionAccuracyAnswerLogRow[]))
+      }
     }
 
     setLoading(false)
@@ -1890,6 +2030,72 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const selectedStudent = selectedStudentId === null
     ? null
     : studentsList.find(student => student.id === selectedStudentId) ?? null
+  const renderQuestionPagination = (position: 'top' | 'bottom') => {
+    if (questionPageCount <= 1) return null
+
+    return (
+      <div
+        key={`question-pagination-${position}`}
+        className="flex flex-col gap-3 rounded-2xl border border-slate-800/80 bg-slate-950/35 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div className="text-xs text-slate-400">
+          {questionPageStart} - {questionPageEnd} 件を表示 / {filteredQuestions.length} 件
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setQuestionPage(1)}
+            className="btn-ghost text-sm"
+            disabled={questionPage === 1}
+          >
+            最初
+          </button>
+          <button
+            onClick={() => setQuestionPage(current => Math.max(1, current - 1))}
+            className="btn-ghost text-sm"
+            disabled={questionPage === 1}
+          >
+            前へ
+          </button>
+          <div className="flex flex-wrap items-center gap-1">
+            {questionPaginationItems.map((item, index) => (
+              item === 'ellipsis' ? (
+                <span key={`ellipsis-${position}-${index}`} className="px-2 text-sm text-slate-500">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={`${position}-${item}`}
+                  onClick={() => setQuestionPage(item)}
+                  className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
+                  style={{
+                    background: item === questionPage ? 'rgba(56, 189, 248, 0.16)' : 'rgba(15, 23, 42, 0.85)',
+                    border: `1px solid ${item === questionPage ? 'rgba(56, 189, 248, 0.34)' : 'rgba(51, 65, 85, 0.72)'}`,
+                    color: item === questionPage ? '#bae6fd' : '#cbd5e1',
+                  }}
+                >
+                  {item}
+                </button>
+              )
+            ))}
+          </div>
+          <button
+            onClick={() => setQuestionPage(current => Math.min(questionPageCount, current + 1))}
+            className="btn-ghost text-sm"
+            disabled={questionPage === questionPageCount}
+          >
+            次へ
+          </button>
+          <button
+            onClick={() => setQuestionPage(questionPageCount)}
+            className="btn-ghost text-sm"
+            disabled={questionPage === questionPageCount}
+          >
+            最後
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="page-shell-wide">
@@ -2544,7 +2750,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 {questions.length}問登録済み
                 {questions.length > 0 && (
                   <span className="ml-2 text-slate-500 text-sm">
-                    生徒作成 {questions.filter(question => question.created_by_student_id !== null).length}問
+                    生徒作成 {studentCreatedQuestionCount}問
+                  </span>
+                )}
+                {questionSearch.trim() && (
+                  <span className="ml-2 text-sky-300 text-sm">
+                    検索結果 {filteredQuestions.length}問
                   </span>
                 )}
               </p>
@@ -2559,11 +2770,36 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               📦 サンプル問題を追加
             </button>
           </div>
+          <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <label className="block">
+              <span className="mb-1 block text-xs text-slate-400">問題を検索</span>
+              <input
+                value={questionSearch}
+                onChange={event => setQuestionSearch(event.target.value)}
+                placeholder="問題文、単元、答え、タイプ、作成者IDで検索"
+                className="input-surface"
+              />
+            </label>
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 px-3 py-2 text-xs text-slate-400">
+                1ページ {QUESTION_LIST_PAGE_SIZE}件
+              </div>
+              {questionSearch.trim() && (
+                <button
+                  onClick={() => setQuestionSearch('')}
+                  className="btn-ghost text-sm"
+                >
+                  検索をクリア
+                </button>
+              )}
+            </div>
+          </div>
           {loading ? (
             <div className="text-slate-400 text-center py-12">読み込み中...</div>
           ) : (
             <div className="space-y-2">
-              {questions.map(question => {
+              {renderQuestionPagination('top')}
+              {paginatedQuestions.map(question => {
                 const previewImageSize = getQuestionImageDisplaySize(question)
                 const draftImageSize = getQuestionImageDraftSize(question)
                 const busyAction = questionImageBusy?.questionId === question.id ? questionImageBusy.action : null
@@ -2571,6 +2807,15 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 const nextWidth = parseQuestionImageDraftValue(draftImageSize.width, draftImageSize.storedWidth)
                 const nextHeight = parseQuestionImageDraftValue(draftImageSize.height, draftImageSize.storedHeight)
                 const sizeDirty = nextWidth !== draftImageSize.storedWidth || nextHeight !== draftImageSize.storedHeight
+                const accuracySummary = questionAccuracyMap[question.id]
+                const shouldShowAccuracy = (accuracySummary?.participantCount ?? 0) >= 2
+                const accuracyColor = !shouldShowAccuracy
+                  ? 'var(--text-muted)'
+                  : accuracySummary.accuracyRate >= 80
+                    ? '#86efac'
+                    : accuracySummary.accuracyRate >= 50
+                      ? '#fde68a'
+                      : '#fca5a5'
 
                 return (
                 <div key={question.id} className="subcard p-4">
@@ -2767,15 +3012,28 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 text-slate-500 text-xs">答え: {getQuestionCorrectAnswerText(normalizeQuestionRecord(question))}</div>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                    <div className="text-slate-500">答え: {getQuestionCorrectAnswerText(normalizeQuestionRecord(question))}</div>
+                    {shouldShowAccuracy && accuracySummary && (
+                      <div style={{ color: accuracyColor }}>
+                        初回正答率 {accuracySummary.accuracyRate}% ({accuracySummary.correctCount}/{accuracySummary.participantCount}人)
+                      </div>
+                    )}
+                  </div>
                   {question.type === 'text' && question.keywords && question.keywords.length > 0 && (
                     <div className="mt-1 text-amber-300 text-xs">キーワード: {question.keywords.join(' / ')}</div>
                   )}
                 </div>
               )})}
+              {renderQuestionPagination('bottom')}
               {questions.length === 0 && (
                 <div className="text-slate-500 text-center py-12 card">
                   問題がありません。サンプルを追加するか、「問題追加」タブから入力してください。
+                </div>
+              )}
+              {questions.length > 0 && filteredQuestions.length === 0 && (
+                <div className="text-slate-500 text-center py-12 card">
+                  検索条件に一致する問題がありません。キーワードを変えてみてください。
                 </div>
               )}
             </div>

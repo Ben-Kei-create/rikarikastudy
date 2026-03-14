@@ -1,0 +1,278 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "2種類以上の物質が結びついて1種類の物質ができる化学変化を何といいますか。",
+    "choices": ["化合", "分解", "中和", "電離"],
+    "answer": "化合",
+    "keywords": null,
+    "explanation": "化合は、2種類以上の物質が結びついて1種類の物質になる変化です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "1種類の物質が2種類以上の別の物質に分かれる変化を何といいますか。",
+    "choices": ["分解", "化合", "燃焼", "凝固"],
+    "answer": "分解",
+    "keywords": null,
+    "explanation": "分解は、1種類の物質が別の物質に分かれる化学変化です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "炭酸水素ナトリウムを加熱したときに発生する気体として正しいものはどれですか。",
+    "choices": ["二酸化炭素", "酸素", "水素", "窒素"],
+    "answer": "二酸化炭素",
+    "keywords": null,
+    "explanation": "炭酸水素ナトリウムを加熱すると、二酸化炭素、水、炭酸ナトリウムができます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "酸化銀を加熱したときに発生する気体は何ですか。",
+    "choices": ["酸素", "水素", "二酸化炭素", "塩素"],
+    "answer": "酸素",
+    "keywords": null,
+    "explanation": "酸化銀は加熱で分解し、銀と酸素になります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "化学変化が起こっても保たれるものはどれですか。",
+    "choices": ["原子の種類と数", "色", "におい", "体積"],
+    "answer": "原子の種類と数",
+    "keywords": null,
+    "explanation": "化学変化では原子の組み合わせは変わっても、種類と数は変わりません。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "水を電気分解したときに陽極に発生する気体は何ですか。",
+    "choices": ["酸素", "水素", "二酸化炭素", "窒素"],
+    "answer": "酸素",
+    "keywords": null,
+    "explanation": "水の電気分解では、陽極に酸素、陰極に水素が発生します。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "化学変化では、新しい物質ができることがある。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "化学変化では、もとの物質とはちがう新しい物質ができます。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "鉄と硫黄を加熱してできた物質は、もとの鉄と硫黄の性質をそのまま保っている。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "硫化鉄は、もとの鉄や硫黄とはちがう性質をもつ新しい物質です。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "化学変化の前後で全体の質量が変わらないきまりを質量保存の法則という。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "原子の種類と数が変わらないため、全体の質量も変わりません。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "周囲に熱を出しながら進む化学変化を【　　】反応という。",
+    "choices": ["発熱", "吸熱", "中和", "凝縮"],
+    "answer": "発熱",
+    "keywords": null,
+    "explanation": "発熱反応では、まわりに熱が出て温度が上がることがあります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "周囲から熱を受け取って進む化学変化を【　　】反応という。",
+    "choices": ["吸熱", "発熱", "酸化", "分解"],
+    "answer": "吸熱",
+    "keywords": null,
+    "explanation": "吸熱反応では、まわりから熱を受け取って変化が進みます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "反応する物質とできる物質を化学式で表したものを【　　】という。",
+    "choices": ["化学反応式", "元素記号", "分子模型", "沸点"],
+    "answer": "化学反応式",
+    "keywords": null,
+    "explanation": "化学反応式は、反応する物質とできる物質の関係を表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "鉄粉と硫黄の粉末を加熱してできる黒色の物質を【　　】という。",
+    "choices": ["硫化鉄", "酸化鉄", "塩化鉄", "炭酸鉄"],
+    "answer": "硫化鉄",
+    "keywords": null,
+    "explanation": "鉄と硫黄の化合でできる黒色の物質は硫化鉄です。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "次の化学変化と、その種類を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "鉄と硫黄を加熱する", "right": "化合" },
+      { "left": "酸化銀を加熱する", "right": "分解" },
+      { "left": "水を電気分解する", "right": "分解" }
+    ],
+    "explanation": "反応前後の物質の変化を見ると、化合か分解かを判断できます。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "次の実験と、確かめることができる気体を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "石灰水を白くにごらせる", "right": "二酸化炭素" },
+      { "left": "火のついた線香を激しく燃やす", "right": "酸素" },
+      { "left": "火を近づけると音を立てて燃える", "right": "水素" }
+    ],
+    "explanation": "気体はそれぞれ決まった方法で見分けることができます。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "水を電気分解して気体を調べる流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "電流を流す",
+      "2種類の気体を集める",
+      "それぞれの気体を調べる"
+    ],
+    "explanation": "まず電気分解を行い、発生した気体を集めてから性質を調べます。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "化学反応式をつくる基本的な手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "反応する物質とできる物質を確かめる",
+      "化学式で書く",
+      "原子の数が等しくなるように係数をそろえる"
+    ],
+    "explanation": "化学反応式では、反応前後で原子の数が等しくなるようにします。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "次の変化の中から、分解にあてはまるものをすべて選びなさい。",
+    "choices": [
+      "酸化銀を加熱する",
+      "水を電気分解する",
+      "鉄と硫黄を加熱する",
+      "炭酸水素ナトリウムを加熱する",
+      "銅を加熱する"
+    ],
+    "correct_choices": [
+      "酸化銀を加熱する",
+      "水を電気分解する",
+      "炭酸水素ナトリウムを加熱する"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "1種類の物質が別の物質に分かれる変化が分解です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "次のうち、化学変化で見られることをすべて選びなさい。",
+    "choices": [
+      "色が変わる",
+      "気体が発生する",
+      "温度が変化する",
+      "新しい物質ができる",
+      "必ず体積が一定である"
+    ],
+    "correct_choices": [
+      "色が変わる",
+      "気体が発生する",
+      "温度が変化する",
+      "新しい物質ができる"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "化学変化では、見た目や温度、発生する気体などが変わることがあります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "化学",
+    "unit": "化学変化",
+    "grade": "中2",
+    "question": "炭酸水素ナトリウムの熱分解の化学反応式を完成させなさい。",
+    "choices": null,
+    "answer": "2NaHCO3 → Na2CO3 + H2O + CO2",
+    "keywords": null,
+    "word_tokens": [
+      "2NaHCO3",
+      "→",
+      "Na2CO3",
+      "+",
+      "H2O",
+      "+",
+      "CO2"
+    ],
+    "distractor_tokens": [
+      "NaOH",
+      "O2"
+    ],
+    "explanation": "炭酸水素ナトリウムを加熱すると、炭酸ナトリウム、水、二酸化炭素ができます。"
+  }
+]
