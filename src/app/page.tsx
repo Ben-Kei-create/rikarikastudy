@@ -63,104 +63,96 @@ function App() {
     )
   }
 
-  let content
+  const screenType = typeof screen === 'object' ? screen.type : screen
+  const goHome = () => setScreen('home')
 
-  if (!studentId) {
-    content = <LoginPage onDone={() => setScreen('home')} onOnline={() => setScreen('online-lab')} onAdmin={() => setAdminOpen(true)} />
-  } else if (screen === 'mypage') {
-    content = <MyPage onBack={() => setScreen('home')} onStartDrill={(field, unit) => setScreen({ type: 'quiz', field, unit, isDrill: true })} />
-  } else if (screen === 'time-attack') {
-    content = <TimeAttackPage onBack={() => setScreen('home')} />
-  } else if (screen === 'online-lab') {
-    content = <OnlineLabPage onBack={() => setScreen('home')} />
-  } else if (typeof screen === 'object' && screen.type === 'unit') {
-    content = (
-      <UnitSelectPage
-        field={screen.field}
-        onSelect={(unit, questionCount) => setScreen({ type: 'quiz', field: screen.field, unit, questionCount })}
-        onStartCustomQuiz={(options, questionCount) => setScreen({ type: 'quiz', field: screen.field, unit: options.unit, customOptions: options, questionCount })}
-        onSelectBiologyMode={mode => setScreen({ type: 'biology-practice', mode })}
-        onSelectSpecialMode={mode => setScreen({ type: 'chemistry-practice', mode })}
-        onSelectEarthMode={mode => setScreen({ type: 'earth-practice', mode })}
-        onSelectWorkbenchMode={mode => setScreen({ type: 'science-workbench', mode })}
-        onOpenChat={field => setScreen({ type: 'chat', field })}
-        onStartActiveRecall={field => setScreen({ type: 'active-recall', field })}
-        onBack={() => setScreen('home')}
-      />
-    )
-  } else if (typeof screen === 'object' && screen.type === 'chat') {
-    content = (
-      <ScienceChatPage
-        field={screen.field}
-        onBack={() => setScreen({ type: 'unit', field: screen.field })}
-      />
-    )
-  } else if (typeof screen === 'object' && screen.type === 'active-recall') {
-    content = (
-      <ActiveRecallPage
-        field={screen.field}
-        onBack={() => setScreen({ type: 'unit', field: screen.field })}
-      />
-    )
-  } else if (typeof screen === 'object' && screen.type === 'chemistry-practice') {
-    content = (
-      <ChemistryPracticePage
-        mode={screen.mode}
-        onBack={() => setScreen({ type: 'unit', field: '化学' })}
-      />
-    )
-  } else if (typeof screen === 'object' && screen.type === 'biology-practice') {
-    content = (
-      <BiologyPracticePage
-        mode={screen.mode}
-        onBack={() => setScreen({ type: 'unit', field: '生物' })}
-      />
-    )
-  } else if (typeof screen === 'object' && screen.type === 'earth-practice') {
-    content = (
-      <EarthSciencePracticePage
-        mode={screen.mode}
-        onBack={() => setScreen({ type: 'unit', field: '地学' })}
-      />
-    )
-  } else if (typeof screen === 'object' && screen.type === 'science-workbench') {
-    content = (
-      <ScienceWorkbenchPage
-        mode={screen.mode}
-        onBack={() => setScreen({ type: 'unit', field: SCIENCE_WORKBENCH_MODE_META[screen.mode].field })}
-      />
-    )
-  } else if (typeof screen === 'object' && screen.type === 'quiz') {
-    content = (
-      <QuizPage
-        field={screen.field}
-        unit={screen.unit}
-        isDrill={screen.isDrill}
-        quickStartAll={screen.quickStartAll}
-        quickStartDaily={screen.quickStartDaily}
-        dailyChallenge={screen.dailyChallenge}
-        customOptions={screen.customOptions}
-        questionCount={screen.questionCount}
-        onBack={() => setScreen(
-          screen.isDrill
-            ? 'mypage'
-            : screen.quickStartAll || screen.quickStartDaily || screen.dailyChallenge
-              ? 'home'
-              : { type: 'unit', field: screen.field }
-        )}
-      />
-    )
-  } else {
-    content = (
-      <HomePage
-        onSelectField={field => setScreen({ type: 'unit', field })}
-        onQuickStartAll={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', quickStartAll: true })}
-        onDailyChallenge={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', quickStartDaily: true, dailyChallenge: true })}
-        onTimeAttack={() => setScreen('time-attack')}
-        onMyPage={() => setScreen('mypage')}
-      />
-    )
+  const renderScreen = (): JSX.Element => {
+    if (!studentId) {
+      return <LoginPage onDone={goHome} onOnline={() => setScreen('online-lab')} onAdmin={() => setAdminOpen(true)} />
+    }
+
+    switch (screenType) {
+      case 'mypage':
+        return <MyPage onBack={goHome} onStartDrill={(field, unit) => setScreen({ type: 'quiz', field, unit, isDrill: true })} />
+      case 'time-attack':
+        return <TimeAttackPage onBack={goHome} />
+      case 'online-lab':
+        return <OnlineLabPage onBack={goHome} />
+      case 'unit': {
+        const s = screen as Extract<Screen, { type: 'unit' }>
+        return (
+          <UnitSelectPage
+            field={s.field}
+            onSelect={(unit, questionCount) => setScreen({ type: 'quiz', field: s.field, unit, questionCount })}
+            onStartCustomQuiz={(options, questionCount) => setScreen({ type: 'quiz', field: s.field, unit: options.unit, customOptions: options, questionCount })}
+            onSelectBiologyMode={mode => setScreen({ type: 'biology-practice', mode })}
+            onSelectSpecialMode={mode => setScreen({ type: 'chemistry-practice', mode })}
+            onSelectEarthMode={mode => setScreen({ type: 'earth-practice', mode })}
+            onSelectWorkbenchMode={mode => setScreen({ type: 'science-workbench', mode })}
+            onOpenChat={field => setScreen({ type: 'chat', field })}
+            onStartActiveRecall={field => setScreen({ type: 'active-recall', field })}
+            onBack={goHome}
+          />
+        )
+      }
+      case 'chat': {
+        const s = screen as Extract<Screen, { type: 'chat' }>
+        return <ScienceChatPage field={s.field} onBack={() => setScreen({ type: 'unit', field: s.field })} />
+      }
+      case 'active-recall': {
+        const s = screen as Extract<Screen, { type: 'active-recall' }>
+        return <ActiveRecallPage field={s.field} onBack={() => setScreen({ type: 'unit', field: s.field })} />
+      }
+      case 'chemistry-practice': {
+        const s = screen as Extract<Screen, { type: 'chemistry-practice' }>
+        return <ChemistryPracticePage mode={s.mode} onBack={() => setScreen({ type: 'unit', field: '化学' })} />
+      }
+      case 'biology-practice': {
+        const s = screen as Extract<Screen, { type: 'biology-practice' }>
+        return <BiologyPracticePage mode={s.mode} onBack={() => setScreen({ type: 'unit', field: '生物' })} />
+      }
+      case 'earth-practice': {
+        const s = screen as Extract<Screen, { type: 'earth-practice' }>
+        return <EarthSciencePracticePage mode={s.mode} onBack={() => setScreen({ type: 'unit', field: '地学' })} />
+      }
+      case 'science-workbench': {
+        const s = screen as Extract<Screen, { type: 'science-workbench' }>
+        return <ScienceWorkbenchPage mode={s.mode} onBack={() => setScreen({ type: 'unit', field: SCIENCE_WORKBENCH_MODE_META[s.mode].field })} />
+      }
+      case 'quiz': {
+        const s = screen as Extract<Screen, { type: 'quiz' }>
+        return (
+          <QuizPage
+            field={s.field}
+            unit={s.unit}
+            isDrill={s.isDrill}
+            quickStartAll={s.quickStartAll}
+            quickStartDaily={s.quickStartDaily}
+            dailyChallenge={s.dailyChallenge}
+            customOptions={s.customOptions}
+            questionCount={s.questionCount}
+            onBack={() => setScreen(
+              s.isDrill ? 'mypage'
+                : s.quickStartAll || s.quickStartDaily || s.dailyChallenge ? 'home'
+                  : { type: 'unit', field: s.field }
+            )}
+          />
+        )
+      }
+      default:
+        return (
+          <HomePage
+            onSelectField={field => setScreen({ type: 'unit', field })}
+            onQuickStartAll={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', quickStartAll: true })}
+            onDailyChallenge={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', quickStartDaily: true, dailyChallenge: true })}
+            onTimeAttack={() => setScreen('time-attack')}
+            onMyPage={() => setScreen('mypage')}
+          />
+        )
+    }
   }
+
+  const content = renderScreen()
 
   return (
     <>
