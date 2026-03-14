@@ -1,0 +1,276 @@
+[
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "根で吸収した水を葉まで運ぶ管はどれですか。",
+    "choices": ["道管", "師管", "葉脈", "気孔"],
+    "answer": "道管",
+    "keywords": null,
+    "explanation": "道管は、根で吸収した水や水にとけた無機養分を葉まで運びます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "植物の細胞で光合成を行うつくりはどれですか。",
+    "choices": ["核", "葉緑体", "液胞", "細胞壁"],
+    "answer": "葉緑体",
+    "keywords": null,
+    "explanation": "葉緑体には葉緑素があり、光のエネルギーを使って光合成を行います。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次のうち、胞子でふえる植物はどれですか。",
+    "choices": ["アサガオ", "サクラ", "ゼンマイ", "マツ"],
+    "answer": "ゼンマイ",
+    "keywords": null,
+    "explanation": "ゼンマイはシダ植物で、種子ではなく胞子でふえます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次のうち、裸子植物のなかまはどれですか。",
+    "choices": ["サクラ", "マツ", "アブラナ", "ツツジ"],
+    "answer": "マツ",
+    "keywords": null,
+    "explanation": "マツは裸子植物で、胚珠が子房につつまれていません。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "葉の表面にあり、気体の出入りを行う小さなすきまは何ですか。",
+    "choices": ["道管", "気孔", "師管", "根毛"],
+    "answer": "気孔",
+    "keywords": null,
+    "explanation": "気孔は葉の表面にあり、二酸化炭素や酸素、水蒸気の出入りを行います。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "おしべの先にあるやくでつくられるものは何ですか。",
+    "choices": ["花粉", "胚珠", "種子", "子房"],
+    "answer": "花粉",
+    "keywords": null,
+    "explanation": "やくはおしべの先端にあり、花粉をつくります。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "師管は、葉でつくられた養分を植物の体の各部分へ運ぶ。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "師管は、光合成でできた養分を運ぶはたらきをしています。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "根毛は、土の中から水や養分を吸収しやすくするために表面積を広げている。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "根毛があることで根の表面積が大きくなり、水や養分を吸収しやすくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "被子植物では、胚珠がむき出しのままで子房につつまれていない。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "被子植物では、胚珠は子房の中にあります。むき出しなのは裸子植物です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "葉でつくられた養分を植物の体に運ぶ管を【　　】という。",
+    "choices": ["師管", "道管", "気孔", "根毛"],
+    "answer": "師管",
+    "keywords": null,
+    "explanation": "師管は、光合成でできた養分を運ぶ管です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "受粉のあと、胚珠はやがて【　　】になる。",
+    "choices": ["種子", "花粉", "やく", "がく"],
+    "answer": "種子",
+    "keywords": null,
+    "explanation": "受粉後、胚珠は種子になり、子房は果実になります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "葉の裏側に多く見られ、気体の出入りを行うすきまを【　　】という。",
+    "choices": ["気孔", "葉脈", "道管", "師管"],
+    "answer": "気孔",
+    "keywords": null,
+    "explanation": "気孔は葉の裏側に多く、光合成や蒸散に関係しています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "道管を通って運ばれるのは主に【　　】である。",
+    "choices": ["水", "空気", "花粉", "デンプン"],
+    "answer": "水",
+    "keywords": null,
+    "explanation": "道管は根から吸い上げた水や無機養分を運びます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次の植物のなかまと、ふえ方を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "種子植物", "right": "種子でふえる" },
+      { "left": "シダ植物", "right": "胞子でふえる" },
+      { "left": "コケ植物", "right": "胞子でふえる植物群" }
+    ],
+    "explanation": "種子植物は種子で、シダ植物やコケ植物は胞子でふえます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次の植物の部分と、そのはたらきを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "根", "right": "水や養分を吸収する" },
+      { "left": "茎", "right": "体を支え、水や養分を運ぶ" },
+      { "left": "葉", "right": "光合成を行う" },
+      { "left": "花", "right": "種子をつくるもとになる" }
+    ],
+    "explanation": "根・茎・葉・花には、それぞれ大切なはたらきがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "種子植物が種子をつくるまでの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "花がさく",
+      "受粉する",
+      "種子ができる"
+    ],
+    "explanation": "花がさき、受粉が起こったあとに種子ができます。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "根から吸収された水が葉まで運ばれる道すじとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "根毛",
+      "道管",
+      "葉"
+    ],
+    "explanation": "水は根毛から入り、道管を通って葉まで運ばれます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次のうち、植物の細胞に特ちょう的に見られるつくりをすべて選びなさい。",
+    "choices": [
+      "細胞壁",
+      "葉緑体",
+      "液胞",
+      "細胞膜",
+      "ミトコンドリア"
+    ],
+    "correct_choices": [
+      "細胞壁",
+      "葉緑体",
+      "液胞"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "細胞壁、葉緑体、液胞は植物の細胞に特ちょう的に見られるつくりです。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次のうち、胞子でふえる植物をすべて選びなさい。",
+    "choices": [
+      "ゼンマイ",
+      "スギナ",
+      "ゼニゴケ",
+      "アサガオ",
+      "マツ"
+    ],
+    "correct_choices": [
+      "ゼンマイ",
+      "スギナ",
+      "ゼニゴケ"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "シダ植物やコケ植物は、胞子でふえます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "根から吸収された水の通り道を完成させなさい。",
+    "choices": null,
+    "answer": "根毛 → 道管 → 葉",
+    "keywords": null,
+    "word_tokens": [
+      "根毛",
+      "→",
+      "道管",
+      "→",
+      "葉"
+    ],
+    "distractor_tokens": [
+      "師管",
+      "花"
+    ],
+    "explanation": "水は根毛から入り、道管を通って葉へ運ばれます。"
+  }
+]

@@ -1,0 +1,1786 @@
+[
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "根で吸収した水を葉まで運ぶ管はどれですか。",
+    "choices": [
+      "道管",
+      "師管",
+      "葉脈",
+      "気孔"
+    ],
+    "answer": "道管",
+    "keywords": null,
+    "explanation": "道管は、根で吸収した水や水にとけた無機養分を葉まで運びます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "植物の細胞で光合成を行うつくりはどれですか。",
+    "choices": [
+      "核",
+      "葉緑体",
+      "液胞",
+      "細胞壁"
+    ],
+    "answer": "葉緑体",
+    "keywords": null,
+    "explanation": "葉緑体には葉緑素があり、光のエネルギーを使って光合成を行います。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次のうち、胞子でふえる植物はどれですか。",
+    "choices": [
+      "アサガオ",
+      "サクラ",
+      "ゼンマイ",
+      "マツ"
+    ],
+    "answer": "ゼンマイ",
+    "keywords": null,
+    "explanation": "ゼンマイはシダ植物で、種子ではなく胞子でふえます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次のうち、裸子植物のなかまはどれですか。",
+    "choices": [
+      "サクラ",
+      "マツ",
+      "アブラナ",
+      "ツツジ"
+    ],
+    "answer": "マツ",
+    "keywords": null,
+    "explanation": "マツは裸子植物で、胚珠が子房につつまれていません。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "葉の表面にあり、気体の出入りを行う小さなすきまは何ですか。",
+    "choices": [
+      "道管",
+      "気孔",
+      "師管",
+      "根毛"
+    ],
+    "answer": "気孔",
+    "keywords": null,
+    "explanation": "気孔は葉の表面にあり、二酸化炭素や酸素、水蒸気の出入りを行います。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "おしべの先にあるやくでつくられるものは何ですか。",
+    "choices": [
+      "花粉",
+      "胚珠",
+      "種子",
+      "子房"
+    ],
+    "answer": "花粉",
+    "keywords": null,
+    "explanation": "やくはおしべの先端にあり、花粉をつくります。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "師管は、葉でつくられた養分を植物の体の各部分へ運ぶ。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "師管は、光合成でできた養分を運ぶはたらきをしています。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "根毛は、土の中から水や養分を吸収しやすくするために表面積を広げている。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "根毛があることで根の表面積が大きくなり、水や養分を吸収しやすくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "被子植物では、胚珠がむき出しのままで子房につつまれていない。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "被子植物では、胚珠は子房の中にあります。むき出しなのは裸子植物です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "葉でつくられた養分を植物の体に運ぶ管を【　　】という。",
+    "choices": [
+      "師管",
+      "道管",
+      "気孔",
+      "根毛"
+    ],
+    "answer": "師管",
+    "keywords": null,
+    "explanation": "師管は、光合成でできた養分を運ぶ管です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "受粉のあと、胚珠はやがて【　　】になる。",
+    "choices": [
+      "種子",
+      "花粉",
+      "やく",
+      "がく"
+    ],
+    "answer": "種子",
+    "keywords": null,
+    "explanation": "受粉後、胚珠は種子になり、子房は果実になります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "葉の裏側に多く見られ、気体の出入りを行うすきまを【　　】という。",
+    "choices": [
+      "気孔",
+      "葉脈",
+      "道管",
+      "師管"
+    ],
+    "answer": "気孔",
+    "keywords": null,
+    "explanation": "気孔は葉の裏側に多く、光合成や蒸散に関係しています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "道管を通って運ばれるのは主に【　　】である。",
+    "choices": [
+      "水",
+      "空気",
+      "花粉",
+      "デンプン"
+    ],
+    "answer": "水",
+    "keywords": null,
+    "explanation": "道管は根から吸い上げた水や無機養分を運びます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次の植物のなかまと、ふえ方を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "種子植物",
+        "right": "種子でふえる"
+      },
+      {
+        "left": "シダ植物",
+        "right": "胞子でふえる"
+      },
+      {
+        "left": "コケ植物",
+        "right": "胞子でふえる植物群"
+      }
+    ],
+    "explanation": "種子植物は種子で、シダ植物やコケ植物は胞子でふえます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次の植物の部分と、そのはたらきを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "根",
+        "right": "水や養分を吸収する"
+      },
+      {
+        "left": "茎",
+        "right": "体を支え、水や養分を運ぶ"
+      },
+      {
+        "left": "葉",
+        "right": "光合成を行う"
+      },
+      {
+        "left": "花",
+        "right": "種子をつくるもとになる"
+      }
+    ],
+    "explanation": "根・茎・葉・花には、それぞれ大切なはたらきがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "種子植物が種子をつくるまでの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "花がさく",
+      "受粉する",
+      "種子ができる"
+    ],
+    "explanation": "花がさき、受粉が起こったあとに種子ができます。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "根から吸収された水が葉まで運ばれる道すじとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "根毛",
+      "道管",
+      "葉"
+    ],
+    "explanation": "水は根毛から入り、道管を通って葉まで運ばれます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次のうち、植物の細胞に特ちょう的に見られるつくりをすべて選びなさい。",
+    "choices": [
+      "細胞壁",
+      "葉緑体",
+      "液胞",
+      "細胞膜",
+      "ミトコンドリア"
+    ],
+    "correct_choices": [
+      "細胞壁",
+      "葉緑体",
+      "液胞"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "細胞壁、葉緑体、液胞は植物の細胞に特ちょう的に見られるつくりです。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "次のうち、胞子でふえる植物をすべて選びなさい。",
+    "choices": [
+      "ゼンマイ",
+      "スギナ",
+      "ゼニゴケ",
+      "アサガオ",
+      "マツ"
+    ],
+    "correct_choices": [
+      "ゼンマイ",
+      "スギナ",
+      "ゼニゴケ"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "シダ植物やコケ植物は、胞子でふえます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "植物のつくり",
+    "grade": "中1",
+    "question": "根から吸収された水の通り道を完成させなさい。",
+    "choices": null,
+    "answer": "根毛 → 道管 → 葉",
+    "keywords": null,
+    "word_tokens": [
+      "根毛",
+      "→",
+      "道管",
+      "→",
+      "葉"
+    ],
+    "distractor_tokens": [
+      "師管",
+      "花"
+    ],
+    "explanation": "水は根毛から入り、道管を通って葉へ運ばれます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "細胞の中で、遺伝子をふくむつくりはどれですか。",
+    "choices": [
+      "核",
+      "葉緑体",
+      "液胞",
+      "細胞壁"
+    ],
+    "answer": "核",
+    "keywords": null,
+    "explanation": "核の中には染色体があり、遺伝子がふくまれています。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "植物の細胞にあり、動物の細胞にはないかたいつくりはどれですか。",
+    "choices": [
+      "細胞膜",
+      "細胞壁",
+      "核",
+      "ミトコンドリア"
+    ],
+    "answer": "細胞壁",
+    "keywords": null,
+    "explanation": "細胞壁は植物の細胞の外側にあり、細胞の形を保つのに役立ちます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "顕微鏡のレンズを取り付けるとき、先につけるのはどれですか。",
+    "choices": [
+      "接眼レンズ",
+      "対物レンズ",
+      "プレパラート",
+      "反射鏡"
+    ],
+    "answer": "接眼レンズ",
+    "keywords": null,
+    "explanation": "接眼レンズを先に取り付けると、鏡筒にほこりが入りにくくなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次のうち、単細胞生物はどれですか。",
+    "choices": [
+      "ヒト",
+      "ゾウリムシ",
+      "イヌ",
+      "サクラ"
+    ],
+    "answer": "ゾウリムシ",
+    "keywords": null,
+    "explanation": "ゾウリムシは1個の細胞だけで生活する単細胞生物です。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "細胞呼吸によってエネルギーを取り出すつくりはどれですか。",
+    "choices": [
+      "核",
+      "液胞",
+      "ミトコンドリア",
+      "細胞壁"
+    ],
+    "answer": "ミトコンドリア",
+    "keywords": null,
+    "explanation": "ミトコンドリアは呼吸を行い、生物が活動するためのエネルギーを取り出します。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "1個の受精卵から体が大きくなっていく主な理由は何ですか。",
+    "choices": [
+      "細胞分裂",
+      "受粉",
+      "消化",
+      "蒸散"
+    ],
+    "answer": "細胞分裂",
+    "keywords": null,
+    "explanation": "受精卵が細胞分裂をくり返すことで、個体の体がつくられていきます。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "植物の細胞には、葉緑体が見られることがある。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "葉緑体は植物の細胞にあり、光合成を行います。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "動物の細胞には、植物の細胞と同じように細胞壁がある。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "動物の細胞に細胞壁はありません。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "多細胞生物では、細胞が集まって組織や器官をつくる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "同じはたらきをする細胞が集まって組織になり、さらに器官をつくります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "生物の体をつくる基本の単位を【　　】という。",
+    "choices": [
+      "細胞",
+      "器官",
+      "組織",
+      "核"
+    ],
+    "answer": "細胞",
+    "keywords": null,
+    "explanation": "細胞は、生物の体をつくる基本の単位です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "顕微鏡でピントを大きく合わせるときに使うねじを【　　】という。",
+    "choices": [
+      "粗動ねじ",
+      "微動ねじ",
+      "反射鏡",
+      "しぼり"
+    ],
+    "answer": "粗動ねじ",
+    "keywords": null,
+    "explanation": "粗動ねじは大まかに、微動ねじは細かくピントを合わせるときに使います。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "植物の細胞で光合成を行うつくりを【　　】という。",
+    "choices": [
+      "葉緑体",
+      "核",
+      "液胞",
+      "細胞膜"
+    ],
+    "answer": "葉緑体",
+    "keywords": null,
+    "explanation": "葉緑体には葉緑素があり、光合成を行います。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "同じはたらきをする細胞が集まったものを【　　】という。",
+    "choices": [
+      "組織",
+      "器官",
+      "個体",
+      "核"
+    ],
+    "answer": "組織",
+    "keywords": null,
+    "explanation": "細胞が集まって組織になり、組織が集まって器官ができます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次の細胞のつくりと、そのはたらきを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "核",
+        "right": "遺伝子をふくむ"
+      },
+      {
+        "left": "ミトコンドリア",
+        "right": "呼吸でエネルギーを取り出す"
+      },
+      {
+        "left": "葉緑体",
+        "right": "光合成を行う"
+      },
+      {
+        "left": "液胞",
+        "right": "細胞液をたくわえる"
+      }
+    ],
+    "explanation": "細胞の中のつくりには、それぞれ決まったはたらきがあります。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次の観察材料と、観察しやすいものを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "タマネギの表皮",
+        "right": "細胞の形"
+      },
+      {
+        "left": "オオカナダモ",
+        "right": "葉緑体"
+      },
+      {
+        "left": "ヒトのほおの内側",
+        "right": "動物の細胞"
+      }
+    ],
+    "explanation": "観察材料によって、見やすい細胞のつくりが異なります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "顕微鏡で観察するときの基本的な流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "視野を明るくする",
+      "プレパラートをステージにのせる",
+      "ピントを合わせる"
+    ],
+    "explanation": "まず視野を明るくし、プレパラートを置いてからピントを合わせます。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "多細胞生物の体の成り立ちとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "細胞",
+      "組織",
+      "器官",
+      "個体"
+    ],
+    "explanation": "多細胞生物では、細胞が集まって組織になり、器官をつくって個体になります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次のうち、植物の細胞に見られるつくりをすべて選びなさい。",
+    "choices": [
+      "細胞壁",
+      "葉緑体",
+      "液胞",
+      "中枢神経",
+      "感覚器官"
+    ],
+    "correct_choices": [
+      "細胞壁",
+      "葉緑体",
+      "液胞"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "植物の細胞には、細胞壁、葉緑体、液胞が見られます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次のうち、単細胞生物をすべて選びなさい。",
+    "choices": [
+      "ゾウリムシ",
+      "ミドリムシ",
+      "アメーバ",
+      "ヒト",
+      "アサガオ"
+    ],
+    "correct_choices": [
+      "ゾウリムシ",
+      "ミドリムシ",
+      "アメーバ"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "ゾウリムシ、ミドリムシ、アメーバは1個の細胞で生活する単細胞生物です。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "多細胞生物の体の成り立ちを完成させなさい。",
+    "choices": null,
+    "answer": "細胞 → 組織 → 器官 → 個体",
+    "keywords": null,
+    "word_tokens": [
+      "細胞",
+      "→",
+      "組織",
+      "→",
+      "器官",
+      "→",
+      "個体"
+    ],
+    "distractor_tokens": [
+      "葉緑体",
+      "核"
+    ],
+    "explanation": "多細胞生物の体は、細胞、組織、器官、個体の順で成り立っています。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "だ液にふくまれ、デンプンを分解する消化酵素はどれですか。",
+    "choices": [
+      "アミラーゼ",
+      "リパーゼ",
+      "ペプシン",
+      "トリプシン"
+    ],
+    "answer": "アミラーゼ",
+    "keywords": null,
+    "explanation": "アミラーゼはだ液にふくまれ、デンプンを分解します。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "消化された養分の多くが吸収される器官はどれですか。",
+    "choices": [
+      "胃",
+      "小腸",
+      "大腸",
+      "食道"
+    ],
+    "answer": "小腸",
+    "keywords": null,
+    "explanation": "小腸の内側には柔毛があり、養分を吸収しやすくなっています。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "胆汁をつくる器官はどれですか。",
+    "choices": [
+      "肝臓",
+      "すい臓",
+      "胃",
+      "大腸"
+    ],
+    "answer": "肝臓",
+    "keywords": null,
+    "explanation": "胆汁は肝臓でつくられ、脂肪の消化を助けます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "胃液の中で主にタンパク質の消化に関わる場所はどこですか。",
+    "choices": [
+      "口",
+      "胃",
+      "小腸",
+      "大腸"
+    ],
+    "answer": "胃",
+    "keywords": null,
+    "explanation": "胃では胃液にふくまれるペプシンがタンパク質の消化を進めます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "小腸の内側にある柔毛のはたらきとして正しいものはどれですか。",
+    "choices": [
+      "表面積を広げて吸収しやすくする",
+      "消化液をためる",
+      "血液を固める",
+      "空気を取りこむ"
+    ],
+    "answer": "表面積を広げて吸収しやすくする",
+    "keywords": null,
+    "explanation": "柔毛があることで小腸の表面積が広くなり、養分を効率よく吸収できます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "デンプンが消化されて最終的に吸収される物質は何ですか。",
+    "choices": [
+      "ブドウ糖",
+      "アミノ酸",
+      "脂肪酸",
+      "グリセリン"
+    ],
+    "answer": "ブドウ糖",
+    "keywords": null,
+    "explanation": "デンプンは消化されてブドウ糖になり、小腸で吸収されます。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "消化とは、大きな分子を小さな分子に分解して吸収しやすくするはたらきである。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "消化によって、吸収できる大きさの物質に変えられます。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "胃液は、デンプンの消化を主に進める消化液である。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "胃液は主にタンパク質の消化に関わります。デンプンの消化は主にだ液やすい液で進みます。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "大腸では、主に水分が吸収される。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "大腸では水分が吸収され、残ったものが便になります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "脂肪を分解する消化酵素を【　　】という。",
+    "choices": [
+      "リパーゼ",
+      "アミラーゼ",
+      "ペプシン",
+      "アドレナリン"
+    ],
+    "answer": "リパーゼ",
+    "keywords": null,
+    "explanation": "リパーゼは脂肪の消化に関わる酵素です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "だ液は、口の中で【　　】の消化を助ける。",
+    "choices": [
+      "デンプン",
+      "タンパク質",
+      "脂肪",
+      "水"
+    ],
+    "answer": "デンプン",
+    "keywords": null,
+    "explanation": "だ液にふくまれるアミラーゼがデンプンの消化を始めます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "小腸の内側にあって養分を吸収しやすくするつくりを【　　】という。",
+    "choices": [
+      "柔毛",
+      "気孔",
+      "葉脈",
+      "核"
+    ],
+    "answer": "柔毛",
+    "keywords": null,
+    "explanation": "柔毛によって小腸の表面積が広くなり、養分を吸収しやすくなります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "口から大腸まで食べ物が通る管をまとめて【　　】という。",
+    "choices": [
+      "消化管",
+      "血管",
+      "神経",
+      "気管"
+    ],
+    "answer": "消化管",
+    "keywords": null,
+    "explanation": "口、食道、胃、小腸、大腸などをまとめて消化管といいます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "次の養分と、最終的に吸収される形を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "デンプン",
+        "right": "ブドウ糖"
+      },
+      {
+        "left": "タンパク質",
+        "right": "アミノ酸"
+      },
+      {
+        "left": "脂肪",
+        "right": "脂肪酸とモノグリセリド"
+      }
+    ],
+    "explanation": "養分は消化によって小さな分子に分解され、吸収されます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "次の器官と、その主なはたらきを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "口",
+        "right": "かみくだき、だ液をまぜる"
+      },
+      {
+        "left": "胃",
+        "right": "タンパク質の消化を進める"
+      },
+      {
+        "left": "小腸",
+        "right": "養分を吸収する"
+      },
+      {
+        "left": "大腸",
+        "right": "水分を吸収する"
+      }
+    ],
+    "explanation": "消化管の各器官には、それぞれ主なはたらきがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "食べ物が通る道すじとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "口",
+      "食道",
+      "胃",
+      "小腸",
+      "大腸"
+    ],
+    "explanation": "食べ物は口から入り、消化管を通って消化・吸収されます。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "デンプンが吸収されるまでの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "口でだ液がはたらく",
+      "小腸でさらに消化される",
+      "ブドウ糖として吸収される"
+    ],
+    "explanation": "デンプンはだ液やすい液などで消化され、最終的にブドウ糖として吸収されます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "次のうち、消化液や消化を助ける液として正しいものをすべて選びなさい。",
+    "choices": [
+      "だ液",
+      "胃液",
+      "胆汁",
+      "血液",
+      "汗"
+    ],
+    "correct_choices": [
+      "だ液",
+      "胃液",
+      "胆汁"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "だ液や胃液は消化酵素をふくみ、胆汁は脂肪の消化を助けます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "次のうち、消化されてから小腸で吸収される物質をすべて選びなさい。",
+    "choices": [
+      "ブドウ糖",
+      "アミノ酸",
+      "脂肪酸",
+      "デンプン",
+      "タンパク質"
+    ],
+    "correct_choices": [
+      "ブドウ糖",
+      "アミノ酸",
+      "脂肪酸"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "デンプンやタンパク質などは消化されて、小さな分子になってから吸収されます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "デンプンが吸収されるまでの変化を完成させなさい。",
+    "choices": null,
+    "answer": "デンプン → 麦芽糖 → ブドウ糖",
+    "keywords": null,
+    "word_tokens": [
+      "デンプン",
+      "→",
+      "麦芽糖",
+      "→",
+      "ブドウ糖"
+    ],
+    "distractor_tokens": [
+      "脂肪酸",
+      "アミノ酸"
+    ],
+    "explanation": "デンプンはまず麦芽糖になり、さらにブドウ糖まで分解されて吸収されます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "熱い物にさわったときにすばやく手を引っこめる反応を何といいますか。",
+    "choices": [
+      "反射",
+      "消化",
+      "受粉",
+      "発芽"
+    ],
+    "answer": "反射",
+    "keywords": null,
+    "explanation": "反射は意識とは関係なく、すばやく起こる反応です。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "刺激を受け取った感覚器官から中枢へ情報を伝える神経はどれですか。",
+    "choices": [
+      "感覚神経",
+      "運動神経",
+      "筋肉",
+      "骨"
+    ],
+    "answer": "感覚神経",
+    "keywords": null,
+    "explanation": "感覚神経は、感覚器官で受け取った情報を中枢へ伝えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "中枢から筋肉などへ命令を伝える神経はどれですか。",
+    "choices": [
+      "感覚神経",
+      "運動神経",
+      "脊髄",
+      "大脳"
+    ],
+    "answer": "運動神経",
+    "keywords": null,
+    "explanation": "運動神経は、中枢からの命令を筋肉などへ伝えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "反射の中枢として重要な部分はどれですか。",
+    "choices": [
+      "小腸",
+      "脊髄",
+      "肺",
+      "肝臓"
+    ],
+    "answer": "脊髄",
+    "keywords": null,
+    "explanation": "反射では、脊髄が中枢となってすばやく命令を出します。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "目が受け取る刺激は何ですか。",
+    "choices": [
+      "光",
+      "音",
+      "におい",
+      "味"
+    ],
+    "answer": "光",
+    "keywords": null,
+    "explanation": "目は光の刺激を受け取る感覚器官です。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "考えたり、判断したりするはたらきにもっとも関係が深い部分はどれですか。",
+    "choices": [
+      "脊髄",
+      "大脳",
+      "胃",
+      "小腸"
+    ],
+    "answer": "大脳",
+    "keywords": null,
+    "explanation": "大脳は、考える、判断する、覚えるなどのはたらきをしています。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "反射では、ふつう大脳で考えてから命令が出される。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "反射では大脳を通らず、主に脊髄で処理されるので反応が速いです。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "耳は音の刺激を受け取る感覚器官である。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "耳は音を感じ取る感覚器官です。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "神経は、体の各部分と中枢を結んでいる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "神経は感覚器官や筋肉と、中枢神経をつないでいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "目や耳のように刺激を受け取る器官を【　　】という。",
+    "choices": [
+      "感覚器官",
+      "消化管",
+      "血管",
+      "呼吸器官"
+    ],
+    "answer": "感覚器官",
+    "keywords": null,
+    "explanation": "感覚器官は、外からの刺激を受け取る器官です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "反射で命令を出す中枢として重要なのは【　　】である。",
+    "choices": [
+      "脊髄",
+      "胃",
+      "肝臓",
+      "小腸"
+    ],
+    "answer": "脊髄",
+    "keywords": null,
+    "explanation": "反射では脊髄が中心となってすばやく命令を出します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "熱い物にさわると手をすぐ引っこめるような反応を【　　】という。",
+    "choices": [
+      "反射",
+      "吸収",
+      "消化",
+      "受精"
+    ],
+    "answer": "反射",
+    "keywords": null,
+    "explanation": "反射は意識に関係なくすばやく起こる反応です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "脳と脊髄をまとめて【　　】という。",
+    "choices": [
+      "中枢神経",
+      "感覚器官",
+      "消化管",
+      "運動器官"
+    ],
+    "answer": "中枢神経",
+    "keywords": null,
+    "explanation": "脳と脊髄は中枢神経とよばれ、神経の中心になります。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "次の感覚器官と、受け取る刺激を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "目",
+        "right": "光"
+      },
+      {
+        "left": "耳",
+        "right": "音"
+      },
+      {
+        "left": "鼻",
+        "right": "におい"
+      },
+      {
+        "left": "舌",
+        "right": "味"
+      }
+    ],
+    "explanation": "感覚器官ごとに、受け取る刺激の種類が異なります。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "次の部分と、その主なはたらきを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "感覚神経",
+        "right": "刺激を中枢へ伝える"
+      },
+      {
+        "left": "運動神経",
+        "right": "命令を筋肉へ伝える"
+      },
+      {
+        "left": "大脳",
+        "right": "考えたり判断したりする"
+      },
+      {
+        "left": "脊髄",
+        "right": "反射の中枢になる"
+      }
+    ],
+    "explanation": "神経や中枢には、それぞれ異なるはたらきがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "反射が起こるときの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "刺激を受ける",
+      "感覚神経が中枢へ伝える",
+      "脊髄で命令が出る",
+      "運動神経が筋肉へ伝える",
+      "筋肉が動く"
+    ],
+    "explanation": "反射では、刺激がすばやく脊髄へ伝わり、筋肉に命令が出されます。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "意識して体を動かすときの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "感覚器官が刺激を受け取る",
+      "大脳で判断する",
+      "運動神経が命令を伝える",
+      "筋肉が動く"
+    ],
+    "explanation": "意識的な運動では、大脳で判断してから命令が出されます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "次のうち、感覚器官をすべて選びなさい。",
+    "choices": [
+      "目",
+      "耳",
+      "鼻",
+      "胃",
+      "小腸"
+    ],
+    "correct_choices": [
+      "目",
+      "耳",
+      "鼻"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "目、耳、鼻は刺激を受け取る感覚器官です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "次のうち、反射の特ちょうとして正しいものをすべて選びなさい。",
+    "choices": [
+      "意識しなくても起こる",
+      "すばやく起こる",
+      "脊髄が関わる",
+      "必ず大腸で処理される",
+      "消化液が必要である"
+    ],
+    "correct_choices": [
+      "意識しなくても起こる",
+      "すばやく起こる",
+      "脊髄が関わる"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "反射は意識に関係なく、脊髄が関わってすばやく起こります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "刺激が中枢へ伝わるまでの基本的な流れを完成させなさい。",
+    "choices": null,
+    "answer": "刺激 → 感覚器官 → 感覚神経 → 中枢",
+    "keywords": null,
+    "word_tokens": [
+      "刺激",
+      "→",
+      "感覚器官",
+      "→",
+      "感覚神経",
+      "→",
+      "中枢"
+    ],
+    "distractor_tokens": [
+      "消化管",
+      "道管"
+    ],
+    "explanation": "刺激は感覚器官で受け取られ、感覚神経を通って中枢へ伝わります。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "形質を決めるもとになるものは何ですか。",
+    "choices": [
+      "遺伝子",
+      "道管",
+      "葉脈",
+      "胆汁"
+    ],
+    "answer": "遺伝子",
+    "keywords": null,
+    "explanation": "遺伝子は形質を決めるもとで、染色体の中にあります。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "エンドウの実験で遺伝の法則を見いだした科学者は誰ですか。",
+    "choices": [
+      "フック",
+      "メンデル",
+      "ダーウィン",
+      "ニュートン"
+    ],
+    "answer": "メンデル",
+    "keywords": null,
+    "explanation": "メンデルはエンドウを使った実験で遺伝の規則性を見いだしました。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "純系の丸い種子 AA と純系のしわのある種子 aa をかけ合わせると、第一代の形質はどうなりますか。",
+    "choices": [
+      "すべて丸",
+      "すべてしわ",
+      "丸としわが1:1",
+      "丸としわが3:1"
+    ],
+    "answer": "すべて丸",
+    "keywords": null,
+    "explanation": "AA と aa をかけ合わせると、第一代はすべて Aa になり、丸い形質が現れます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "第一代どうしをかけ合わせた第二代で、丸い種子としわのある種子の現れ方の比はどうなりますか。",
+    "choices": [
+      "1:1",
+      "2:1",
+      "3:1",
+      "4:1"
+    ],
+    "answer": "3:1",
+    "keywords": null,
+    "explanation": "Aa どうしをかけ合わせると、丸い形質としわのある形質は 3:1 の比で現れます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "親から子へ受けつがれる形や性質を何といいますか。",
+    "choices": [
+      "形質",
+      "消化液",
+      "反射",
+      "組織"
+    ],
+    "answer": "形質",
+    "keywords": null,
+    "explanation": "親から子へ受けつがれる形や性質を形質といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "遺伝子がふくまれているつくりはどれですか。",
+    "choices": [
+      "染色体",
+      "気孔",
+      "柔毛",
+      "だ液"
+    ],
+    "answer": "染色体",
+    "keywords": null,
+    "explanation": "染色体は核の中にあり、その中に遺伝子がふくまれています。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "遺伝子は染色体の中にふくまれている。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "遺伝子は染色体の中にあり、形質を決めています。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "純系どうしをかけ合わせてできた第一代では、形質が 3:1 に分かれる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "3:1 に分かれるのは第一代どうしをかけ合わせてできる第二代です。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "丸い形質が優性なら、遺伝子の組み合わせが Aa でも丸い形質が現れる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "A が優性なら、Aa では丸い形質が現れます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "親から子へ形質が伝わることを【　　】という。",
+    "choices": [
+      "遺伝",
+      "消化",
+      "呼吸",
+      "蒸散"
+    ],
+    "answer": "遺伝",
+    "keywords": null,
+    "explanation": "親の形質が子に受けつがれることを遺伝といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "染色体の中にあり、形質を決めるもとになるものを【　　】という。",
+    "choices": [
+      "遺伝子",
+      "根毛",
+      "気孔",
+      "柔毛"
+    ],
+    "answer": "遺伝子",
+    "keywords": null,
+    "explanation": "遺伝子は染色体の中にあり、形質を決めています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "純系どうしをかけ合わせてできる子を【　　】という。",
+    "choices": [
+      "第一代",
+      "第二代",
+      "受精卵",
+      "組織"
+    ],
+    "answer": "第一代",
+    "keywords": null,
+    "explanation": "純系どうしの交配でできる子を第一代といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "第一代どうしをかけ合わせてできる子を【　　】という。",
+    "choices": [
+      "第二代",
+      "第一代",
+      "純系",
+      "個体"
+    ],
+    "answer": "第二代",
+    "keywords": null,
+    "explanation": "第一代どうしを交配してできる子が第二代です。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "次の用語と、その意味を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "形質",
+        "right": "親から子へ伝わる性質"
+      },
+      {
+        "left": "遺伝子",
+        "right": "形質を決めるもと"
+      },
+      {
+        "left": "染色体",
+        "right": "遺伝子をふくむつくり"
+      },
+      {
+        "left": "純系",
+        "right": "代々同じ形質が現れる系統"
+      }
+    ],
+    "explanation": "遺伝の学習では、用語の意味を正しく覚えることが大切です。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "次の遺伝子の組み合わせと、その説明を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "AA",
+        "right": "丸い形質の純系"
+      },
+      {
+        "left": "Aa",
+        "right": "丸い形質が現れる雑種"
+      },
+      {
+        "left": "aa",
+        "right": "しわの形質の純系"
+      }
+    ],
+    "explanation": "遺伝子の組み合わせによって、現れる形質が決まります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "メンデルの実験の基本的な流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "純系どうしをかけ合わせる",
+      "第一代を得る",
+      "第一代どうしをかけ合わせる",
+      "第二代の形質の比を調べる"
+    ],
+    "explanation": "メンデルは交配をくり返し、第二代の形質の比を調べました。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "親の形質が子に伝わるまでの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "親の生殖細胞に遺伝子が入る",
+      "受精が起こる",
+      "受精卵ができる",
+      "子に形質が現れる"
+    ],
+    "explanation": "親の遺伝子は生殖細胞を通じて子へ伝わります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "次のうち、丸い形質が現れる遺伝子の組み合わせをすべて選びなさい。",
+    "choices": [
+      "AA",
+      "Aa",
+      "aa",
+      "bb"
+    ],
+    "correct_choices": [
+      "AA",
+      "Aa"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "丸い形質が優性なら、AA と Aa で丸い形質が現れます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "次のうち、メンデルがエンドウの実験で調べた形質として正しいものをすべて選びなさい。",
+    "choices": [
+      "種子の形",
+      "花の色",
+      "茎の長さ",
+      "気孔の数",
+      "葉緑体の数"
+    ],
+    "correct_choices": [
+      "種子の形",
+      "花の色",
+      "茎の長さ"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "メンデルはエンドウで、種子の形や花の色、茎の長さなどの形質を調べました。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "純系の丸い種子と純系のしわのある種子をかけ合わせたときの結果を完成させなさい。",
+    "choices": null,
+    "answer": "AA × aa → すべてAa",
+    "keywords": null,
+    "word_tokens": [
+      "AA",
+      "×",
+      "aa",
+      "→",
+      "すべてAa"
+    ],
+    "distractor_tokens": [
+      "すべてaa",
+      "AAa"
+    ],
+    "explanation": "純系の丸 AA と純系のしわ aa をかけ合わせると、第一代はすべて Aa になります。"
+  }
+]

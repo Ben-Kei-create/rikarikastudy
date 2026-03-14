@@ -1,0 +1,363 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学式 O2 が表しているものはどれですか。",
+    "choices": [
+      "酸素原子1個",
+      "酸素原子2個",
+      "酸素分子1個",
+      "酸素分子2個"
+    ],
+    "answer": "酸素分子1個",
+    "keywords": null,
+    "explanation": "O2 は、酸素原子2個が結びついた酸素分子1個を表します。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "酸化銅と炭素の混合物を加熱したあとに残る赤色の物質は何ですか。",
+    "choices": [
+      "銅",
+      "銀",
+      "鉄",
+      "硫黄"
+    ],
+    "answer": "銅",
+    "keywords": null,
+    "explanation": "炭素が酸化銅から酸素をうばうと、赤色の銅ができます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "元素記号 Ag が表す元素は何ですか。",
+    "choices": [
+      "銀",
+      "アルミニウム",
+      "酸素",
+      "金"
+    ],
+    "answer": "銀",
+    "keywords": null,
+    "explanation": "Ag は銀を表す元素記号です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "塩化ナトリウムをつくっている原子の組み合わせとして正しいものはどれですか。",
+    "choices": [
+      "ナトリウムと塩素",
+      "ナトリウムと酸素",
+      "鉄と硫黄",
+      "銅と酸素"
+    ],
+    "answer": "ナトリウムと塩素",
+    "keywords": null,
+    "explanation": "塩化ナトリウム NaCl は、ナトリウム原子と塩素原子からできています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、加熱によって分解する物質はどれですか。",
+    "choices": [
+      "酸化銀",
+      "銅",
+      "鉄",
+      "酸素"
+    ],
+    "answer": "酸化銀",
+    "keywords": null,
+    "explanation": "酸化銀は加熱すると銀と酸素に分かれます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、分子をつくる単体はどれですか。",
+    "choices": [
+      "酸素",
+      "鉄",
+      "銅",
+      "塩化ナトリウム"
+    ],
+    "answer": "酸素",
+    "keywords": null,
+    "explanation": "酸素は酸素原子2個が結びついた分子をつくる単体です。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学反応式の前につく 2 などの数は、その物質の個数や分子の数の比を表している。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "化学反応式の係数は、反応に関わる粒子の数の比を表しています。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "酸化銅は、銅が酸素を失うことでできた物質である。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "酸化銅は、銅が酸素と結びつく酸化によってできます。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "混合物は、それぞれの物質の性質のちがいを利用して分けられることがある。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "混合物では、磁石につくかどうかやとけやすさなどの性質のちがいを利用して分けられます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "水を電気分解したとき、陽極に集まる気体は【　　】である。",
+    "choices": [
+      "酸素",
+      "水素",
+      "二酸化炭素",
+      "窒素"
+    ],
+    "answer": "酸素",
+    "keywords": null,
+    "explanation": "水の電気分解では、陰極に水素、陽極に酸素が発生します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "鉄と硫黄を加熱してできる黒色の物質を【　　】という。",
+    "choices": [
+      "硫化鉄",
+      "酸化鉄",
+      "塩化鉄",
+      "炭酸鉄"
+    ],
+    "answer": "硫化鉄",
+    "keywords": null,
+    "explanation": "鉄と硫黄を加熱すると、黒色の硫化鉄ができます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "いくつかの原子が結びついてでき、分子をつくる物質の性質を示す最小の粒を【　　】という。",
+    "choices": [
+      "分子",
+      "原子",
+      "元素",
+      "結晶"
+    ],
+    "answer": "分子",
+    "keywords": null,
+    "explanation": "分子は、分子をつくる物質の性質を示す最小の粒です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学反応式では、できた物質を矢印の【　　】側に書く。",
+    "choices": [
+      "右",
+      "左",
+      "上",
+      "下"
+    ],
+    "answer": "右",
+    "keywords": null,
+    "explanation": "化学反応式では、左側に反応する物質、右側にできる物質を書きます。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次の物質と、その見た目の特徴を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "硫黄",
+        "right": "黄色い粉末"
+      },
+      {
+        "left": "酸化銅",
+        "right": "黒色の物質"
+      },
+      {
+        "left": "銅",
+        "right": "赤色の金属"
+      },
+      {
+        "left": "銀",
+        "right": "白色の金属"
+      }
+    ],
+    "explanation": "物質は色や見た目にも特徴があり、実験結果の判断に役立ちます。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次の化学変化と、その結果として見られることを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "水の電気分解",
+        "right": "2種類の気体が発生する"
+      },
+      {
+        "left": "酸化銀の加熱",
+        "right": "銀色の金属と気体ができる"
+      },
+      {
+        "left": "炭酸水素ナトリウムの加熱",
+        "right": "二酸化炭素が発生する"
+      },
+      {
+        "left": "酸化銅の還元",
+        "right": "赤色の金属ができる"
+      }
+    ],
+    "explanation": "化学変化によって、発生する気体やできる物質の特徴が変わります。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "発生した気体が酸素かどうかを確かめる手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "発生した気体を集める",
+      "火のついた線香を気体に近づける",
+      "線香が激しく燃えるか確かめる"
+    ],
+    "explanation": "酸素にはものを燃えやすくするはたらきがあるため、線香は激しく燃えます。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "水の電気分解で発生する気体の体積比を調べる手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "装置に水を入れて電極をセットする",
+      "電流を流して2種類の気体を集める",
+      "集まった気体の体積を比べる"
+    ],
+    "explanation": "電気分解では2種類の気体を別々に集め、体積を比べて比の関係を調べます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、単体をすべて選びなさい。",
+    "choices": [
+      "酸素",
+      "銅",
+      "水",
+      "硫黄",
+      "二酸化炭素"
+    ],
+    "correct_choices": [
+      "酸素",
+      "銅",
+      "硫黄"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "1種類の原子だけでできている物質が単体です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、酸素をふくむ化合物をすべて選びなさい。",
+    "choices": [
+      "水",
+      "酸化銅",
+      "二酸化炭素",
+      "硫化鉄",
+      "銀"
+    ],
+    "correct_choices": [
+      "水",
+      "酸化銅",
+      "二酸化炭素"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "水、酸化銅、二酸化炭素は、どれも酸素原子をふくむ化合物です。"
+  },
+  {
+    "type": "word_bank",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "酸化銅が炭素によって還元される反応を化学反応式で完成させなさい。",
+    "choices": null,
+    "answer": "2CuO + C → 2Cu + CO2",
+    "keywords": null,
+    "word_tokens": [
+      "2CuO",
+      "+",
+      "C",
+      "→",
+      "2Cu",
+      "+",
+      "CO2"
+    ],
+    "distractor_tokens": [
+      "CuO2",
+      "2C",
+      "O2"
+    ],
+    "explanation": "炭素が酸化銅から酸素をうばい、銅と二酸化炭素ができます。反応前後で原子の数が等しくなるようにすると 2CuO + C → 2Cu + CO2 になります。"
+  }
+]

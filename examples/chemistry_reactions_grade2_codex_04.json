@@ -1,0 +1,361 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学式 CO2 にふくまれる原子の個数の合計はいくつですか。",
+    "choices": [
+      "2個",
+      "3個",
+      "4個",
+      "5個"
+    ],
+    "answer": "3個",
+    "keywords": null,
+    "explanation": "CO2 は炭素原子1個と酸素原子2個からできているので、合計3個の原子がふくまれています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学式 NaCl が表す物質は何ですか。",
+    "choices": [
+      "塩化ナトリウム",
+      "炭酸ナトリウム",
+      "塩化銅",
+      "酸化ナトリウム"
+    ],
+    "answer": "塩化ナトリウム",
+    "keywords": null,
+    "explanation": "NaCl はナトリウム原子と塩素原子からできた塩化ナトリウムを表します。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "酸化銅と炭素の混合物を加熱したとき、石灰水を白くにごらせる気体は何ですか。",
+    "choices": [
+      "酸素",
+      "水素",
+      "二酸化炭素",
+      "窒素"
+    ],
+    "answer": "二酸化炭素",
+    "keywords": null,
+    "explanation": "炭素が酸化銅から奪った酸素と結びつき、二酸化炭素ができます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "ふたをした容器の中で化学変化を起こしたとき、反応前後で同じといえるものはどれですか。",
+    "choices": [
+      "容器をふくめた全体の質量",
+      "できた物質の色",
+      "物質のにおい",
+      "気体の体積"
+    ],
+    "answer": "容器をふくめた全体の質量",
+    "keywords": null,
+    "explanation": "気体が外へ逃げなければ、化学変化の前後で全体の質量は変わりません。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "元素記号 Cu が表す元素は何ですか。",
+    "choices": [
+      "銅",
+      "炭素",
+      "カルシウム",
+      "塩素"
+    ],
+    "answer": "銅",
+    "keywords": null,
+    "explanation": "Cu は銅を表す元素記号です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、化合物はどれですか。",
+    "choices": [
+      "酸素",
+      "鉄",
+      "水",
+      "硫黄"
+    ],
+    "answer": "水",
+    "keywords": null,
+    "explanation": "水は水素原子と酸素原子からできた化合物です。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学反応式をつくるとき、右下の数字を書きかえて原子の数を合わせてもよい。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "右下の数字はその物質の化学式そのものなので変えず、化学式の前の係数で原子の数をそろえます。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "気体が外に逃げる開いた容器で反応を行うと、はかった質量が小さくなることがある。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "発生した気体が外へ逃げると、はかった質量が減ったように見えることがあります。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "NaCl はナトリウム原子と塩素原子からできている。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "Na はナトリウム、Cl は塩素を表し、NaCl はその2種類の原子からできています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学式 CO2 の 2 は、酸素原子が【　　】個あることを示す。",
+    "choices": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "answer": "2",
+    "keywords": null,
+    "explanation": "化学式の右下の数字は、その元素の原子の数を表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "銅が酸素と結びついて酸化銅になる変化を【　　】という。",
+    "choices": [
+      "酸化",
+      "還元",
+      "分解",
+      "蒸発"
+    ],
+    "answer": "酸化",
+    "keywords": null,
+    "explanation": "物質が酸素と結びつく化学変化を酸化といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "1個の水分子にふくまれる原子の数の合計は【　　】個である。",
+    "choices": [
+      "2",
+      "3",
+      "4",
+      "5"
+    ],
+    "answer": "3",
+    "keywords": null,
+    "explanation": "水分子 H2O は水素原子2個と酸素原子1個からできているので、合計3個です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "集めた酸素に火のついた線香を入れると、火が【　　】。",
+    "choices": [
+      "激しく燃える",
+      "消える",
+      "青くなる",
+      "弱くなる"
+    ],
+    "answer": "激しく燃える",
+    "keywords": null,
+    "explanation": "酸素にはものを燃えやすくするはたらきがあるため、線香は激しく燃えます。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次の化学式と、その表す物質を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "H2O",
+        "right": "水"
+      },
+      {
+        "left": "CuO",
+        "right": "酸化銅"
+      },
+      {
+        "left": "FeS",
+        "right": "硫化鉄"
+      },
+      {
+        "left": "NaHCO3",
+        "right": "炭酸水素ナトリウム"
+      }
+    ],
+    "explanation": "化学式は、物質をつくる原子の種類と数の比を表しています。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次の物質と、その実験で見られる変化を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "炭酸水素ナトリウム",
+        "right": "加熱すると白い固体と気体ができる"
+      },
+      {
+        "left": "酸化銀",
+        "right": "加熱すると銀色の金属ができる"
+      },
+      {
+        "left": "銅",
+        "right": "加熱すると表面が黒くなる"
+      },
+      {
+        "left": "水",
+        "right": "電気分解すると2種類の気体が発生する"
+      }
+    ],
+    "explanation": "物質ごとに、加熱や電気分解で見られる変化は異なります。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "発生した気体が二酸化炭素かどうかを確かめる手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "発生した気体を集める",
+      "気体を石灰水に通す",
+      "石灰水が白くにごるか確かめる"
+    ],
+    "explanation": "二酸化炭素なら、石灰水は白くにごります。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "密閉した容器で質量保存の法則を確かめるときの手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "反応前の容器全体の質量をはかる",
+      "容器を閉じたまま反応を起こす",
+      "反応後の容器全体の質量をはかる"
+    ],
+    "explanation": "気体を逃がさないようにして全体の質量を比べると、質量保存の法則を確かめられます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、混合物をすべて選びなさい。",
+    "choices": [
+      "空気",
+      "食塩水",
+      "水",
+      "銅",
+      "鉄と硫黄の混合物"
+    ],
+    "correct_choices": [
+      "空気",
+      "食塩水",
+      "鉄と硫黄の混合物"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "混合物は、いくつかの物質が混ざってできたものです。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、化学変化が起こったものをすべて選びなさい。",
+    "choices": [
+      "銅が黒くなった",
+      "酸化銀から銀ができた",
+      "水がこおった",
+      "食塩が水にとけた",
+      "鉄と硫黄から硫化鉄ができた"
+    ],
+    "correct_choices": [
+      "銅が黒くなった",
+      "酸化銀から銀ができた",
+      "鉄と硫黄から硫化鉄ができた"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "別の物質ができていれば化学変化です。こおることやとけることは状態変化や溶解です。"
+  },
+  {
+    "type": "word_bank",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "銅が酸素と結びつく反応を化学反応式で完成させなさい。",
+    "choices": null,
+    "answer": "2Cu + O2 → 2CuO",
+    "keywords": null,
+    "word_tokens": [
+      "2Cu",
+      "+",
+      "O2",
+      "→",
+      "2CuO"
+    ],
+    "distractor_tokens": [
+      "Cu2",
+      "2O2",
+      "CuO2"
+    ],
+    "explanation": "反応の前後で銅原子と酸素原子の数が等しくなるように係数をそろえると、2Cu + O2 → 2CuO になります。"
+  }
+]

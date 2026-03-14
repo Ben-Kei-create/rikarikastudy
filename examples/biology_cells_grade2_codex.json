@@ -1,0 +1,279 @@
+[
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "細胞の中で、遺伝子をふくむつくりはどれですか。",
+    "choices": ["核", "葉緑体", "液胞", "細胞壁"],
+    "answer": "核",
+    "keywords": null,
+    "explanation": "核の中には染色体があり、遺伝子がふくまれています。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "植物の細胞にあり、動物の細胞にはないかたいつくりはどれですか。",
+    "choices": ["細胞膜", "細胞壁", "核", "ミトコンドリア"],
+    "answer": "細胞壁",
+    "keywords": null,
+    "explanation": "細胞壁は植物の細胞の外側にあり、細胞の形を保つのに役立ちます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "顕微鏡のレンズを取り付けるとき、先につけるのはどれですか。",
+    "choices": ["接眼レンズ", "対物レンズ", "プレパラート", "反射鏡"],
+    "answer": "接眼レンズ",
+    "keywords": null,
+    "explanation": "接眼レンズを先に取り付けると、鏡筒にほこりが入りにくくなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次のうち、単細胞生物はどれですか。",
+    "choices": ["ヒト", "ゾウリムシ", "イヌ", "サクラ"],
+    "answer": "ゾウリムシ",
+    "keywords": null,
+    "explanation": "ゾウリムシは1個の細胞だけで生活する単細胞生物です。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "細胞呼吸によってエネルギーを取り出すつくりはどれですか。",
+    "choices": ["核", "液胞", "ミトコンドリア", "細胞壁"],
+    "answer": "ミトコンドリア",
+    "keywords": null,
+    "explanation": "ミトコンドリアは呼吸を行い、生物が活動するためのエネルギーを取り出します。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "1個の受精卵から体が大きくなっていく主な理由は何ですか。",
+    "choices": ["細胞分裂", "受粉", "消化", "蒸散"],
+    "answer": "細胞分裂",
+    "keywords": null,
+    "explanation": "受精卵が細胞分裂をくり返すことで、個体の体がつくられていきます。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "植物の細胞には、葉緑体が見られることがある。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "葉緑体は植物の細胞にあり、光合成を行います。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "動物の細胞には、植物の細胞と同じように細胞壁がある。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "動物の細胞に細胞壁はありません。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "多細胞生物では、細胞が集まって組織や器官をつくる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "同じはたらきをする細胞が集まって組織になり、さらに器官をつくります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "生物の体をつくる基本の単位を【　　】という。",
+    "choices": ["細胞", "器官", "組織", "核"],
+    "answer": "細胞",
+    "keywords": null,
+    "explanation": "細胞は、生物の体をつくる基本の単位です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "顕微鏡でピントを大きく合わせるときに使うねじを【　　】という。",
+    "choices": ["粗動ねじ", "微動ねじ", "反射鏡", "しぼり"],
+    "answer": "粗動ねじ",
+    "keywords": null,
+    "explanation": "粗動ねじは大まかに、微動ねじは細かくピントを合わせるときに使います。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "植物の細胞で光合成を行うつくりを【　　】という。",
+    "choices": ["葉緑体", "核", "液胞", "細胞膜"],
+    "answer": "葉緑体",
+    "keywords": null,
+    "explanation": "葉緑体には葉緑素があり、光合成を行います。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "同じはたらきをする細胞が集まったものを【　　】という。",
+    "choices": ["組織", "器官", "個体", "核"],
+    "answer": "組織",
+    "keywords": null,
+    "explanation": "細胞が集まって組織になり、組織が集まって器官ができます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次の細胞のつくりと、そのはたらきを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "核", "right": "遺伝子をふくむ" },
+      { "left": "ミトコンドリア", "right": "呼吸でエネルギーを取り出す" },
+      { "left": "葉緑体", "right": "光合成を行う" },
+      { "left": "液胞", "right": "細胞液をたくわえる" }
+    ],
+    "explanation": "細胞の中のつくりには、それぞれ決まったはたらきがあります。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次の観察材料と、観察しやすいものを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "タマネギの表皮", "right": "細胞の形" },
+      { "left": "オオカナダモ", "right": "葉緑体" },
+      { "left": "ヒトのほおの内側", "right": "動物の細胞" }
+    ],
+    "explanation": "観察材料によって、見やすい細胞のつくりが異なります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "顕微鏡で観察するときの基本的な流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "視野を明るくする",
+      "プレパラートをステージにのせる",
+      "ピントを合わせる"
+    ],
+    "explanation": "まず視野を明るくし、プレパラートを置いてからピントを合わせます。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "多細胞生物の体の成り立ちとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "細胞",
+      "組織",
+      "器官",
+      "個体"
+    ],
+    "explanation": "多細胞生物では、細胞が集まって組織になり、器官をつくって個体になります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次のうち、植物の細胞に見られるつくりをすべて選びなさい。",
+    "choices": [
+      "細胞壁",
+      "葉緑体",
+      "液胞",
+      "中枢神経",
+      "感覚器官"
+    ],
+    "correct_choices": [
+      "細胞壁",
+      "葉緑体",
+      "液胞"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "植物の細胞には、細胞壁、葉緑体、液胞が見られます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "次のうち、単細胞生物をすべて選びなさい。",
+    "choices": [
+      "ゾウリムシ",
+      "ミドリムシ",
+      "アメーバ",
+      "ヒト",
+      "アサガオ"
+    ],
+    "correct_choices": [
+      "ゾウリムシ",
+      "ミドリムシ",
+      "アメーバ"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "ゾウリムシ、ミドリムシ、アメーバは1個の細胞で生活する単細胞生物です。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "細胞と生物",
+    "grade": "中2",
+    "question": "多細胞生物の体の成り立ちを完成させなさい。",
+    "choices": null,
+    "answer": "細胞 → 組織 → 器官 → 個体",
+    "keywords": null,
+    "word_tokens": [
+      "細胞",
+      "→",
+      "組織",
+      "→",
+      "器官",
+      "→",
+      "個体"
+    ],
+    "distractor_tokens": [
+      "葉緑体",
+      "核"
+    ],
+    "explanation": "多細胞生物の体は、細胞、組織、器官、個体の順で成り立っています。"
+  }
+]
