@@ -277,22 +277,10 @@ export default function HomePage({
     }),
     [],
   )
-  const timeFormatter = useMemo(
-    () => new Intl.DateTimeFormat('ja-JP', {
-      hour: 'numeric',
-      minute: '2-digit',
-    }),
-    [],
-  )
   const weekRangeLabel = useMemo(() => {
     const endDate = new Date(currentWeekRange.endDate.getTime() - 1)
     return `${newsDateFormatter.format(currentWeekRange.startDate)} 〜 ${newsDateFormatter.format(endDate)}`
   }, [currentWeekRange.endDate, currentWeekRange.startDate, newsDateFormatter])
-  const dailyCompletionLabel = useMemo(() => {
-    if (!dailyStatus.completedAt) return '今日はクリアずみ'
-    return `${timeFormatter.format(new Date(dailyStatus.completedAt))} にクリア`
-  }, [dailyStatus.completedAt, timeFormatter])
-
   return (
     <div className="page-shell page-shell-dashboard">
       {pendingLoginCardReward && (
@@ -541,45 +529,43 @@ export default function HomePage({
         )}
       </div>
 
-      <button
-        onClick={onDailyChallenge}
-        disabled={dailyCompleted}
-        className={`card mb-4 w-full text-left transition-all sm:mb-5 ${dailyCompleted ? '' : 'daily-challenge-cta'}`}
-        style={{
-          padding: '18px 20px',
-          borderColor: dailyCompleted ? 'rgba(34, 197, 94, 0.24)' : 'rgba(245, 158, 11, 0.34)',
-          background: dailyCompleted
-            ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(15, 23, 42, 0.82))'
-            : 'linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.08), rgba(15, 23, 42, 0.84))',
-          opacity: dailyCompleted ? 0.84 : 1,
-        }}
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <div className={`text-[11px] font-semibold tracking-[0.18em] uppercase ${dailyCompleted ? 'text-emerald-200' : 'text-amber-200'}`}>
-              本日の5問
+      {!dailyCompleted && (
+        <button
+          onClick={onDailyChallenge}
+          className="card mb-4 w-full text-left transition-all sm:mb-5 daily-challenge-cta"
+          style={{
+            padding: '18px 20px',
+            borderColor: 'rgba(245, 158, 11, 0.34)',
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.08), rgba(15, 23, 42, 0.84))',
+          }}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-amber-200">
+                本日の5問
+              </div>
+              <div className="mt-2 flex items-center gap-3 flex-wrap">
+                <div className="font-display text-2xl text-white sm:text-[1.8rem]">今日のチャレンジ</div>
+                <span
+                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                  style={{
+                    background: 'rgba(251, 191, 36, 0.14)',
+                    color: '#fde68a',
+                  }}
+                >
+                  5問 / XP×2
+                </span>
+              </div>
+              <div className="mt-2 text-sm text-slate-300">
+                苦手 → まだ解いていない問題 → ランダム の順で出題
+              </div>
             </div>
-            <div className="mt-2 flex items-center gap-3 flex-wrap">
-              <div className="font-display text-2xl text-white sm:text-[1.8rem]">今日のチャレンジ</div>
-              <span
-                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                style={{
-                  background: dailyCompleted ? 'rgba(34, 197, 94, 0.14)' : 'rgba(251, 191, 36, 0.14)',
-                  color: dailyCompleted ? '#86efac' : '#fde68a',
-                }}
-              >
-                5問 / XP×2
-              </span>
-            </div>
-            <div className="mt-2 text-sm text-slate-300">
-              {dailyCompleted ? dailyCompletionLabel : '苦手 → まだ解いていない問題 → ランダム の順で出題'}
+            <div className="text-3xl text-amber-200 sm:text-4xl">
+              ☀️
             </div>
           </div>
-          <div className={`text-3xl sm:text-4xl ${dailyCompleted ? 'text-emerald-300' : 'text-amber-200'}`}>
-            {dailyCompleted ? '✅' : '☀️'}
-          </div>
-        </div>
-      </button>
+        </button>
+      )}
 
       <button
         onClick={onTimeAttack}
