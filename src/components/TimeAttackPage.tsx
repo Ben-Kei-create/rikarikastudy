@@ -1,6 +1,6 @@
 'use client'
 
-import { buildTextBlankPrompt, evaluateTextAnswer, TextAnswerResult } from '@/lib/answerUtils'
+import { TextAnswerResult } from '@/lib/answerUtils'
 import { fetchStudents, useAuth } from '@/lib/auth'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import {
@@ -16,8 +16,9 @@ import {
 } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
+import { evaluateQuestionAnswer, getQuestionBlankPrompt, QuestionSubmission } from '@/lib/questionEval'
 import { pickChallengeTestQuestions, pickTimeAttackQuestions, shuffleArray } from '@/lib/questionPicker'
-import { getQuestionTypeShortLabel, isChallengeSupportedQuestionType, isSingleChoiceQuestionType, normalizeQuestionRecord, QuestionShape } from '@/lib/questionTypes'
+import { getQuestionCorrectAnswerText, getQuestionTypeShortLabel, isChallengeSupportedQuestionType, normalizeQuestionRecord, QuestionShape } from '@/lib/questionTypes'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
@@ -30,9 +31,16 @@ import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import BadgeEarnedToastStack from '@/components/BadgeEarnedToastStack'
+import Choice4Question from '@/components/quiz/Choice4Question'
+import FillChoiceQuestion from '@/components/quiz/FillChoiceQuestion'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
+import MatchQuestion from '@/components/quiz/MatchQuestion'
+import MultiSelectQuestion from '@/components/quiz/MultiSelectQuestion'
 import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
+import SortQuestion from '@/components/quiz/SortQuestion'
 import SuccessBurst from '@/components/SuccessBurst'
+import TrueFalseQuestion from '@/components/quiz/TrueFalseQuestion'
+import WordBankQuestion from '@/components/quiz/WordBankQuestion'
 
 type ChallengeMode = 'time_attack' | 'test_mode' | 'streak_mode'
 type LeaderboardMode = Extract<ChallengeMode, 'test_mode' | 'streak_mode'>
@@ -261,7 +269,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
   const [testSummary, setTestSummary] = useState<SessionModeSummary>({ personalBest: 0, leaderboard: [] })
   const [streakSummary, setStreakSummary] = useState<SessionModeSummary>({ personalBest: 0, leaderboard: [] })
   const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
-  const [answerLogs, setAnswerLogs] = useState<Array<{ qId: string; correct: boolean; answer: string; result?: TextAnswerResult }>>([])
+  const [answerLogs, setAnswerLogs] = useState<Array<{ qId: string; correct: boolean; answer: string; answerLogValue?: string; result?: TextAnswerResult }>>([])
   const [totalXp, setTotalXp] = useState(0)
   const [newRecord, setNewRecord] = useState(false)
   const startedAtRef = useRef<number | null>(null)
@@ -277,9 +285,10 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     return questions[currentIndex] ?? null
   }, [currentIndex, questions])
   const currentQuestionImageDisplay = currentQuestion ? getQuestionImageDisplaySize(currentQuestion) : null
-  const textBlankPrompt = currentQuestion?.type === 'text'
-    ? buildTextBlankPrompt(currentQuestion.answer, currentQuestion.accept_answers, currentQuestion.keywords)
-    : null
+  const textBlankPrompt = currentQuestion ? getQuestionBlankPrompt(currentQuestion) : null
+  const currentCorrectAnswerText = currentQuestion
+    ? textBlankPrompt?.target ?? getQuestionCorrectAnswerText(currentQuestion)
+    : ''
   const testModeAnswered = selectedMode === 'test_mode' && answerResult !== null
   const testModeProgress = questions.length > 0 ? ((currentIndex + (testModeAnswered ? 1 : 0)) / questions.length) * 100 : 0
   const testModeQuestionReady = allQuestions.length >= TEST_MODE_QUESTION_COUNT
@@ -375,18 +384,22 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     }
   }, [feedback, phase, selectedMode])
 
+  const resetQuestionUiState = () => {
+    setSelectedChoice(null)
+    setTextInput('')
+    setAnswerResult(null)
+    setCelebration(null)
+  }
+
   const resetRunState = () => {
     setCurrentIndex(0)
     setScore(0)
     setAnsweredCount(0)
     setRewardSummary(null)
     setFeedback(null)
-    setSelectedChoice(null)
-    setTextInput('')
-    setAnswerResult(null)
+    resetQuestionUiState()
     setComboStreak(0)
     setBestCombo(0)
-    setCelebration(null)
     setAnswerLogs([])
     setNewRecord(false)
   }
@@ -492,10 +505,10 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     setTotalXp(reward.totalXp)
   }
 
-  const handleSpeedChoice = (choice: string) => {
+  const applyTimedEvaluation = (evaluated: ReturnType<typeof evaluateQuestionAnswer>) => {
     if (phase !== 'playing' || !currentQuestion) return
 
-    const correct = choice === currentQuestion.answer
+    const correct = evaluated.result === 'exact'
     if (correct) {
       const nextCombo = comboStreak + 1
       setComboStreak(nextCombo)
@@ -506,9 +519,16 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
       setCelebration(null)
     }
     setFeedback(correct ? 'correct' : 'wrong')
+    setAnswerResult(evaluated.result)
     setScore(current => current + (correct ? 1 : 0))
     setAnsweredCount(current => current + 1)
-    setAnswerLogs(current => [...current, { qId: currentQuestion.id, correct, answer: choice }])
+    setAnswerLogs(current => [...current, {
+      qId: currentQuestion.id,
+      correct,
+      answer: evaluated.studentAnswerText,
+      answerLogValue: evaluated.answerLogValue,
+      result: evaluated.result,
+    }])
 
     if (correct && selectedMode === 'time_attack') {
       deadlineRef.current += 500
@@ -525,14 +545,33 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
       if (correct && selectedMode === 'streak_mode') {
         resetStreakTimer()
       }
+      resetQuestionUiState()
       advanceQuestion()
     }, correct ? 140 : 220)
   }
 
-  const handleTestChoice = (choice: string) => {
+  const handleSpeedChoice = (choice: string) => {
+    if (!currentQuestion) return
+    setSelectedChoice(choice)
+    applyTimedEvaluation(evaluateQuestionAnswer(currentQuestion, { kind: 'single', value: choice }))
+  }
+
+  const handleTimedStructuredSubmit = (submission: QuestionSubmission) => {
+    if (!currentQuestion) return
+    applyTimedEvaluation(evaluateQuestionAnswer(currentQuestion, submission))
+  }
+
+  const handleTimedTextSubmit = () => {
+    if (!currentQuestion || currentQuestion.type !== 'text') return
+    const answer = textInput.trim()
+    if (!answer) return
+    applyTimedEvaluation(evaluateQuestionAnswer(currentQuestion, { kind: 'text', value: answer }))
+  }
+
+  const applyTestEvaluation = (evaluated: ReturnType<typeof evaluateQuestionAnswer>) => {
     if (phase !== 'playing' || selectedMode !== 'test_mode' || !currentQuestion || testModeAnswered) return
-    const result: TextAnswerResult = choice === currentQuestion.answer ? 'exact' : 'incorrect'
-    if (result === 'exact') {
+
+    if (evaluated.result === 'exact') {
       const nextCombo = comboStreak + 1
       const isPerfectRun = currentIndex + 1 >= questions.length && score + 1 === questions.length
       setComboStreak(nextCombo)
@@ -542,42 +581,40 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
       setComboStreak(0)
       setCelebration(null)
     }
-    setSelectedChoice(choice)
-    setAnswerResult(result)
+    setAnswerResult(evaluated.result)
     setAnsweredCount(current => current + 1)
-    if (result === 'exact') setScore(current => current + 1)
-    setAnswerLogs(current => [...current, { qId: currentQuestion.id, correct: result === 'exact', answer: choice, result }])
+    if (evaluated.result === 'exact') setScore(current => current + 1)
+    setAnswerLogs(current => [...current, {
+      qId: currentQuestion.id,
+      correct: evaluated.result === 'exact',
+      answer: evaluated.studentAnswerText,
+      answerLogValue: evaluated.answerLogValue,
+      result: evaluated.result,
+    }])
+  }
+
+  const handleTestChoice = (choice: string) => {
+    if (!currentQuestion) return
+    setSelectedChoice(choice)
+    applyTestEvaluation(evaluateQuestionAnswer(currentQuestion, { kind: 'single', value: choice }))
+  }
+
+  const handleTestStructuredSubmit = (submission: QuestionSubmission) => {
+    if (!currentQuestion) return
+    applyTestEvaluation(evaluateQuestionAnswer(currentQuestion, submission))
   }
 
   const handleTestTextSubmit = () => {
-    if (phase !== 'playing' || selectedMode !== 'test_mode' || !currentQuestion || testModeAnswered) return
+    if (!currentQuestion || currentQuestion.type !== 'text') return
     const answer = textInput.trim()
     if (!answer) return
-    const result = evaluateTextAnswer(answer, currentQuestion.answer, currentQuestion.accept_answers, currentQuestion.keywords)
-    if (result === 'exact') {
-      const nextCombo = comboStreak + 1
-      const isPerfectRun = currentIndex + 1 >= questions.length && score + 1 === questions.length
-      setComboStreak(nextCombo)
-      setBestCombo(currentBest => Math.max(currentBest, nextCombo))
-      setCelebration(getSuccessCelebration(nextCombo, { perfect: isPerfectRun }))
-    } else {
-      setComboStreak(0)
-      setCelebration(null)
-    }
-    setAnswerResult(result)
-    setAnsweredCount(current => current + 1)
-    if (result === 'exact') setScore(current => current + 1)
-    setAnswerLogs(current => [...current, { qId: currentQuestion.id, correct: result === 'exact', answer, result }])
+    applyTestEvaluation(evaluateQuestionAnswer(currentQuestion, { kind: 'text', value: answer }))
   }
 
   const handleTestDontKnow = () => {
-    if (phase !== 'playing' || selectedMode !== 'test_mode' || !currentQuestion || testModeAnswered) return
-    setComboStreak(0)
-    setCelebration(null)
+    if (!currentQuestion || currentQuestion.type !== 'text') return
     setTextInput('わからない')
-    setAnswerResult('incorrect')
-    setAnsweredCount(current => current + 1)
-    setAnswerLogs(current => [...current, { qId: currentQuestion.id, correct: false, answer: 'わからない', result: 'incorrect' }])
+    applyTestEvaluation(evaluateQuestionAnswer(currentQuestion, { kind: 'text', value: 'わからない' }))
   }
 
   const handleNextTestQuestion = async () => {
@@ -588,10 +625,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
     }
 
     advanceQuestion()
-    setSelectedChoice(null)
-    setTextInput('')
-    setAnswerResult(null)
-    setCelebration(null)
+    resetQuestionUiState()
   }
 
   const renderRewardStrip = () => {
@@ -786,7 +820,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   <div className="subcard p-4">
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題</div>
                     <div className="mt-2 font-display text-3xl text-sky-300">{choiceQuestions.length}</div>
-                    <div className="mt-1 text-xs text-slate-500">4択</div>
+                    <div className="mt-1 text-xs text-slate-500">タップ問題</div>
                   </div>
                 </div>
               )}
@@ -828,7 +862,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   <div className="subcard p-4">
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題</div>
                     <div className="mt-2 font-display text-3xl text-sky-300">{choiceQuestions.length}</div>
-                    <div className="mt-1 text-xs text-slate-500">4択</div>
+                    <div className="mt-1 text-xs text-slate-500">タップ問題</div>
                   </div>
                 </div>
               )}
@@ -874,7 +908,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ルール</div>
                   <div className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
                     <div>正解すると 0.5 秒延長されます。</div>
-                    <div>2択問題だけをテンポよく解き続けます。</div>
+                    <div>○×・4択・穴埋め・マッチなど、記述なしの問題がテンポよく出ます。</div>
                     <div>自己ベストと他ユーザのトップ記録を見比べられます。</div>
                   </div>
                 </>
@@ -1113,86 +1147,151 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               </div>
             )}
 
-            {isSingleChoiceQuestionType(currentQuestion.type) ? (
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                {currentQuestion.choices?.map((choice, index) => {
-                  const isCorrect = choice === currentQuestion.answer
-                  const isSelected = selectedChoice === choice
-                  const showState = testModeAnswered
-                  return (
-                    <button
-                      key={`${currentQuestion.id}-${choice}`}
-                      onClick={() => handleTestChoice(choice)}
+            {(() => {
+              if (currentQuestion.type === 'choice' || currentQuestion.type === 'choice4') {
+                return (
+                  <div className="mt-5">
+                    <Choice4Question
+                      choices={currentQuestion.choices ?? []}
+                      selectedChoice={selectedChoice}
+                      answer={currentQuestion.answer}
+                      answerResult={answerResult}
                       disabled={testModeAnswered}
-                      className="min-h-[90px] rounded-xl border p-4 text-left font-bold text-white transition-all disabled:opacity-100"
-                      style={{
-                        borderColor: showState
-                          ? isCorrect
-                            ? 'rgba(34, 197, 94, 0.48)'
-                            : isSelected
-                              ? 'rgba(239, 68, 68, 0.48)'
-                              : 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(255, 255, 255, 0.08)',
-                        background: showState
-                          ? isCorrect
-                            ? 'rgba(34, 197, 94, 0.14)'
-                            : isSelected
-                              ? 'rgba(239, 68, 68, 0.14)'
-                              : 'rgba(15, 23, 42, 0.72)'
-                          : 'rgba(15, 23, 42, 0.72)',
-                      }}
-                    >
-                      <span className="mr-3 opacity-50">{'ABCD'[index] ?? `${index + 1}` }.</span>
-                      {choice}
-                    </button>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="mt-5">
-                <div
-                  className="mb-3 rounded-[24px] border px-4 py-3"
-                  style={{
-                    borderColor: 'rgba(245, 158, 11, 0.24)',
-                    background: 'rgba(15, 23, 42, 0.68)',
-                  }}
-                >
+                      onSelect={handleTestChoice}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'true_false') {
+                return (
+                  <div className="mt-5">
+                    <TrueFalseQuestion
+                      choices={currentQuestion.choices ?? ['○', '×']}
+                      selectedChoice={selectedChoice}
+                      answer={currentQuestion.answer}
+                      answerResult={answerResult}
+                      disabled={testModeAnswered}
+                      onSelect={handleTestChoice}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'fill_choice') {
+                return (
+                  <div className="mt-5">
+                    <FillChoiceQuestion
+                      choices={currentQuestion.choices ?? []}
+                      selectedChoice={selectedChoice}
+                      answer={currentQuestion.answer}
+                      answerResult={answerResult}
+                      disabled={testModeAnswered}
+                      onSelect={handleTestChoice}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'match') {
+                return (
+                  <div className="mt-5">
+                    <MatchQuestion
+                      questionId={currentQuestion.id}
+                      pairs={currentQuestion.match_pairs ?? []}
+                      disabled={testModeAnswered}
+                      onSubmit={pairs => handleTestStructuredSubmit({ kind: 'match', pairs })}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'sort') {
+                return (
+                  <div className="mt-5">
+                    <SortQuestion
+                      questionId={currentQuestion.id}
+                      items={currentQuestion.sort_items ?? []}
+                      disabled={testModeAnswered}
+                      onSubmit={items => handleTestStructuredSubmit({ kind: 'sort', items })}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'multi_select') {
+                return (
+                  <div className="mt-5">
+                    <MultiSelectQuestion
+                      questionId={currentQuestion.id}
+                      choices={currentQuestion.choices ?? []}
+                      disabled={testModeAnswered}
+                      onSubmit={selected => handleTestStructuredSubmit({ kind: 'multi_select', selected })}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'word_bank') {
+                return (
+                  <div className="mt-5">
+                    <WordBankQuestion
+                      questionId={currentQuestion.id}
+                      wordTokens={currentQuestion.word_tokens ?? []}
+                      distractorTokens={currentQuestion.distractor_tokens ?? []}
+                      disabled={testModeAnswered}
+                      onSubmit={tokens => handleTestStructuredSubmit({ kind: 'word_bank', tokens })}
+                    />
+                  </div>
+                )
+              }
+
+              return (
+                <div className="mt-5">
                   <div
-                    className="rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
+                    className="mb-3 rounded-[24px] border px-4 py-3"
                     style={{
-                      borderColor: 'rgba(245, 158, 11, 0.2)',
-                      background: 'rgba(2, 8, 23, 0.32)',
+                      borderColor: 'rgba(245, 158, 11, 0.24)',
+                      background: 'rgba(15, 23, 42, 0.68)',
                     }}
                   >
-                    {textBlankPrompt?.promptText ?? '＿＿＿＿'}
+                    <div
+                      className="rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
+                      style={{
+                        borderColor: 'rgba(245, 158, 11, 0.2)',
+                        background: 'rgba(2, 8, 23, 0.32)',
+                      }}
+                    >
+                      {textBlankPrompt?.promptText ?? '＿＿＿＿'}
+                    </div>
+                  </div>
+                  <input
+                    value={textInput}
+                    onChange={event => setTextInput(event.target.value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                        handleTestTextSubmit()
+                      }
+                    }}
+                    disabled={testModeAnswered}
+                    placeholder={textBlankPrompt?.placeholder ?? '答え'}
+                    enterKeyHint="done"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    className="w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none"
+                  />
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <button onClick={handleTestTextSubmit} disabled={testModeAnswered || !textInput.trim()} className="btn-primary disabled:opacity-60">
+                      決定
+                    </button>
+                    <button onClick={handleTestDontKnow} disabled={testModeAnswered} className="btn-secondary disabled:opacity-60">
+                      わからない
+                    </button>
                   </div>
                 </div>
-                <input
-                  value={textInput}
-                  onChange={event => setTextInput(event.target.value)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault()
-                      handleTestTextSubmit()
-                    }
-                  }}
-                  disabled={testModeAnswered}
-                  placeholder={textBlankPrompt?.placeholder ?? '答え'}
-                  enterKeyHint="done"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none"
-                />
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <button onClick={handleTestTextSubmit} disabled={testModeAnswered || !textInput.trim()} className="btn-primary disabled:opacity-60">
-                    決定
-                  </button>
-                  <button onClick={handleTestDontKnow} disabled={testModeAnswered} className="btn-secondary disabled:opacity-60">
-                    わからない
-                  </button>
-                </div>
-              </div>
-            )}
+              )
+            })()}
 
             {testModeAnswered && (
               <div
@@ -1217,9 +1316,9 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   {answerResult === 'exact' ? '○ 正解' : answerResult === 'keyword' ? '△ あと少し' : '× 不正解'}
                 </div>
                 <div className="mt-2 text-sm leading-7 text-slate-300">
-                  答え: {textBlankPrompt?.target ?? currentQuestion.answer}
+                  答え: {currentCorrectAnswerText}
                 </div>
-                {(textBlankPrompt?.target ?? currentQuestion.answer) !== currentQuestion.answer && (
+                {currentCorrectAnswerText !== currentQuestion.answer && (
                   <div className="mt-1 text-xs leading-6 text-slate-400">{currentQuestion.answer}</div>
                 )}
                 {answerResult !== 'exact' && currentQuestion.keywords && currentQuestion.keywords.length > 0 && (
@@ -1300,19 +1399,174 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               </div>
             )}
 
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {currentQuestion.choices?.map((choice, index) => (
-                <button
-                  key={`${currentQuestion.id}-${choice}`}
-                  onClick={() => handleSpeedChoice(choice)}
-                  className="min-h-[90px] rounded-xl border border-white/10 bg-slate-900/70 p-4 text-left font-bold text-white transition-all"
-                  disabled={phase !== 'playing'}
-                >
-                  <span className="mr-3 opacity-50">{'AB'[index] ?? `${index + 1}` }.</span>
-                  {choice}
-                </button>
-              ))}
-            </div>
+            {feedback && (
+              <div
+                className="mt-4 inline-flex rounded-full px-3 py-1.5 text-sm font-semibold"
+                style={{
+                  background: feedback === 'correct' ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)',
+                  color: feedback === 'correct' ? '#86efac' : '#fca5a5',
+                }}
+              >
+                {feedback === 'correct' ? '○ 正解' : '× 不正解'}
+              </div>
+            )}
+
+            {(() => {
+              const timedDisabled = phase !== 'playing' || feedback !== null
+
+              if (currentQuestion.type === 'choice' || currentQuestion.type === 'choice4') {
+                return (
+                  <div className="mt-5">
+                    <Choice4Question
+                      choices={currentQuestion.choices ?? []}
+                      selectedChoice={selectedChoice}
+                      answer={currentQuestion.answer}
+                      answerResult={answerResult}
+                      disabled={timedDisabled}
+                      onSelect={handleSpeedChoice}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'true_false') {
+                return (
+                  <div className="mt-5">
+                    <TrueFalseQuestion
+                      choices={currentQuestion.choices ?? ['○', '×']}
+                      selectedChoice={selectedChoice}
+                      answer={currentQuestion.answer}
+                      answerResult={answerResult}
+                      disabled={timedDisabled}
+                      onSelect={handleSpeedChoice}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'fill_choice') {
+                return (
+                  <div className="mt-5">
+                    <FillChoiceQuestion
+                      choices={currentQuestion.choices ?? []}
+                      selectedChoice={selectedChoice}
+                      answer={currentQuestion.answer}
+                      answerResult={answerResult}
+                      disabled={timedDisabled}
+                      onSelect={handleSpeedChoice}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'match') {
+                return (
+                  <div className="mt-5">
+                    <MatchQuestion
+                      questionId={currentQuestion.id}
+                      pairs={currentQuestion.match_pairs ?? []}
+                      disabled={timedDisabled}
+                      onSubmit={pairs => handleTimedStructuredSubmit({ kind: 'match', pairs })}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'sort') {
+                return (
+                  <div className="mt-5">
+                    <SortQuestion
+                      questionId={currentQuestion.id}
+                      items={currentQuestion.sort_items ?? []}
+                      disabled={timedDisabled}
+                      onSubmit={items => handleTimedStructuredSubmit({ kind: 'sort', items })}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'multi_select') {
+                return (
+                  <div className="mt-5">
+                    <MultiSelectQuestion
+                      questionId={currentQuestion.id}
+                      choices={currentQuestion.choices ?? []}
+                      disabled={timedDisabled}
+                      onSubmit={selected => handleTimedStructuredSubmit({ kind: 'multi_select', selected })}
+                    />
+                  </div>
+                )
+              }
+
+              if (currentQuestion.type === 'word_bank') {
+                return (
+                  <div className="mt-5">
+                    <WordBankQuestion
+                      questionId={currentQuestion.id}
+                      wordTokens={currentQuestion.word_tokens ?? []}
+                      distractorTokens={currentQuestion.distractor_tokens ?? []}
+                      disabled={timedDisabled}
+                      onSubmit={tokens => handleTimedStructuredSubmit({ kind: 'word_bank', tokens })}
+                    />
+                  </div>
+                )
+              }
+
+              return (
+                <div className="mt-5">
+                  <div
+                    className="mb-3 rounded-[24px] border px-4 py-3"
+                    style={{
+                      borderColor: 'rgba(56, 189, 248, 0.18)',
+                      background: 'rgba(15, 23, 42, 0.62)',
+                    }}
+                  >
+                    <div
+                      className="rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
+                      style={{
+                        borderColor: 'rgba(56, 189, 248, 0.16)',
+                        background: 'rgba(2, 8, 23, 0.32)',
+                      }}
+                    >
+                      {textBlankPrompt?.promptText ?? '＿＿＿＿'}
+                    </div>
+                  </div>
+                  <input
+                    value={textInput}
+                    onChange={event => setTextInput(event.target.value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                        handleTimedTextSubmit()
+                      }
+                    }}
+                    disabled={timedDisabled}
+                    placeholder={textBlankPrompt?.placeholder ?? '答え'}
+                    enterKeyHint="done"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    className="w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none"
+                  />
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <button onClick={handleTimedTextSubmit} disabled={timedDisabled || !textInput.trim()} className="btn-primary disabled:opacity-60">
+                      決定
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTextInput('わからない')
+                        if (currentQuestion.type === 'text') {
+                          handleTimedStructuredSubmit({ kind: 'text', value: 'わからない' })
+                        }
+                      }}
+                      disabled={timedDisabled}
+                      className="btn-secondary disabled:opacity-60"
+                    >
+                      わからない
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
 

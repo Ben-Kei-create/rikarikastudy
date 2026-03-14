@@ -24,6 +24,7 @@ import {
   getCustomQuizQuestionTypeLabel,
   getCustomQuizSummaryParts,
 } from '@/lib/customQuiz'
+import { QUESTION_TYPES } from '@/lib/questionTypes'
 import {
   getCachedColumnSupport,
   isMissingColumnError,
@@ -705,8 +706,8 @@ export default function UnitSelectPage({
               <div className="grid gap-4">
                 <div>
                   <div className="text-slate-400 text-xs mb-2">問題タイプ</div>
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    {(['all', 'choice', 'text'] as const).map(questionType => {
+                  <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                    {(['all', ...QUESTION_TYPES] as const).map(questionType => {
                       const active = customOptions.questionType === questionType
                       return (
                         <button

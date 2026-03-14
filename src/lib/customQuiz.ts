@@ -1,6 +1,8 @@
 'use client'
 
-export type CustomQuizQuestionType = 'all' | 'choice' | 'text'
+import { getQuestionTypeLabel, QuestionType } from '@/lib/questionTypes'
+
+export type CustomQuizQuestionType = 'all' | QuestionType
 export type CustomQuizHistoryFilter = 'all' | 'unanswered' | 'weak'
 
 export interface CustomQuizOptions {
@@ -16,9 +18,8 @@ export const DEFAULT_CUSTOM_QUIZ_OPTIONS: CustomQuizOptions = {
 }
 
 export function getCustomQuizQuestionTypeLabel(questionType: CustomQuizQuestionType) {
-  if (questionType === 'choice') return 'タップ式のみ'
-  if (questionType === 'text') return '記述のみ'
-  return '形式すべて'
+  if (questionType === 'all') return '形式すべて'
+  return getQuestionTypeLabel(questionType)
 }
 
 export function getCustomQuizHistoryFilterLabel(historyFilter: CustomQuizHistoryFilter) {

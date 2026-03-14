@@ -38,6 +38,13 @@ import {
   ScienceGlossaryEntry,
   ScienceGlossaryField,
 } from '@/lib/scienceGlossary'
+import {
+  getQuestionCorrectAnswerText,
+  getQuestionTypeLabel,
+  normalizeQuestionRecord,
+  QUESTION_TYPES,
+  QuestionType,
+} from '@/lib/questionTypes'
 import { PeriodicCardSurface, PeriodicCardViewer } from '@/components/PeriodicCard'
 
 interface Session {
@@ -60,10 +67,15 @@ interface CustomQuestionForm {
   field: string
   unit: string
   question: string
-  type: 'choice' | 'text'
-  choices: [string, string]
+  type: QuestionType
+  choices: string[]
   answer: string
   keywords: string
+  matchPairsText: string
+  sortItemsText: string
+  correctChoicesText: string
+  wordTokensText: string
+  distractorTokensText: string
   explanation: string
   grade: string
 }
@@ -73,9 +85,14 @@ const INITIAL_CUSTOM_QUESTION_FORM: CustomQuestionForm = {
   unit: '',
   question: '',
   type: 'choice',
-  choices: ['', ''],
+  choices: ['', '', '', '', '', ''],
   answer: '',
   keywords: '',
+  matchPairsText: '',
+  sortItemsText: '',
+  correctChoicesText: '',
+  wordTokensText: '',
+  distractorTokensText: '',
   explanation: '',
   grade: '中3',
 }
@@ -87,6 +104,30 @@ function parseKeywordInput(input: string) {
     .filter(Boolean)
 
   return keywords.length > 0 ? keywords : null
+}
+
+function parseListInput(input: string) {
+  return input
+    .split(/\n|,|、/)
+    .map(item => item.trim())
+    .filter(Boolean)
+}
+
+function parseMatchPairsText(input: string) {
+  const pairs = input
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const [left, right] = line.split(/\s*\|\s*/)
+      return {
+        left: (left ?? '').trim(),
+        right: (right ?? '').trim(),
+      }
+    })
+    .filter(pair => pair.left && pair.right)
+
+  return pairs.length > 0 ? pairs : null
 }
 
 function getThemePreview(theme: Theme) {
@@ -508,21 +549,9 @@ export default function MyPage({
 
   const handleAddQuestion = async () => {
     if (!studentId) return
-    if (!questionForm.unit.trim() || !questionForm.question.trim() || !questionForm.answer.trim()) {
-      setQuestionMsg({ type: 'error', text: '分野・単元・問題・答えを入力してください。' })
+    if (!questionForm.unit.trim() || !questionForm.question.trim()) {
+      setQuestionMsg({ type: 'error', text: '分野・単元・問題文を入力してください。' })
       return
-    }
-
-    if (questionForm.type === 'choice') {
-      const filledChoices = questionForm.choices.map(choice => choice.trim()).filter(Boolean)
-      if (filledChoices.length !== 2) {
-        setQuestionMsg({ type: 'error', text: '2択問題は選択肢を2つ入力してください。' })
-        return
-      }
-      if (!filledChoices.includes(questionForm.answer.trim())) {
-        setQuestionMsg({ type: 'error', text: '答えは選択肢AかBと同じ内容にしてください。' })
-        return
-      }
     }
 
     try {
@@ -534,11 +563,104 @@ export default function MyPage({
         unit: questionForm.unit.trim(),
         question: questionForm.question.trim(),
         type: questionForm.type,
-        choices: questionForm.type === 'choice' ? questionForm.choices.map(choice => choice.trim()) : null,
+        choices: null as string[] | null,
         answer: questionForm.answer.trim(),
-        keywords: questionForm.type === 'text' ? parseKeywordInput(questionForm.keywords) : null,
+        keywords: null as string[] | null,
+        match_pairs: null as Array<{ left: string; right: string }> | null,
+        sort_items: null as string[] | null,
+        correct_choices: null as string[] | null,
+        word_tokens: null as string[] | null,
+        distractor_tokens: null as string[] | null,
         explanation: questionForm.explanation.trim() || null,
         grade: questionForm.grade,
+      }
+
+      if (questionForm.type === 'choice') {
+        const filledChoices = questionForm.choices.slice(0, 2).map(choice => choice.trim()).filter(Boolean)
+        if (filledChoices.length !== 2) {
+          setQuestionMsg({ type: 'error', text: '2択問題は選択肢を2つ入力してください。' })
+          return
+        }
+        if (!filledChoices.includes(questionForm.answer.trim())) {
+          setQuestionMsg({ type: 'error', text: '答えは選択肢AかBと同じ内容にしてください。' })
+          return
+        }
+        payload.choices = filledChoices
+      } else if (questionForm.type === 'choice4' || questionForm.type === 'fill_choice') {
+        const filledChoices = questionForm.choices.slice(0, 4).map(choice => choice.trim()).filter(Boolean)
+        if (filledChoices.length < 3 || filledChoices.length > 4) {
+          setQuestionMsg({ type: 'error', text: `${getQuestionTypeLabel(questionForm.type)} は選択肢を3〜4個入力してください。` })
+          return
+        }
+        if (!filledChoices.includes(questionForm.answer.trim())) {
+          setQuestionMsg({ type: 'error', text: '正解は選択肢と同じ内容にしてください。' })
+          return
+        }
+        if (questionForm.type === 'fill_choice' && !questionForm.question.includes('【')) {
+          setQuestionMsg({ type: 'error', text: '穴埋め問題の問題文には【　　】を入れてください。' })
+          return
+        }
+        payload.choices = filledChoices
+      } else if (questionForm.type === 'true_false') {
+        if (questionForm.answer !== '○' && questionForm.answer !== '×') {
+          setQuestionMsg({ type: 'error', text: '○×問題の正解は ○ か × にしてください。' })
+          return
+        }
+        payload.choices = ['○', '×']
+      } else if (questionForm.type === 'text') {
+        if (!questionForm.answer.trim()) {
+          setQuestionMsg({ type: 'error', text: '記述問題は模範解答文が必要です。' })
+          return
+        }
+        payload.keywords = parseKeywordInput(questionForm.keywords)
+      } else if (questionForm.type === 'match') {
+        const pairs = parseMatchPairsText(questionForm.matchPairsText)
+        if (!pairs || pairs.length < 2) {
+          setQuestionMsg({ type: 'error', text: 'マッチ問題は「左 | 右」を2組以上入力してください。' })
+          return
+        }
+        payload.match_pairs = pairs
+        payload.answer = ''
+      } else if (questionForm.type === 'sort') {
+        const items = parseListInput(questionForm.sortItemsText)
+        if (items.length < 3) {
+          setQuestionMsg({ type: 'error', text: '並べ替え問題は3件以上入力してください。' })
+          return
+        }
+        payload.sort_items = items
+        payload.answer = ''
+      } else if (questionForm.type === 'multi_select') {
+        const choices = questionForm.choices.map(choice => choice.trim()).filter(Boolean)
+        const correctChoices = parseListInput(questionForm.correctChoicesText)
+        if (choices.length < 4) {
+          setQuestionMsg({ type: 'error', text: '複数選択は選択肢を4件以上入力してください。' })
+          return
+        }
+        if (correctChoices.length < 2) {
+          setQuestionMsg({ type: 'error', text: '複数選択の正解は2件以上入れてください。' })
+          return
+        }
+        if (!correctChoices.every(choice => choices.includes(choice))) {
+          setQuestionMsg({ type: 'error', text: '複数選択の正解は選択肢の中から入力してください。' })
+          return
+        }
+        payload.choices = choices
+        payload.correct_choices = correctChoices
+        payload.answer = ''
+      } else if (questionForm.type === 'word_bank') {
+        const wordTokens = parseListInput(questionForm.wordTokensText)
+        const distractorTokens = parseListInput(questionForm.distractorTokensText)
+        if (wordTokens.length < 2) {
+          setQuestionMsg({ type: 'error', text: '語群問題は正解トークンを2件以上入力してください。' })
+          return
+        }
+        if (distractorTokens.length < 1) {
+          setQuestionMsg({ type: 'error', text: '語群問題はダミートークンを1件以上入力してください。' })
+          return
+        }
+        payload.word_tokens = wordTokens
+        payload.distractor_tokens = distractorTokens
+        payload.answer = questionForm.answer.trim() || wordTokens.join(' ')
       }
 
       await ensureNoDuplicateQuestions([{
@@ -548,6 +670,11 @@ export default function MyPage({
         type: payload.type,
         choices: payload.choices,
         answer: payload.answer,
+        match_pairs: payload.match_pairs,
+        sort_items: payload.sort_items,
+        correct_choices: payload.correct_choices,
+        word_tokens: payload.word_tokens,
+        distractor_tokens: payload.distractor_tokens,
       }])
 
       const { data, error } = await supabase
@@ -563,6 +690,19 @@ export default function MyPage({
 
       if (error && isMissingColumnError(error, 'keywords')) {
         throw new Error('Supabase の questions テーブルに keywords 列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      }
+
+      if (
+        error
+        && (
+          isMissingColumnError(error, 'match_pairs')
+          || isMissingColumnError(error, 'sort_items')
+          || isMissingColumnError(error, 'correct_choices')
+          || isMissingColumnError(error, 'word_tokens')
+          || isMissingColumnError(error, 'distractor_tokens')
+        )
+      ) {
+        throw new Error('Supabase の questions テーブルが新しい問題タイプ列に対応していません。最新の supabase_schema.sql を SQL Editor で実行してください。')
       }
 
       if (!error) {
@@ -1420,11 +1560,12 @@ export default function MyPage({
                 </select>
                 <select
                   value={questionForm.type}
-                  onChange={e => setQuestionForm(current => ({ ...current, type: e.target.value as 'choice' | 'text' }))}
+                  onChange={e => setQuestionForm(current => ({ ...current, type: e.target.value as QuestionType }))}
                   className="input-surface"
                 >
-                  <option value="choice">2択</option>
-                  <option value="text">記述</option>
+                  {QUESTION_TYPES.map(type => (
+                    <option key={type} value={type}>{getQuestionTypeLabel(type)}</option>
+                  ))}
                 </select>
               </div>
               <div className="grid grid-cols-1 gap-3 mt-3 sm:grid-cols-2">
@@ -1451,31 +1592,52 @@ export default function MyPage({
                   rows={4}
                   className="input-surface resize-y"
                 />
-                {questionForm.type === 'choice' && (
+                {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'multi_select') && (
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <input
-                      type="text"
-                      value={questionForm.choices[0]}
-                      onChange={e => setQuestionForm(current => ({ ...current, choices: [e.target.value, current.choices[1]] as [string, string] }))}
-                      placeholder="選択肢A"
-                      className="input-surface"
-                    />
-                    <input
-                      type="text"
-                      value={questionForm.choices[1]}
-                      onChange={e => setQuestionForm(current => ({ ...current, choices: [current.choices[0], e.target.value] as [string, string] }))}
-                      placeholder="選択肢B"
-                      className="input-surface"
-                    />
+                    {questionForm.choices
+                      .slice(0, questionForm.type === 'choice' ? 2 : questionForm.type === 'multi_select' ? 6 : 4)
+                      .map((choice, index) => (
+                        <input
+                          key={`${questionForm.type}-choice-${index}`}
+                          type="text"
+                          value={choice}
+                          onChange={e => setQuestionForm(current => {
+                            const nextChoices = [...current.choices]
+                            nextChoices[index] = e.target.value
+                            return { ...current, choices: nextChoices }
+                          })}
+                          placeholder={`${'ABCDEF'[index]}. 選択肢`}
+                          className="input-surface"
+                        />
+                      ))}
                   </div>
                 )}
-                <input
-                  type="text"
-                  value={questionForm.answer}
-                  onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
-                  placeholder={questionForm.type === 'choice' ? '答え（AかBと同じ内容）' : '模範解答文'}
-                  className="input-surface"
-                />
+                {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'text' || questionForm.type === 'word_bank') && (
+                  <input
+                    type="text"
+                    value={questionForm.answer}
+                    onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+                    placeholder={
+                      questionForm.type === 'text'
+                        ? '模範解答文'
+                        : questionForm.type === 'word_bank'
+                          ? '完成形（空欄なら語群から自動生成）'
+                          : '正解（選択肢と同じ内容）'
+                    }
+                    className="input-surface"
+                  />
+                )}
+                {questionForm.type === 'true_false' && (
+                  <select
+                    value={questionForm.answer}
+                    onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+                    className="input-surface"
+                  >
+                    <option value="">正解を選ぶ</option>
+                    <option value="○">○</option>
+                    <option value="×">×</option>
+                  </select>
+                )}
                 {questionForm.type === 'text' && (
                   <div>
                     <input
@@ -1488,6 +1650,60 @@ export default function MyPage({
                     <p className="text-slate-500 text-xs mt-2">
                       `answer` の模範解答文に入る理科キーワードをここへ入れると、生徒はその空欄だけ入力する形になります。
                     </p>
+                  </div>
+                )}
+                {questionForm.type === 'match' && (
+                  <div>
+                    <textarea
+                      value={questionForm.matchPairsText}
+                      onChange={e => setQuestionForm(current => ({ ...current, matchPairsText: e.target.value }))}
+                      placeholder={'左 | 右\nアミラーゼ | デンプン'}
+                      rows={4}
+                      className="input-surface resize-y"
+                    />
+                    <p className="text-slate-500 text-xs mt-2">1行に1組ずつ、`左 | 右` の形で書きます。</p>
+                  </div>
+                )}
+                {questionForm.type === 'sort' && (
+                  <div>
+                    <textarea
+                      value={questionForm.sortItemsText}
+                      onChange={e => setQuestionForm(current => ({ ...current, sortItemsText: e.target.value }))}
+                      placeholder={'口\n食道\n胃\n小腸\n大腸'}
+                      rows={4}
+                      className="input-surface resize-y"
+                    />
+                    <p className="text-slate-500 text-xs mt-2">正しい順番で、1行に1つずつ書きます。</p>
+                  </div>
+                )}
+                {questionForm.type === 'multi_select' && (
+                  <div>
+                    <textarea
+                      value={questionForm.correctChoicesText}
+                      onChange={e => setQuestionForm(current => ({ ...current, correctChoicesText: e.target.value }))}
+                      placeholder={'デンプン\nエタノール'}
+                      rows={3}
+                      className="input-surface resize-y"
+                    />
+                    <p className="text-slate-500 text-xs mt-2">正解にする選択肢だけを、1行に1つずつ書きます。</p>
+                  </div>
+                )}
+                {questionForm.type === 'word_bank' && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <textarea
+                      value={questionForm.wordTokensText}
+                      onChange={e => setQuestionForm(current => ({ ...current, wordTokensText: e.target.value }))}
+                      placeholder={'2Cu\n+\nO₂\n→\n2CuO'}
+                      rows={4}
+                      className="input-surface resize-y"
+                    />
+                    <textarea
+                      value={questionForm.distractorTokensText}
+                      onChange={e => setQuestionForm(current => ({ ...current, distractorTokensText: e.target.value }))}
+                      placeholder={'Cu₂\n2O₂'}
+                      rows={4}
+                      className="input-surface resize-y"
+                    />
                   </div>
                 )}
                 <textarea
@@ -1538,6 +1754,9 @@ export default function MyPage({
                             {question.field}
                           </span>
                           <span className="text-white font-bold">{question.unit}</span>
+                          <span className="rounded-full bg-slate-800 px-2 py-1 text-[11px] font-semibold text-slate-300">
+                            {getQuestionTypeLabel(normalizeQuestionRecord(question).type)}
+                          </span>
                         </div>
                         <div className="text-slate-500 text-xs mt-1">
                           {format(new Date(question.created_at), 'M月d日(E) HH:mm', { locale: ja })}
@@ -1551,7 +1770,7 @@ export default function MyPage({
                       </span>
                     </div>
                     <p className="text-white text-sm leading-7 mt-3 whitespace-pre-wrap">{question.question}</p>
-                    <div className="text-slate-400 text-sm mt-3">答え: {question.answer}</div>
+                    <div className="text-slate-400 text-sm mt-3">答え: {getQuestionCorrectAnswerText(normalizeQuestionRecord(question))}</div>
                     {question.explanation && (
                       <p className="text-slate-300 text-sm leading-7 mt-2 whitespace-pre-wrap">{question.explanation}</p>
                     )}

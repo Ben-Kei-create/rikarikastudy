@@ -71,7 +71,11 @@ export function isChoiceArrayQuestionType(type: QuestionType) {
 }
 
 export function isChallengeSupportedQuestionType(type: QuestionType) {
-  return isSingleChoiceQuestionType(type) || type === 'text'
+  return QUESTION_TYPES.includes(type)
+}
+
+export function isTimedChallengeSupportedQuestionType(type: QuestionType) {
+  return type !== 'text'
 }
 
 function cleanString(value: unknown) {

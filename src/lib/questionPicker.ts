@@ -1,7 +1,7 @@
 'use client'
 
 import { CustomQuizOptions } from '@/lib/customQuiz'
-import { QuestionType, isChallengeSupportedQuestionType } from '@/lib/questionTypes'
+import { isTimedChallengeSupportedQuestionType, QuestionType } from '@/lib/questionTypes'
 
 const CORE_FIELDS = ['生物', '化学', '物理', '地学']
 export type QuizQuestionCount = 5 | 10 | 15 | 'all'
@@ -94,8 +94,7 @@ function matchesCustomHistoryFilter(
 
 function matchesCustomQuestionType(type: QuestionType, questionType: CustomQuizOptions['questionType']) {
   if (questionType === 'all') return true
-  if (questionType === 'text') return type === 'text'
-  return type !== 'text'
+  return type === questionType
 }
 
 export function pickCustomQuizQuestions<T extends QuizQuestionLike>(
@@ -151,7 +150,7 @@ export function pickDailyChallengeQuestions<T extends QuizQuestionLike>(
 }
 
 export function pickTimeAttackQuestions<T extends QuizQuestionLike>(pool: T[]) {
-  return shuffleArray(pool.filter(question => isChallengeSupportedQuestionType(question.type) && question.type !== 'text'))
+  return shuffleArray(pool.filter(question => isTimedChallengeSupportedQuestionType(question.type)))
 }
 
 export function pickChallengeTestQuestions<T extends QuizQuestionLike>(pool: T[], count = 25) {
