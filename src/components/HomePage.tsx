@@ -339,25 +339,21 @@ export default function HomePage({
                 <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
               </div>
             </div>
-            <div className="mt-3 rounded-[22px] border px-3.5 py-3.5 sm:mt-4 sm:rounded-[24px] sm:px-4 sm:py-4" style={{
-              borderColor: 'rgba(255,255,255,0.08)',
-              background: 'rgba(15, 23, 42, 0.28)',
-            }}>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">次の解放</div>
-                  {nextUnlock ? (
+            {nextUnlock && (
+              <div className="mt-3 rounded-[22px] border px-3.5 py-3.5 sm:mt-4 sm:rounded-[24px] sm:px-4 sm:py-4" style={{
+                borderColor: 'rgba(255,255,255,0.08)',
+                background: 'rgba(15, 23, 42, 0.28)',
+              }}>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">次の解放</div>
                     <div className="mt-2 flex items-center gap-3">
                       <div className="text-2xl">{nextUnlock.emoji}</div>
                       <div>
                         <div className="font-semibold text-white">{nextUnlock.title}</div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="mt-2 text-sm text-emerald-300">解放ずみ</div>
-                  )}
-                </div>
-                {nextUnlock && (
+                  </div>
                   <div className="text-right">
                     <div className="text-xs text-slate-500">UNLOCK</div>
                     <div className="mt-1 font-display text-2xl text-white">Lv.{nextUnlock.level}</div>
@@ -365,22 +361,22 @@ export default function HomePage({
                       あと {Math.max(0, getXpFloorForLevel(nextUnlock.level) - levelInfo.totalXp)} XP
                     </div>
                   </div>
+                </div>
+                {unlockedRewards.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {unlockedRewards.map(reward => (
+                      <span
+                        key={reward.key}
+                        className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                        style={{ background: 'rgba(34, 197, 94, 0.12)', color: '#86efac' }}
+                      >
+                        {reward.emoji} {reward.title}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
-              {unlockedRewards.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {unlockedRewards.map(reward => (
-                    <span
-                      key={reward.key}
-                      className="rounded-full px-3 py-1 text-[11px] font-semibold"
-                      style={{ background: 'rgba(34, 197, 94, 0.12)', color: '#86efac' }}
-                    >
-                      {reward.emoji} {reward.title}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
             {isGuest && (
               <p className="mt-4 text-sm leading-6 text-sky-200">
                 ゲストは毎日リセット
