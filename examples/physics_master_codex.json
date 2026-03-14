@@ -1,0 +1,1757 @@
+[
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "物体の形を変えたり、動きを変えたりするはたらきを何といいますか。",
+    "choices": [
+      "力",
+      "熱",
+      "電流",
+      "音"
+    ],
+    "answer": "力",
+    "keywords": null,
+    "explanation": "力には、物体を動かしたり、止めたり、形を変えたりするはたらきがあります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "物体にはたらく重力の向きはどれですか。",
+    "choices": [
+      "真上",
+      "真下",
+      "進行方向",
+      "右向き"
+    ],
+    "answer": "真下",
+    "keywords": null,
+    "explanation": "重力は地球の中心に向かって、いつも真下向きにはたらきます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "ばねを引く力を大きくすると、ばねののびはどうなりますか。",
+    "choices": [
+      "大きくなる",
+      "小さくなる",
+      "変わらない",
+      "0になる"
+    ],
+    "answer": "大きくなる",
+    "keywords": null,
+    "explanation": "一定の範囲では、ばねを引く力が大きいほどばねののびも大きくなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "質量 100 g の物体にはたらく重力の大きさは、およそ何 N ですか。",
+    "choices": [
+      "0.1 N",
+      "1 N",
+      "10 N",
+      "100 N"
+    ],
+    "answer": "1 N",
+    "keywords": null,
+    "explanation": "100 g の物体にはたらく重力は、およそ 1 N と考えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "1つの物体に2つの力が同じ直線上で反対向きにはたらき、つり合うときどうなりますか。",
+    "choices": [
+      "動きは変わらない",
+      "必ず速くなる",
+      "必ず止まる",
+      "形が必ず変わる"
+    ],
+    "answer": "動きは変わらない",
+    "keywords": null,
+    "explanation": "力がつり合うと、物体の動きは変わりません。止まっていれば止まり続け、動いていれば等速直線運動を続けます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "物体の運動の向きを変えるときに必要なのは何ですか。",
+    "choices": [
+      "力",
+      "温度",
+      "音",
+      "光"
+    ],
+    "answer": "力",
+    "keywords": null,
+    "explanation": "物体の速さや向きを変えるには、力がはたらく必要があります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "ばねののびは、一定の範囲では引く力の大きさに比例する。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "ばねののびと力の大きさには、一定の範囲で比例関係があります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "重力の大きさは、同じ場所なら物体の質量が大きいほど大きい。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "質量が大きい物体ほど、はたらく重力も大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "1 N は、約 100 g の物体にはたらく重力の大きさとして使われる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "中学理科では、100 g の物体にはたらく重力をおよそ 1 N とします。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "力の大きさを表す単位を【　　】という。",
+    "choices": [
+      "N",
+      "V",
+      "A",
+      "W"
+    ],
+    "answer": "N",
+    "keywords": null,
+    "explanation": "力の大きさはニュートンという単位で表し、記号は N です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "ばねののびを調べるときに使う器具を【　　】という。",
+    "choices": [
+      "ばねばかり",
+      "電流計",
+      "温度計",
+      "メスシリンダー"
+    ],
+    "answer": "ばねばかり",
+    "keywords": null,
+    "explanation": "ばねばかりは、ばねののびを利用して力の大きさをはかる器具です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "2つの力が同じ大きさで反対向きに一直線上ではたらくとき、力は【　　】。",
+    "choices": [
+      "つり合う",
+      "増える",
+      "消える",
+      "回転する"
+    ],
+    "answer": "つり合う",
+    "keywords": null,
+    "explanation": "同じ一直線上で反対向き、同じ大きさの2力はつり合います。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "地球が物体を引く力を【　　】という。",
+    "choices": [
+      "重力",
+      "摩擦力",
+      "弾性力",
+      "磁力"
+    ],
+    "answer": "重力",
+    "keywords": null,
+    "explanation": "地球が物体を引く力を重力といいます。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "次の力の種類と、その説明を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "重力",
+        "right": "地球が物体を引く力"
+      },
+      {
+        "left": "弾性力",
+        "right": "元に戻ろうとする力"
+      },
+      {
+        "left": "摩擦力",
+        "right": "ふれ合う面で運動をさまたげる力"
+      }
+    ],
+    "explanation": "力にはいろいろな種類があり、それぞれはたらきが異なります。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "次の場面と、はたらいている力を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "ばねが元にもどる",
+        "right": "弾性力"
+      },
+      {
+        "left": "机の上の本が下向きに引かれる",
+        "right": "重力"
+      },
+      {
+        "left": "床の上で物体が進みにくい",
+        "right": "摩擦力"
+      }
+    ],
+    "explanation": "場面ごとに、はたらいている力の種類を見分けることが大切です。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "ばねののびを調べる実験の流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "おもりをつるす",
+      "ばねののびを読む",
+      "力の大きさとの関係を比べる"
+    ],
+    "explanation": "おもりをつるして、のびを読み取り、力との関係を調べます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "力がつり合っているかを考える手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "向きを調べる",
+      "大きさを比べる",
+      "一直線上かどうかを確かめる"
+    ],
+    "explanation": "つり合いは、向き、大きさ、一直線上かどうかに注目して判断します。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "次のうち、力のはたらきとして正しいものをすべて選びなさい。",
+    "choices": [
+      "物体を動かす",
+      "物体の形を変える",
+      "物体の向きを変える",
+      "物体の色を必ず変える",
+      "物体を止める"
+    ],
+    "correct_choices": [
+      "物体を動かす",
+      "物体の形を変える",
+      "物体の向きを変える",
+      "物体を止める"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "力には、動きや形を変えるはたらきがあります。色を必ず変えるわけではありません。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "次のうち、力がつり合う条件として正しいものをすべて選びなさい。",
+    "choices": [
+      "同じ大きさ",
+      "反対向き",
+      "一直線上",
+      "同じ色",
+      "同じ体積"
+    ],
+    "correct_choices": [
+      "同じ大きさ",
+      "反対向き",
+      "一直線上"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "2力がつり合うには、同じ大きさで反対向き、一直線上ではたらく必要があります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "力がつり合う条件を完成させなさい。",
+    "choices": null,
+    "answer": "同じ大きさ → 反対向き → 一直線上",
+    "keywords": null,
+    "word_tokens": [
+      "同じ大きさ",
+      "→",
+      "反対向き",
+      "→",
+      "一直線上"
+    ],
+    "distractor_tokens": [
+      "同じ色",
+      "曲線上"
+    ],
+    "explanation": "2力のつり合いは、大きさ、向き、一直線上かどうかで決まります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "面を押す力の大きさをその面積で割ったものを何といいますか。",
+    "choices": [
+      "圧力",
+      "密度",
+      "電力",
+      "速さ"
+    ],
+    "answer": "圧力",
+    "keywords": null,
+    "explanation": "圧力は、面を押す力の大きさを面積で割って求めます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "同じ力で押すとき、圧力を大きくしたいならどうすればよいですか。",
+    "choices": [
+      "面積を小さくする",
+      "面積を大きくする",
+      "力を0にする",
+      "向きを変えるだけにする"
+    ],
+    "answer": "面積を小さくする",
+    "keywords": null,
+    "explanation": "同じ力なら、面積が小さいほど圧力は大きくなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "単位面積あたりにはたらく大気の重さによる圧力を何といいますか。",
+    "choices": [
+      "大気圧",
+      "水圧",
+      "浮力",
+      "磁力"
+    ],
+    "answer": "大気圧",
+    "keywords": null,
+    "explanation": "空気にも重さがあるため、地表には大気圧がはたらいています。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "水中で深くなるほど大きくなる圧力はどれですか。",
+    "choices": [
+      "水圧",
+      "気圧",
+      "弾性力",
+      "摩擦力"
+    ],
+    "answer": "水圧",
+    "keywords": null,
+    "explanation": "水圧は水の深さが深いほど大きくなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力の単位として使う記号はどれですか。",
+    "choices": [
+      "Pa",
+      "N",
+      "A",
+      "V"
+    ],
+    "answer": "Pa",
+    "keywords": null,
+    "explanation": "圧力の単位はパスカルで、記号は Pa です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "くつの裏を広くすると、地面にかかる圧力はどうなりますか。",
+    "choices": [
+      "小さくなる",
+      "大きくなる",
+      "変わらない",
+      "0になる"
+    ],
+    "answer": "小さくなる",
+    "keywords": null,
+    "explanation": "同じ重さでも、面積が広いと圧力は小さくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "同じ面積なら、押す力が大きいほど圧力は大きくなる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "圧力は力の大きさに比例するので、同じ面積なら力が大きいほど圧力も大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "水圧は、水の深さが同じならどの向きでも同じようにはたらく。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "水圧は、同じ深さならいろいろな向きに同じようにはたらきます。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "大気圧は空気に重さがないので存在しない。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "空気にも重さがあるため、大気圧が生じます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力を求める式は、力 ÷ 【　　】である。",
+    "choices": [
+      "面積",
+      "体積",
+      "速さ",
+      "時間"
+    ],
+    "answer": "面積",
+    "keywords": null,
+    "explanation": "圧力は、面を押す力の大きさを面積で割って求めます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "水の深さが深いほど【　　】は大きくなる。",
+    "choices": [
+      "水圧",
+      "摩擦力",
+      "電流",
+      "音"
+    ],
+    "answer": "水圧",
+    "keywords": null,
+    "explanation": "水圧は、水深が深いほど大きくなります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力の単位パスカルの記号は【　　】である。",
+    "choices": [
+      "Pa",
+      "N",
+      "W",
+      "J"
+    ],
+    "answer": "Pa",
+    "keywords": null,
+    "explanation": "圧力の単位はパスカルで、記号は Pa です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "空気の重さによって生じる圧力を【　　】という。",
+    "choices": [
+      "大気圧",
+      "水圧",
+      "浮力",
+      "磁力"
+    ],
+    "answer": "大気圧",
+    "keywords": null,
+    "explanation": "空気にも重さがあり、そのため大気圧がはたらきます。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "次の圧力の種類と、説明を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "圧力",
+        "right": "面を押す力の大きさを面積で割ったもの"
+      },
+      {
+        "left": "大気圧",
+        "right": "空気の重さによる圧力"
+      },
+      {
+        "left": "水圧",
+        "right": "水中ではたらく圧力"
+      }
+    ],
+    "explanation": "圧力には、空気によるものや水によるものなどがあります。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "次の場面と、圧力の変化を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "スキー板をはく",
+        "right": "圧力を小さくする"
+      },
+      {
+        "left": "画びょうの先がとがっている",
+        "right": "圧力を大きくする"
+      },
+      {
+        "left": "くつの裏を広くする",
+        "right": "圧力を小さくする"
+      }
+    ],
+    "explanation": "面積を広くすると圧力は小さくなり、面積をせまくすると圧力は大きくなります。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力を求める手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "面を押す力の大きさを調べる",
+      "力がはたらく面積を求める",
+      "力を面積で割る"
+    ],
+    "explanation": "圧力は、力と面積がわかれば求められます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "水圧を調べる実験の流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "深さのちがう位置に穴をあける",
+      "水を入れる",
+      "出る水の勢いを比べる"
+    ],
+    "explanation": "深さが深いほど水の勢いが強くなり、水圧が大きいことがわかります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "次のうち、圧力を小さくする工夫として正しいものをすべて選びなさい。",
+    "choices": [
+      "面積を広くする",
+      "スキー板を使う",
+      "くつ底を広くする",
+      "画びょうの先を細くする",
+      "力を大きくする"
+    ],
+    "correct_choices": [
+      "面積を広くする",
+      "スキー板を使う",
+      "くつ底を広くする"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "同じ力なら、面積を広くするほど圧力は小さくなります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "次のうち、水圧について正しいものをすべて選びなさい。",
+    "choices": [
+      "深いほど大きい",
+      "同じ深さなら同じくらいはたらく",
+      "上向きにもはたらく",
+      "深さに関係なく一定である",
+      "水がなくてもはたらく"
+    ],
+    "correct_choices": [
+      "深いほど大きい",
+      "同じ深さなら同じくらいはたらく",
+      "上向きにもはたらく"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "水圧は深さで変わり、いろいろな向きにはたらきます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力の求め方を完成させなさい。",
+    "choices": null,
+    "answer": "圧力 = 力 ÷ 面積",
+    "keywords": null,
+    "word_tokens": [
+      "圧力",
+      "=",
+      "力",
+      "÷",
+      "面積"
+    ],
+    "distractor_tokens": [
+      "×",
+      "体積"
+    ],
+    "explanation": "圧力は、面を押す力の大きさを面積で割って求めます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流の大きさを表す単位はどれですか。",
+    "choices": [
+      "A",
+      "V",
+      "W",
+      "N"
+    ],
+    "answer": "A",
+    "keywords": null,
+    "explanation": "電流の大きさはアンペアという単位で表し、記号は A です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電圧の大きさを表す単位はどれですか。",
+    "choices": [
+      "V",
+      "A",
+      "J",
+      "Pa"
+    ],
+    "answer": "V",
+    "keywords": null,
+    "explanation": "電圧の単位はボルトで、記号は V です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流の大きさをはかる器具はどれですか。",
+    "choices": [
+      "電流計",
+      "電圧計",
+      "ばねばかり",
+      "温度計"
+    ],
+    "answer": "電流計",
+    "keywords": null,
+    "explanation": "電流の大きさは電流計で測定します。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "豆電球と電流計をつないで電流をはかるとき、電流計のつなぎ方として正しいものはどれですか。",
+    "choices": [
+      "直列につなぐ",
+      "並列につなぐ",
+      "どこにもつながない",
+      "電池とだけつなぐ"
+    ],
+    "answer": "直列につなぐ",
+    "keywords": null,
+    "explanation": "電流計は、電流が流れる道すじに直列につなぎます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "回路の両端にかかる電圧をはかるとき、電圧計のつなぎ方として正しいものはどれですか。",
+    "choices": [
+      "並列につなぐ",
+      "直列につなぐ",
+      "回路から外す",
+      "電池の中に入れる"
+    ],
+    "answer": "並列につなぐ",
+    "keywords": null,
+    "explanation": "電圧計は、はかりたい部分に並列につなぎます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "直列回路の特ちょうとして正しいものはどれですか。",
+    "choices": [
+      "回路のどこでも電流の大きさが同じ",
+      "各部分の電圧が必ず同じ",
+      "枝分かれが多い",
+      "電池が不要である"
+    ],
+    "answer": "回路のどこでも電流の大きさが同じ",
+    "keywords": null,
+    "explanation": "直列回路では、回路のどの部分でも同じ大きさの電流が流れます。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "並列回路では、枝分かれする前の電流は、分かれたあとの電流の和に等しい。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "並列回路では、分かれる前の電流の大きさは、枝の電流の和になります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流計は、はかりたい部分に並列につなぐ。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "電流計は直列につなぎます。並列につなぐのは電圧計です。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "オームの法則は、電圧と電流と抵抗の関係を表している。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "オームの法則は、電圧 = 電流 × 抵抗 の関係を表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流の大きさは、1 秒あたりに流れる電気の量で表され、その単位は【　　】である。",
+    "choices": [
+      "A",
+      "V",
+      "W",
+      "Ω"
+    ],
+    "answer": "A",
+    "keywords": null,
+    "explanation": "電流の単位はアンペアで、記号は A です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "抵抗の大きさの単位を【　　】という。",
+    "choices": [
+      "Ω",
+      "V",
+      "A",
+      "J"
+    ],
+    "answer": "Ω",
+    "keywords": null,
+    "explanation": "抵抗の単位はオームで、記号は Ω です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電圧 = 電流 × 抵抗 の関係を【　　】という。",
+    "choices": [
+      "オームの法則",
+      "フックの法則",
+      "質量保存の法則",
+      "慣性の法則"
+    ],
+    "answer": "オームの法則",
+    "keywords": null,
+    "explanation": "オームの法則は、電圧と電流と抵抗の関係を表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電圧計は、はかりたい部分に【　　】につなぐ。",
+    "choices": [
+      "並列",
+      "直列",
+      "交差",
+      "無関係"
+    ],
+    "answer": "並列",
+    "keywords": null,
+    "explanation": "電圧計は、はかりたい部分の両端に並列につなぎます。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "次の量と、その単位を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "電流",
+        "right": "A"
+      },
+      {
+        "left": "電圧",
+        "right": "V"
+      },
+      {
+        "left": "抵抗",
+        "right": "Ω"
+      }
+    ],
+    "explanation": "電流、電圧、抵抗にはそれぞれ決まった単位があります。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "次の器具と、そのはかるものを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "電流計",
+        "right": "電流"
+      },
+      {
+        "left": "電圧計",
+        "right": "電圧"
+      },
+      {
+        "left": "抵抗器",
+        "right": "電流を流れにくくする"
+      }
+    ],
+    "explanation": "回路では、器具ごとの役割を区別して覚えることが大切です。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流をはかるときの手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "電流計を直列につなぐ",
+      "回路に電流を流す",
+      "目盛りを読む"
+    ],
+    "explanation": "電流計は直列につなぎ、電流を流してから目盛りを読みます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "オームの法則を使って抵抗を求める手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "電圧を調べる",
+      "電流を調べる",
+      "電圧を電流で割る"
+    ],
+    "explanation": "抵抗は、オームの法則より 電圧 ÷ 電流 で求められます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "次のうち、直列回路の性質として正しいものをすべて選びなさい。",
+    "choices": [
+      "回路のどこでも電流が同じ",
+      "各部分の電圧の和が全体の電圧になる",
+      "枝分かれしている",
+      "1つ切れると全部消える",
+      "各枝の電圧が必ず同じ"
+    ],
+    "correct_choices": [
+      "回路のどこでも電流が同じ",
+      "各部分の電圧の和が全体の電圧になる",
+      "1つ切れると全部消える"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "直列回路では、電流はどこでも同じで、1か所切れると全体が流れなくなります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "次のうち、並列回路の性質として正しいものをすべて選びなさい。",
+    "choices": [
+      "枝ごとの電圧が同じ",
+      "全体の電流は枝の電流の和になる",
+      "1つ切れても他の枝は流れることがある",
+      "回路のどこでも電流が必ず同じ",
+      "枝分かれがない"
+    ],
+    "correct_choices": [
+      "枝ごとの電圧が同じ",
+      "全体の電流は枝の電流の和になる",
+      "1つ切れても他の枝は流れることがある"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "並列回路では、枝の電圧は同じで、電流は分かれて流れます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "オームの法則を完成させなさい。",
+    "choices": null,
+    "answer": "電圧 = 電流 × 抵抗",
+    "keywords": null,
+    "word_tokens": [
+      "電圧",
+      "=",
+      "電流",
+      "×",
+      "抵抗"
+    ],
+    "distractor_tokens": [
+      "÷",
+      "時間"
+    ],
+    "explanation": "オームの法則は、電圧、電流、抵抗の関係を表す基本の式です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波の山から次の山までの長さを何といいますか。",
+    "choices": [
+      "波長",
+      "振幅",
+      "速さ",
+      "周波数"
+    ],
+    "answer": "波長",
+    "keywords": null,
+    "explanation": "波長は、波の1つ分の長さを表します。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波の中心線から山や谷までの高さを何といいますか。",
+    "choices": [
+      "振幅",
+      "波長",
+      "速さ",
+      "電圧"
+    ],
+    "answer": "振幅",
+    "keywords": null,
+    "explanation": "振幅は、波のゆれの大きさを表します。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音の高さを決めるものはどれですか。",
+    "choices": [
+      "振動数",
+      "音の大きさ",
+      "温度",
+      "重さ"
+    ],
+    "answer": "振動数",
+    "keywords": null,
+    "explanation": "音の高さは、1秒間の振動の回数である振動数で決まります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音の大きさにもっとも関係するものはどれですか。",
+    "choices": [
+      "振幅",
+      "波長",
+      "色",
+      "重力"
+    ],
+    "answer": "振幅",
+    "keywords": null,
+    "explanation": "振幅が大きいほど、音は大きく聞こえます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音が伝わるために必要なものとして正しいものはどれですか。",
+    "choices": [
+      "空気などの物質",
+      "必ず光",
+      "必ず水",
+      "電池"
+    ],
+    "answer": "空気などの物質",
+    "keywords": null,
+    "explanation": "音は空気や水、固体などの物質を通して伝わります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "真空中では音はどうなりますか。",
+    "choices": [
+      "伝わらない",
+      "速く伝わる",
+      "色が変わる",
+      "必ず反射する"
+    ],
+    "answer": "伝わらない",
+    "keywords": null,
+    "explanation": "真空中には音を伝える物質がないので、音は伝わりません。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波の振幅が大きいほど、波のゆれは大きい。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "振幅は、波のゆれの大きさそのものを表します。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音の高さが高いほど、振動数は小さい。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "音が高いほど、振動数は大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音は空気中だけでなく、水中や固体中でも伝わる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "音は物質の振動で伝わるので、水や固体でも伝わります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "1 秒間の振動の回数を【　　】という。",
+    "choices": [
+      "振動数",
+      "振幅",
+      "波長",
+      "密度"
+    ],
+    "answer": "振動数",
+    "keywords": null,
+    "explanation": "振動数は、1秒間に何回振動するかを表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波が進んでも、水面の水そのものは大きく前へは進まず、上下に【　　】。",
+    "choices": [
+      "ゆれる",
+      "固まる",
+      "消える",
+      "凍る"
+    ],
+    "answer": "ゆれる",
+    "keywords": null,
+    "explanation": "波は形が進む現象で、水そのものはその場で上下にゆれます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波の山から次の山までの長さを【　　】という。",
+    "choices": [
+      "波長",
+      "振幅",
+      "速さ",
+      "圧力"
+    ],
+    "answer": "波長",
+    "keywords": null,
+    "explanation": "波長は波1つ分の長さです。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "真空中では音は【　　】。",
+    "choices": [
+      "伝わらない",
+      "速くなる",
+      "大きくなる",
+      "高くなる"
+    ],
+    "answer": "伝わらない",
+    "keywords": null,
+    "explanation": "真空中には物質がないため、音は伝わりません。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "次の波の用語と、その意味を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "波長",
+        "right": "波1つ分の長さ"
+      },
+      {
+        "left": "振幅",
+        "right": "中心線からの高さ"
+      },
+      {
+        "left": "振動数",
+        "right": "1秒間の振動の回数"
+      }
+    ],
+    "explanation": "波や音の学習では、用語の意味を区別して覚えることが大切です。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "次の音の性質と、関係するものを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "音の高さ",
+        "right": "振動数"
+      },
+      {
+        "left": "音の大きさ",
+        "right": "振幅"
+      },
+      {
+        "left": "音が伝わる",
+        "right": "物質の振動"
+      }
+    ],
+    "explanation": "音の高さと大きさは、それぞれ別の要素で決まります。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "糸電話で音が伝わる流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "声で紙コップを振動させる",
+      "糸が振動する",
+      "相手側の紙コップが振動する",
+      "相手が音として聞く"
+    ],
+    "explanation": "糸電話では、振動が糸を通って相手に伝わります。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "水面の波を観察するときの見方として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "山や谷の位置を見る",
+      "山から山までの長さを調べる",
+      "波長を読み取る"
+    ],
+    "explanation": "山と山の間の長さを測ると、波長がわかります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "次のうち、音の性質として正しいものをすべて選びなさい。",
+    "choices": [
+      "物質を通して伝わる",
+      "真空中では伝わらない",
+      "振動で生じる",
+      "必ず光と同じ速さで進む",
+      "音の高さは振動数で決まる"
+    ],
+    "correct_choices": [
+      "物質を通して伝わる",
+      "真空中では伝わらない",
+      "振動で生じる",
+      "音の高さは振動数で決まる"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "音は物質中を振動で伝わり、真空では伝わりません。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "次のうち、波について正しいものをすべて選びなさい。",
+    "choices": [
+      "波長は波1つ分の長さである",
+      "振幅はゆれの大きさを表す",
+      "波が進むと物質も同じだけ前へ進み続ける",
+      "山から山までの長さを波長という",
+      "振幅は温度を表す"
+    ],
+    "correct_choices": [
+      "波長は波1つ分の長さである",
+      "振幅はゆれの大きさを表す",
+      "山から山までの長さを波長という"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "波は形が進む現象で、物質そのものが大きく前へ進み続けるわけではありません。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音の高さとの関係を完成させなさい。",
+    "choices": null,
+    "answer": "振動数が大きい → 音が高い",
+    "keywords": null,
+    "word_tokens": [
+      "振動数が大きい",
+      "→",
+      "音が高い"
+    ],
+    "distractor_tokens": [
+      "音が小さい",
+      "波長が短い"
+    ],
+    "explanation": "振動数が大きいほど、音は高く聞こえます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事の大きさを表す単位はどれですか。",
+    "choices": [
+      "J",
+      "V",
+      "A",
+      "Pa"
+    ],
+    "answer": "J",
+    "keywords": null,
+    "explanation": "仕事の大きさの単位はジュールで、記号は J です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "1 N の力で物体を力の向きに 1 m 動かしたときの仕事は何 J ですか。",
+    "choices": [
+      "1 J",
+      "10 J",
+      "0.1 J",
+      "100 J"
+    ],
+    "answer": "1 J",
+    "keywords": null,
+    "explanation": "仕事は 力 × 力の向きに動いた距離 で求めるので、1 N × 1 m = 1 J です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事率の単位として正しいものはどれですか。",
+    "choices": [
+      "W",
+      "J",
+      "N",
+      "V"
+    ],
+    "answer": "W",
+    "keywords": null,
+    "explanation": "仕事率の単位はワットで、記号は W です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "高いところにある物体がもつエネルギーを何といいますか。",
+    "choices": [
+      "位置エネルギー",
+      "運動エネルギー",
+      "熱エネルギー",
+      "電気エネルギー"
+    ],
+    "answer": "位置エネルギー",
+    "keywords": null,
+    "explanation": "高い位置にある物体は、位置エネルギーをもっています。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "動いている物体がもつエネルギーを何といいますか。",
+    "choices": [
+      "運動エネルギー",
+      "位置エネルギー",
+      "光エネルギー",
+      "化学エネルギー"
+    ],
+    "answer": "運動エネルギー",
+    "keywords": null,
+    "explanation": "速く動く物体ほど、大きな運動エネルギーをもちます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "てこや滑車などを使っても、仕事の大きさが変わらないという考え方を何といいますか。",
+    "choices": [
+      "仕事の原理",
+      "オームの法則",
+      "質量保存の法則",
+      "フックの法則"
+    ],
+    "answer": "仕事の原理",
+    "keywords": null,
+    "explanation": "道具を使うと力や距離は変えられても、仕事の大きさは変わらないという考え方です。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事率は、単位時間あたりにした仕事の大きさを表す。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "同じ仕事でも、短い時間でするほど仕事率は大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "物体を持ち上げると、その物体の位置エネルギーは大きくなる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "高い位置にあるほど、位置エネルギーは大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "エネルギーは、まったく別のものに変わることなくいつも同じ形だけで使われる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "エネルギーはいろいろな形に変換されながら利用されます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事 = 力 × 【　　】に動いた距離 で表される。",
+    "choices": [
+      "力の向き",
+      "反対向き",
+      "斜め向き",
+      "上向き"
+    ],
+    "answer": "力の向き",
+    "keywords": null,
+    "explanation": "仕事は、力の向きに動いた距離を使って求めます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "単位時間あたりの仕事の大きさを【　　】という。",
+    "choices": [
+      "仕事率",
+      "圧力",
+      "密度",
+      "電圧"
+    ],
+    "answer": "仕事率",
+    "keywords": null,
+    "explanation": "仕事率は、どれだけ速く仕事をしたかを表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "位置エネルギーと運動エネルギーを合わせて【　　】エネルギーという。",
+    "choices": [
+      "力学的",
+      "電気",
+      "熱",
+      "光"
+    ],
+    "answer": "力学的",
+    "keywords": null,
+    "explanation": "位置エネルギーと運動エネルギーを合わせて力学的エネルギーといいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "物体が速く動くほど大きくなるエネルギーを【　　】エネルギーという。",
+    "choices": [
+      "運動",
+      "位置",
+      "熱",
+      "化学"
+    ],
+    "answer": "運動",
+    "keywords": null,
+    "explanation": "運動エネルギーは、物体の速さに関係しています。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事・仕事率・力について、次の量とその単位を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "仕事",
+        "right": "J"
+      },
+      {
+        "left": "仕事率",
+        "right": "W"
+      },
+      {
+        "left": "力",
+        "right": "N"
+      }
+    ],
+    "explanation": "仕事、仕事率、力にはそれぞれ決まった単位があります。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "次のエネルギーの種類と、例を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "位置エネルギー",
+        "right": "高い場所にある物体"
+      },
+      {
+        "left": "運動エネルギー",
+        "right": "走っている自転車"
+      },
+      {
+        "left": "電気エネルギー",
+        "right": "乾電池"
+      },
+      {
+        "left": "熱エネルギー",
+        "right": "熱い湯"
+      }
+    ],
+    "explanation": "エネルギーにはいろいろな種類があり、身の回りで見つけられます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事を求める手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "力の大きさを調べる",
+      "力の向きに動いた距離を調べる",
+      "力と距離をかける"
+    ],
+    "explanation": "仕事は、力と力の向きに動いた距離の積で求めます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "高いところから物体を落としたときのエネルギーの変化として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "位置エネルギーが大きい",
+      "落下しながら運動エネルギーが増える",
+      "下に着く直前は運動エネルギーが大きい"
+    ],
+    "explanation": "落下中に位置エネルギーが運動エネルギーへ変わっていきます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "次のうち、仕事が 0 J になる場合をすべて選びなさい。",
+    "choices": [
+      "力を入れても動かなかった",
+      "持ち上げた物体をそのまま止めているだけ",
+      "1 N の力で 1 m 動かした",
+      "軽く押して動いた",
+      "力の向きにまったく動かなかった"
+    ],
+    "correct_choices": [
+      "力を入れても動かなかった",
+      "持ち上げた物体をそのまま止めているだけ",
+      "力の向きにまったく動かなかった"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "力の向きに物体が動かないと、仕事は 0 J です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "次のうち、エネルギーの変換の例として正しいものをすべて選びなさい。",
+    "choices": [
+      "電気ストーブで電気エネルギーが熱エネルギーに変わる",
+      "懐中電灯で化学エネルギーが光エネルギーに変わる",
+      "落下する物体で位置エネルギーが運動エネルギーに変わる",
+      "氷がとけると必ず電気エネルギーになる",
+      "音が必ず質量に変わる"
+    ],
+    "correct_choices": [
+      "電気ストーブで電気エネルギーが熱エネルギーに変わる",
+      "懐中電灯で化学エネルギーが光エネルギーに変わる",
+      "落下する物体で位置エネルギーが運動エネルギーに変わる"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "エネルギーは、いろいろな形に変換されながら利用されます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事の求め方を完成させなさい。",
+    "choices": null,
+    "answer": "仕事 = 力 × 距離",
+    "keywords": null,
+    "word_tokens": [
+      "仕事",
+      "=",
+      "力",
+      "×",
+      "距離"
+    ],
+    "distractor_tokens": [
+      "時間",
+      "÷"
+    ],
+    "explanation": "仕事は、力の向きに動いた距離を使って求めます。"
+  }
+]

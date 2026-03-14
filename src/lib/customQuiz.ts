@@ -4,15 +4,20 @@ import { getQuestionTypeLabel, QuestionType } from '@/lib/questionTypes'
 
 export type CustomQuizQuestionType = 'all' | QuestionType
 export type CustomQuizHistoryFilter = 'all' | 'unanswered' | 'weak'
+export type CustomQuizGradeFilter = 'all' | '中1' | '中2' | '中3'
+
+export const CUSTOM_QUIZ_GRADE_OPTIONS: CustomQuizGradeFilter[] = ['all', '中1', '中2', '中3']
 
 export interface CustomQuizOptions {
   unit: string
+  grade: CustomQuizGradeFilter
   questionType: CustomQuizQuestionType
   historyFilter: CustomQuizHistoryFilter
 }
 
 export const DEFAULT_CUSTOM_QUIZ_OPTIONS: CustomQuizOptions = {
   unit: 'all',
+  grade: 'all',
   questionType: 'all',
   historyFilter: 'all',
 }
@@ -28,6 +33,11 @@ export function getCustomQuizHistoryFilterLabel(historyFilter: CustomQuizHistory
   return '履歴条件なし'
 }
 
+export function getCustomQuizGradeFilterLabel(grade: CustomQuizGradeFilter) {
+  if (grade === 'all') return '学年すべて'
+  return grade
+}
+
 export function getCustomQuizSummaryParts(options: CustomQuizOptions) {
   const parts: string[] = []
 
@@ -35,6 +45,10 @@ export function getCustomQuizSummaryParts(options: CustomQuizOptions) {
     parts.push(options.unit)
   } else {
     parts.push('全単元')
+  }
+
+  if (options.grade !== 'all') {
+    parts.push(getCustomQuizGradeFilterLabel(options.grade))
   }
 
   if (options.questionType !== 'all') {

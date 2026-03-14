@@ -11,6 +11,7 @@ export interface QuizQuestionLike {
   field: string
   unit: string
   type: QuestionType
+  grade?: string
 }
 
 export interface QuestionHistoryLike {
@@ -97,6 +98,11 @@ function matchesCustomQuestionType(type: QuestionType, questionType: CustomQuizO
   return type === questionType
 }
 
+function matchesCustomGrade(grade: string | undefined, selectedGrade: CustomQuizOptions['grade']) {
+  if (selectedGrade === 'all') return true
+  return grade === selectedGrade
+}
+
 export function pickCustomQuizQuestions<T extends QuizQuestionLike>(
   pool: T[],
   history: QuestionHistoryLike[],
@@ -105,6 +111,10 @@ export function pickCustomQuizQuestions<T extends QuizQuestionLike>(
 ) {
   const historyMap = buildQuestionPriorityMap(history)
   const filtered = pool.filter(question => {
+    if (!matchesCustomGrade(question.grade, options.grade)) {
+      return false
+    }
+
     if (!matchesCustomQuestionType(question.type, options.questionType)) {
       return false
     }

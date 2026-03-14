@@ -1,0 +1,276 @@
+[
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事の大きさを表す単位はどれですか。",
+    "choices": ["J", "V", "A", "Pa"],
+    "answer": "J",
+    "keywords": null,
+    "explanation": "仕事の大きさの単位はジュールで、記号は J です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "1 N の力で物体を力の向きに 1 m 動かしたときの仕事は何 J ですか。",
+    "choices": ["1 J", "10 J", "0.1 J", "100 J"],
+    "answer": "1 J",
+    "keywords": null,
+    "explanation": "仕事は 力 × 力の向きに動いた距離 で求めるので、1 N × 1 m = 1 J です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事率の単位として正しいものはどれですか。",
+    "choices": ["W", "J", "N", "V"],
+    "answer": "W",
+    "keywords": null,
+    "explanation": "仕事率の単位はワットで、記号は W です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "高いところにある物体がもつエネルギーを何といいますか。",
+    "choices": ["位置エネルギー", "運動エネルギー", "熱エネルギー", "電気エネルギー"],
+    "answer": "位置エネルギー",
+    "keywords": null,
+    "explanation": "高い位置にある物体は、位置エネルギーをもっています。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "動いている物体がもつエネルギーを何といいますか。",
+    "choices": ["運動エネルギー", "位置エネルギー", "光エネルギー", "化学エネルギー"],
+    "answer": "運動エネルギー",
+    "keywords": null,
+    "explanation": "速く動く物体ほど、大きな運動エネルギーをもちます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "てこや滑車などを使っても、仕事の大きさが変わらないという考え方を何といいますか。",
+    "choices": ["仕事の原理", "オームの法則", "質量保存の法則", "フックの法則"],
+    "answer": "仕事の原理",
+    "keywords": null,
+    "explanation": "道具を使うと力や距離は変えられても、仕事の大きさは変わらないという考え方です。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事率は、単位時間あたりにした仕事の大きさを表す。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "同じ仕事でも、短い時間でするほど仕事率は大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "物体を持ち上げると、その物体の位置エネルギーは大きくなる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "高い位置にあるほど、位置エネルギーは大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "エネルギーは、まったく別のものに変わることなくいつも同じ形だけで使われる。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "エネルギーはいろいろな形に変換されながら利用されます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事 = 力 × 【　　】に動いた距離 で表される。",
+    "choices": ["力の向き", "反対向き", "斜め向き", "上向き"],
+    "answer": "力の向き",
+    "keywords": null,
+    "explanation": "仕事は、力の向きに動いた距離を使って求めます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "単位時間あたりの仕事の大きさを【　　】という。",
+    "choices": ["仕事率", "圧力", "密度", "電圧"],
+    "answer": "仕事率",
+    "keywords": null,
+    "explanation": "仕事率は、どれだけ速く仕事をしたかを表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "位置エネルギーと運動エネルギーを合わせて【　　】エネルギーという。",
+    "choices": ["力学的", "電気", "熱", "光"],
+    "answer": "力学的",
+    "keywords": null,
+    "explanation": "位置エネルギーと運動エネルギーを合わせて力学的エネルギーといいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "物体が速く動くほど大きくなるエネルギーを【　　】エネルギーという。",
+    "choices": ["運動", "位置", "熱", "化学"],
+    "answer": "運動",
+    "keywords": null,
+    "explanation": "運動エネルギーは、物体の速さに関係しています。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事・仕事率・力について、次の量とその単位を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "仕事", "right": "J" },
+      { "left": "仕事率", "right": "W" },
+      { "left": "力", "right": "N" }
+    ],
+    "explanation": "仕事、仕事率、力にはそれぞれ決まった単位があります。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "次のエネルギーの種類と、例を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "位置エネルギー", "right": "高い場所にある物体" },
+      { "left": "運動エネルギー", "right": "走っている自転車" },
+      { "left": "電気エネルギー", "right": "乾電池" },
+      { "left": "熱エネルギー", "right": "熱い湯" }
+    ],
+    "explanation": "エネルギーにはいろいろな種類があり、身の回りで見つけられます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事を求める手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "力の大きさを調べる",
+      "力の向きに動いた距離を調べる",
+      "力と距離をかける"
+    ],
+    "explanation": "仕事は、力と力の向きに動いた距離の積で求めます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "高いところから物体を落としたときのエネルギーの変化として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "位置エネルギーが大きい",
+      "落下しながら運動エネルギーが増える",
+      "下に着く直前は運動エネルギーが大きい"
+    ],
+    "explanation": "落下中に位置エネルギーが運動エネルギーへ変わっていきます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "次のうち、仕事が 0 J になる場合をすべて選びなさい。",
+    "choices": [
+      "力を入れても動かなかった",
+      "持ち上げた物体をそのまま止めているだけ",
+      "1 N の力で 1 m 動かした",
+      "軽く押して動いた",
+      "力の向きにまったく動かなかった"
+    ],
+    "correct_choices": [
+      "力を入れても動かなかった",
+      "持ち上げた物体をそのまま止めているだけ",
+      "力の向きにまったく動かなかった"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "力の向きに物体が動かないと、仕事は 0 J です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "次のうち、エネルギーの変換の例として正しいものをすべて選びなさい。",
+    "choices": [
+      "電気ストーブで電気エネルギーが熱エネルギーに変わる",
+      "懐中電灯で化学エネルギーが光エネルギーに変わる",
+      "落下する物体で位置エネルギーが運動エネルギーに変わる",
+      "氷がとけると必ず電気エネルギーになる",
+      "音が必ず質量に変わる"
+    ],
+    "correct_choices": [
+      "電気ストーブで電気エネルギーが熱エネルギーに変わる",
+      "懐中電灯で化学エネルギーが光エネルギーに変わる",
+      "落下する物体で位置エネルギーが運動エネルギーに変わる"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "エネルギーは、いろいろな形に変換されながら利用されます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "エネルギー",
+    "grade": "中3",
+    "question": "仕事の求め方を完成させなさい。",
+    "choices": null,
+    "answer": "仕事 = 力 × 距離",
+    "keywords": null,
+    "word_tokens": [
+      "仕事",
+      "=",
+      "力",
+      "×",
+      "距離"
+    ],
+    "distractor_tokens": [
+      "時間",
+      "÷"
+    ],
+    "explanation": "仕事は、力の向きに動いた距離を使って求めます。"
+  }
+]

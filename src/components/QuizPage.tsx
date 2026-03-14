@@ -211,6 +211,9 @@ export default function QuizPage({
       if (!dailyChallenge && (customOptions?.unit ?? unit) !== 'all') {
         query = query.eq('unit', customOptions?.unit ?? unit)
       }
+      if (!dailyChallenge && customOptions?.grade && customOptions.grade !== 'all') {
+        query = query.eq('grade', customOptions.grade)
+      }
       const supportsStudentQuestionFilter = getCachedColumnSupport('created_by_student_id') !== false
 
       if (supportsStudentQuestionFilter) {
@@ -228,6 +231,9 @@ export default function QuizPage({
         let fallbackQuery = supabase.from('questions').select('*')
         if (!dailyChallenge && field !== 'all') fallbackQuery = fallbackQuery.eq('field', field)
         if (!dailyChallenge && unit !== 'all') fallbackQuery = fallbackQuery.eq('unit', unit)
+        if (!dailyChallenge && customOptions?.grade && customOptions.grade !== 'all') {
+          fallbackQuery = fallbackQuery.eq('grade', customOptions.grade)
+        }
         const fallbackResponse = await fallbackQuery
         data = fallbackResponse.data
         error = fallbackResponse.error

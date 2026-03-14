@@ -1,0 +1,275 @@
+[
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "面を押す力の大きさをその面積で割ったものを何といいますか。",
+    "choices": ["圧力", "密度", "電力", "速さ"],
+    "answer": "圧力",
+    "keywords": null,
+    "explanation": "圧力は、面を押す力の大きさを面積で割って求めます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "同じ力で押すとき、圧力を大きくしたいならどうすればよいですか。",
+    "choices": ["面積を小さくする", "面積を大きくする", "力を0にする", "向きを変えるだけにする"],
+    "answer": "面積を小さくする",
+    "keywords": null,
+    "explanation": "同じ力なら、面積が小さいほど圧力は大きくなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "単位面積あたりにはたらく大気の重さによる圧力を何といいますか。",
+    "choices": ["大気圧", "水圧", "浮力", "磁力"],
+    "answer": "大気圧",
+    "keywords": null,
+    "explanation": "空気にも重さがあるため、地表には大気圧がはたらいています。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "水中で深くなるほど大きくなる圧力はどれですか。",
+    "choices": ["水圧", "気圧", "弾性力", "摩擦力"],
+    "answer": "水圧",
+    "keywords": null,
+    "explanation": "水圧は水の深さが深いほど大きくなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力の単位として使う記号はどれですか。",
+    "choices": ["Pa", "N", "A", "V"],
+    "answer": "Pa",
+    "keywords": null,
+    "explanation": "圧力の単位はパスカルで、記号は Pa です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "くつの裏を広くすると、地面にかかる圧力はどうなりますか。",
+    "choices": ["小さくなる", "大きくなる", "変わらない", "0になる"],
+    "answer": "小さくなる",
+    "keywords": null,
+    "explanation": "同じ重さでも、面積が広いと圧力は小さくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "同じ面積なら、押す力が大きいほど圧力は大きくなる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "圧力は力の大きさに比例するので、同じ面積なら力が大きいほど圧力も大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "水圧は、水の深さが同じならどの向きでも同じようにはたらく。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "水圧は、同じ深さならいろいろな向きに同じようにはたらきます。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "大気圧は空気に重さがないので存在しない。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "空気にも重さがあるため、大気圧が生じます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力を求める式は、力 ÷ 【　　】である。",
+    "choices": ["面積", "体積", "速さ", "時間"],
+    "answer": "面積",
+    "keywords": null,
+    "explanation": "圧力は、面を押す力の大きさを面積で割って求めます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "水の深さが深いほど【　　】は大きくなる。",
+    "choices": ["水圧", "摩擦力", "電流", "音"],
+    "answer": "水圧",
+    "keywords": null,
+    "explanation": "水圧は、水深が深いほど大きくなります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力の単位パスカルの記号は【　　】である。",
+    "choices": ["Pa", "N", "W", "J"],
+    "answer": "Pa",
+    "keywords": null,
+    "explanation": "圧力の単位はパスカルで、記号は Pa です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "空気の重さによって生じる圧力を【　　】という。",
+    "choices": ["大気圧", "水圧", "浮力", "磁力"],
+    "answer": "大気圧",
+    "keywords": null,
+    "explanation": "空気にも重さがあり、そのため大気圧がはたらきます。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "次の圧力の種類と、説明を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "圧力", "right": "面を押す力の大きさを面積で割ったもの" },
+      { "left": "大気圧", "right": "空気の重さによる圧力" },
+      { "left": "水圧", "right": "水中ではたらく圧力" }
+    ],
+    "explanation": "圧力には、空気によるものや水によるものなどがあります。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "次の場面と、圧力の変化を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "スキー板をはく", "right": "圧力を小さくする" },
+      { "left": "画びょうの先がとがっている", "right": "圧力を大きくする" },
+      { "left": "くつの裏を広くする", "right": "圧力を小さくする" }
+    ],
+    "explanation": "面積を広くすると圧力は小さくなり、面積をせまくすると圧力は大きくなります。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力を求める手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "面を押す力の大きさを調べる",
+      "力がはたらく面積を求める",
+      "力を面積で割る"
+    ],
+    "explanation": "圧力は、力と面積がわかれば求められます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "水圧を調べる実験の流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "深さのちがう位置に穴をあける",
+      "水を入れる",
+      "出る水の勢いを比べる"
+    ],
+    "explanation": "深さが深いほど水の勢いが強くなり、水圧が大きいことがわかります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "次のうち、圧力を小さくする工夫として正しいものをすべて選びなさい。",
+    "choices": [
+      "面積を広くする",
+      "スキー板を使う",
+      "くつ底を広くする",
+      "画びょうの先を細くする",
+      "力を大きくする"
+    ],
+    "correct_choices": [
+      "面積を広くする",
+      "スキー板を使う",
+      "くつ底を広くする"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "同じ力なら、面積を広くするほど圧力は小さくなります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "次のうち、水圧について正しいものをすべて選びなさい。",
+    "choices": [
+      "深いほど大きい",
+      "同じ深さなら同じくらいはたらく",
+      "上向きにもはたらく",
+      "深さに関係なく一定である",
+      "水がなくてもはたらく"
+    ],
+    "correct_choices": [
+      "深いほど大きい",
+      "同じ深さなら同じくらいはたらく",
+      "上向きにもはたらく"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "水圧は深さで変わり、いろいろな向きにはたらきます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "圧力",
+    "grade": "中1",
+    "question": "圧力の求め方を完成させなさい。",
+    "choices": null,
+    "answer": "圧力 = 力 ÷ 面積",
+    "keywords": null,
+    "word_tokens": [
+      "圧力",
+      "=",
+      "力",
+      "÷",
+      "面積"
+    ],
+    "distractor_tokens": [
+      "×",
+      "体積"
+    ],
+    "explanation": "圧力は、面を押す力の大きさを面積で割って求めます。"
+  }
+]

@@ -16,10 +16,13 @@ import {
 import { ScienceChatField } from '@/lib/scienceChat'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import {
+  CUSTOM_QUIZ_GRADE_OPTIONS,
+  CustomQuizGradeFilter,
   CustomQuizHistoryFilter,
   CustomQuizOptions,
   CustomQuizQuestionType,
   DEFAULT_CUSTOM_QUIZ_OPTIONS,
+  getCustomQuizGradeFilterLabel,
   getCustomQuizHistoryFilterLabel,
   getCustomQuizQuestionTypeLabel,
   getCustomQuizSummaryParts,
@@ -69,10 +72,14 @@ export default function UnitSelectPage({
   const [loading, setLoading] = useState(true)
   const [showCustomPanel, setShowCustomPanel] = useState(false)
   const [customOptions, setCustomOptions] = useState<CustomQuizOptions>(DEFAULT_CUSTOM_QUIZ_OPTIONS)
+  const [availableGrades, setAvailableGrades] = useState<CustomQuizGradeFilter[]>(['中1', '中2', '中3'])
   const [questionCount, setQuestionCount] = useState<QuizQuestionCount>(10)
   const color = FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
   const totalQuestionCount = units.reduce((sum, item) => sum + item.questionCount, 0)
   const isGuest = isGuestStudentId(studentId)
+  const customGradeOptions = CUSTOM_QUIZ_GRADE_OPTIONS.filter(grade => (
+    grade === 'all' || availableGrades.includes(grade)
+  ))
 
   useEffect(() => {
     setShowCustomPanel(false)
@@ -84,7 +91,7 @@ export default function UnitSelectPage({
       setLoading(true)
       let query = supabase
         .from('questions')
-        .select('unit')
+        .select('unit, grade')
         .eq('field', field)
       const supportsStudentQuestionFilter = getCachedColumnSupport('created_by_student_id') !== false
 
@@ -102,7 +109,7 @@ export default function UnitSelectPage({
         markColumnMissing('created_by_student_id')
         const fallback = await supabase
           .from('questions')
-          .select('unit')
+          .select('unit, grade')
           .eq('field', field)
         qData = fallback.data
         qError = fallback.error
@@ -118,8 +125,12 @@ export default function UnitSelectPage({
       }
 
       const unitCounts: Record<string, number> = {}
+      const gradeSet = new Set<CustomQuizGradeFilter>()
       qData?.forEach(question => {
         unitCounts[question.unit] = (unitCounts[question.unit] || 0) + 1
+        if (question.grade === '中1' || question.grade === '中2' || question.grade === '中3') {
+          gradeSet.add(question.grade)
+        }
       })
 
       const sessionStats: Record<string, { total: number; correct: number }> = {}
@@ -155,10 +166,15 @@ export default function UnitSelectPage({
       }))
 
       setUnits(unitList)
+      setAvailableGrades(gradeSet.size > 0 ? Array.from(gradeSet) : ['中1', '中2', '中3'])
       setLoading(false)
     }
     load()
   }, [field, isGuest, studentId])
+
+  const updateGrade = (grade: CustomQuizGradeFilter) => {
+    setCustomOptions(current => ({ ...current, grade }))
+  }
 
   const updateQuestionType = (questionType: CustomQuizQuestionType) => {
     setCustomOptions(current => ({ ...current, questionType }))
@@ -704,6 +720,32 @@ export default function UnitSelectPage({
               </div>
 
               <div className="grid gap-4">
+                <div>
+                  <div className="text-slate-400 text-xs mb-2">学年</div>
+                  <div className="grid gap-2 sm:grid-cols-4">
+                    {customGradeOptions.map(grade => {
+                      const active = customOptions.grade === grade
+                      return (
+                        <button
+                          key={grade}
+                          onClick={() => updateGrade(grade)}
+                          className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
+                          style={{
+                            borderColor: active ? `${color}70` : 'var(--surface-elevated-border)',
+                            background: active ? `${color}18` : 'var(--surface-elevated)',
+                            color: active ? color : 'var(--text)',
+                          }}
+                        >
+                          {getCustomQuizGradeFilterLabel(grade)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="mt-2 text-xs leading-6 text-slate-500">
+                    中1・中2・中3でまとめてしぼれます。
+                  </p>
+                </div>
+
                 <div>
                   <div className="text-slate-400 text-xs mb-2">問題タイプ</div>
                   <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">

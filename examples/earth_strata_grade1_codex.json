@@ -1,0 +1,238 @@
+[
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "流れる水が土地や岩石をけずるはたらきを何といいますか。",
+    "choices": ["侵食", "運搬", "堆積", "風化"],
+    "answer": "侵食",
+    "keywords": null,
+    "explanation": "流れる水には、地面をけずる侵食、土砂を運ぶ運搬、積もらせる堆積の3つのはたらきがあります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "川が運んできた土砂が水底などに積もるはたらきを何といいますか。",
+    "choices": ["堆積", "侵食", "蒸発", "融解"],
+    "answer": "堆積",
+    "keywords": null,
+    "explanation": "流れる水の速さが弱まると、運ばれていた土砂が下に沈んで積もります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "れき・砂・泥のうち、最も粒が大きいものはどれですか。",
+    "choices": ["れき", "砂", "泥", "火山灰"],
+    "answer": "れき",
+    "keywords": null,
+    "explanation": "れき、砂、泥の順に粒が小さくなります。粒の大きさは堆積した場所のようすを考える手がかりになります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "泥が固まってできた堆積岩は何ですか。",
+    "choices": ["泥岩", "砂岩", "れき岩", "石灰岩"],
+    "answer": "泥岩",
+    "keywords": null,
+    "explanation": "泥が固まると泥岩、砂が固まると砂岩、れきが固まるとれき岩になります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層が水平に積み重なっているとき、より古い地層はふつうどこにありますか。",
+    "choices": ["下の方", "上の方", "左右の端", "中央だけ"],
+    "answer": "下の方",
+    "keywords": null,
+    "explanation": "地層は下から順に積もるので、変形していなければ下の地層ほど古いと考えられます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層の中に残された生物のからだや生活のあとを何といいますか。",
+    "choices": ["化石", "結晶", "鉱物", "火口"],
+    "answer": "化石",
+    "keywords": null,
+    "explanation": "化石は、昔の生物や当時の環境を知る大切な手がかりになります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "大きな変形がなければ、新しい地層ほど上に重なる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "地層は時間とともに上へ上へと積み重なっていくため、上ほど新しい地層になります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "水に長く運ばれたれきは、角ばったままのものが多い。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "長く運ばれる間にぶつかり合うため、れきはしだいに丸みを帯びることが多いです。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "石灰岩は、サンゴや貝などの生物の遺がいがもとになってできることがある。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "石灰岩は、炭酸カルシウムを多くふくむ生物の遺がいが積もってできることがあります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "火山灰が積もって固まってできた岩石を【　　】という。",
+    "choices": ["凝灰岩", "石灰岩", "泥岩", "チャート"],
+    "answer": "凝灰岩",
+    "keywords": null,
+    "explanation": "火山灰が積もって固まると凝灰岩になります。地層の中で火山活動のようすを知る手がかりになります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "砂が積もって固まってできた堆積岩を【　　】という。",
+    "choices": ["砂岩", "泥岩", "れき岩", "凝灰岩"],
+    "answer": "砂岩",
+    "keywords": null,
+    "explanation": "堆積物の種類に応じて、できる堆積岩の名前も変わります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層に残る生物のからだや生活のあとを【　　】という。",
+    "choices": ["化石", "鉱石", "地震", "マグマ"],
+    "answer": "化石",
+    "keywords": null,
+    "explanation": "化石を調べると、その地層ができた時代や環境を推定できます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "最も粒が細かく、さわるとすべすべした堆積物を【　　】という。",
+    "choices": ["泥", "砂", "れき", "火山れき"],
+    "answer": "泥",
+    "keywords": null,
+    "explanation": "泥は粒がとても細かいため、静かな水中に堆積しやすいです。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "次の堆積物と、それが固まってできる岩石を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "れき", "right": "れき岩" },
+      { "left": "砂", "right": "砂岩" },
+      { "left": "泥", "right": "泥岩" }
+    ],
+    "explanation": "もとの堆積物が何かを考えると、堆積岩の名前を整理しやすくなります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "次の化石の種類と、わかる内容を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "示相化石", "right": "昔の環境の手がかり" },
+      { "left": "示準化石", "right": "地層の年代の手がかり" },
+      { "left": "サンゴの化石", "right": "暖かく浅い海の手がかり" }
+    ],
+    "explanation": "化石には、年代を知るものと環境を知るものがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "流れる水のはたらきの順として、正しいものに並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["侵食", "運搬", "堆積"],
+    "explanation": "水はまず地面をけずり、次に土砂を運び、最後に積もらせます。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層ができるまでの流れとして、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["岩石がけずられる", "土砂が運ばれる", "水底に積もる"],
+    "explanation": "侵食、運搬、堆積の順に進んで地層がつくられます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "次のうち、堆積岩をすべて選びなさい。",
+    "choices": ["砂岩", "泥岩", "石灰岩", "花こう岩", "玄武岩"],
+    "correct_choices": ["砂岩", "泥岩", "石灰岩"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "花こう岩や玄武岩は火成岩で、堆積岩ではありません。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層や化石を調べるとわかることをすべて選びなさい。",
+    "choices": ["昔の環境", "地層のおおよその年代", "当時いた生物", "未来の天気", "太陽の表面温度"],
+    "correct_choices": ["昔の環境", "地層のおおよその年代", "当時いた生物"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "地層や化石は過去の地球のようすを知る手がかりになります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "流れる水の3つのはたらきの順を完成させなさい。",
+    "choices": null,
+    "answer": "侵食 → 運搬 → 堆積",
+    "keywords": null,
+    "word_tokens": ["侵食", "→", "運搬", "→", "堆積"],
+    "distractor_tokens": ["風化", "蒸発"],
+    "explanation": "流れる水のはたらきは、侵食、運搬、堆積の順で整理できます。"
+  }
+]

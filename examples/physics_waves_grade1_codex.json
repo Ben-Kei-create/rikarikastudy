@@ -1,0 +1,275 @@
+[
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波の山から次の山までの長さを何といいますか。",
+    "choices": ["波長", "振幅", "速さ", "周波数"],
+    "answer": "波長",
+    "keywords": null,
+    "explanation": "波長は、波の1つ分の長さを表します。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波の中心線から山や谷までの高さを何といいますか。",
+    "choices": ["振幅", "波長", "速さ", "電圧"],
+    "answer": "振幅",
+    "keywords": null,
+    "explanation": "振幅は、波のゆれの大きさを表します。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音の高さを決めるものはどれですか。",
+    "choices": ["振動数", "音の大きさ", "温度", "重さ"],
+    "answer": "振動数",
+    "keywords": null,
+    "explanation": "音の高さは、1秒間の振動の回数である振動数で決まります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音の大きさにもっとも関係するものはどれですか。",
+    "choices": ["振幅", "波長", "色", "重力"],
+    "answer": "振幅",
+    "keywords": null,
+    "explanation": "振幅が大きいほど、音は大きく聞こえます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音が伝わるために必要なものとして正しいものはどれですか。",
+    "choices": ["空気などの物質", "必ず光", "必ず水", "電池"],
+    "answer": "空気などの物質",
+    "keywords": null,
+    "explanation": "音は空気や水、固体などの物質を通して伝わります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "真空中では音はどうなりますか。",
+    "choices": ["伝わらない", "速く伝わる", "色が変わる", "必ず反射する"],
+    "answer": "伝わらない",
+    "keywords": null,
+    "explanation": "真空中には音を伝える物質がないので、音は伝わりません。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波の振幅が大きいほど、波のゆれは大きい。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "振幅は、波のゆれの大きさそのものを表します。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音の高さが高いほど、振動数は小さい。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "音が高いほど、振動数は大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音は空気中だけでなく、水中や固体中でも伝わる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "音は物質の振動で伝わるので、水や固体でも伝わります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "1 秒間の振動の回数を【　　】という。",
+    "choices": ["振動数", "振幅", "波長", "密度"],
+    "answer": "振動数",
+    "keywords": null,
+    "explanation": "振動数は、1秒間に何回振動するかを表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波が進んでも、水面の水そのものは大きく前へは進まず、上下に【　　】。",
+    "choices": ["ゆれる", "固まる", "消える", "凍る"],
+    "answer": "ゆれる",
+    "keywords": null,
+    "explanation": "波は形が進む現象で、水そのものはその場で上下にゆれます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "波の山から次の山までの長さを【　　】という。",
+    "choices": ["波長", "振幅", "速さ", "圧力"],
+    "answer": "波長",
+    "keywords": null,
+    "explanation": "波長は波1つ分の長さです。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "真空中では音は【　　】。",
+    "choices": ["伝わらない", "速くなる", "大きくなる", "高くなる"],
+    "answer": "伝わらない",
+    "keywords": null,
+    "explanation": "真空中には物質がないため、音は伝わりません。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "次の波の用語と、その意味を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "波長", "right": "波1つ分の長さ" },
+      { "left": "振幅", "right": "中心線からの高さ" },
+      { "left": "振動数", "right": "1秒間の振動の回数" }
+    ],
+    "explanation": "波や音の学習では、用語の意味を区別して覚えることが大切です。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "次の音の性質と、関係するものを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "音の高さ", "right": "振動数" },
+      { "left": "音の大きさ", "right": "振幅" },
+      { "left": "音が伝わる", "right": "物質の振動" }
+    ],
+    "explanation": "音の高さと大きさは、それぞれ別の要素で決まります。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "糸電話で音が伝わる流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "声で紙コップを振動させる",
+      "糸が振動する",
+      "相手側の紙コップが振動する",
+      "相手が音として聞く"
+    ],
+    "explanation": "糸電話では、振動が糸を通って相手に伝わります。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "水面の波を観察するときの見方として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "山や谷の位置を見る",
+      "山から山までの長さを調べる",
+      "波長を読み取る"
+    ],
+    "explanation": "山と山の間の長さを測ると、波長がわかります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "次のうち、音の性質として正しいものをすべて選びなさい。",
+    "choices": [
+      "物質を通して伝わる",
+      "真空中では伝わらない",
+      "振動で生じる",
+      "必ず光と同じ速さで進む",
+      "音の高さは振動数で決まる"
+    ],
+    "correct_choices": [
+      "物質を通して伝わる",
+      "真空中では伝わらない",
+      "振動で生じる",
+      "音の高さは振動数で決まる"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "音は物質中を振動で伝わり、真空では伝わりません。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "次のうち、波について正しいものをすべて選びなさい。",
+    "choices": [
+      "波長は波1つ分の長さである",
+      "振幅はゆれの大きさを表す",
+      "波が進むと物質も同じだけ前へ進み続ける",
+      "山から山までの長さを波長という",
+      "振幅は温度を表す"
+    ],
+    "correct_choices": [
+      "波長は波1つ分の長さである",
+      "振幅はゆれの大きさを表す",
+      "山から山までの長さを波長という"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "波は形が進む現象で、物質そのものが大きく前へ進み続けるわけではありません。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "波と音",
+    "grade": "中1",
+    "question": "音の高さとの関係を完成させなさい。",
+    "choices": null,
+    "answer": "振動数が大きい → 音が高い",
+    "keywords": null,
+    "word_tokens": [
+      "振動数が大きい",
+      "→",
+      "音が高い"
+    ],
+    "distractor_tokens": [
+      "音が小さい",
+      "波長が短い"
+    ],
+    "explanation": "振動数が大きいほど、音は高く聞こえます。"
+  }
+]

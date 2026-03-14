@@ -1,0 +1,1758 @@
+[
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "流れる水が土地や岩石をけずるはたらきを何といいますか。",
+    "choices": [
+      "侵食",
+      "運搬",
+      "堆積",
+      "風化"
+    ],
+    "answer": "侵食",
+    "keywords": null,
+    "explanation": "流れる水には、地面をけずる侵食、土砂を運ぶ運搬、積もらせる堆積の3つのはたらきがあります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "川が運んできた土砂が水底などに積もるはたらきを何といいますか。",
+    "choices": [
+      "堆積",
+      "侵食",
+      "蒸発",
+      "融解"
+    ],
+    "answer": "堆積",
+    "keywords": null,
+    "explanation": "流れる水の速さが弱まると、運ばれていた土砂が下に沈んで積もります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "れき・砂・泥のうち、最も粒が大きいものはどれですか。",
+    "choices": [
+      "れき",
+      "砂",
+      "泥",
+      "火山灰"
+    ],
+    "answer": "れき",
+    "keywords": null,
+    "explanation": "れき、砂、泥の順に粒が小さくなります。粒の大きさは堆積した場所のようすを考える手がかりになります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "泥が固まってできた堆積岩は何ですか。",
+    "choices": [
+      "泥岩",
+      "砂岩",
+      "れき岩",
+      "石灰岩"
+    ],
+    "answer": "泥岩",
+    "keywords": null,
+    "explanation": "泥が固まると泥岩、砂が固まると砂岩、れきが固まるとれき岩になります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層が水平に積み重なっているとき、より古い地層はふつうどこにありますか。",
+    "choices": [
+      "下の方",
+      "上の方",
+      "左右の端",
+      "中央だけ"
+    ],
+    "answer": "下の方",
+    "keywords": null,
+    "explanation": "地層は下から順に積もるので、変形していなければ下の地層ほど古いと考えられます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層の中に残された生物のからだや生活のあとを何といいますか。",
+    "choices": [
+      "化石",
+      "結晶",
+      "鉱物",
+      "火口"
+    ],
+    "answer": "化石",
+    "keywords": null,
+    "explanation": "化石は、昔の生物や当時の環境を知る大切な手がかりになります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "大きな変形がなければ、新しい地層ほど上に重なる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "地層は時間とともに上へ上へと積み重なっていくため、上ほど新しい地層になります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "水に長く運ばれたれきは、角ばったままのものが多い。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "長く運ばれる間にぶつかり合うため、れきはしだいに丸みを帯びることが多いです。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "石灰岩は、サンゴや貝などの生物の遺がいがもとになってできることがある。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "石灰岩は、炭酸カルシウムを多くふくむ生物の遺がいが積もってできることがあります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "火山灰が積もって固まってできた岩石を【　　】という。",
+    "choices": [
+      "凝灰岩",
+      "石灰岩",
+      "泥岩",
+      "チャート"
+    ],
+    "answer": "凝灰岩",
+    "keywords": null,
+    "explanation": "火山灰が積もって固まると凝灰岩になります。地層の中で火山活動のようすを知る手がかりになります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "砂が積もって固まってできた堆積岩を【　　】という。",
+    "choices": [
+      "砂岩",
+      "泥岩",
+      "れき岩",
+      "凝灰岩"
+    ],
+    "answer": "砂岩",
+    "keywords": null,
+    "explanation": "堆積物の種類に応じて、できる堆積岩の名前も変わります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層に残る生物のからだや生活のあとを【　　】という。",
+    "choices": [
+      "化石",
+      "鉱石",
+      "地震",
+      "マグマ"
+    ],
+    "answer": "化石",
+    "keywords": null,
+    "explanation": "化石を調べると、その地層ができた時代や環境を推定できます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "最も粒が細かく、さわるとすべすべした堆積物を【　　】という。",
+    "choices": [
+      "泥",
+      "砂",
+      "れき",
+      "火山れき"
+    ],
+    "answer": "泥",
+    "keywords": null,
+    "explanation": "泥は粒がとても細かいため、静かな水中に堆積しやすいです。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "次の堆積物と、それが固まってできる岩石を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "れき",
+        "right": "れき岩"
+      },
+      {
+        "left": "砂",
+        "right": "砂岩"
+      },
+      {
+        "left": "泥",
+        "right": "泥岩"
+      }
+    ],
+    "explanation": "もとの堆積物が何かを考えると、堆積岩の名前を整理しやすくなります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "次の化石の種類と、わかる内容を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "示相化石",
+        "right": "昔の環境の手がかり"
+      },
+      {
+        "left": "示準化石",
+        "right": "地層の年代の手がかり"
+      },
+      {
+        "left": "サンゴの化石",
+        "right": "暖かく浅い海の手がかり"
+      }
+    ],
+    "explanation": "化石には、年代を知るものと環境を知るものがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "流れる水のはたらきの順として、正しいものに並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "侵食",
+      "運搬",
+      "堆積"
+    ],
+    "explanation": "水はまず地面をけずり、次に土砂を運び、最後に積もらせます。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層ができるまでの流れとして、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "岩石がけずられる",
+      "土砂が運ばれる",
+      "水底に積もる"
+    ],
+    "explanation": "侵食、運搬、堆積の順に進んで地層がつくられます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "次のうち、堆積岩をすべて選びなさい。",
+    "choices": [
+      "砂岩",
+      "泥岩",
+      "石灰岩",
+      "花こう岩",
+      "玄武岩"
+    ],
+    "correct_choices": [
+      "砂岩",
+      "泥岩",
+      "石灰岩"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "花こう岩や玄武岩は火成岩で、堆積岩ではありません。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "地層や化石を調べるとわかることをすべて選びなさい。",
+    "choices": [
+      "昔の環境",
+      "地層のおおよその年代",
+      "当時いた生物",
+      "未来の天気",
+      "太陽の表面温度"
+    ],
+    "correct_choices": [
+      "昔の環境",
+      "地層のおおよその年代",
+      "当時いた生物"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "地層や化石は過去の地球のようすを知る手がかりになります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "地層と堆積岩",
+    "grade": "中1",
+    "question": "流れる水の3つのはたらきの順を完成させなさい。",
+    "choices": null,
+    "answer": "侵食 → 運搬 → 堆積",
+    "keywords": null,
+    "word_tokens": [
+      "侵食",
+      "→",
+      "運搬",
+      "→",
+      "堆積"
+    ],
+    "distractor_tokens": [
+      "風化",
+      "蒸発"
+    ],
+    "explanation": "流れる水のはたらきは、侵食、運搬、堆積の順で整理できます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "火山の地下にある、高温でどろどろにとけた岩石を何といいますか。",
+    "choices": [
+      "マグマ",
+      "溶岩",
+      "火山灰",
+      "火山弾"
+    ],
+    "answer": "マグマ",
+    "keywords": null,
+    "explanation": "地下ではマグマ、地表に出たあとは溶岩とよばれます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地表にふき出したマグマを何といいますか。",
+    "choices": [
+      "溶岩",
+      "火山灰",
+      "火山ガス",
+      "軽石"
+    ],
+    "answer": "溶岩",
+    "keywords": null,
+    "explanation": "地下ではマグマでも、地表に出ると溶岩とよばれます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震が起こり始めた地下の地点を何といいますか。",
+    "choices": [
+      "震源",
+      "震央",
+      "断層",
+      "火口"
+    ],
+    "answer": "震源",
+    "keywords": null,
+    "explanation": "地震は地下の震源で発生し、その真上の地表の地点を震央といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "震源の真上にあたる地表の地点を何といいますか。",
+    "choices": [
+      "震央",
+      "震源",
+      "初期微動",
+      "主要動"
+    ],
+    "answer": "震央",
+    "keywords": null,
+    "explanation": "震央は、地下の震源を地表に真上へのばした位置です。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震のはじめに感じる小さなゆれを何といいますか。",
+    "choices": [
+      "初期微動",
+      "主要動",
+      "余震",
+      "本震"
+    ],
+    "answer": "初期微動",
+    "keywords": null,
+    "explanation": "初期微動はP波による小さなゆれで、その後に主要動が続きます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "各地での地震のゆれの強さを表すものはどれですか。",
+    "choices": [
+      "震度",
+      "マグニチュード",
+      "震源距離",
+      "等高線"
+    ],
+    "answer": "震度",
+    "keywords": null,
+    "explanation": "震度は場所ごとのゆれの強さ、マグニチュードは地震そのものの規模を表します。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "P波はS波よりも速く伝わる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "P波が先に届くため、最初に小さなゆれである初期微動が観測されます。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "マグニチュードは、ある地点で感じたゆれの強さを表している。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "マグニチュードは地震の規模、各地点でのゆれの強さは震度で表します。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "火山灰は、直径が2mmより小さい火山噴出物である。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "火山噴出物は大きさによって火山灰、火山れき、火山弾に分けられます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震計の記録で、最初の小さなゆれが続く時間を【　　】という。",
+    "choices": [
+      "初期微動継続時間",
+      "主要動継続時間",
+      "震源距離",
+      "震度階級"
+    ],
+    "answer": "初期微動継続時間",
+    "keywords": null,
+    "explanation": "初期微動継続時間を使うと、震源までのおおよその距離を求められます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震が起こり始めた地下の場所を【　　】という。",
+    "choices": [
+      "震源",
+      "震央",
+      "断面",
+      "火口"
+    ],
+    "answer": "震源",
+    "keywords": null,
+    "explanation": "地震の出発点は地下の震源です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "各地でのゆれの強さを表す値を【　　】という。",
+    "choices": [
+      "震度",
+      "速度",
+      "圧力",
+      "密度"
+    ],
+    "answer": "震度",
+    "keywords": null,
+    "explanation": "震度は観測地点ごとのゆれの強さを表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地下のマグマが地表に出たものを【　　】という。",
+    "choices": [
+      "溶岩",
+      "火山灰",
+      "軽石",
+      "火山ガス"
+    ],
+    "answer": "溶岩",
+    "keywords": null,
+    "explanation": "マグマは地表に出ると溶岩とよばれます。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "次の火山噴出物と、その大きさの特徴を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "火山灰",
+        "right": "2mmより小さい"
+      },
+      {
+        "left": "火山れき",
+        "right": "2mm以上64mm未満"
+      },
+      {
+        "left": "火山弾",
+        "right": "64mm以上"
+      }
+    ],
+    "explanation": "火山噴出物は粒の大きさで分類されます。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "次の地震の用語と、その意味を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "P波",
+        "right": "初期微動を起こす"
+      },
+      {
+        "left": "S波",
+        "right": "主要動を起こす"
+      },
+      {
+        "left": "震央",
+        "right": "震源の真上の地表"
+      }
+    ],
+    "explanation": "P波とS波のちがい、震源と震央の関係を整理して覚えることが大切です。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震が起こってから観測点で感じるゆれの順として、正しく並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "地震が発生する",
+      "初期微動が始まる",
+      "主要動が始まる"
+    ],
+    "explanation": "P波が先に届いて初期微動が起こり、その後にS波で主要動が始まります。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "火山活動で地表に噴き出した物質の流れとして、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "地下でマグマができる",
+      "マグマが地表へ出る",
+      "溶岩が冷えて固まる"
+    ],
+    "explanation": "地下のマグマが地表に出て溶岩となり、その後冷えて固まります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "次のうち、火山から出るものをすべて選びなさい。",
+    "choices": [
+      "溶岩",
+      "火山灰",
+      "火山ガス",
+      "海水",
+      "雲母"
+    ],
+    "correct_choices": [
+      "溶岩",
+      "火山灰",
+      "火山ガス"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "火山からは溶岩や火山灰、火山ガスなどが出ます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震について正しいものをすべて選びなさい。",
+    "choices": [
+      "P波はS波より速い",
+      "震度は場所ごとに異なる",
+      "震央は地下にある",
+      "初期微動は小さなゆれである",
+      "マグニチュードは各地点のゆれの強さを表す"
+    ],
+    "correct_choices": [
+      "P波はS波より速い",
+      "震度は場所ごとに異なる",
+      "初期微動は小さなゆれである"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "震央は地表、地下は震源です。マグニチュードは地震の規模を表します。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震のゆれの順を完成させなさい。",
+    "choices": null,
+    "answer": "初期微動 → 主要動",
+    "keywords": null,
+    "word_tokens": [
+      "初期微動",
+      "→",
+      "主要動"
+    ],
+    "distractor_tokens": [
+      "余震",
+      "火山灰"
+    ],
+    "explanation": "地震では、はじめに初期微動、その後に主要動が起こります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "空気中にふくむことのできる水蒸気の限度量を何といいますか。",
+    "choices": [
+      "飽和水蒸気量",
+      "湿度",
+      "気圧",
+      "露点"
+    ],
+    "answer": "飽和水蒸気量",
+    "keywords": null,
+    "explanation": "空気の温度が高いほど、ふくむことのできる水蒸気の量は多くなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "性質がほぼ同じ空気の大きなかたまりを何といいますか。",
+    "choices": [
+      "気団",
+      "前線",
+      "低気圧",
+      "等圧線"
+    ],
+    "answer": "気団",
+    "keywords": null,
+    "explanation": "気団は、広い範囲で気温や湿度がほぼ同じ空気の集まりです。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "性質のちがう気団どうしの境目を何といいますか。",
+    "choices": [
+      "前線",
+      "等高線",
+      "震源",
+      "磁界"
+    ],
+    "answer": "前線",
+    "keywords": null,
+    "explanation": "暖かい気団と冷たい気団の境目には前線ができます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "天気図で、気圧の等しい場所を結んだ線を何といいますか。",
+    "choices": [
+      "等圧線",
+      "等温線",
+      "前線面",
+      "風向線"
+    ],
+    "answer": "等圧線",
+    "keywords": null,
+    "explanation": "等圧線の間隔がせまいほど、風が強くなりやすいです。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "広い範囲に長い時間雨を降らせやすい雲はどれですか。",
+    "choices": [
+      "乱層雲",
+      "積雲",
+      "巻雲",
+      "うろこ雲"
+    ],
+    "answer": "乱層雲",
+    "keywords": null,
+    "explanation": "乱層雲は空全体をおおいやすく、しとしとした雨を降らせることが多いです。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "日本付近で低気圧のまわりの風は、ふつうどの向きにふきこみますか。",
+    "choices": [
+      "反時計回りに中心へ",
+      "時計回りに中心へ",
+      "反時計回りに外へ",
+      "時計回りに外へ"
+    ],
+    "answer": "反時計回りに中心へ",
+    "keywords": null,
+    "explanation": "北半球では、低気圧のまわりの風は反時計回りに中心へふきこみます。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "北半球では、高気圧のまわりの風は時計回りに中心からふき出す。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "高気圧では空気が上から下へおり、地表付近で外側へ広がります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "湿った空気が冷やされると、ふくむことのできる水蒸気量は小さくなる。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "気温が下がると飽和水蒸気量も小さくなり、余分な水蒸気が水滴になります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "積乱雲は、弱い雨を長時間降らせるだけで、雷をともなうことはない。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "積乱雲は強い雨や雷をともなうことがあり、急な天気の変化を起こします。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "空気中の水蒸気の割合を百分率で表したものを【　　】という。",
+    "choices": [
+      "湿度",
+      "気圧",
+      "気温",
+      "露点"
+    ],
+    "answer": "湿度",
+    "keywords": null,
+    "explanation": "湿度は、実際の水蒸気量が飽和水蒸気量の何％かを表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "空気が冷えて、水蒸気が水滴に変わることを【　　】という。",
+    "choices": [
+      "凝結",
+      "蒸発",
+      "融解",
+      "昇華"
+    ],
+    "answer": "凝結",
+    "keywords": null,
+    "explanation": "雲ができるのは、水蒸気が凝結して細かい水滴になるためです。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "暖気と寒気の境目を【　　】という。",
+    "choices": [
+      "前線",
+      "気団",
+      "湿度",
+      "天頂"
+    ],
+    "answer": "前線",
+    "keywords": null,
+    "explanation": "前線付近では上昇気流が起こりやすく、雲や雨が生じやすいです。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "天気図で、気圧の等しい場所を結んだ線を【　　】という。",
+    "choices": [
+      "等圧線",
+      "等深線",
+      "子午線",
+      "輪中線"
+    ],
+    "answer": "等圧線",
+    "keywords": null,
+    "explanation": "等圧線のようすを見ると、風の強さや気圧配置を読み取りやすくなります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "次の雲の名前と、起こりやすい天気を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "積乱雲",
+        "right": "短時間の強い雨や雷"
+      },
+      {
+        "left": "乱層雲",
+        "right": "広い範囲の長い雨"
+      },
+      {
+        "left": "巻雲",
+        "right": "晴れた高い空に見られやすい"
+      }
+    ],
+    "explanation": "雲の種類ごとの特徴を知ると、天気の変化を予想しやすくなります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "次の前線の種類と、起こりやすい天気の特徴を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "温暖前線",
+        "right": "広い範囲で弱い雨が続く"
+      },
+      {
+        "left": "寒冷前線",
+        "right": "せまい範囲で強い雨が降る"
+      },
+      {
+        "left": "閉塞前線",
+        "right": "温暖前線と寒冷前線が重なった状態"
+      }
+    ],
+    "explanation": "前線の種類によって、降り方や雨雲の広がり方が変わります。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "雲ができるまでの流れとして、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "空気が上昇する",
+      "空気が冷える",
+      "水蒸気が凝結する"
+    ],
+    "explanation": "空気が上昇すると気圧が下がって温度が下がり、やがて水蒸気が凝結して雲になります。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "寒冷前線が通過するときの天気の変化として、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "雲が急に発達する",
+      "短時間の強い雨が降る",
+      "通過後に天気が回復しやすい"
+    ],
+    "explanation": "寒冷前線では急な上昇気流ができやすく、激しい雨のあと天気が回復しやすいです。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "次のうち、低気圧のまわりで起こりやすいことをすべて選びなさい。",
+    "choices": [
+      "上昇気流が起こる",
+      "雲ができやすい",
+      "北半球で反時計回りに風がふく",
+      "中心から外向きに時計回りで風がふく",
+      "晴天が続きやすい"
+    ],
+    "correct_choices": [
+      "上昇気流が起こる",
+      "雲ができやすい",
+      "北半球で反時計回りに風がふく"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "低気圧では空気が中心へ集まりながら上昇し、雲や雨が生じやすくなります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "天気の変化を予想する手がかりとして役立つものをすべて選びなさい。",
+    "choices": [
+      "気圧の変化",
+      "風向",
+      "雲の種類",
+      "地層の厚さ",
+      "火山灰の色"
+    ],
+    "correct_choices": [
+      "気圧の変化",
+      "風向",
+      "雲の種類"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "気圧、風向、雲のようすなどを組み合わせて見ると、天気の変化を予想しやすくなります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "雲ができる流れを完成させなさい。",
+    "choices": null,
+    "answer": "上昇 → 冷却 → 凝結",
+    "keywords": null,
+    "word_tokens": [
+      "上昇",
+      "→",
+      "冷却",
+      "→",
+      "凝結"
+    ],
+    "distractor_tokens": [
+      "蒸発",
+      "融解"
+    ],
+    "explanation": "空気が上昇して冷やされると、水蒸気が凝結して雲になります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "星や太陽が1日のうちに東から西へ動いて見えるのは、主に何が原因ですか。",
+    "choices": [
+      "地球の自転",
+      "地球の公転",
+      "月の公転",
+      "雲の移動"
+    ],
+    "answer": "地球の自転",
+    "keywords": null,
+    "explanation": "地球が西から東へ自転しているため、天体が東から西へ動くように見えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "日本で太陽がのぼる方角として正しいものはどれですか。",
+    "choices": [
+      "東",
+      "西",
+      "南",
+      "北"
+    ],
+    "answer": "東",
+    "keywords": null,
+    "explanation": "太陽は日周運動によって東からのぼり、西にしずむように見えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "北の空でほとんど動かないように見える星はどれですか。",
+    "choices": [
+      "北極星",
+      "シリウス",
+      "ベガ",
+      "金星"
+    ],
+    "answer": "北極星",
+    "keywords": null,
+    "explanation": "北極星は北の空のほぼ動かない位置に見え、方角を知る手がかりになります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "季節によって見える星座が変わる主な原因は何ですか。",
+    "choices": [
+      "地球の公転",
+      "地球の自転",
+      "月の自転",
+      "雲の量"
+    ],
+    "answer": "地球の公転",
+    "keywords": null,
+    "explanation": "地球が太陽のまわりを公転するため、夜に見える宇宙の向きが季節で変わります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "地球が1回自転するのにかかる時間は約どれくらいですか。",
+    "choices": [
+      "24時間",
+      "12時間",
+      "30日",
+      "365日"
+    ],
+    "answer": "24時間",
+    "keywords": null,
+    "explanation": "地球は約24時間で1回自転し、これが昼夜のくり返しをつくります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "地球が太陽のまわりを1回公転するのにかかる時間は約どれくらいですか。",
+    "choices": [
+      "365日",
+      "24時間",
+      "7日",
+      "12時間"
+    ],
+    "answer": "365日",
+    "keywords": null,
+    "explanation": "地球は約1年かけて太陽のまわりを公転します。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "星の日周運動は、東から西へ動くように見える。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "地球の自転のため、太陽や星は東から西へ動くように見えます。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "日本では、夏のほうが冬より太陽の南中高度が高い。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "夏は太陽が高くのぼるため、昼の長さも長くなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "月は毎日まったく同じ時刻に同じ位置に見える。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "月は地球のまわりを公転しているので、見える時刻や位置は毎日少しずつ変わります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "地球が自分自身を回転する運動を【　　】という。",
+    "choices": [
+      "自転",
+      "公転",
+      "日食",
+      "満ち欠け"
+    ],
+    "answer": "自転",
+    "keywords": null,
+    "explanation": "自転は昼夜の変化や天体の日周運動に関係しています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "地球が太陽のまわりを回る運動を【　　】という。",
+    "choices": [
+      "公転",
+      "自転",
+      "逆行",
+      "黄道"
+    ],
+    "answer": "公転",
+    "keywords": null,
+    "explanation": "公転によって、季節によって見える星座が変わります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "北の空でほとんど動かないように見える星を【　　】という。",
+    "choices": [
+      "北極星",
+      "太陽",
+      "火星",
+      "月"
+    ],
+    "answer": "北極星",
+    "keywords": null,
+    "explanation": "北極星は方角を知る目印として使えます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "1日のうちに天体が動いて見える見かけの運動を【　　】という。",
+    "choices": [
+      "日周運動",
+      "公転",
+      "年周運動",
+      "満ち欠け"
+    ],
+    "answer": "日周運動",
+    "keywords": null,
+    "explanation": "日周運動は、地球の自転によって起こる見かけの運動です。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "次の天体の見え方と、その主な原因を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "日周運動",
+        "right": "地球の自転"
+      },
+      {
+        "left": "季節で星座が変わる",
+        "right": "地球の公転"
+      },
+      {
+        "left": "月の形が変わる",
+        "right": "太陽・地球・月の位置関係"
+      }
+    ],
+    "explanation": "見える理由を原因と結びつけて整理すると、天体分野が理解しやすくなります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "次の方角の空と、天体の見え方を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "東の空",
+        "right": "天体がのぼり始める"
+      },
+      {
+        "left": "南の空",
+        "right": "天体が高く見える"
+      },
+      {
+        "left": "西の空",
+        "right": "天体がしずんでいく"
+      }
+    ],
+    "explanation": "日周運動では、天体は東からのぼり南の空で高くなり、西へしずみます。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "太陽の1日の見え方として、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "東の空にのぼる",
+      "南の空で高くなる",
+      "西の空にしずむ"
+    ],
+    "explanation": "太陽も日周運動によって東から西へ動くように見えます。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "月の見え方の変化として、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "新月",
+      "上弦の月",
+      "満月"
+    ],
+    "explanation": "月は位置関係によって見える形が変わり、新月から満月へと見え方が変化していきます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "次のうち、地球の自転が関係している現象をすべて選びなさい。",
+    "choices": [
+      "昼と夜の交代",
+      "太陽の日周運動",
+      "星の日周運動",
+      "季節の変化",
+      "月の満ち欠け"
+    ],
+    "correct_choices": [
+      "昼と夜の交代",
+      "太陽の日周運動",
+      "星の日周運動"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "季節の変化は地球の公転、月の満ち欠けは位置関係によります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "日本の夏の太陽について正しいものをすべて選びなさい。",
+    "choices": [
+      "南中高度が高い",
+      "昼の長さが長い",
+      "日の出の位置が北寄りになる",
+      "南中高度が低い",
+      "昼の長さが短い"
+    ],
+    "correct_choices": [
+      "南中高度が高い",
+      "昼の長さが長い",
+      "日の出の位置が北寄りになる"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "夏は太陽が高くのぼり、昼が長くなります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "太陽の日周運動の方角の流れを完成させなさい。",
+    "choices": null,
+    "answer": "東 → 南 → 西",
+    "keywords": null,
+    "word_tokens": [
+      "東",
+      "→",
+      "南",
+      "→",
+      "西"
+    ],
+    "distractor_tokens": [
+      "北",
+      "公転"
+    ],
+    "explanation": "太陽は東からのぼり、南の空を通って、西にしずむように見えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽系の中心にある天体はどれですか。",
+    "choices": [
+      "太陽",
+      "地球",
+      "月",
+      "木星"
+    ],
+    "answer": "太陽",
+    "keywords": null,
+    "explanation": "太陽系では、太陽のまわりを惑星が公転しています。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "輪のような環でよく知られている惑星はどれですか。",
+    "choices": [
+      "土星",
+      "金星",
+      "火星",
+      "水星"
+    ],
+    "answer": "土星",
+    "keywords": null,
+    "explanation": "土星は大きな環をもつ惑星として有名です。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "赤っぽく見えることから「赤い惑星」とよばれる天体はどれですか。",
+    "choices": [
+      "火星",
+      "木星",
+      "海王星",
+      "天王星"
+    ],
+    "answer": "火星",
+    "keywords": null,
+    "explanation": "火星は表面に酸化鉄を多くふくむため、赤っぽく見えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "自ら光を出している天体を何といいますか。",
+    "choices": [
+      "恒星",
+      "惑星",
+      "衛星",
+      "小惑星"
+    ],
+    "answer": "恒星",
+    "keywords": null,
+    "explanation": "太陽は恒星ですが、地球や月は自ら光っていません。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "岩石を主成分とする地球型惑星のなかまに入るものはどれですか。",
+    "choices": [
+      "地球",
+      "木星",
+      "土星",
+      "海王星"
+    ],
+    "answer": "地球",
+    "keywords": null,
+    "explanation": "水星、金星、地球、火星は地球型惑星に分類されます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽系の惑星の中で最も大きいものはどれですか。",
+    "choices": [
+      "木星",
+      "地球",
+      "土星",
+      "火星"
+    ],
+    "answer": "木星",
+    "keywords": null,
+    "explanation": "木星は太陽系最大の惑星で、ガスを主成分としています。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽は恒星である。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "太陽は自ら光と熱を出している恒星です。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "月は太陽のまわりを公転する惑星の1つである。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "月は地球のまわりを回る衛星であり、惑星ではありません。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "海王星は木星よりも太陽から遠い位置を公転している。",
+    "choices": [
+      "○",
+      "×"
+    ],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "海王星は太陽系の外側にある惑星で、木星よりずっと遠くを公転しています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "惑星のまわりを回る天体を【　　】という。",
+    "choices": [
+      "衛星",
+      "恒星",
+      "前線",
+      "気団"
+    ],
+    "answer": "衛星",
+    "keywords": null,
+    "explanation": "月は地球の衛星です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽の表面に見られる比較的暗い部分を【　　】という。",
+    "choices": [
+      "黒点",
+      "火口",
+      "極光",
+      "星雲"
+    ],
+    "answer": "黒点",
+    "keywords": null,
+    "explanation": "黒点は周囲より温度が低いため暗く見えます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "自ら光を出している天体を【　　】という。",
+    "choices": [
+      "恒星",
+      "惑星",
+      "衛星",
+      "流星"
+    ],
+    "answer": "恒星",
+    "keywords": null,
+    "explanation": "太陽や夜空の多くの星は恒星です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽のまわりを天体が回る道すじを【　　】という。",
+    "choices": [
+      "公転軌道",
+      "断層",
+      "等圧線",
+      "地層"
+    ],
+    "answer": "公転軌道",
+    "keywords": null,
+    "explanation": "惑星はそれぞれ公転軌道に沿って太陽のまわりを回ります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "次の惑星と、その特徴を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "水星",
+        "right": "太陽に最も近い"
+      },
+      {
+        "left": "木星",
+        "right": "太陽系で最も大きい"
+      },
+      {
+        "left": "土星",
+        "right": "環が目立つ"
+      },
+      {
+        "left": "金星",
+        "right": "明けの明星・宵の明星として見える"
+      }
+    ],
+    "explanation": "惑星ごとの代表的な特徴は、太陽系の学習で重要なポイントです。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "次の天体の分類と、具体例を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "恒星",
+        "right": "太陽"
+      },
+      {
+        "left": "惑星",
+        "right": "地球"
+      },
+      {
+        "left": "衛星",
+        "right": "月"
+      }
+    ],
+    "explanation": "恒星、惑星、衛星のちがいを例と合わせて整理しましょう。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽から近い順に、内側の惑星を並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "水星",
+      "金星",
+      "地球",
+      "火星"
+    ],
+    "explanation": "内側の4惑星は、水星、金星、地球、火星の順に並びます。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽から遠い順ではなく、近い順に外側の惑星を並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "木星",
+      "土星",
+      "天王星",
+      "海王星"
+    ],
+    "explanation": "外側の惑星は木星、土星、天王星、海王星の順です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "次のうち、太陽系の惑星をすべて選びなさい。",
+    "choices": [
+      "地球",
+      "火星",
+      "シリウス",
+      "金星",
+      "月"
+    ],
+    "correct_choices": [
+      "地球",
+      "火星",
+      "金星"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "シリウスは恒星、月は地球の衛星です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "恒星について正しいものをすべて選びなさい。",
+    "choices": [
+      "自ら光を出している",
+      "色のちがいがある",
+      "太陽も恒星である",
+      "すべて地球のまわりを回る",
+      "必ず環をもつ"
+    ],
+    "correct_choices": [
+      "自ら光を出している",
+      "色のちがいがある",
+      "太陽も恒星である"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "恒星は自ら光り、温度のちがいによって色も異なります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽から近い順に内側の惑星を完成させなさい。",
+    "choices": null,
+    "answer": "水星 → 金星 → 地球 → 火星",
+    "keywords": null,
+    "word_tokens": [
+      "水星",
+      "→",
+      "金星",
+      "→",
+      "地球",
+      "→",
+      "火星"
+    ],
+    "distractor_tokens": [
+      "木星",
+      "月"
+    ],
+    "explanation": "内側の惑星の並びは、水星、金星、地球、火星です。"
+  }
+]

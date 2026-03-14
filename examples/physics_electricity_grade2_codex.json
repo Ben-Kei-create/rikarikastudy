@@ -1,0 +1,275 @@
+[
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流の大きさを表す単位はどれですか。",
+    "choices": ["A", "V", "W", "N"],
+    "answer": "A",
+    "keywords": null,
+    "explanation": "電流の大きさはアンペアという単位で表し、記号は A です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電圧の大きさを表す単位はどれですか。",
+    "choices": ["V", "A", "J", "Pa"],
+    "answer": "V",
+    "keywords": null,
+    "explanation": "電圧の単位はボルトで、記号は V です。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流の大きさをはかる器具はどれですか。",
+    "choices": ["電流計", "電圧計", "ばねばかり", "温度計"],
+    "answer": "電流計",
+    "keywords": null,
+    "explanation": "電流の大きさは電流計で測定します。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "豆電球と電流計をつないで電流をはかるとき、電流計のつなぎ方として正しいものはどれですか。",
+    "choices": ["直列につなぐ", "並列につなぐ", "どこにもつながない", "電池とだけつなぐ"],
+    "answer": "直列につなぐ",
+    "keywords": null,
+    "explanation": "電流計は、電流が流れる道すじに直列につなぎます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "回路の両端にかかる電圧をはかるとき、電圧計のつなぎ方として正しいものはどれですか。",
+    "choices": ["並列につなぐ", "直列につなぐ", "回路から外す", "電池の中に入れる"],
+    "answer": "並列につなぐ",
+    "keywords": null,
+    "explanation": "電圧計は、はかりたい部分に並列につなぎます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "直列回路の特ちょうとして正しいものはどれですか。",
+    "choices": ["回路のどこでも電流の大きさが同じ", "各部分の電圧が必ず同じ", "枝分かれが多い", "電池が不要である"],
+    "answer": "回路のどこでも電流の大きさが同じ",
+    "keywords": null,
+    "explanation": "直列回路では、回路のどの部分でも同じ大きさの電流が流れます。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "並列回路では、枝分かれする前の電流は、分かれたあとの電流の和に等しい。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "並列回路では、分かれる前の電流の大きさは、枝の電流の和になります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流計は、はかりたい部分に並列につなぐ。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "電流計は直列につなぎます。並列につなぐのは電圧計です。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "オームの法則は、電圧と電流と抵抗の関係を表している。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "オームの法則は、電圧 = 電流 × 抵抗 の関係を表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流の大きさは、1 秒あたりに流れる電気の量で表され、その単位は【　　】である。",
+    "choices": ["A", "V", "W", "Ω"],
+    "answer": "A",
+    "keywords": null,
+    "explanation": "電流の単位はアンペアで、記号は A です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "抵抗の大きさの単位を【　　】という。",
+    "choices": ["Ω", "V", "A", "J"],
+    "answer": "Ω",
+    "keywords": null,
+    "explanation": "抵抗の単位はオームで、記号は Ω です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電圧 = 電流 × 抵抗 の関係を【　　】という。",
+    "choices": ["オームの法則", "フックの法則", "質量保存の法則", "慣性の法則"],
+    "answer": "オームの法則",
+    "keywords": null,
+    "explanation": "オームの法則は、電圧と電流と抵抗の関係を表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電圧計は、はかりたい部分に【　　】につなぐ。",
+    "choices": ["並列", "直列", "交差", "無関係"],
+    "answer": "並列",
+    "keywords": null,
+    "explanation": "電圧計は、はかりたい部分の両端に並列につなぎます。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "次の量と、その単位を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "電流", "right": "A" },
+      { "left": "電圧", "right": "V" },
+      { "left": "抵抗", "right": "Ω" }
+    ],
+    "explanation": "電流、電圧、抵抗にはそれぞれ決まった単位があります。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "次の器具と、そのはかるものを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "電流計", "right": "電流" },
+      { "left": "電圧計", "right": "電圧" },
+      { "left": "抵抗器", "right": "電流を流れにくくする" }
+    ],
+    "explanation": "回路では、器具ごとの役割を区別して覚えることが大切です。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "電流をはかるときの手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "電流計を直列につなぐ",
+      "回路に電流を流す",
+      "目盛りを読む"
+    ],
+    "explanation": "電流計は直列につなぎ、電流を流してから目盛りを読みます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "オームの法則を使って抵抗を求める手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "電圧を調べる",
+      "電流を調べる",
+      "電圧を電流で割る"
+    ],
+    "explanation": "抵抗は、オームの法則より 電圧 ÷ 電流 で求められます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "次のうち、直列回路の性質として正しいものをすべて選びなさい。",
+    "choices": [
+      "回路のどこでも電流が同じ",
+      "各部分の電圧の和が全体の電圧になる",
+      "枝分かれしている",
+      "1つ切れると全部消える",
+      "各枝の電圧が必ず同じ"
+    ],
+    "correct_choices": [
+      "回路のどこでも電流が同じ",
+      "各部分の電圧の和が全体の電圧になる",
+      "1つ切れると全部消える"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "直列回路では、電流はどこでも同じで、1か所切れると全体が流れなくなります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "次のうち、並列回路の性質として正しいものをすべて選びなさい。",
+    "choices": [
+      "枝ごとの電圧が同じ",
+      "全体の電流は枝の電流の和になる",
+      "1つ切れても他の枝は流れることがある",
+      "回路のどこでも電流が必ず同じ",
+      "枝分かれがない"
+    ],
+    "correct_choices": [
+      "枝ごとの電圧が同じ",
+      "全体の電流は枝の電流の和になる",
+      "1つ切れても他の枝は流れることがある"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "並列回路では、枝の電圧は同じで、電流は分かれて流れます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "電気",
+    "grade": "中2",
+    "question": "オームの法則を完成させなさい。",
+    "choices": null,
+    "answer": "電圧 = 電流 × 抵抗",
+    "keywords": null,
+    "word_tokens": [
+      "電圧",
+      "=",
+      "電流",
+      "×",
+      "抵抗"
+    ],
+    "distractor_tokens": [
+      "÷",
+      "時間"
+    ],
+    "explanation": "オームの法則は、電圧、電流、抵抗の関係を表す基本の式です。"
+  }
+]

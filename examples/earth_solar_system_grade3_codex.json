@@ -1,0 +1,239 @@
+[
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽系の中心にある天体はどれですか。",
+    "choices": ["太陽", "地球", "月", "木星"],
+    "answer": "太陽",
+    "keywords": null,
+    "explanation": "太陽系では、太陽のまわりを惑星が公転しています。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "輪のような環でよく知られている惑星はどれですか。",
+    "choices": ["土星", "金星", "火星", "水星"],
+    "answer": "土星",
+    "keywords": null,
+    "explanation": "土星は大きな環をもつ惑星として有名です。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "赤っぽく見えることから「赤い惑星」とよばれる天体はどれですか。",
+    "choices": ["火星", "木星", "海王星", "天王星"],
+    "answer": "火星",
+    "keywords": null,
+    "explanation": "火星は表面に酸化鉄を多くふくむため、赤っぽく見えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "自ら光を出している天体を何といいますか。",
+    "choices": ["恒星", "惑星", "衛星", "小惑星"],
+    "answer": "恒星",
+    "keywords": null,
+    "explanation": "太陽は恒星ですが、地球や月は自ら光っていません。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "岩石を主成分とする地球型惑星のなかまに入るものはどれですか。",
+    "choices": ["地球", "木星", "土星", "海王星"],
+    "answer": "地球",
+    "keywords": null,
+    "explanation": "水星、金星、地球、火星は地球型惑星に分類されます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽系の惑星の中で最も大きいものはどれですか。",
+    "choices": ["木星", "地球", "土星", "火星"],
+    "answer": "木星",
+    "keywords": null,
+    "explanation": "木星は太陽系最大の惑星で、ガスを主成分としています。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽は恒星である。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "太陽は自ら光と熱を出している恒星です。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "月は太陽のまわりを公転する惑星の1つである。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "月は地球のまわりを回る衛星であり、惑星ではありません。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "海王星は木星よりも太陽から遠い位置を公転している。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "海王星は太陽系の外側にある惑星で、木星よりずっと遠くを公転しています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "惑星のまわりを回る天体を【　　】という。",
+    "choices": ["衛星", "恒星", "前線", "気団"],
+    "answer": "衛星",
+    "keywords": null,
+    "explanation": "月は地球の衛星です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽の表面に見られる比較的暗い部分を【　　】という。",
+    "choices": ["黒点", "火口", "極光", "星雲"],
+    "answer": "黒点",
+    "keywords": null,
+    "explanation": "黒点は周囲より温度が低いため暗く見えます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "自ら光を出している天体を【　　】という。",
+    "choices": ["恒星", "惑星", "衛星", "流星"],
+    "answer": "恒星",
+    "keywords": null,
+    "explanation": "太陽や夜空の多くの星は恒星です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽のまわりを天体が回る道すじを【　　】という。",
+    "choices": ["公転軌道", "断層", "等圧線", "地層"],
+    "answer": "公転軌道",
+    "keywords": null,
+    "explanation": "惑星はそれぞれ公転軌道に沿って太陽のまわりを回ります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "次の惑星と、その特徴を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "水星", "right": "太陽に最も近い" },
+      { "left": "木星", "right": "太陽系で最も大きい" },
+      { "left": "土星", "right": "環が目立つ" },
+      { "left": "金星", "right": "明けの明星・宵の明星として見える" }
+    ],
+    "explanation": "惑星ごとの代表的な特徴は、太陽系の学習で重要なポイントです。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "次の天体の分類と、具体例を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "恒星", "right": "太陽" },
+      { "left": "惑星", "right": "地球" },
+      { "left": "衛星", "right": "月" }
+    ],
+    "explanation": "恒星、惑星、衛星のちがいを例と合わせて整理しましょう。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽から近い順に、内側の惑星を並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["水星", "金星", "地球", "火星"],
+    "explanation": "内側の4惑星は、水星、金星、地球、火星の順に並びます。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽から遠い順ではなく、近い順に外側の惑星を並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["木星", "土星", "天王星", "海王星"],
+    "explanation": "外側の惑星は木星、土星、天王星、海王星の順です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "次のうち、太陽系の惑星をすべて選びなさい。",
+    "choices": ["地球", "火星", "シリウス", "金星", "月"],
+    "correct_choices": ["地球", "火星", "金星"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "シリウスは恒星、月は地球の衛星です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "恒星について正しいものをすべて選びなさい。",
+    "choices": ["自ら光を出している", "色のちがいがある", "太陽も恒星である", "すべて地球のまわりを回る", "必ず環をもつ"],
+    "correct_choices": ["自ら光を出している", "色のちがいがある", "太陽も恒星である"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "恒星は自ら光り、温度のちがいによって色も異なります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "太陽系と恒星",
+    "grade": "中3",
+    "question": "太陽から近い順に内側の惑星を完成させなさい。",
+    "choices": null,
+    "answer": "水星 → 金星 → 地球 → 火星",
+    "keywords": null,
+    "word_tokens": ["水星", "→", "金星", "→", "地球", "→", "火星"],
+    "distractor_tokens": ["木星", "月"],
+    "explanation": "内側の惑星の並びは、水星、金星、地球、火星です。"
+  }
+]
