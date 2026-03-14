@@ -93,6 +93,7 @@ export default function ScienceChatPage({
   const [draftThread, setDraftThread] = useState<ScienceChatThread>(() => createThread(field))
   const [input, setInput] = useState('')
   const [error, setError] = useState('')
+  const [warning, setWarning] = useState('')
   const [loading, setLoading] = useState(false)
   const [provider, setProvider] = useState<ScienceChatProvider>('mock')
   const messagesRef = useRef<HTMLDivElement | null>(null)
@@ -121,6 +122,7 @@ export default function ScienceChatPage({
     setDraftThread(createThread(field))
     setInput('')
     setError('')
+    setWarning('')
     setProvider('mock')
     reportedBlockedDraftRef.current = false
   }, [field, storageKey])
@@ -178,12 +180,14 @@ export default function ScienceChatPage({
     setDraftThread(createThread(field))
     setInput('')
     setError('')
+    setWarning('')
   }
 
   const handleSelectThread = (threadId: string) => {
     setActiveThreadId(threadId)
     setInput('')
     setError('')
+    setWarning('')
   }
 
   const handleSend = async () => {
@@ -216,6 +220,7 @@ export default function ScienceChatPage({
 
     setInput('')
     setError('')
+    setWarning('')
     setLoading(true)
 
     try {
@@ -239,6 +244,7 @@ export default function ScienceChatPage({
       }
 
       setProvider(payload.provider)
+      setWarning(typeof payload.warning === 'string' ? payload.warning : '')
       const assistantMessage = makeMessage('assistant', payload.reply)
       upsertThread({
         ...storedThread,
@@ -527,6 +533,12 @@ export default function ScienceChatPage({
         {error && (
           <div className="mt-3 rounded-2xl border border-red-800/70 bg-red-950/50 px-4 py-3 text-sm text-red-200">
             {error}
+          </div>
+        )}
+
+        {warning && (
+          <div className="mt-3 rounded-2xl border border-amber-700/70 bg-amber-950/60 px-4 py-3 text-sm text-amber-100">
+            {warning}
           </div>
         )}
 

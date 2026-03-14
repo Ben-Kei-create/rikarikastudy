@@ -37,6 +37,7 @@ interface StartResponse {
   provider: 'mock' | 'gemini'
   model: string
   cards: ActiveRecallCard[]
+  warning?: string
 }
 
 interface EvaluateResponse {
@@ -44,6 +45,7 @@ interface EvaluateResponse {
   model: string
   evaluation: ActiveRecallEvaluation
   error?: string
+  warning?: string
 }
 
 type Phase = 'setup' | 'answering' | 'feedback' | 'finished'
@@ -78,6 +80,7 @@ export default function ActiveRecallPage({
   const [loadingSession, setLoadingSession] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [warning, setWarning] = useState('')
   const [schemaMessage, setSchemaMessage] = useState('')
   const [provider, setProvider] = useState<'mock' | 'gemini'>('mock')
   const [model, setModel] = useState('')
@@ -204,6 +207,7 @@ export default function ActiveRecallPage({
     setLoadingSession(true)
     setSchemaMessage('')
     setError('')
+    setWarning('')
 
     try {
       const response = await fetch('/api/active-recall', {
@@ -232,6 +236,7 @@ export default function ActiveRecallPage({
       setCards(payload.cards)
       setProvider(payload.provider)
       setModel(payload.model)
+      setWarning(typeof payload.warning === 'string' ? payload.warning : '')
       setAttempts([])
       setCurrent(0)
       setRewardSummary(null)
@@ -250,6 +255,7 @@ export default function ActiveRecallPage({
 
     setSubmitting(true)
     setError('')
+    setWarning('')
 
     try {
       const response = await fetch('/api/active-recall', {
@@ -272,6 +278,7 @@ export default function ActiveRecallPage({
 
       setProvider(payload.provider)
       setModel(payload.model)
+      setWarning(typeof payload.warning === 'string' ? payload.warning : '')
       setEvaluation(payload.evaluation)
       setCurrentAttemptCount(count => count + 1)
       setPhase('feedback')
@@ -358,6 +365,7 @@ export default function ActiveRecallPage({
     setCurrent(0)
     setRewardSummary(null)
     resetQuestionState()
+    setWarning('')
     startedAtRef.current = null
     if (unlocked) {
       await handleStartSession()
@@ -653,6 +661,12 @@ export default function ActiveRecallPage({
           />
         </div>
       </div>
+
+      {warning && phase !== 'finished' && (
+        <div className="mb-4 rounded-2xl border border-amber-700/70 bg-amber-950/50 px-4 py-3 text-sm text-amber-100">
+          {warning}
+        </div>
+      )}
 
       {phase === 'setup' ? (
         <div className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">

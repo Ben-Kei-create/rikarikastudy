@@ -42,6 +42,16 @@ interface GenerateContentResponse {
 
 type RouteMode = 'live' | 'mock'
 
+class GeminiRequestError extends Error {
+  status?: number
+
+  constructor(message: string, status?: number) {
+    super(message)
+    this.name = 'GeminiRequestError'
+    this.status = status
+  }
+}
+
 type StartRequestBody = {
   action: 'start'
   field?: string
@@ -66,6 +76,8 @@ function getApiKey() {
 }
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
+const GEMINI_TIMEOUT_MS = 12000
+const GEMINI_MAX_ATTEMPTS = 2
 
 function getRouteMode(): RouteMode {
   const configuredMode = process.env.SCIENCE_CHAT_MODE?.trim().toLowerCase()
@@ -90,6 +102,41 @@ function extractText(payload: GenerateContentResponse) {
     .map(part => part.text ?? '')
     .join('\n')
     .trim() ?? ''
+}
+
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function isAbortError(error: unknown) {
+  return (
+    (error instanceof DOMException && error.name === 'AbortError') ||
+    (typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError')
+  )
+}
+
+function isRetryableStatus(status?: number) {
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504
+}
+
+function getFallbackWarning(action: 'start' | 'evaluate', error: unknown) {
+  const status = error instanceof GeminiRequestError ? error.status : undefined
+
+  if (status === 429 || status === 503) {
+    return action === 'start'
+      ? 'Gemini が混み合っていたため、今回は簡易カード生成に切り替えました。'
+      : 'Gemini が混み合っていたため、今回は簡易評価に切り替えました。'
+  }
+
+  if (status === 504) {
+    return action === 'start'
+      ? 'Gemini の応答が遅かったため、今回は簡易カード生成に切り替えました。'
+      : 'Gemini の応答が遅かったため、今回は簡易評価に切り替えました。'
+  }
+
+  return action === 'start'
+    ? 'Gemini への接続に失敗したため、今回は簡易カード生成に切り替えました。'
+    : 'Gemini への接続に失敗したため、今回は簡易評価に切り替えました。'
 }
 
 function parseJsonText<T>(text: string): T | null {
@@ -374,46 +421,85 @@ async function requestGeminiJson<T>({
     throw new Error('GEMINI_API_KEY または GOOGLE_API_KEY が未設定です。')
   }
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_MODEL}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: systemInstruction }],
-        },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: userText }],
+  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS)
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_MODEL}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey,
           },
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 900,
-          responseMimeType: 'application/json',
-        },
-      }),
+          body: JSON.stringify({
+            systemInstruction: {
+              parts: [{ text: systemInstruction }],
+            },
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: userText }],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.4,
+              maxOutputTokens: 900,
+              responseMimeType: 'application/json',
+            },
+          }),
+          signal: controller.signal,
+        }
+      )
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        if (isRetryableStatus(response.status) && attempt < GEMINI_MAX_ATTEMPTS) {
+          await delay(500 * attempt)
+          continue
+        }
+        throw new GeminiRequestError(`Gemini API error: ${errorText}`, response.status)
+      }
+
+      const payload = await response.json() as GenerateContentResponse
+      const text = extractText(payload)
+      const parsed = parseJsonText<T>(text)
+      if (!parsed) {
+        throw new GeminiRequestError('Gemini の JSON 応答を解析できませんでした。')
+      }
+
+      return parsed
+    } catch (error) {
+      if (isAbortError(error)) {
+        if (attempt < GEMINI_MAX_ATTEMPTS) {
+          await delay(500 * attempt)
+          continue
+        }
+        throw new GeminiRequestError('Gemini request timed out', 504)
+      }
+
+      if (error instanceof GeminiRequestError) {
+        if (isRetryableStatus(error.status) && attempt < GEMINI_MAX_ATTEMPTS) {
+          await delay(500 * attempt)
+          continue
+        }
+        throw error
+      }
+
+      if (attempt < GEMINI_MAX_ATTEMPTS) {
+        await delay(500 * attempt)
+        continue
+      }
+
+      throw new GeminiRequestError(error instanceof Error ? error.message : 'Gemini request failed')
+    } finally {
+      clearTimeout(timeoutId)
     }
-  )
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Gemini API error: ${errorText}`)
   }
 
-  const payload = await response.json() as GenerateContentResponse
-  const text = extractText(payload)
-  const parsed = parseJsonText<T>(text)
-  if (!parsed) {
-    throw new Error('Gemini の JSON 応答を解析できませんでした。')
-  }
-
-  return parsed
+  throw new GeminiRequestError('Gemini request failed')
 }
 
 async function buildLiveCards(field: ScienceChatField, sources: SourceQuestion[]) {
@@ -483,14 +569,29 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'この条件ではアクティブリコール用の問題を作れませんでした。' }, { status: 404 })
       }
 
+      let provider: 'mock' | 'gemini' = 'mock'
+      let model = mode === 'live' ? 'mock-fallback' : 'mock'
+      let warning: string | undefined
+
       const cards = mode === 'live'
-        ? await buildLiveCards(body.field, sources).catch(() => buildMockCards(sources))
+        ? await buildLiveCards(body.field, sources)
+            .then(result => {
+              provider = 'gemini'
+              model = DEFAULT_MODEL
+              return result
+            })
+            .catch(error => {
+              console.error('[active-recall] falling back to mock cards', error)
+              warning = getFallbackWarning('start', error)
+              return buildMockCards(sources)
+            })
         : buildMockCards(sources)
 
       return NextResponse.json({
-        provider: mode === 'live' ? 'gemini' : 'mock',
-        model: DEFAULT_MODEL,
+        provider,
+        model,
         cards,
+        ...(warning ? { warning } : {}),
       })
     }
 
@@ -517,14 +618,29 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      let provider: 'mock' | 'gemini' = 'mock'
+      let model = mode === 'live' ? 'mock-fallback' : 'mock'
+      let warning: string | undefined
+
       const evaluation = mode === 'live'
-        ? await buildLiveEvaluation(body.field, card, answer).catch(() => buildMockEvaluation(card, answer))
+        ? await buildLiveEvaluation(body.field, card, answer)
+            .then(result => {
+              provider = 'gemini'
+              model = DEFAULT_MODEL
+              return result
+            })
+            .catch(error => {
+              console.error('[active-recall] falling back to mock evaluation', error)
+              warning = getFallbackWarning('evaluate', error)
+              return buildMockEvaluation(card, answer)
+            })
         : buildMockEvaluation(card, answer)
 
       return NextResponse.json({
-        provider: mode === 'live' ? 'gemini' : 'mock',
-        model: DEFAULT_MODEL,
+        provider,
+        model,
         evaluation,
+        ...(warning ? { warning } : {}),
       })
     }
 

@@ -24,6 +24,7 @@ export interface ScienceChatApiReply {
   reply: string
   provider: ScienceChatProvider
   model: string
+  warning?: string
 }
 
 export const SCIENCE_CHAT_STORAGE_KEY = 'rika_science_chat_threads_v1'
