@@ -177,3 +177,108 @@ Markdown は不要です。
 - 順序は `sort`
 - 分類は `multi_select`
 - 化学反応式や語句組み立ては `word_bank`
+
+---
+
+## Claude Code 用
+
+Claude Code には、生成だけでなく「このリポジトリ内に JSON ファイルとして保存する」ところまで依頼できます。
+
+### コピペ用プロンプト
+
+```text
+このリポジトリの現在の問題仕様に合わせて、中学理科の問題データを作成してください。
+
+要件:
+- 分野: [FIELD]
+- 単元: [UNIT]
+- 学年: [GRADE]
+- 問題数: [COUNT]
+- 保存先: [OUTPUT_PATH]
+
+作業ルール:
+- まず現在の仕様をコードベースから確認してください
+  - `docs/QUESTION_TYPES_UPGRADE.md`
+  - `docs/QUESTION_GENERATION_PROMPT.md`
+  - `docs/QUESTION_ADDITION_PROMPT.md`
+  - `src/lib/questionTypes.ts`
+  - `scripts/import_questions_supabase.mjs`
+- 現在サポートされている問題タイプと JSON 仕様に厳密に合わせてください
+- 問題は教科書レベルの自然な日本語で作ってください
+- ひっかけ問題は禁止です
+- 同じ知識を重複させすぎないでください
+- できるだけ `text` は避け、タップ式を優先してください
+- 優先順は `choice4`, `true_false`, `fill_choice`, `match`, `sort`, `multi_select`, `word_bank`
+- `choice` と `text` は後方互換用なので、必要な場合だけ使ってください
+
+出題比率の目安:
+- true_false: 15%
+- choice4: 30%
+- fill_choice: 20%
+- match: 10%
+- sort: 10%
+- multi_select: 10%
+- word_bank: 5%
+
+問題数が少ない場合:
+- 10問未満なら `choice4`, `fill_choice`, `true_false` を優先してください
+
+型ごとの必須条件:
+- true_false
+  - `answer` は `○` または `×`
+  - `choices` は `["○", "×"]`
+- choice
+  - `choices` は2個
+  - `answer` は choices のどれかと完全一致
+- choice4
+  - `choices` は4個
+  - `answer` は choices のどれかと完全一致
+- fill_choice
+  - `question` に必ず `【　　】` を含める
+  - `choices` は3〜4個
+  - `answer` は choices のどれかと完全一致
+- match
+  - `answer` は null
+  - `choices` は null
+  - `match_pairs` は2〜4組
+- sort
+  - `answer` は null
+  - `choices` は null
+  - `sort_items` は正しい順で3〜5個
+- multi_select
+  - `answer` は null
+  - `choices` は4〜6個
+  - `correct_choices` は2個以上
+  - `correct_choices` は choices の部分集合
+- word_bank
+  - `choices` は null
+  - `word_tokens` は正解トークン列
+  - `distractor_tokens` は1〜3個
+  - `answer` は完成形
+- text
+  - `answer` は模範解答文
+  - `keywords` は任意
+
+共通制約:
+- `field` は `生物` / `化学` / `物理` / `地学`
+- `grade` は `中1` / `中2` / `中3`
+- `explanation` は1〜3文
+- null にする値は省略せず `null`
+- 型ごとに不要な追加フィールドは入れない
+
+出力形式:
+- JSON 配列
+- その JSON を `[OUTPUT_PATH]` に保存してください
+- 生成後に自己チェックして、JSON が現在の仕様に合っているか確認してください
+- 最後に、作成ファイルのパスと問題数だけを簡潔に報告してください
+```
+
+### 入力例
+
+```text
+[FIELD] = 生物
+[UNIT] = 消化と吸収
+[GRADE] = 中2
+[COUNT] = 20
+[OUTPUT_PATH] = examples/biology_digestive_questions.json
+```
