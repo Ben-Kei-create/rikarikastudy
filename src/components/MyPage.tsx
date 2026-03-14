@@ -737,47 +737,47 @@ export default function MyPage({
   return (
     <div className="page-shell page-shell-dashboard">
       {/* ヘッダー */}
-      <div className="sticky top-0 z-10 px-1 pt-2 pb-4 floating-header">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <button onClick={onBack} className="btn-secondary text-sm !px-4 !py-2.5">
+      <div className="px-1 pt-1 pb-3 floating-header md:sticky md:top-0 md:z-10 md:pt-2 md:pb-4">
+        <div className="mb-2.5 flex items-center justify-between gap-3 sm:mb-3">
+          <button onClick={onBack} className="btn-secondary text-sm !px-3.5 !py-2 sm:!px-4 sm:!py-2.5">
             もどる
           </button>
           <button
             onClick={() => logout()}
-            className="btn-ghost text-sm !px-4 !py-2.5"
+            className="btn-ghost text-sm !px-3.5 !py-2 sm:!px-4 sm:!py-2.5"
           >
             ログアウト
           </button>
         </div>
-        <div className="hero-card science-surface px-5 py-5 sm:px-6">
+        <div className="hero-card science-surface px-4 py-4 sm:px-5 sm:py-5 lg:px-6">
           <ScienceBackdrop />
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
             <div>
-              <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">My Page</div>
-              <h1 className="font-display text-3xl text-white">マイページ</h1>
-              <p className="text-slate-400 text-sm mt-1">
+              <div className="mb-1.5 text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase sm:mb-2">My Page</div>
+              <h1 className="font-display text-[1.7rem] leading-none text-white sm:text-3xl">マイページ</h1>
+              <p className="mt-1 text-xs text-slate-400 sm:text-sm">
                 {isGuest ? `${nickname}さんの当日成績` : `${nickname}さんの成績`}
               </p>
             </div>
-            <div className="grid gap-3 lg:min-w-[320px]">
-              <div className="rounded-[22px] border px-4 py-4" style={{
+            <div className="grid gap-2.5 md:min-w-[280px] lg:min-w-[320px]">
+              <div className="rounded-[20px] border px-3.5 py-3.5 sm:rounded-[22px] sm:px-4 sm:py-4" style={{
                 borderColor: 'rgba(56, 189, 248, 0.16)',
                 background: 'rgba(8, 13, 24, 0.48)',
               }}>
                 <div className="flex items-end justify-between gap-3">
                   <div>
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Level</div>
-                    <div className="mt-2 flex items-end gap-3">
-                      <div className="font-display text-4xl text-white">Lv.{levelInfo.level}</div>
-                      <div className="pb-1 text-sm font-semibold text-sky-200">{levelInfo.title}</div>
+                    <div className="mt-1.5 flex flex-wrap items-end gap-x-3 gap-y-1 sm:mt-2">
+                      <div className="font-display text-3xl leading-none text-white sm:text-4xl">Lv.{levelInfo.level}</div>
+                      <div className="pb-0.5 text-xs font-semibold text-sky-200 sm:pb-1 sm:text-sm">{levelInfo.title}</div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-slate-500">XP</div>
-                    <div className="mt-2 font-display text-2xl text-sky-300">{levelInfo.totalXp}</div>
+                    <div className="mt-1.5 font-display text-xl leading-none text-sky-300 sm:mt-2 sm:text-2xl">{levelInfo.totalXp}</div>
                   </div>
                 </div>
-                <div className="mt-4 soft-track" style={{ height: 8 }}>
+                <div className="mt-3 soft-track sm:mt-4" style={{ height: 8 }}>
                   <div
                     style={{
                       width: `${levelInfo.progressRate}%`,
@@ -787,29 +787,29 @@ export default function MyPage({
                     }}
                   />
                 </div>
-                <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-slate-500 sm:text-xs">
                   <span>{levelInfo.progressXp} / {levelInfo.progressMax} XP</span>
                   <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
                 </div>
               </div>
               {streak > 0 && (
-                <div className="flex w-fit items-center gap-2 rounded-[20px] px-4 py-3" style={{ background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
-                  <span className="text-2xl">🔥</span>
-                  <span className="font-display text-2xl text-orange-300">{streak}</span>
-                  <span className="text-slate-400 text-xs">日連続</span>
+                <div className="flex w-fit items-center gap-2 rounded-[18px] px-3.5 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3" style={{ background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
+                  <span className="text-xl sm:text-2xl">🔥</span>
+                  <span className="font-display text-xl leading-none text-orange-300 sm:text-2xl">{streak}</span>
+                  <span className="text-[11px] text-slate-400 sm:text-xs">日連続</span>
                 </div>
               )}
             </div>
           </div>
           {isGuest && (
             <div
-              className="mt-4 rounded-[20px] px-4 py-3 text-sm leading-6 text-sky-100"
+              className="mt-3 rounded-[18px] px-3.5 py-2.5 text-xs leading-5 text-sky-100 sm:mt-4 sm:rounded-[20px] sm:px-4 sm:py-3 sm:text-sm sm:leading-6"
               style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.2)' }}
             >
               ゲストモードでは、成績は当日分だけ保存されます。ニックネーム変更や自分用問題の作成は使えません。
             </div>
           )}
-          <div className="segment-bar mt-5">
+          <div className="segment-bar mt-4 sm:mt-5">
             {tabs.map(([t, label]) => (
               <button
                 key={t}
