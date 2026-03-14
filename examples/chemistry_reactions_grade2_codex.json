@@ -1,0 +1,247 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "酸化銀を加熱したときにできる金属は何ですか。",
+    "choices": ["銀", "銅", "鉄", "アルミニウム"],
+    "answer": "銀",
+    "keywords": null,
+    "explanation": "酸化銀は加熱すると熱分解し、銀と酸素に分かれます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学変化の前後で変わらないものとして正しいものはどれですか。",
+    "choices": ["原子の種類と数", "物質の色", "物質の状態", "におい"],
+    "answer": "原子の種類と数",
+    "keywords": null,
+    "explanation": "化学変化では原子の組み合わせは変わりますが、原子そのものの種類と数は変わりません。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "銅を加熱したときに表面にできる黒色の物質は何ですか。",
+    "choices": ["酸化銅", "硫化銅", "塩化銅", "炭酸銅"],
+    "answer": "酸化銅",
+    "keywords": null,
+    "explanation": "銅は加熱すると空気中の酸素と結びつき、黒色の酸化銅になります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "1種類の原子だけでできている純粋な物質を何といいますか。",
+    "choices": ["単体", "化合物", "混合物", "分子"],
+    "answer": "単体",
+    "keywords": null,
+    "explanation": "酸素や銅のように、1種類の原子だけでできている物質を単体といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "炭素を使って酸化銅を加熱すると、酸化銅から何が奪われますか。",
+    "choices": ["酸素", "水素", "窒素", "二酸化炭素"],
+    "answer": "酸素",
+    "keywords": null,
+    "explanation": "炭素は酸化銅から酸素を奪い、酸化銅を銅に変える還元を起こします。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化合物についての説明として正しいものはどれですか。",
+    "choices": ["2種類以上の原子が結びついてできた物質", "1種類の原子だけでできた物質", "いくつかの物質が混ざったもの", "どんな液体にも溶ける物質"],
+    "answer": "2種類以上の原子が結びついてできた物質",
+    "keywords": null,
+    "explanation": "水や二酸化炭素のように、2種類以上の原子が結びついてできた物質を化合物といいます。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "水の電気分解では、発生する水素と酸素の体積比は2:1である。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "水を電気分解すると、水素は酸素の2倍の体積だけ発生します。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学変化では、原子そのものが別の種類の原子に変わることがある。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "化学変化では原子の組み合わせが変わるだけで、原子の種類そのものは変わりません。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "マグネシウムを燃やすとき、光と熱を出しながら激しく反応する。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "マグネシウムは酸素と激しく反応し、強い光と熱を出して燃えます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "2種類以上の物質がまじり合い、それぞれの性質を保っているものを【　　】という。",
+    "choices": ["混合物", "化合物", "単体", "分子"],
+    "answer": "混合物",
+    "keywords": null,
+    "explanation": "空気や塩水のように、いくつかの物質が混ざっていてもそれぞれの性質を保っているものを混合物といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "銅やマグネシウムが酸素と結びつく反応のように、物質どうしが結びついて別の物質ができる反応を【　　】という。",
+    "choices": ["化合", "分解", "還元", "中和"],
+    "answer": "化合",
+    "keywords": null,
+    "explanation": "2種類以上の物質が結びついて1種類の物質になる化学変化を化合といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "1つの物質が2種類以上の別の物質に分かれる化学変化を【　　】という。",
+    "choices": ["分解", "化合", "酸化", "燃焼"],
+    "answer": "分解",
+    "keywords": null,
+    "explanation": "酸化銀や炭酸水素ナトリウムを加熱して別の物質に分かれる変化は分解です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "水にうすい塩酸を少量加えるのは、電流を流れやすくして【　　】を進めやすくするためである。",
+    "choices": ["電気分解", "中和", "燃焼", "蒸発"],
+    "answer": "電気分解",
+    "keywords": null,
+    "explanation": "純粋な水は電気を通しにくいため、少量の塩酸や水酸化ナトリウム水溶液を加えて電気分解しやすくします。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次の物質と、その化学式を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "水", "right": "H2O" },
+      { "left": "水素", "right": "H2" },
+      { "left": "酸素", "right": "O2" },
+      { "left": "二酸化炭素", "right": "CO2" }
+    ],
+    "explanation": "化学式は、物質をつくる原子の種類と数の比を表しています。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次の反応と、その反応の種類を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "銀ができる", "right": "酸化銀の分解" },
+      { "left": "硫化鉄ができる", "right": "鉄と硫黄の化合" },
+      { "left": "銅ができる", "right": "酸化銅の還元" }
+    ],
+    "explanation": "できた物質や反応前後の変化に注目すると、分解・化合・還元を見分けられます。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "炭酸水素ナトリウムを加熱する実験で、安全に加熱を終えるまでの操作を正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "加熱して発生した気体を調べる",
+      "ガラス管を液体から抜く",
+      "ガスバーナーの火を消す"
+    ],
+    "explanation": "先に火を消すと液体が逆流し、熱い試験管が割れるおそれがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "水を電気分解して発生した気体を確かめる手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "陰極と陽極で気体を集める",
+      "陰極側の気体に火を近づける",
+      "陽極側の気体に火のついた線香を近づける"
+    ],
+    "explanation": "陰極では水素、陽極では酸素が発生するので、それぞれ別の方法で確かめます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、化合物をすべて選びなさい。",
+    "choices": ["水", "酸素", "銅", "二酸化炭素", "塩化ナトリウム"],
+    "correct_choices": ["水", "二酸化炭素", "塩化ナトリウム"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "化合物は2種類以上の原子でできています。酸素や銅は単体です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、加熱による分解でできる物質として正しいものをすべて選びなさい。",
+    "choices": ["酸化銀から酸素", "酸化銀から銀", "水から鉄", "炭酸水素ナトリウムから二酸化炭素", "銅から酸素"],
+    "correct_choices": ["酸化銀から酸素", "酸化銀から銀", "炭酸水素ナトリウムから二酸化炭素"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "酸化銀は銀と酸素に、炭酸水素ナトリウムは炭酸ナトリウム・水・二酸化炭素に分かれます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "マグネシウムが酸素と結びつく反応を化学反応式で完成させなさい。",
+    "choices": null,
+    "answer": "2Mg + O2 → 2MgO",
+    "keywords": null,
+    "word_tokens": ["2Mg", "+", "O2", "→", "2MgO"],
+    "distractor_tokens": ["Mg2", "2O2", "MgO2"],
+    "explanation": "反応の前後で原子の数が等しくなるように係数をそろえると、2Mg + O2 → 2MgO になります。"
+  }
+]
