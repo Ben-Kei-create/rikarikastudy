@@ -771,29 +771,57 @@ export default function MyPage({
   return (
     <div className="page-shell page-shell-dashboard">
       {/* ヘッダー */}
-      <div className="px-1 pt-1 pb-2 sm:pb-3">
-        <div className="mb-2.5 flex items-center justify-between gap-3 sm:mb-3">
-          <button onClick={onBack} className="btn-secondary text-sm !px-3.5 !py-2 sm:!px-4 sm:!py-2.5">
+      <div className="px-1 pt-0.5 pb-1.5 sm:pt-1 sm:pb-3">
+        <div className="mb-2 flex items-center justify-between gap-3 sm:mb-3">
+          <button onClick={onBack} className="btn-secondary text-sm !px-3 !py-1.5 sm:!px-4 sm:!py-2.5">
             もどる
           </button>
           <button
             onClick={() => logout()}
-            className="btn-ghost text-sm !px-3.5 !py-2 sm:!px-4 sm:!py-2.5"
+            className="btn-ghost text-sm !px-3 !py-1.5 sm:!px-4 sm:!py-2.5"
           >
             ログアウト
           </button>
         </div>
-        <div className="hero-card science-surface px-4 py-4 sm:px-5 sm:py-5 lg:px-6">
+        <div className="hero-card science-surface px-3 py-3 sm:px-5 sm:py-5 lg:px-6">
           <ScienceBackdrop />
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
+          <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
             <div>
-              <div className="mb-1.5 text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase sm:mb-2">My Page</div>
-              <h1 className="font-display text-[1.7rem] leading-none text-white sm:text-3xl">マイページ</h1>
-              <p className="mt-1 text-xs text-slate-400 sm:text-sm">
+              <div className="mb-1 text-[10px] font-semibold tracking-[0.16em] text-slate-400 uppercase sm:mb-2 sm:text-[11px] sm:tracking-[0.18em]">My Page</div>
+              <h1 className="font-display text-[1.45rem] leading-none text-white sm:text-3xl">マイページ</h1>
+              <p className="mt-1 text-[11px] text-slate-400 sm:text-sm">
                 {isGuest ? `${nickname}さんの当日成績` : `${nickname}さんの成績`}
               </p>
+
+              <div className="mt-2 flex flex-wrap gap-2 sm:hidden">
+                <div className="rounded-full border border-sky-300/16 bg-sky-300/8 px-3 py-1.5 text-[11px] text-sky-100">
+                  <span className="font-display text-base leading-none text-white">Lv.{levelInfo.level}</span>
+                  <span className="ml-1.5 font-semibold text-sky-200">{levelInfo.title}</span>
+                </div>
+                <div className="rounded-full border border-white/10 bg-slate-950/32 px-3 py-1.5 text-[11px] text-slate-300">
+                  XP <span className="ml-1 font-display text-sm leading-none text-sky-300">{levelInfo.totalXp}</span>
+                </div>
+                {streak > 0 && (
+                  <div className="rounded-full border border-orange-400/18 bg-orange-500/10 px-3 py-1.5 text-[11px] text-orange-200">
+                    🔥 <span className="font-display text-sm leading-none">{streak}</span> 日連続
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-2 hidden sm:block">
+                <div className="soft-track" style={{ height: 6 }}>
+                  <div
+                    style={{
+                      width: `${levelInfo.progressRate}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                      borderRadius: 999,
+                    }}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2.5 md:min-w-[280px] lg:min-w-[320px]">
+            <div className="hidden gap-2.5 sm:grid md:min-w-[280px] lg:min-w-[320px]">
               <div className="rounded-[20px] border px-3.5 py-3.5 sm:rounded-[22px] sm:px-4 sm:py-4" style={{
                 borderColor: 'rgba(56, 189, 248, 0.16)',
                 background: 'rgba(8, 13, 24, 0.48)',
@@ -837,7 +865,7 @@ export default function MyPage({
           </div>
           {isGuest && (
             <div
-              className="mt-3 rounded-[18px] px-3.5 py-2.5 text-xs leading-5 text-sky-100 sm:mt-4 sm:rounded-[20px] sm:px-4 sm:py-3 sm:text-sm sm:leading-6"
+              className="mt-2 rounded-[16px] px-3 py-2 text-[11px] leading-5 text-sky-100 sm:mt-4 sm:rounded-[20px] sm:px-4 sm:py-3 sm:text-sm sm:leading-6"
               style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.2)' }}
             >
               ゲストモードでは、成績は当日分だけ保存されます。ニックネーム変更や自分用問題の作成は使えません。
