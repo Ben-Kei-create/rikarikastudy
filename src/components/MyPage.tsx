@@ -349,6 +349,22 @@ export default function MyPage({
     () => new Map(periodicCards.map(card => [card.cardKey, card])),
     [periodicCards],
   )
+  const ownedPeriodicCards = useMemo(
+    () => periodicCards
+      .map(entry => {
+        const definition = getPeriodicCardByKey(entry.cardKey)
+        if (!definition) return null
+        return { entry, definition }
+      })
+      .filter((item): item is { entry: PeriodicCardCollectionEntry; definition: NonNullable<ReturnType<typeof getPeriodicCardByKey>> } => item !== null)
+      .sort((left, right) => left.definition.atomicNumber - right.definition.atomicNumber),
+    [periodicCards],
+  )
+  const selectedPeriodicCardIndex = useMemo(
+    () => ownedPeriodicCards.findIndex(item => item.definition.key === selectedPeriodicCardKey),
+    [ownedPeriodicCards, selectedPeriodicCardKey],
+  )
+  const selectedPeriodicCard = selectedPeriodicCardIndex >= 0 ? ownedPeriodicCards[selectedPeriodicCardIndex] : null
   const earnedBadgeMap = useMemo(
     () => new Map(earnedBadges.map(badge => [badge.badge_key, badge])),
     [earnedBadges],
@@ -441,8 +457,8 @@ export default function MyPage({
     [sessions]
   )
   const tabs = isGuest
-    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 周期表'], ['glossary', '📘 辞典'], ['account', '⚙️ 設定']] as const)
-    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 周期表'], ['glossary', '📘 辞典'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
+    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['account', '⚙️ 設定']] as const)
+    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
 
   const allGlossaryEntries = useMemo(
     () => mergeGlossaryEntries(SCIENCE_GLOSSARY, customGlossaryEntries),
@@ -510,14 +526,28 @@ export default function MyPage({
       return
     }
 
-    if (periodicCards.length === 0) {
+    if (ownedPeriodicCards.length === 0) {
       if (selectedPeriodicCardKey !== null) setSelectedPeriodicCardKey(null)
       return
     }
 
-    const exists = periodicCards.some(card => card.cardKey === selectedPeriodicCardKey)
-    if (!exists) setSelectedPeriodicCardKey(periodicCards[0].cardKey)
-  }, [periodicCards, periodicUnlocked, selectedPeriodicCardKey])
+    const exists = ownedPeriodicCards.some(card => card.definition.key === selectedPeriodicCardKey)
+    if (!exists) setSelectedPeriodicCardKey(ownedPeriodicCards[0].definition.key)
+  }, [ownedPeriodicCards, periodicUnlocked, selectedPeriodicCardKey])
+
+  const showPreviousPeriodicCard = () => {
+    if (ownedPeriodicCards.length <= 1) return
+    const currentIndex = selectedPeriodicCardIndex >= 0 ? selectedPeriodicCardIndex : 0
+    const nextIndex = (currentIndex - 1 + ownedPeriodicCards.length) % ownedPeriodicCards.length
+    setSelectedPeriodicCardKey(ownedPeriodicCards[nextIndex].definition.key)
+  }
+
+  const showNextPeriodicCard = () => {
+    if (ownedPeriodicCards.length <= 1) return
+    const currentIndex = selectedPeriodicCardIndex >= 0 ? selectedPeriodicCardIndex : 0
+    const nextIndex = (currentIndex + 1) % ownedPeriodicCards.length
+    setSelectedPeriodicCardKey(ownedPeriodicCards[nextIndex].definition.key)
+  }
 
   useEffect(() => {
     if (tab !== 'glossary' && glossaryModalOpen) {

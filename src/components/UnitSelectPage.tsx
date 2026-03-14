@@ -41,8 +41,6 @@ import { QuizQuestionCount } from '@/lib/questionPicker'
 
 interface UnitStat {
   unit: string
-  total: number
-  correct: number
   questionCount: number
 }
 
@@ -141,44 +139,17 @@ export default function UnitSelectPage({
         }
       })
 
-      const sessionStats: Record<string, { total: number; correct: number }> = {}
-
-      if (isGuest) {
-        const store = loadGuestStudyStore()
-        store.sessions
-          .filter(session => session.field === field)
-          .forEach(session => {
-            if (!sessionStats[session.unit]) sessionStats[session.unit] = { total: 0, correct: 0 }
-            sessionStats[session.unit].total += session.total_questions
-            sessionStats[session.unit].correct += session.correct_count
-          })
-      } else if (studentId !== null) {
-        const { data: sData } = await supabase
-          .from('quiz_sessions')
-          .select('unit, total_questions, correct_count')
-          .eq('field', field)
-          .eq('student_id', studentId)
-
-        sData?.forEach(session => {
-          if (!sessionStats[session.unit]) sessionStats[session.unit] = { total: 0, correct: 0 }
-          sessionStats[session.unit].total += session.total_questions
-          sessionStats[session.unit].correct += session.correct_count
-        })
-      }
-
       const unitList = Object.keys(unitCounts).map(unitName => ({
         unit: unitName,
         questionCount: unitCounts[unitName],
-        total: sessionStats[unitName]?.total || 0,
-        correct: sessionStats[unitName]?.correct || 0,
-      }))
+      })).sort((left, right) => left.unit.localeCompare(right.unit, 'ja'))
 
       setUnits(unitList)
       setAvailableGrades(gradeSet.size > 0 ? Array.from(gradeSet) : ['中1', '中2', '中3'])
       setLoading(false)
     }
     load()
-  }, [field, isGuest, studentId])
+  }, [field, studentId])
 
   useEffect(() => {
     let active = true
@@ -248,13 +219,13 @@ export default function UnitSelectPage({
                 Unit Select
               </div>
               <div className="font-display text-[1.65rem] leading-none sm:text-[2.35rem]" style={{ color }}>{field}</div>
-              <p className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">単元を選んで、そのまま解き始められます。</p>
+              <p className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">全単元ランダムか、カスタム条件でしぼって解けます。</p>
             </div>
           </div>
           <div className="flex flex-col gap-2 lg:min-w-[284px] lg:items-end">
             <div className="grid w-full grid-cols-2 gap-2 lg:w-auto">
               <div className="subcard mobile-mini-card px-4 py-3">
-                <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">単元数</div>
+                <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">登録単元</div>
                 <div className="mt-1 flex items-end gap-2">
                   <div className="font-display text-[1.6rem] leading-none text-white sm:text-[1.9rem]">{units.length}</div>
                   <div className="pb-0.5 text-[11px] text-slate-500">units</div>
@@ -532,12 +503,12 @@ export default function UnitSelectPage({
                   <option value="all">全単元</option>
                   {units.map(unitItem => (
                     <option key={unitItem.unit} value={unitItem.unit}>
-                      {unitItem.unit}
+                      {unitItem.unit} ({unitItem.questionCount}問)
                     </option>
                   ))}
                 </select>
                 <p className="mt-2 text-xs leading-6 text-slate-500">
-                  単元だけで絞りたい時は、ここで選べます。
+                  単元を指定したいときは、ここから選べます。
                 </p>
               </div>
 
@@ -637,66 +608,11 @@ export default function UnitSelectPage({
         )}
       </div>
 
-      {loading ? (
-        <div className="text-center text-slate-400 py-12">読み込み中...</div>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {units.map((unitItem, index) => {
-            const rate = unitItem.total > 0 ? Math.round((unitItem.correct / unitItem.total) * 100) : null
-            return (
-              <button
-                key={unitItem.unit}
-                onClick={() => onSelect(unitItem.unit, questionCount)}
-                className="card mobile-mini-card anim-fade-up text-left h-full"
-                style={{
-                  animationDelay: `${(index + 1) * 0.07}s`,
-                  transition: 'transform 0.18s ease, border-color 0.18s ease',
-                }}
-                onMouseEnter={event => {
-                  event.currentTarget.style.transform = 'translateY(-2px)'
-                  event.currentTarget.style.borderColor = `${color}45`
-                }}
-                onMouseLeave={event => {
-                  event.currentTarget.style.transform = ''
-                  event.currentTarget.style.borderColor = ''
-                }}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="font-semibold text-[15px] text-white sm:text-base">{unitItem.unit}</div>
-                    <div className="text-slate-500 text-xs mt-1">{unitItem.questionCount}問</div>
-                  </div>
-                  {rate !== null && (
-                    <div className="text-right">
-                      <div className="font-semibold" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
-                        {rate}%
-                      </div>
-                      <div className="text-slate-500 text-xs mt-1">{unitItem.total}問解答</div>
-                    </div>
-                  )}
-                </div>
-                {rate === null && (
-                  <div className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    未チャレンジ
-                  </div>
-                )}
-                {rate !== null && (
-                <div className="mt-3 soft-track" style={{ height: 6 }}>
-                  <div
-                    style={{
-                      width: `${rate}%`,
-                        height: '100%',
-                        background: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444',
-                        borderRadius: 999,
-                      }}
-                    />
-                  </div>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      )}
+      <div className="mb-4 rounded-[24px] border border-white/8 bg-slate-950/22 px-4 py-3 text-sm text-slate-400">
+        {loading
+          ? '単元データを読み込み中...'
+          : '単元ごとの開始ボタンはカスタムにまとめました。単元をしぼりたいときは「条件」から選べます。'}
+      </div>
 
       {field === '生物' && (
         <div className="mt-6">

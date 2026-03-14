@@ -15,11 +15,19 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-function buildCardStyle(accent: string, border: string, glow: string, compact?: boolean): CSSProperties {
+type PeriodicCardSize = 'regular' | 'compact' | 'showcase'
+
+function buildCardStyle(
+  accent: string,
+  border: string,
+  glow: string,
+  size: PeriodicCardSize,
+): CSSProperties {
+  const compactLike = size === 'compact'
   return {
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: compact ? 24 : 30,
+    borderRadius: compactLike ? 24 : size === 'showcase' ? 26 : 30,
     border: `1px solid ${border}`,
     background: `linear-gradient(155deg, ${accent}1f 0%, rgba(15, 23, 42, 0.92) 48%, rgba(2, 6, 23, 0.98) 100%)`,
     boxShadow: `0 22px 48px ${glow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
@@ -36,6 +44,7 @@ export function PeriodicCardSurface({
   cardKey: string
   entry?: PeriodicCardCollectionEntry | null
   compact?: boolean
+  size?: PeriodicCardSize
   style?: CSSProperties
   className?: string
 }) {
@@ -43,12 +52,21 @@ export function PeriodicCardSurface({
   if (!card) return null
 
   const categoryMeta = getPeriodicCategoryMeta(card.category)
+  const resolvedSize = compact ? 'compact' : size ?? 'regular'
+  const compactLike = resolvedSize === 'compact'
+  const showcase = resolvedSize === 'showcase'
+  const chromeSize = compactLike ? 180 : showcase ? 210 : 240
+  const symbolSize = compactLike ? 'text-[2.85rem]' : showcase ? 'text-[4.2rem]' : 'text-5xl'
+  const headingSize = compactLike ? 'text-xl' : showcase ? 'text-[1.65rem]' : 'text-2xl'
+  const bodyText = compactLike ? 'text-[13px] leading-6' : showcase ? 'text-[13px] leading-6' : 'text-sm leading-7'
+  const chipText = compactLike ? 'text-[10px]' : 'text-[11px]'
+  const sectionPadding = compactLike ? 18 : showcase ? 20 : 24
 
   return (
     <div
       className={className}
       style={{
-        ...buildCardStyle(categoryMeta.accent, categoryMeta.border, categoryMeta.glow, compact),
+        ...buildCardStyle(categoryMeta.accent, categoryMeta.border, categoryMeta.glow, resolvedSize),
         ...style,
       }}
     >
@@ -67,22 +85,22 @@ export function PeriodicCardSurface({
           position: 'absolute',
           top: -90,
           right: -60,
-          width: compact ? 180 : 240,
-          height: compact ? 180 : 240,
+          width: chromeSize,
+          height: chromeSize,
           borderRadius: '999px',
           background: `radial-gradient(circle, ${categoryMeta.accent}33 0%, transparent 72%)`,
           pointerEvents: 'none',
         }}
       />
 
-      <div style={{ position: 'relative', zIndex: 1, padding: compact ? 18 : 24 }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: sectionPadding }}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400">No.{card.atomicNumber}</div>
-            <div className="mt-2 font-display text-5xl text-white" style={{ lineHeight: 1 }}>{card.symbol}</div>
+            <div className={`${chipText} font-semibold tracking-[0.2em] text-slate-400`}>No.{card.atomicNumber}</div>
+            <div className={`mt-2 font-display ${symbolSize} text-white`} style={{ lineHeight: 1 }}>{card.symbol}</div>
           </div>
           <div
-            className="rounded-full px-3 py-1 text-[11px] font-semibold"
+            className={`rounded-full px-3 py-1 ${chipText} font-semibold`}
             style={{ background: `${categoryMeta.accent}1f`, color: categoryMeta.accent }}
           >
             {categoryMeta.label}
@@ -90,16 +108,16 @@ export function PeriodicCardSurface({
         </div>
 
         <div className="mt-4">
-          <div className="text-2xl font-bold text-white">{card.nameJa}</div>
-          <div className="mt-1 text-sm tracking-[0.14em] text-slate-400 uppercase">{card.nameEn}</div>
-          <div className="mt-2 text-sm leading-7 text-slate-200">{card.summary}</div>
+          <div className={`${headingSize} font-bold text-white`}>{card.nameJa}</div>
+          <div className={`mt-1 ${compactLike ? 'text-xs' : 'text-sm'} tracking-[0.14em] text-slate-400 uppercase`}>{card.nameEn}</div>
+          <div className={`mt-2 text-slate-200 ${bodyText}`}>{card.summary}</div>
         </div>
 
         <div className="mt-4 grid gap-2">
           {card.features.map(feature => (
             <div
               key={feature}
-              className="rounded-[16px] border px-3 py-2 text-sm text-slate-100"
+              className={`rounded-[16px] border px-3 py-2 text-slate-100 ${compactLike ? 'text-[13px]' : 'text-sm'}`}
               style={{
                 borderColor: 'rgba(255,255,255,0.08)',
                 background: 'rgba(15, 23, 42, 0.42)',
@@ -110,7 +128,7 @@ export function PeriodicCardSurface({
           ))}
         </div>
 
-        {!compact && (
+        {!compactLike && (
           <div
             className="mt-4 rounded-[20px] border px-4 py-3"
             style={{
@@ -118,12 +136,12 @@ export function PeriodicCardSurface({
               background: 'rgba(2, 6, 23, 0.5)',
             }}
           >
-            <div className="text-[11px] font-semibold tracking-[0.18em] text-slate-400">TRIVIA</div>
-            <div className="mt-2 text-sm leading-7 text-slate-200">{card.trivia}</div>
+            <div className={`${chipText} font-semibold tracking-[0.18em] text-slate-400`}>TRIVIA</div>
+            <div className={`mt-2 text-slate-200 ${showcase ? 'text-[13px] leading-6' : 'text-sm leading-7'}`}>{card.trivia}</div>
           </div>
         )}
 
-        <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-400">
+        <div className={`mt-4 flex items-center justify-between gap-3 text-slate-400 ${compactLike ? 'text-[11px]' : 'text-xs'}`}>
           <span>{card.period}周期 / {card.group}族</span>
           {entry ? <span>{entry.obtainCount}枚所持</span> : <span>未収集</span>}
         </div>
@@ -136,14 +154,21 @@ export function PeriodicCardViewer({
   cardKey,
   entry,
   className = '',
+  size = 'regular',
+  onSwipeLeft,
+  onSwipeRight,
 }: {
   cardKey: string
   entry?: PeriodicCardCollectionEntry | null
   className?: string
+  size?: Exclude<PeriodicCardSize, 'compact'>
+  onSwipeLeft?: () => void
+  onSwipeRight?: () => void
 }) {
   const frameRef = useRef<HTMLDivElement | null>(null)
   const [tilt, setTilt] = useState({ x: 0, y: 0, tx: 0, ty: 0 })
   const [dragging, setDragging] = useState(false)
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null)
 
   const transform = useMemo(
     () => `perspective(1400px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translate3d(${tilt.tx}px, ${tilt.ty}px, ${dragging ? 18 : 0}px) scale(${dragging ? 1.01 : 1})`,
@@ -170,17 +195,34 @@ export function PeriodicCardViewer({
       style={{ touchAction: 'none' }}
       onPointerDown={event => {
         setDragging(true)
+        dragStartRef.current = { x: event.clientX, y: event.clientY }
         updateTilt(event.clientX, event.clientY)
       }}
       onPointerMove={event => {
         if (!dragging) return
         updateTilt(event.clientX, event.clientY)
       }}
-      onPointerUp={() => {
+      onPointerUp={event => {
+        const dragStart = dragStartRef.current
+        if (dragStart) {
+          const deltaX = event.clientX - dragStart.x
+          const deltaY = event.clientY - dragStart.y
+          if (Math.abs(deltaX) > 52 && Math.abs(deltaX) > Math.abs(deltaY) + 10) {
+            if (deltaX < 0) onSwipeLeft?.()
+            if (deltaX > 0) onSwipeRight?.()
+          }
+        }
+        dragStartRef.current = null
         setDragging(false)
         setTilt({ x: 0, y: 0, tx: 0, ty: 0 })
       }}
       onPointerLeave={() => {
+        dragStartRef.current = null
+        setDragging(false)
+        setTilt({ x: 0, y: 0, tx: 0, ty: 0 })
+      }}
+      onPointerCancel={() => {
+        dragStartRef.current = null
         setDragging(false)
         setTilt({ x: 0, y: 0, tx: 0, ty: 0 })
       }}
@@ -188,6 +230,7 @@ export function PeriodicCardViewer({
       <PeriodicCardSurface
         cardKey={cardKey}
         entry={entry}
+        size={size}
         style={{
           transform,
           transformStyle: 'preserve-3d',
@@ -289,7 +332,7 @@ export function PeriodicCardRewardModal({
             {getPeriodicCardRewardSourceLabel(reward.source)}で <span className="font-semibold text-white">{card.nameJa}</span> を獲得しました。
           </p>
           <p className="mt-1 text-xs leading-6 text-slate-400">
-            マイページの周期表マップから、集めたカードをいつでも確認できます。
+            マイページの元素カードタブから、集めたカードをいつでも確認できます。
           </p>
         </div>
 

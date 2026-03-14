@@ -63,7 +63,6 @@ export default function HomePage({
     allTimeBest: 0,
     allTimeLeaderName: null,
   })
-  const [menuExpanded, setMenuExpanded] = useState(false)
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<WeeklyLeaderboardEntry[]>([])
   const [weeklyLeaderboardLoading, setWeeklyLeaderboardLoading] = useState(true)
   const totalQuestions = Object.values(stats).reduce((sum, field) => sum + field.total, 0)
@@ -444,68 +443,40 @@ export default function HomePage({
               </div>
             </div>
 
-            <div className="grid grid-cols-[1fr_auto] gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <button onClick={onMyPage} className="btn-secondary w-full">
                 マイページ
               </button>
-              <button
-                onClick={() => setMenuExpanded(current => !current)}
-                className="btn-ghost whitespace-nowrap"
-                aria-expanded={menuExpanded}
-              >
-                {menuExpanded ? '閉じる' : 'その他'}
+              <button onClick={() => logout()} className="btn-ghost whitespace-nowrap">
+                ログアウト
               </button>
             </div>
 
-            {menuExpanded && (
-              <div
-                className="rounded-[22px] border px-3.5 py-3.5 anim-fade-up sm:px-4 sm:py-4"
-                style={{
-                  borderColor: 'rgba(255,255,255,0.08)',
-                  background: 'rgba(8, 13, 24, 0.62)',
-                }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">その他メニュー</div>
-                    <div className="mt-1 text-sm text-slate-300">ニュース / ログアウト</div>
+            <a
+              href={scienceNews.item.link}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-[18px] border px-3 py-3 transition-all sm:rounded-[20px] sm:px-3.5 sm:py-3.5"
+              style={{
+                borderColor: 'rgba(245, 158, 11, 0.14)',
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(15, 23, 42, 0.78) 64%)',
+              }}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase">
+                    Science News
                   </div>
-                  <button onClick={() => logout()} className="btn-ghost whitespace-nowrap text-sm">
-                    ログアウト
-                  </button>
-                </div>
-
-                <a
-                  href={scienceNews.item.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 block rounded-[18px] border px-3.5 py-3.5 transition-all sm:mt-4 sm:rounded-[20px] sm:px-4 sm:py-4"
-                  style={{
-                    borderColor: 'rgba(245, 158, 11, 0.18)',
-                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(15, 23, 42, 0.82) 58%, rgba(56, 189, 248, 0.08))',
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-[11px] font-semibold tracking-[0.18em] text-amber-200 uppercase">
-                      Science News
-                    </div>
-                    <span className="rounded-full border border-amber-300/20 bg-amber-200/10 px-2.5 py-1 text-[11px] font-semibold text-amber-100">
-                      1日1記事
-                    </span>
-                  </div>
-                  <div className="mt-3 text-sm font-semibold leading-6 text-white line-clamp-2">
+                  <div className="mt-1 truncate text-sm font-semibold text-white">
                     {scienceNews.item.title}
                   </div>
-                  <div className="mt-2 text-xs leading-6 text-slate-300 line-clamp-2">
-                    {scienceNews.item.summary}
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-                    <span>{scienceNews.item.source}</span>
-                    <span>{newsDateFormatter.format(new Date(scienceNews.item.publishedAt))}</span>
-                  </div>
-                </a>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="text-[10px] text-slate-500">{newsDateFormatter.format(new Date(scienceNews.item.publishedAt))}</div>
+                  <div className="mt-1 text-[10px] font-semibold text-amber-100">記事へ →</div>
+                </div>
               </div>
-            )}
+            </a>
           </div>
         </div>
       </div>
