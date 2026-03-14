@@ -343,12 +343,7 @@ export default function MyPage({
   const overallRate = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : 0
   const levelInfo = useMemo(() => getLevelInfo(studentXp), [studentXp])
   const periodicUnlocked = isPeriodicCardUnlockedAtLevel(levelInfo.level)
-  const periodicOwnedCount = periodicCards.length
   const periodicTotalCount = PERIODIC_ELEMENT_CARDS.length
-  const periodicCollectionMap = useMemo(
-    () => new Map(periodicCards.map(card => [card.cardKey, card])),
-    [periodicCards],
-  )
   const ownedPeriodicCards = useMemo(
     () => periodicCards
       .map(entry => {
@@ -360,6 +355,7 @@ export default function MyPage({
       .sort((left, right) => left.definition.atomicNumber - right.definition.atomicNumber),
     [periodicCards],
   )
+  const periodicOwnedCount = ownedPeriodicCards.length
   const selectedPeriodicCardIndex = useMemo(
     () => ownedPeriodicCards.findIndex(item => item.definition.key === selectedPeriodicCardKey),
     [ownedPeriodicCards, selectedPeriodicCardKey],
@@ -1014,10 +1010,10 @@ export default function MyPage({
             <div className="card">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-2xl">
-                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Periodic Table Map</div>
-                  <div className="mt-2 text-lg font-semibold text-white">周期表カードコレクション</div>
+                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Element Cards</div>
+                  <div className="mt-2 text-lg font-semibold text-white">元素カードコレクション</div>
                   <p className="mt-1 text-sm leading-6 text-slate-400">
-                    元素カードを集めると、周期表マップが少しずつ埋まっていきます。カードには特徴や雑学も入っています。
+                    ログインボーナスやパーフェクト報酬で集めた元素カードを、元素番号順に見返せます。カードには特徴や雑学も入っています。
                   </p>
                   {periodicUnlocked ? (
                     <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
@@ -1027,7 +1023,7 @@ export default function MyPage({
                       <div className="text-xs font-semibold tracking-[0.18em] text-sky-200">COLLECTION</div>
                       <div className="mt-2 text-2xl font-display text-white">{periodicOwnedCount}<span className="text-base text-slate-500"> / {periodicTotalCount}</span></div>
                       <div className="mt-1 text-xs text-slate-400">
-                        {periodicCardsLoading ? 'コレクションを読み込み中...' : 'マイページの「周期表」タブでカードを開いて動かせます。'}
+                        {periodicCardsLoading ? 'コレクションを読み込み中...' : 'マイページの「元素カード」タブで、入手したカードだけを左右スワイプできます。'}
                       </div>
                     </div>
                   ) : (
@@ -1045,19 +1041,19 @@ export default function MyPage({
                 </div>
 
                 <div className="w-full lg:max-w-md">
-                  {periodicUnlocked && periodicCards.length > 0 ? (
+                  {periodicUnlocked && ownedPeriodicCards.length > 0 ? (
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {periodicCards.slice(0, 2).map(entry => (
-                        <PeriodicCardSurface key={entry.cardKey} cardKey={entry.cardKey} entry={entry} compact />
+                      {ownedPeriodicCards.slice(0, 2).map(item => (
+                        <PeriodicCardSurface key={item.entry.cardKey} cardKey={item.entry.cardKey} entry={item.entry} compact />
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-6 gap-2 rounded-[24px] border border-white/8 bg-slate-950/28 p-3">
-                      {PERIODIC_ELEMENT_CARDS.slice(0, 18).map(card => (
+                    <div className="grid grid-cols-2 gap-3 rounded-[24px] border border-white/8 bg-slate-950/28 p-3">
+                      {[0, 1].map(index => (
                         <div
-                          key={card.key}
-                          className="aspect-square rounded-[14px] border border-dashed border-white/10 bg-slate-950/40"
-                          style={{ opacity: 0.65 }}
+                          key={index}
+                          className="rounded-[18px] border border-dashed border-white/10 bg-slate-950/40 px-4 py-6"
+                          style={{ opacity: 0.65, minHeight: 176 }}
                         />
                       ))}
                     </div>
@@ -1350,9 +1346,9 @@ export default function MyPage({
             <div className="card">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <h3 className="text-slate-300 font-bold">周期表マップ</h3>
+                  <h3 className="text-slate-300 font-bold">元素カード</h3>
                   <p className="text-slate-500 text-xs mt-1 leading-6">
-                    ログインボーナスやパーフェクト報酬で元素カードを集めて、周期表を埋めていきます。
+                    ログインボーナスやパーフェクト報酬で集めたカードだけを、元素番号順にスワイプして見返せます。
                   </p>
                 </div>
                 <div className="rounded-full bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-200">
@@ -1370,7 +1366,7 @@ export default function MyPage({
                   <div className="text-4xl">🧪</div>
                   <div className="mt-3 font-semibold text-white">{getPeriodicCardUnlockText()}</div>
                   <p className="mt-2 text-sm leading-7 text-slate-400">
-                    Lv.20 になると周期表マップが開放され、元素カードを集められるようになります。
+                    Lv.20 になると元素カードが解放され、ログインボーナスやパーフェクト報酬で集められるようになります。
                   </p>
                 </div>
               </div>
@@ -1381,99 +1377,120 @@ export default function MyPage({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                <div className="card overflow-x-auto">
-                  <div className="min-w-[980px]">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Collection Map</div>
-                      <div className="text-xs text-slate-500">手に入れたカードをタップすると詳細を見られます。</div>
-                    </div>
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(18, minmax(0, 1fr))',
-                        gap: 10,
-                        alignItems: 'stretch',
-                      }}
-                    >
-                      {PERIODIC_ELEMENT_CARDS.map(card => {
-                        const ownedEntry = periodicCollectionMap.get(card.key) ?? null
-                        const selected = selectedPeriodicCardKey === card.key
-                        return (
-                          <button
-                            key={card.key}
-                            onClick={() => ownedEntry && setSelectedPeriodicCardKey(card.key)}
-                            disabled={!ownedEntry}
-                            className="rounded-[18px] border text-left transition-all"
-                            style={{
-                              gridColumn: card.group,
-                              gridRow: card.period,
-                              minHeight: 90,
-                              padding: 12,
-                              borderColor: ownedEntry
-                                ? selected
-                                  ? 'rgba(125, 211, 252, 0.55)'
-                                  : 'rgba(255,255,255,0.08)'
-                                : 'rgba(148, 163, 184, 0.12)',
-                              background: ownedEntry
-                                ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.82))'
-                                : 'rgba(15, 23, 42, 0.34)',
-                              opacity: ownedEntry ? 1 : 0.42,
-                              cursor: ownedEntry ? 'pointer' : 'default',
-                              boxShadow: selected ? '0 18px 32px rgba(56, 189, 248, 0.18)' : 'none',
-                            }}
-                          >
-                            <div className="text-[10px] font-semibold tracking-[0.18em] text-slate-500">No.{card.atomicNumber}</div>
-                            <div className="mt-2 font-display text-2xl text-white">{ownedEntry ? card.symbol : '—'}</div>
-                            <div className="mt-1 text-xs font-semibold text-slate-300">{ownedEntry ? card.nameJa : '未収集'}</div>
-                            <div className="mt-2 text-[10px] text-slate-500">
-                              {ownedEntry ? `${ownedEntry.obtainCount}枚` : `${card.period}周期 / ${card.group}族`}
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-
+              <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
                 <div className="card">
                   {periodicCardsLoading ? (
                     <div className="rounded-[24px] border border-dashed border-slate-700 px-4 py-8 text-sm text-slate-400">
                       カードを読み込み中...
                     </div>
-                  ) : selectedPeriodicCardKey ? (
+                  ) : selectedPeriodicCard && selectedPeriodicCardKey ? (
                     <div className="space-y-4">
-                      <div>
-                        <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Selected Card</div>
-                        <div className="mt-2 text-sm leading-6 text-slate-400">
-                          指でカードを動かすと、少し立体的に眺められます。
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Swipe Viewer</div>
+                          <div className="mt-2 text-sm leading-6 text-slate-400">
+                            左右にスワイプ、または矢印ボタンで次のカードへ進めます。
+                          </div>
+                        </div>
+                        <div className="rounded-full bg-sky-300/10 px-3 py-1.5 text-xs font-semibold text-sky-100">
+                          {selectedPeriodicCardIndex + 1} / {ownedPeriodicCards.length}
                         </div>
                       </div>
-                      <PeriodicCardViewer
-                        cardKey={selectedPeriodicCardKey}
-                        entry={periodicCollectionMap.get(selectedPeriodicCardKey) ?? null}
-                      />
-                      {(() => {
-                        const card = getPeriodicCardByKey(selectedPeriodicCardKey)
-                        const entry = periodicCollectionMap.get(selectedPeriodicCardKey)
-                        if (!card || !entry) return null
-                        return (
-                          <div className="rounded-[22px] border border-white/8 bg-slate-950/28 p-4">
-                            <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">コレクション情報</div>
-                            <div className="mt-3 grid gap-2 text-sm text-slate-300">
-                              <div>所持枚数: <span className="font-semibold text-white">{entry.obtainCount}枚</span></div>
-                              <div>初回入手: <span className="font-semibold text-white">{format(new Date(entry.firstObtainedAt), 'M月d日', { locale: ja })}</span></div>
-                              <div>最近の入手: <span className="font-semibold text-white">{format(new Date(entry.lastObtainedAt), 'M月d日 HH:mm', { locale: ja })}</span></div>
-                            </div>
-                          </div>
-                        )
-                      })()}
+
+                      <div className="mx-auto w-full max-w-[24rem]">
+                        <PeriodicCardViewer
+                          cardKey={selectedPeriodicCardKey}
+                          entry={selectedPeriodicCard.entry}
+                          size="showcase"
+                          onSwipeLeft={showNextPeriodicCard}
+                          onSwipeRight={showPreviousPeriodicCard}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          onClick={showPreviousPeriodicCard}
+                          disabled={ownedPeriodicCards.length <= 1}
+                          className="btn-secondary w-full disabled:opacity-60"
+                        >
+                          ← 前のカード
+                        </button>
+                        <button
+                          onClick={showNextPeriodicCard}
+                          disabled={ownedPeriodicCards.length <= 1}
+                          className="btn-secondary w-full disabled:opacity-60"
+                        >
+                          次のカード →
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="rounded-[24px] border border-dashed border-slate-700 px-4 py-8 text-sm text-slate-400">
                       まだカードがありません。ログインボーナスやパーフェクト報酬でカードを集めてみよう。
                     </div>
                   )}
+                </div>
+
+                <div className="space-y-4">
+                  {selectedPeriodicCard ? (
+                    <div className="card">
+                      <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">コレクション情報</div>
+                      <div className="mt-3 grid gap-2 text-sm text-slate-300">
+                        <div>元素番号: <span className="font-semibold text-white">No.{selectedPeriodicCard.definition.atomicNumber}</span></div>
+                        <div>所持枚数: <span className="font-semibold text-white">{selectedPeriodicCard.entry.obtainCount}枚</span></div>
+                        <div>初回入手: <span className="font-semibold text-white">{format(new Date(selectedPeriodicCard.entry.firstObtainedAt), 'M月d日', { locale: ja })}</span></div>
+                        <div>最近の入手: <span className="font-semibold text-white">{format(new Date(selectedPeriodicCard.entry.lastObtainedAt), 'M月d日 HH:mm', { locale: ja })}</span></div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="card">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Owned Cards</div>
+                        <div className="mt-1 text-sm text-slate-400">入手したカードだけを元素番号順に表示</div>
+                      </div>
+                      <div className="text-xs text-slate-500">{ownedPeriodicCards.length}枚</div>
+                    </div>
+
+                    {ownedPeriodicCards.length > 0 ? (
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        {ownedPeriodicCards.map(item => {
+                          const selected = item.definition.key === selectedPeriodicCardKey
+                          return (
+                            <button
+                              key={item.definition.key}
+                              onClick={() => setSelectedPeriodicCardKey(item.definition.key)}
+                              className="rounded-[18px] border px-3 py-3 text-left transition-all"
+                              style={{
+                                borderColor: selected ? 'rgba(125, 211, 252, 0.45)' : 'rgba(255,255,255,0.08)',
+                                background: selected
+                                  ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.14), rgba(15, 23, 42, 0.84))'
+                                  : 'rgba(15, 23, 42, 0.34)',
+                                boxShadow: selected ? '0 16px 28px rgba(56, 189, 248, 0.16)' : 'none',
+                              }}
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <div className="text-[10px] font-semibold tracking-[0.18em] text-slate-500">No.{item.definition.atomicNumber}</div>
+                                  <div className="mt-1 font-display text-xl text-white">{item.definition.symbol}</div>
+                                  <div className="mt-1 text-xs text-slate-300">{item.definition.nameJa}</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-xs font-semibold text-sky-100">{item.entry.obtainCount}枚</div>
+                                  <div className="mt-1 text-[10px] text-slate-500">{selected ? '表示中' : '表示する'}</div>
+                                </div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="mt-4 rounded-[20px] border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
+                        まだカードがありません。
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

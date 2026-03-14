@@ -38,6 +38,7 @@ export function PeriodicCardSurface({
   cardKey,
   entry,
   compact = false,
+  size,
   style,
   className = '',
 }: {
@@ -270,7 +271,7 @@ export function PeriodicCardRewardPanel({
         <div>
           <div className="text-xs font-semibold tracking-[0.2em] text-amber-200">CARD REWARD</div>
           <div className="mt-2 font-semibold text-white">
-            {reward.isNew ? '新しい周期表カードを手に入れた！' : '周期表カードをもう1枚獲得！'}
+            {reward.isNew ? '新しい元素カードを手に入れた！' : '元素カードをもう1枚獲得！'}
           </div>
           <div className="mt-1 text-xs leading-6 text-slate-300">
             {getPeriodicCardRewardSourceLabel(reward.source)}で {card.nameJa} カードを獲得しました。
@@ -326,7 +327,7 @@ export function PeriodicCardRewardModal({
         <div className="text-center">
           <div className="text-xs font-semibold tracking-[0.22em] text-amber-200">LOGIN REWARD</div>
           <div className="mt-3 font-display text-3xl text-white">
-            {reward.isNew ? '周期表カードを手に入れた！' : '今日の周期表カード'}
+            {reward.isNew ? '元素カードを手に入れた！' : '今日の元素カード'}
           </div>
           <p className="mt-2 text-sm leading-7 text-slate-300">
             {getPeriodicCardRewardSourceLabel(reward.source)}で <span className="font-semibold text-white">{card.nameJa}</span> を獲得しました。

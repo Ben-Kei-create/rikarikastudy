@@ -599,7 +599,7 @@ export default function HomePage({
             <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-sky-200">
               30秒チャレンジ
             </div>
-            <div className="mt-2 font-display text-2xl text-white sm:text-[1.8rem]">タイムアタック</div>
+            <div className="mt-2 font-display text-2xl text-white sm:text-[1.8rem]">チャレンジモード</div>
             <div className="mt-2 text-sm text-slate-300">
               {timeAttackUnlocked ? '30秒 / 正解で +0.5秒' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
             </div>

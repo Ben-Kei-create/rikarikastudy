@@ -58,6 +58,14 @@ function formatThreadTime(iso: string) {
   }).format(date)
 }
 
+function formatMessageTime(iso: string) {
+  const date = new Date(iso)
+  return new Intl.DateTimeFormat('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
 function makeMessage(role: ScienceChatMessage['role'], text: string): ScienceChatMessage {
   return {
     id: `${role}-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`,
@@ -390,37 +398,125 @@ export default function ScienceChatPage({
 
         <div
           ref={messagesRef}
-          className="rounded-[24px] border border-slate-800 bg-slate-950/50 p-3 sm:p-4"
-          style={{ maxHeight: '52vh', overflowY: 'auto' }}
+          className="rounded-[28px] border border-slate-800 bg-slate-950/60 p-3 sm:p-4"
+          style={{
+            maxHeight: '52vh',
+            overflowY: 'auto',
+            backgroundImage: 'linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.96))',
+          }}
         >
           {activeThread.messages.length === 0 ? (
-            <div className="text-sm leading-7 text-slate-400">
-              例: 「光合成って何？」「イオンってざっくり何？」「地震のP波とS波の違いは？」
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {activeThread.messages.map(message => (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
                 <div
-                  key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
+                  style={{ background: `${meta.color}1a`, border: `1px solid ${meta.color}30` }}
                 >
-                  <div
-                    className="max-w-[88%] rounded-[22px] px-4 py-3 text-sm leading-7 whitespace-pre-wrap"
-                    style={{
-                      background: message.role === 'user' ? `${meta.color}24` : 'rgba(30, 41, 59, 0.86)',
-                      border: `1px solid ${message.role === 'user' ? `${meta.color}38` : 'rgba(148, 163, 184, 0.16)'}`,
-                      color: message.role === 'user' ? '#f8fafc' : '#e2e8f0',
-                    }}
-                  >
-                    {message.text}
+                  {meta.icon}
+                </div>
+                <div className="max-w-[88%]">
+                  <div className="mb-1 flex items-center gap-2">
+                    <div className="text-xs font-semibold text-slate-300">Gemini</div>
+                    <div className="text-[11px] text-slate-500">質問をどうぞ</div>
+                  </div>
+                  <div className="relative rounded-[24px] rounded-tl-[12px] border border-slate-700/80 bg-slate-800/90 px-4 py-3 text-sm leading-7 text-slate-200">
+                    例: 「光合成って何？」「イオンってざっくり何？」「地震のP波とS波の違いは？」
+                    <div
+                      aria-hidden="true"
+                      className="absolute -left-1.5 top-3 h-3.5 w-3.5 rotate-45 border-l border-t border-slate-700/80 bg-slate-800/90"
+                    />
                   </div>
                 </div>
-              ))}
+              </div>
+              <div className="pl-[3.25rem] text-xs text-slate-500">
+                左に Gemini、右に自分の吹き出しで会話が並びます。
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {activeThread.messages.map(message => {
+                const isUser = message.role === 'user'
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex items-end gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {!isUser && (
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
+                        style={{ background: `${meta.color}1a`, border: `1px solid ${meta.color}30` }}
+                      >
+                        {meta.icon}
+                      </div>
+                    )}
+
+                    <div className={`max-w-[88%] ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
+                      <div className={`mb-1 flex items-center gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                        <div className="text-xs font-semibold text-slate-300">
+                          {isUser ? 'あなた' : 'Gemini'}
+                        </div>
+                        <div className="text-[11px] text-slate-500">{formatMessageTime(message.createdAt)}</div>
+                      </div>
+
+                      <div
+                        className={`relative whitespace-pre-wrap rounded-[24px] px-4 py-3 text-sm leading-7 ${
+                          isUser ? 'rounded-br-[12px]' : 'rounded-tl-[12px]'
+                        }`}
+                        style={{
+                          background: isUser
+                            ? `linear-gradient(135deg, ${meta.color}2f, ${meta.color}20)`
+                            : 'rgba(30, 41, 59, 0.9)',
+                          border: `1px solid ${isUser ? `${meta.color}44` : 'rgba(148, 163, 184, 0.16)'}`,
+                          color: isUser ? '#f8fafc' : '#e2e8f0',
+                          boxShadow: isUser ? `0 14px 28px ${meta.color}18` : '0 14px 28px rgba(15, 23, 42, 0.2)',
+                        }}
+                      >
+                        {message.text}
+                        <div
+                          aria-hidden="true"
+                          className={`absolute top-3 h-3.5 w-3.5 rotate-45 ${
+                            isUser ? '-right-1.5 border-r border-t' : '-left-1.5 border-l border-t'
+                          }`}
+                          style={{
+                            background: isUser ? `${meta.color}26` : 'rgba(30, 41, 59, 0.9)',
+                            borderColor: isUser ? `${meta.color}44` : 'rgba(148, 163, 184, 0.16)',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {isUser && (
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
+                        style={{ background: `${meta.color}24`, border: `1px solid ${meta.color}36` }}
+                      >
+                        You
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
 
               {loading && (
-                <div className="flex justify-start">
-                  <div className="max-w-[88%] rounded-[22px] border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-400">
-                    回答をまとめています...
+                <div className="flex items-end gap-3 justify-start">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
+                    style={{ background: `${meta.color}1a`, border: `1px solid ${meta.color}30` }}
+                  >
+                    {meta.icon}
+                  </div>
+                  <div className="max-w-[88%]">
+                    <div className="mb-1 flex items-center gap-2">
+                      <div className="text-xs font-semibold text-slate-300">Gemini</div>
+                      <div className="text-[11px] text-slate-500">考え中</div>
+                    </div>
+                    <div className="relative rounded-[24px] rounded-tl-[12px] border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-400">
+                      回答をまとめています...
+                      <div
+                        aria-hidden="true"
+                        className="absolute -left-1.5 top-3 h-3.5 w-3.5 rotate-45 border-l border-t border-slate-700 bg-slate-900"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -434,7 +530,25 @@ export default function ScienceChatPage({
           </div>
         )}
 
-        <div className="mt-4">
+        <div className="mt-4 rounded-[28px] border border-slate-800 bg-slate-950/55 p-3 sm:p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-full text-base"
+                style={{ background: `${meta.color}1c`, border: `1px solid ${meta.color}32` }}
+              >
+                💬
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">{field}について質問する</div>
+                <div className="text-xs text-slate-500">やさしく短く返すチャット形式</div>
+              </div>
+            </div>
+            <div className="rounded-full bg-slate-800/80 px-3 py-1 text-[11px] text-slate-400">
+              3行以内
+            </div>
+          </div>
+
           <textarea
             value={input}
             onChange={event => {
@@ -443,7 +557,8 @@ export default function ScienceChatPage({
             }}
             placeholder={`${field}について質問を書く（3行以内で返答）`}
             rows={3}
-            className="input-surface resize-y"
+            className="input-surface resize-y border-none bg-slate-900/70"
+            style={{ boxShadow: 'none' }}
             disabled={loading || rallyCount >= maxRallies}
           />
           {moderation.blocked && (

@@ -76,8 +76,8 @@ export const LEVEL_UNLOCK_REWARDS: LevelUnlockReward[] = [
   {
     key: 'periodic_table_map',
     level: 20,
-    title: '周期表マップ',
-    description: 'マイページで元素カードを集める周期表マップが開放されます。',
+    title: '元素カード',
+    description: 'マイページで元素カードを集めて、入手したカードを順番に見返せるようになります。',
     emoji: '🧪',
   },
 ]
