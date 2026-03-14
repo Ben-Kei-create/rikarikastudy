@@ -45,6 +45,7 @@ type SessionMode =
   | 'physics_motion_graph_lab'
   | 'test_mode'
   | 'streak_mode'
+  | 'active_recall'
   | 'time_attack'
 
 export type Database = {
@@ -182,6 +183,73 @@ export type Database = {
           question_id: string
           is_correct: boolean
           student_answer: string
+        }
+      }
+      active_recall_logs: {
+        Row: {
+          id: string
+          session_id: string
+          student_id: number
+          field: '生物' | '化学' | '物理' | '地学'
+          unit: string
+          source_question_id: string | null
+          prompt_type: 'term' | 'mechanism' | 'process' | 'compare' | 'cause'
+          prompt_text: string
+          cue_text: string
+          hint_keywords: string[]
+          key_points: string[]
+          student_answer: string
+          rating: 'strong' | 'close' | 'review'
+          strengths: string[]
+          missing_points: string[]
+          coach_reply: string
+          model_answer: string
+          follow_up_prompt: string | null
+          needs_review: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          student_id: number
+          field: '生物' | '化学' | '物理' | '地学'
+          unit: string
+          source_question_id?: string | null
+          prompt_type: 'term' | 'mechanism' | 'process' | 'compare' | 'cause'
+          prompt_text: string
+          cue_text?: string
+          hint_keywords?: string[]
+          key_points?: string[]
+          student_answer: string
+          rating: 'strong' | 'close' | 'review'
+          strengths?: string[]
+          missing_points?: string[]
+          coach_reply?: string
+          model_answer?: string
+          follow_up_prompt?: string | null
+          needs_review?: boolean
+          created_at?: string
+        }
+        Update: {
+          session_id?: string
+          student_id?: number
+          field?: '生物' | '化学' | '物理' | '地学'
+          unit?: string
+          source_question_id?: string | null
+          prompt_type?: 'term' | 'mechanism' | 'process' | 'compare' | 'cause'
+          prompt_text?: string
+          cue_text?: string
+          hint_keywords?: string[]
+          key_points?: string[]
+          student_answer?: string
+          rating?: 'strong' | 'close' | 'review'
+          strengths?: string[]
+          missing_points?: string[]
+          coach_reply?: string
+          model_answer?: string
+          follow_up_prompt?: string | null
+          needs_review?: boolean
+          created_at?: string
         }
       }
       active_sessions: {

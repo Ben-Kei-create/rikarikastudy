@@ -14,6 +14,7 @@ import EarthSciencePracticePage from '@/components/EarthSciencePracticePage'
 import ScienceWorkbenchPage from '@/components/ScienceWorkbenchPage'
 import TimeAttackPage from '@/components/TimeAttackPage'
 import OnlineLabPage from '@/components/OnlineLabPage'
+import ActiveRecallPage from '@/components/ActiveRecallPage'
 import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
@@ -22,6 +23,7 @@ import ScienceChatPage from '@/components/ScienceChatPage'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { CustomQuizOptions } from '@/lib/customQuiz'
 import { QuizQuestionCount } from '@/lib/questionPicker'
+import { ScienceField } from '@/lib/constants'
 
 type Screen =
   | 'home'
@@ -35,6 +37,7 @@ type Screen =
   | { type: 'earth-practice'; mode: EarthSciencePracticeMode }
   | { type: 'science-workbench'; mode: ScienceWorkbenchMode }
   | { type: 'chat'; field: ScienceChatField }
+  | { type: 'active-recall'; field: ScienceField }
 
 const BG_THEMES = ['bg-bio', 'bg-chem', 'bg-phys', 'bg-earth'] as const
 
@@ -81,12 +84,20 @@ function App() {
         onSelectEarthMode={mode => setScreen({ type: 'earth-practice', mode })}
         onSelectWorkbenchMode={mode => setScreen({ type: 'science-workbench', mode })}
         onOpenChat={field => setScreen({ type: 'chat', field })}
+        onStartActiveRecall={field => setScreen({ type: 'active-recall', field })}
         onBack={() => setScreen('home')}
       />
     )
   } else if (typeof screen === 'object' && screen.type === 'chat') {
     content = (
       <ScienceChatPage
+        field={screen.field}
+        onBack={() => setScreen({ type: 'unit', field: screen.field })}
+      />
+    )
+  } else if (typeof screen === 'object' && screen.type === 'active-recall') {
+    content = (
+      <ActiveRecallPage
         field={screen.field}
         onBack={() => setScreen({ type: 'unit', field: screen.field })}
       />

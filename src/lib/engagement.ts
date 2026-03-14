@@ -28,6 +28,7 @@ export type SessionMode =
   | 'physics_motion_graph_lab'
   | 'test_mode'
   | 'streak_mode'
+  | 'active_recall'
   | 'time_attack'
 
 export const JST_OFFSET_MS = 9 * 60 * 60 * 1000
@@ -36,7 +37,7 @@ export const TEST_MODE_QUESTION_COUNT = 25
 export const TEST_MODE_POINT_PER_QUESTION = 4
 
 export interface LevelUnlockReward {
-  key: 'challenge_mode' | 'light_theme' | 'cute_theme' | 'periodic_table_map'
+  key: 'challenge_mode' | 'light_theme' | 'cute_theme' | 'periodic_table_map' | 'active_recall'
   level: number
   title: string
   description: string
@@ -57,6 +58,13 @@ export const LEVEL_UNLOCK_REWARDS: LevelUnlockReward[] = [
     title: 'ライトテーマ',
     description: 'マイページでライトモードを選べるようになります。',
     emoji: '☀️',
+  },
+  {
+    key: 'active_recall',
+    level: 20,
+    title: 'アクティブリコール',
+    description: '各分野で、思い出して説明する AI 学習モードが使えるようになります。',
+    emoji: '🧠',
   },
   {
     key: 'cute_theme',
