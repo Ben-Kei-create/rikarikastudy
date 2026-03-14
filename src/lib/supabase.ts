@@ -406,6 +406,28 @@ export type Database = {
           resolved_at?: string | null
         }
       }
+      login_updates: {
+        Row: {
+          id: string
+          title: string
+          body: string
+          created_by_student_id: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          body: string
+          created_by_student_id?: number | null
+          created_at?: string
+        }
+        Update: {
+          title?: string
+          body?: string
+          created_by_student_id?: number | null
+          created_at?: string
+        }
+      }
       science_glossary_entries: {
         Row: {
           id: string

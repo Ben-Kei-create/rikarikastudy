@@ -219,6 +219,40 @@ CREATE TABLE IF NOT EXISTS science_glossary_entries (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ログイン画面アップデート掲示板
+CREATE TABLE IF NOT EXISTS login_updates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_by_student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE login_updates ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE login_updates ADD COLUMN IF NOT EXISTS body TEXT;
+ALTER TABLE login_updates ADD COLUMN IF NOT EXISTS created_by_student_id INTEGER REFERENCES students(id) ON DELETE SET NULL;
+ALTER TABLE login_updates ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+CREATE OR REPLACE FUNCTION trim_login_updates()
+RETURNS TRIGGER AS $$
+BEGIN
+  DELETE FROM login_updates
+  WHERE id IN (
+    SELECT id
+    FROM login_updates
+    ORDER BY created_at DESC, id DESC
+    OFFSET 10
+  );
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_trim_login_updates ON login_updates;
+CREATE TRIGGER trigger_trim_login_updates
+AFTER INSERT ON login_updates
+FOR EACH STATEMENT
+EXECUTE FUNCTION trim_login_updates();
+
 -- 周期表カード所持テーブル
 CREATE TABLE IF NOT EXISTS student_element_cards (
   student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
@@ -270,6 +304,7 @@ CREATE INDEX IF NOT EXISTS idx_question_inquiries_status ON question_inquiries(s
 CREATE INDEX IF NOT EXISTS idx_question_inquiries_created_at ON question_inquiries(created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_science_glossary_field_term ON science_glossary_entries(field, term);
 CREATE INDEX IF NOT EXISTS idx_science_glossary_reading ON science_glossary_entries(reading);
+CREATE INDEX IF NOT EXISTS idx_login_updates_created_at ON login_updates(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_student_element_cards_student ON student_element_cards(student_id);
 CREATE INDEX IF NOT EXISTS idx_element_card_rewards_student ON element_card_rewards(student_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_element_card_rewards_daily_login
@@ -286,6 +321,7 @@ ALTER TABLE online_lab_rooms DISABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_guard_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE question_inquiries DISABLE ROW LEVEL SECURITY;
 ALTER TABLE science_glossary_entries DISABLE ROW LEVEL SECURITY;
+ALTER TABLE login_updates DISABLE ROW LEVEL SECURITY;
 ALTER TABLE student_element_cards DISABLE ROW LEVEL SECURITY;
 ALTER TABLE element_card_rewards DISABLE ROW LEVEL SECURITY;
 

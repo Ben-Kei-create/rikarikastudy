@@ -1,6 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { format, subDays } from 'date-fns'
+import { ja } from 'date-fns/locale'
 import { fetchStudents, LOGIN_STUDENTS, useAuth } from '@/lib/auth'
+import { LoginUpdateRow, isLoginUpdatesTableMissing } from '@/lib/loginUpdates'
+import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { GUEST_STUDENT_ID } from '@/lib/guestStudy'
 import { getStudentAvatarMeta } from '@/lib/studentAvatar'
@@ -26,12 +30,52 @@ export default function LoginPage({
   const [onlinePw, setOnlinePw] = useState('')
   const [onlineError, setOnlineError] = useState('')
   const [onlineSubmitting, setOnlineSubmitting] = useState(false)
+  const [loginUpdates, setLoginUpdates] = useState<LoginUpdateRow[]>([])
+  const [loginUpdatesLoading, setLoginUpdatesLoading] = useState(true)
+  const [showLoginUpdates, setShowLoginUpdates] = useState(true)
 
   useEffect(() => {
     let active = true
     fetchStudents().then(data => {
       if (active) setStudents([LOGIN_STUDENTS[0], ...data])
     })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+
+    const loadLoginUpdates = async () => {
+      const { data, error } = await supabase
+        .from('login_updates')
+        .select('*')
+        .gte('created_at', subDays(new Date(), 3).toISOString())
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (!active) return
+
+      if (error) {
+        if (!isLoginUpdatesTableMissing(error)) {
+          console.error('[login] failed to load login updates', error)
+          setShowLoginUpdates(true)
+        } else {
+          setShowLoginUpdates(false)
+        }
+        setLoginUpdates([])
+        setLoginUpdatesLoading(false)
+        return
+      }
+
+      setLoginUpdates((data || []) as LoginUpdateRow[])
+      setLoginUpdatesLoading(false)
+      setShowLoginUpdates(true)
+    }
+
+    void loadLoginUpdates()
+
     return () => {
       active = false
     }
@@ -309,6 +353,46 @@ export default function LoginPage({
                 <button onClick={() => setOnlineOpen(false)} className="btn-secondary w-full">
                   キャンセル
                 </button>
+              </div>
+            </div>
+          )}
+
+          {showLoginUpdates && (
+            <div className="mt-4 rounded-[24px] border border-white/10 bg-slate-950/38 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Update Board</div>
+                  <div className="mt-1 text-sm font-semibold text-white">直近3日のアップデート</div>
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  {loginUpdates.length}件
+                </div>
+              </div>
+
+              <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1">
+                {loginUpdatesLoading ? (
+                  <div className="rounded-2xl border border-dashed border-slate-700 px-3 py-4 text-center text-xs text-slate-500">
+                    掲示板を読み込み中...
+                  </div>
+                ) : loginUpdates.length > 0 ? (
+                  loginUpdates.map(update => (
+                    <div key={update.id} className="rounded-[18px] border border-sky-400/12 bg-sky-400/5 px-3 py-2.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-white">{update.title}</div>
+                          <div className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-300">{update.body}</div>
+                        </div>
+                        <div className="shrink-0 text-[10px] text-slate-500">
+                          {format(new Date(update.created_at), 'M/d HH:mm', { locale: ja })}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-700 px-3 py-4 text-center text-xs text-slate-500">
+                    直近のアップデートはまだありません。
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -29,6 +29,11 @@ import {
   QuestionInquiryRow,
   QuestionInquiryStatus,
 } from '@/lib/questionInquiry'
+import {
+  getLoginUpdatesSchemaErrorMessage,
+  isLoginUpdatesTableMissing,
+  LoginUpdateRow,
+} from '@/lib/loginUpdates'
 import { buildGlossaryEntryId, ScienceGlossaryField } from '@/lib/scienceGlossary'
 import { FIELD_COLORS, FIELDS } from '@/lib/constants'
 import {
@@ -254,6 +259,7 @@ interface RestoreSnapshot {
   format: string
   students: StudentInsert[]
   questions: QuestionRow[]
+  loginUpdates: LoginUpdateRow[]
   glossaryEntries: GlossaryRow[]
   questionInquiries: QuestionInquiryRow[]
   quizSessions: QuizSessionRow[]
@@ -266,6 +272,7 @@ interface RestoreSnapshot {
   hasChatGuardLogs: boolean
   hasEngagementTables: boolean
   hasGlossaryEntries: boolean
+  hasLoginUpdates: boolean
   hasQuestionInquiries: boolean
   defaultPasswordCount: number
 }
@@ -638,6 +645,10 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
   const glossaryEntries = hasGlossaryEntries
     ? parsed.scienceGlossaryEntries as GlossaryRow[]
     : []
+  const hasLoginUpdates = Array.isArray(parsed.loginUpdates)
+  const loginUpdates = hasLoginUpdates
+    ? parsed.loginUpdates as LoginUpdateRow[]
+    : []
   const hasQuestionInquiries = Array.isArray(parsed.questionInquiries)
   const questionInquiries = hasQuestionInquiries
     ? parsed.questionInquiries as QuestionInquiryRow[]
@@ -702,6 +713,7 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
     format,
     students,
     questions: questionCatalog,
+    loginUpdates,
     glossaryEntries,
     questionInquiries,
     quizSessions,
@@ -714,13 +726,14 @@ function parseAdminRestorePayload(jsonText: string): RestoreSnapshot {
     hasChatGuardLogs,
     hasEngagementTables,
     hasGlossaryEntries,
+    hasLoginUpdates,
     hasQuestionInquiries,
     defaultPasswordCount,
   }
 }
 
 async function insertRowsInChunks(
-  table: 'questions' | 'science_glossary_entries' | 'question_inquiries' | 'quiz_sessions' | 'answer_logs' | 'chat_guard_logs' | 'daily_challenges' | 'badges' | 'student_badges' | 'time_attack_records',
+  table: 'questions' | 'login_updates' | 'science_glossary_entries' | 'question_inquiries' | 'quiz_sessions' | 'answer_logs' | 'chat_guard_logs' | 'daily_challenges' | 'badges' | 'student_badges' | 'time_attack_records',
   rows: Record<string, unknown>[]
 ) {
   if (rows.length === 0) return
@@ -751,6 +764,7 @@ function getRestoreErrorMessage(message: string) {
   }
   if (
     message.includes('chat_guard_logs')
+    || message.includes('login_updates')
     || message.includes('question_inquiries')
     || message.includes('daily_challenges')
     || message.includes('student_badges')
@@ -782,6 +796,13 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [chatGuardLogs, setChatGuardLogs] = useState<ChatGuardLogRow[]>([])
   const [questionInquiries, setQuestionInquiries] = useState<QuestionInquiryRow[]>([])
   const [questionInquiryLoadError, setQuestionInquiryLoadError] = useState('')
+  const [loginUpdates, setLoginUpdates] = useState<LoginUpdateRow[]>([])
+  const [loginUpdatesLoadError, setLoginUpdatesLoadError] = useState('')
+  const [loginUpdateTitle, setLoginUpdateTitle] = useState('')
+  const [loginUpdateBody, setLoginUpdateBody] = useState('')
+  const [loginUpdateMsg, setLoginUpdateMsg] = useState('')
+  const [loginUpdateSaving, setLoginUpdateSaving] = useState(false)
+  const [loginUpdateDeletingId, setLoginUpdateDeletingId] = useState<string | null>(null)
   const [questionInquiryActionId, setQuestionInquiryActionId] = useState<string | null>(null)
   const [questionInquiryNoteDrafts, setQuestionInquiryNoteDrafts] = useState<Record<string, string>>({})
   const [questionInquiryReplyDrafts, setQuestionInquiryReplyDrafts] = useState<Record<string, string>>({})
@@ -947,16 +968,34 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     setQuestionPage(current => Math.min(current, questionPageCount))
   }, [questionPageCount])
 
+  const trimLoginUpdates = async () => {
+    const { data, error } = await supabase
+      .from('login_updates')
+      .select('id')
+      .order('created_at', { ascending: false })
+
+    if (error || !data || data.length <= 10) return
+
+    const staleIds = data.slice(10).map(row => row.id)
+    if (staleIds.length === 0) return
+
+    await supabase
+      .from('login_updates')
+      .delete()
+      .in('id', staleIds)
+  }
+
   const loadData = async () => {
     setLoading(true)
 
     if (tab === 'overview') {
-      const [students, { data: sessions }, activeSessionRows, chatGuardLogsResponse, questionInquiriesResponse] = await Promise.all([
+      const [students, { data: sessions }, activeSessionRows, chatGuardLogsResponse, questionInquiriesResponse, loginUpdatesResponse] = await Promise.all([
         fetchStudents(),
         supabase.from('quiz_sessions').select('*'),
         fetchActiveSessions(),
         supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }).limit(20),
         supabase.from('question_inquiries').select('*').order('created_at', { ascending: false }).limit(20),
+        supabase.from('login_updates').select('*').order('created_at', { ascending: false }).limit(10),
       ])
       setStudentsList(students)
       setStats(buildStudentStats(students, (sessions || []) as QuizSessionRow[]))
@@ -1003,6 +1042,19 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         setQuestionInquiries((questionInquiriesResponse.data || []) as QuestionInquiryRow[])
         setQuestionInquiryLoadError('')
       }
+
+      if (loginUpdatesResponse.error) {
+        if (!isLoginUpdatesTableMissing(loginUpdatesResponse.error)) {
+          console.error(loginUpdatesResponse.error)
+          setLoginUpdatesLoadError(loginUpdatesResponse.error.message)
+        } else {
+          setLoginUpdatesLoadError(getLoginUpdatesSchemaErrorMessage(loginUpdatesResponse.error.message))
+        }
+        setLoginUpdates([])
+      } else {
+        setLoginUpdates((loginUpdatesResponse.data || []) as LoginUpdateRow[])
+        setLoginUpdatesLoadError('')
+      }
     } else if (tab === 'inquiries') {
       const { data, error } = await supabase
         .from('question_inquiries')
@@ -1035,6 +1087,60 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     }
 
     setLoading(false)
+  }
+
+  const handleAddLoginUpdate = async () => {
+    const title = loginUpdateTitle.trim()
+    const body = loginUpdateBody.trim()
+
+    if (!title || !body) {
+      setLoginUpdateMsg('タイトルと本文を入力してください。')
+      return
+    }
+
+    setLoginUpdateSaving(true)
+    setLoginUpdateMsg('')
+
+    const { error } = await supabase
+      .from('login_updates')
+      .insert({
+        title,
+        body,
+        created_by_student_id: 5,
+      })
+
+    if (error) {
+      setLoginUpdateSaving(false)
+      setLoginUpdateMsg(getLoginUpdatesSchemaErrorMessage(error.message))
+      return
+    }
+
+    await trimLoginUpdates()
+    setLoginUpdateTitle('')
+    setLoginUpdateBody('')
+    setLoginUpdateMsg('✅ アップデート掲示板を更新しました。')
+    setLoginUpdateSaving(false)
+    await loadData()
+  }
+
+  const handleDeleteLoginUpdate = async (updateId: string) => {
+    setLoginUpdateDeletingId(updateId)
+    setLoginUpdateMsg('')
+
+    const { error } = await supabase
+      .from('login_updates')
+      .delete()
+      .eq('id', updateId)
+
+    if (error) {
+      setLoginUpdateDeletingId(null)
+      setLoginUpdateMsg(getLoginUpdatesSchemaErrorMessage(error.message))
+      return
+    }
+
+    setLoginUpdateDeletingId(null)
+    setLoginUpdateMsg('✅ 掲示板の項目を削除しました。')
+    await loadData()
   }
 
   useEffect(() => {
@@ -1232,6 +1338,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         sessionsResponse,
         answerLogsResponse,
         questionsResponse,
+        loginUpdatesResponse,
         glossaryResponse,
         chatGuardLogsResponse,
         questionInquiriesResponse,
@@ -1244,6 +1351,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         supabase.from('quiz_sessions').select('*').order('created_at', { ascending: false }),
         supabase.from('answer_logs').select('*').order('created_at', { ascending: false }),
         supabase.from('questions').select('*').order('created_at', { ascending: false }),
+        supabase.from('login_updates').select('*').order('created_at', { ascending: false }),
         supabase.from('science_glossary_entries').select('*').order('reading', { ascending: true }).order('term', { ascending: true }),
         supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }),
         supabase.from('question_inquiries').select('*').order('created_at', { ascending: false }),
@@ -1256,6 +1364,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       if (sessionsResponse.error) throw new Error(sessionsResponse.error.message)
       if (answerLogsResponse.error) throw new Error(answerLogsResponse.error.message)
       if (questionsResponse.error) throw new Error(questionsResponse.error.message)
+      if (loginUpdatesResponse.error && !isLoginUpdatesTableMissing(loginUpdatesResponse.error)) {
+        throw new Error(loginUpdatesResponse.error.message)
+      }
       if (glossaryResponse.error && !isMissingRelationError(glossaryResponse.error, 'science_glossary_entries')) {
         throw new Error(glossaryResponse.error.message)
       }
@@ -1273,6 +1384,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       const sessions = (sessionsResponse.data || []) as QuizSessionRow[]
       const answerLogs = (answerLogsResponse.data || []) as AnswerLogRow[]
       const questions = (questionsResponse.data || []) as QuestionRow[]
+      const loginUpdates = (loginUpdatesResponse.data || []) as LoginUpdateRow[]
+      const hasLoginUpdatesTable = !loginUpdatesResponse.error
       const glossaryEntries = (glossaryResponse.data || []) as GlossaryRow[]
       const hasGlossaryTable = !glossaryResponse.error
       const chatGuardLogs = (chatGuardLogsResponse.data || []) as ChatGuardLogRow[]
@@ -1286,9 +1399,10 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       const payload = {
         exportedAt: new Date().toISOString(),
-        format: 'rikarikastudy-admin-export/v6',
+        format: 'rikarikastudy-admin-export/v7',
         restoreHint: 'テーブルが消えている場合は、先に supabase_schema.sql を SQL Editor で実行してから復元してください。',
         questionCatalog: questions,
+        ...(hasLoginUpdatesTable ? { loginUpdates } : {}),
         ...(hasGlossaryTable ? { scienceGlossaryEntries: glossaryEntries } : {}),
         chatGuardLogs,
         ...(hasQuestionInquiryTable ? { questionInquiries } : {}),
@@ -1652,6 +1766,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         '現在のバックアップ対象データを、このJSONの内容で置き換えて復元します。',
         `生徒: ${snapshot.students.length}件`,
         `問題: ${snapshot.questions.length}件`,
+        ...(snapshot.hasLoginUpdates ? [`ログイン掲示板: ${snapshot.loginUpdates.length}件`] : []),
         ...(snapshot.hasGlossaryEntries ? [`辞書: ${snapshot.glossaryEntries.length}件`] : []),
         ...(snapshot.hasQuestionInquiries ? [`問い合わせ: ${snapshot.questionInquiries.length}件`] : []),
         `クイズ履歴: ${snapshot.quizSessions.length}件`,
@@ -1663,7 +1778,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           `タイムアタック記録: ${snapshot.timeAttackRecords.length}件`,
         ] : []),
         '',
-        `questions${snapshot.hasGlossaryEntries ? ' / science_glossary_entries' : ''}${snapshot.hasQuestionInquiries ? ' / question_inquiries' : ''} / quiz_sessions / answer_logs は入れ替えになります。続けますか？`,
+        `questions${snapshot.hasLoginUpdates ? ' / login_updates' : ''}${snapshot.hasGlossaryEntries ? ' / science_glossary_entries' : ''}${snapshot.hasQuestionInquiries ? ' / question_inquiries' : ''} / quiz_sessions / answer_logs は入れ替えになります。続けますか？`,
       ].join('\n')
 
       if (!confirm(confirmMessage)) return
@@ -1701,6 +1816,14 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           .delete()
           .not('id', 'is', null)
         if (deleteGlossaryError) throw new Error(deleteGlossaryError.message)
+      }
+
+      if (snapshot.hasLoginUpdates) {
+        const { error: deleteLoginUpdatesError } = await supabase
+          .from('login_updates')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteLoginUpdatesError) throw new Error(deleteLoginUpdatesError.message)
       }
 
       if (snapshot.hasQuestionInquiries) {
@@ -1746,6 +1869,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       }
 
       await insertRowsInChunks('questions', snapshot.questions as unknown as Record<string, unknown>[])
+      if (snapshot.hasLoginUpdates) {
+        await insertRowsInChunks('login_updates', snapshot.loginUpdates as unknown as Record<string, unknown>[])
+      }
       if (snapshot.hasGlossaryEntries) {
         await insertRowsInChunks('science_glossary_entries', snapshot.glossaryEntries as unknown as Record<string, unknown>[])
       }
@@ -1766,6 +1892,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       setRestoreMsg(
         `✅ 復元しました。問題${snapshot.questions.length}件 / 履歴${snapshot.quizSessions.length}件 / 解答ログ${snapshot.answerLogs.length}件`
+        + (snapshot.hasLoginUpdates ? ` / ログイン掲示板${snapshot.loginUpdates.length}件` : '')
         + (snapshot.hasGlossaryEntries ? ` / 辞書${snapshot.glossaryEntries.length}件` : '')
         + (snapshot.hasQuestionInquiries ? ` / 問い合わせ${snapshot.questionInquiries.length}件` : '')
         + (snapshot.hasChatGuardLogs ? ` / チャット警告${snapshot.chatGuardLogs.length}件` : '')
@@ -2192,6 +2319,115 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                   >
                     {exportLoading ? '作成中...' : '⬇️ 復元用JSONを保存'}
                   </button>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[0.78fr_1.22fr]">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-white font-bold">ログイン画面アップデート掲示板</div>
+                      <div className="text-slate-400 text-sm mt-1">
+                        ログイン画面には直近3日分だけ表示されます。保存件数は最大10件で、古いものから自動で整理されます。
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <input
+                        value={loginUpdateTitle}
+                        onChange={event => setLoginUpdateTitle(event.target.value)}
+                        placeholder="タイトル"
+                        className="input-surface"
+                        maxLength={60}
+                      />
+                      <textarea
+                        value={loginUpdateBody}
+                        onChange={event => setLoginUpdateBody(event.target.value)}
+                        placeholder="本文"
+                        rows={4}
+                        className="input-surface resize-y"
+                        maxLength={240}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={() => {
+                          void handleAddLoginUpdate()
+                        }}
+                        disabled={loginUpdateSaving}
+                        className="btn-primary"
+                      >
+                        {loginUpdateSaving ? '掲示中...' : '掲示する'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setLoginUpdateTitle('')
+                          setLoginUpdateBody('')
+                          setLoginUpdateMsg('')
+                        }}
+                        className="btn-ghost"
+                        disabled={loginUpdateSaving}
+                      >
+                        クリア
+                      </button>
+                      <div className="text-xs text-slate-500">
+                        {loginUpdates.length} / 10件保存中
+                      </div>
+                    </div>
+
+                    {loginUpdateMsg && (
+                      <div
+                        className="rounded-2xl px-4 py-3 text-sm"
+                        style={{ color: loginUpdateMsg.startsWith('✅') ? '#86efac' : '#fca5a5', background: loginUpdateMsg.startsWith('✅') ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)', border: `1px solid ${loginUpdateMsg.startsWith('✅') ? 'rgba(34, 197, 94, 0.18)' : 'rgba(239, 68, 68, 0.18)'}` }}
+                      >
+                        {loginUpdateMsg}
+                      </div>
+                    )}
+
+                    {loginUpdatesLoadError && (
+                      <div className="rounded-2xl border border-rose-500/18 bg-rose-500/6 px-4 py-3 text-sm text-rose-200">
+                        {loginUpdatesLoadError}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-white font-semibold">保存中の掲示</div>
+                      <div className="text-xs text-slate-500">新しい順</div>
+                    </div>
+                    <div className="mt-3 max-h-[24rem] space-y-3 overflow-y-auto pr-1">
+                      {loginUpdates.length > 0 ? loginUpdates.map(update => (
+                        <div key={update.id} className="rounded-2xl border border-sky-500/16 bg-sky-500/6 px-4 py-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-white">{update.title}</div>
+                              <div className="mt-1 text-xs text-slate-500">
+                                {format(new Date(update.created_at), 'M/d HH:mm', { locale: ja })}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                void handleDeleteLoginUpdate(update.id)
+                              }}
+                              className="text-xs text-rose-300 transition-colors hover:text-rose-200"
+                              disabled={loginUpdateDeletingId === update.id}
+                            >
+                              {loginUpdateDeletingId === update.id ? '削除中...' : '削除'}
+                            </button>
+                          </div>
+                          <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
+                            {update.body}
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-5 text-sm text-slate-400">
+                          まだ掲示はありません。
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 

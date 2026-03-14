@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/theme'
@@ -219,6 +219,9 @@ export default function MyPage({
   const [periodicCardsLoading, setPeriodicCardsLoading] = useState(true)
   const [periodicCardsSchemaMessage, setPeriodicCardsSchemaMessage] = useState<string | null>(null)
   const [selectedPeriodicCardKey, setSelectedPeriodicCardKey] = useState<string | null>(null)
+  const tabContentRef = useRef<HTMLDivElement | null>(null)
+  const tabScrollPositionsRef = useRef<Partial<Record<Tab, number>>>({})
+  const hasMountedTabRef = useRef(false)
 
   useEffect(() => {
     if (studentId === null) return
@@ -547,6 +550,37 @@ export default function MyPage({
     setSelectedGlossaryId(target.id)
   }
 
+  const handleTabChange = (nextTab: Tab) => {
+    if (nextTab === tab) return
+    if (typeof window !== 'undefined') {
+      tabScrollPositionsRef.current[tab] = window.scrollY
+    }
+    setTab(nextTab)
+  }
+
+  useEffect(() => {
+    if (!hasMountedTabRef.current) {
+      hasMountedTabRef.current = true
+      return
+    }
+
+    if (typeof window === 'undefined') return
+
+    const savedScrollY = tabScrollPositionsRef.current[tab]
+    const fallbackTop = tabContentRef.current
+      ? window.scrollY + tabContentRef.current.getBoundingClientRect().top - 12
+      : 0
+    const targetTop = typeof savedScrollY === 'number' ? savedScrollY : Math.max(0, fallbackTop)
+
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: targetTop, behavior: 'auto' })
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+    }
+  }, [tab])
+
   const handleAddQuestion = async () => {
     if (!studentId) return
     if (!questionForm.unit.trim() || !questionForm.question.trim()) {
@@ -737,7 +771,7 @@ export default function MyPage({
   return (
     <div className="page-shell page-shell-dashboard">
       {/* ヘッダー */}
-      <div className="px-1 pt-1 pb-3 floating-header md:sticky md:top-0 md:z-10 md:pt-2 md:pb-4">
+      <div className="px-1 pt-1 pb-2 sm:pb-3">
         <div className="mb-2.5 flex items-center justify-between gap-3 sm:mb-3">
           <button onClick={onBack} className="btn-secondary text-sm !px-3.5 !py-2 sm:!px-4 sm:!py-2.5">
             もどる
@@ -809,53 +843,59 @@ export default function MyPage({
               ゲストモードでは、成績は当日分だけ保存されます。ニックネーム変更や自分用問題の作成は使えません。
             </div>
           )}
-          <div className="segment-bar mt-4 sm:mt-5">
-            {tabs.map(([t, label]) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`segment-button ${tab === t ? 'is-active' : ''}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
-      <div className="px-1">
+      <div className="sticky top-0 z-10 px-1 pb-3 pt-1 floating-header">
+        <div className="segment-bar">
+          {tabs.map(([t, label]) => (
+            <button
+              key={t}
+              onClick={() => handleTabChange(t)}
+              className={`segment-button ${tab === t ? 'is-active' : ''}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div ref={tabContentRef} className="px-1">
 
         {/* ===== 概要タブ ===== */}
         {tab === 'overview' && (
           <div className="space-y-4 anim-fade">
-            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
               {[
                 { label: '総問題数', display: `${totalQ}問`, color: '#3b82f6' },
                 { label: '総合正答率', display: `${overallRate}%`, color: overallRate >= 70 ? '#22c55e' : overallRate >= 50 ? '#f59e0b' : '#ef4444' },
                 { label: '総勉強時間', display: formatStudyTime(totalStudySeconds), color: '#38bdf8', compact: true },
                 { label: '最高連続', display: `${maxStreak}日`, color: '#f97316' },
               ].map(item => (
-                <div key={item.label} className="card text-center" style={{ padding: '16px 8px' }}>
-                  <div className={`font-display ${item.compact ? 'text-xl' : 'text-2xl'}`} style={{ color: item.color }}>
+                <div key={item.label} className="card mobile-mini-card text-center !px-2.5 !py-3 sm:!px-3 sm:!py-4">
+                  <div
+                    className={`font-display leading-none ${item.compact ? 'text-[1rem] sm:text-xl' : 'text-[1.2rem] sm:text-2xl'}`}
+                    style={{ color: item.color }}
+                  >
                     {item.display}
                   </div>
-                  <div className="text-slate-500 text-xs mt-1">{item.label}</div>
+                  <div className="mt-1 text-[11px] text-slate-500 sm:text-xs">{item.label}</div>
                 </div>
               ))}
             </div>
 
-            <div className="card">
+            <div className="card mobile-action-card">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">XP / Level</div>
-                  <div className="mt-2 flex items-end gap-3 flex-wrap">
-                    <div className="rounded-full border border-sky-300/20 bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-100">
+                  <div className="mt-2 flex flex-wrap items-end gap-2.5 sm:gap-3">
+                    <div className="rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1.5 text-xs font-semibold text-sky-100 sm:px-4 sm:py-2 sm:text-sm">
                       Lv.{levelInfo.level} {levelInfo.title}
                     </div>
-                    <div className="font-display text-3xl text-white">{levelInfo.totalXp}<span className="ml-2 text-base text-slate-500">XP</span></div>
+                    <div className="font-display text-[1.55rem] text-white sm:text-3xl">{levelInfo.totalXp}<span className="ml-1.5 text-sm text-slate-500 sm:ml-2 sm:text-base">XP</span></div>
                   </div>
                 </div>
-                <div className="text-sm text-slate-400">
+                <div className="text-xs text-slate-400 sm:text-sm">
                   次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP
                 </div>
               </div>
@@ -1544,206 +1584,218 @@ export default function MyPage({
         )}
 
         {tab === 'questions' && (
-          <div className="space-y-4 anim-fade">
-            <div className="card">
-              <h3 className="text-slate-300 font-bold mb-1">自分の問題を追加</h3>
-              <p className="text-slate-500 text-xs leading-6">
-                ここで作った問題は、自分だけが解けます。先生は管理画面の問題一覧で確認できます。
-              </p>
-              <div className="grid grid-cols-1 gap-3 mt-4 sm:grid-cols-2">
-                <select
-                  value={questionForm.field}
-                  onChange={e => setQuestionForm(current => ({ ...current, field: e.target.value as typeof FIELDS[number] }))}
-                  className="input-surface"
-                >
-                  {FIELDS.map(field => <option key={field}>{field}</option>)}
-                </select>
-                <select
-                  value={questionForm.type}
-                  onChange={e => setQuestionForm(current => ({ ...current, type: e.target.value as QuestionType }))}
-                  className="input-surface"
-                >
-                  {QUESTION_TYPES.map(type => (
-                    <option key={type} value={type}>{getQuestionTypeLabel(type)}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-1 gap-3 mt-3 sm:grid-cols-2">
-                <input
-                  type="text"
-                  value={questionForm.unit}
-                  onChange={e => setQuestionForm(current => ({ ...current, unit: e.target.value }))}
-                  placeholder="単元"
-                  className="input-surface"
-                />
-                <select
-                  value={questionForm.grade}
-                  onChange={e => setQuestionForm(current => ({ ...current, grade: e.target.value }))}
-                  className="input-surface"
-                >
-                  {['中1', '中2', '中3', '高校'].map(grade => <option key={grade}>{grade}</option>)}
-                </select>
-              </div>
-              <div className="space-y-3 mt-3">
-                <textarea
-                  value={questionForm.question}
-                  onChange={e => setQuestionForm(current => ({ ...current, question: e.target.value }))}
-                  placeholder="問題文"
-                  rows={4}
-                  className="input-surface resize-y"
-                />
-                {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'multi_select') && (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {questionForm.choices
-                      .slice(0, questionForm.type === 'choice' ? 2 : questionForm.type === 'multi_select' ? 6 : 4)
-                      .map((choice, index) => (
-                        <input
-                          key={`${questionForm.type}-choice-${index}`}
-                          type="text"
-                          value={choice}
-                          onChange={e => setQuestionForm(current => {
-                            const nextChoices = [...current.choices]
-                            nextChoices[index] = e.target.value
-                            return { ...current, choices: nextChoices }
-                          })}
-                          placeholder={`${'ABCDEF'[index]}. 選択肢`}
-                          className="input-surface"
-                        />
-                      ))}
-                  </div>
-                )}
-                {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'text' || questionForm.type === 'word_bank') && (
-                  <input
-                    type="text"
-                    value={questionForm.answer}
-                    onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
-                    placeholder={
-                      questionForm.type === 'text'
-                        ? '模範解答文'
-                        : questionForm.type === 'word_bank'
-                          ? '完成形（空欄なら語群から自動生成）'
-                          : '正解（選択肢と同じ内容）'
-                    }
-                    className="input-surface"
-                  />
-                )}
-                {questionForm.type === 'true_false' && (
+          <div className="anim-fade lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-4">
+            <div className="space-y-4">
+              <div className="card">
+                <h3 className="text-slate-300 font-bold mb-1">自分の問題を追加</h3>
+                <p className="text-slate-500 text-xs leading-6">
+                  ここで作った問題は、自分だけが解けます。先生は管理画面の問題一覧で確認できます。
+                </p>
+                <div className="grid grid-cols-1 gap-3 mt-4 sm:grid-cols-2">
                   <select
-                    value={questionForm.answer}
-                    onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+                    value={questionForm.field}
+                    onChange={e => setQuestionForm(current => ({ ...current, field: e.target.value as typeof FIELDS[number] }))}
                     className="input-surface"
                   >
-                    <option value="">正解を選ぶ</option>
-                    <option value="○">○</option>
-                    <option value="×">×</option>
+                    {FIELDS.map(field => <option key={field}>{field}</option>)}
                   </select>
-                )}
-                {questionForm.type === 'text' && (
-                  <div>
+                  <select
+                    value={questionForm.type}
+                    onChange={e => setQuestionForm(current => ({ ...current, type: e.target.value as QuestionType }))}
+                    className="input-surface"
+                  >
+                    {QUESTION_TYPES.map(type => (
+                      <option key={type} value={type}>{getQuestionTypeLabel(type)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-1 gap-3 mt-3 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    value={questionForm.unit}
+                    onChange={e => setQuestionForm(current => ({ ...current, unit: e.target.value }))}
+                    placeholder="単元"
+                    className="input-surface"
+                  />
+                  <select
+                    value={questionForm.grade}
+                    onChange={e => setQuestionForm(current => ({ ...current, grade: e.target.value }))}
+                    className="input-surface"
+                  >
+                    {['中1', '中2', '中3', '高校'].map(grade => <option key={grade}>{grade}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-3 mt-3">
+                  <textarea
+                    value={questionForm.question}
+                    onChange={e => setQuestionForm(current => ({ ...current, question: e.target.value }))}
+                    placeholder="問題文"
+                    rows={4}
+                    className="input-surface resize-y"
+                  />
+                  {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'multi_select') && (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {questionForm.choices
+                        .slice(0, questionForm.type === 'choice' ? 2 : questionForm.type === 'multi_select' ? 6 : 4)
+                        .map((choice, index) => (
+                          <input
+                            key={`${questionForm.type}-choice-${index}`}
+                            type="text"
+                            value={choice}
+                            onChange={e => setQuestionForm(current => {
+                              const nextChoices = [...current.choices]
+                              nextChoices[index] = e.target.value
+                              return { ...current, choices: nextChoices }
+                            })}
+                            placeholder={`${'ABCDEF'[index]}. 選択肢`}
+                            className="input-surface"
+                          />
+                        ))}
+                    </div>
+                  )}
+                  {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'text' || questionForm.type === 'word_bank') && (
                     <input
                       type="text"
-                      value={questionForm.keywords}
-                      onChange={e => setQuestionForm(current => ({ ...current, keywords: e.target.value }))}
-                      placeholder="空欄にしたいキーワード（任意 / カンマ区切り）"
+                      value={questionForm.answer}
+                      onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+                      placeholder={
+                        questionForm.type === 'text'
+                          ? '模範解答文'
+                          : questionForm.type === 'word_bank'
+                            ? '完成形（空欄なら語群から自動生成）'
+                            : '正解（選択肢と同じ内容）'
+                      }
                       className="input-surface"
                     />
-                    <p className="text-slate-500 text-xs mt-2">
-                      `answer` の模範解答文に入る理科キーワードをここへ入れると、生徒はその空欄だけ入力する形になります。
-                    </p>
-                  </div>
-                )}
-                {questionForm.type === 'match' && (
-                  <div>
-                    <textarea
-                      value={questionForm.matchPairsText}
-                      onChange={e => setQuestionForm(current => ({ ...current, matchPairsText: e.target.value }))}
-                      placeholder={'左 | 右\nアミラーゼ | デンプン'}
-                      rows={4}
-                      className="input-surface resize-y"
-                    />
-                    <p className="text-slate-500 text-xs mt-2">1行に1組ずつ、`左 | 右` の形で書きます。</p>
-                  </div>
-                )}
-                {questionForm.type === 'sort' && (
-                  <div>
-                    <textarea
-                      value={questionForm.sortItemsText}
-                      onChange={e => setQuestionForm(current => ({ ...current, sortItemsText: e.target.value }))}
-                      placeholder={'口\n食道\n胃\n小腸\n大腸'}
-                      rows={4}
-                      className="input-surface resize-y"
-                    />
-                    <p className="text-slate-500 text-xs mt-2">正しい順番で、1行に1つずつ書きます。</p>
-                  </div>
-                )}
-                {questionForm.type === 'multi_select' && (
-                  <div>
-                    <textarea
-                      value={questionForm.correctChoicesText}
-                      onChange={e => setQuestionForm(current => ({ ...current, correctChoicesText: e.target.value }))}
-                      placeholder={'デンプン\nエタノール'}
-                      rows={3}
-                      className="input-surface resize-y"
-                    />
-                    <p className="text-slate-500 text-xs mt-2">正解にする選択肢だけを、1行に1つずつ書きます。</p>
-                  </div>
-                )}
-                {questionForm.type === 'word_bank' && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <textarea
-                      value={questionForm.wordTokensText}
-                      onChange={e => setQuestionForm(current => ({ ...current, wordTokensText: e.target.value }))}
-                      placeholder={'2Cu\n+\nO₂\n→\n2CuO'}
-                      rows={4}
-                      className="input-surface resize-y"
-                    />
-                    <textarea
-                      value={questionForm.distractorTokensText}
-                      onChange={e => setQuestionForm(current => ({ ...current, distractorTokensText: e.target.value }))}
-                      placeholder={'Cu₂\n2O₂'}
-                      rows={4}
-                      className="input-surface resize-y"
-                    />
-                  </div>
-                )}
-                <textarea
-                  value={questionForm.explanation}
-                  onChange={e => setQuestionForm(current => ({ ...current, explanation: e.target.value }))}
-                  placeholder="解説（任意）"
-                  rows={3}
-                  className="input-surface resize-y"
-                />
-              </div>
-              <button
-                onClick={handleAddQuestion}
-                className="btn-primary w-full mt-3"
-                disabled={savingQuestion}
-                style={{ opacity: savingQuestion ? 0.7 : 1 }}
-              >
-                {savingQuestion ? '追加中...' : 'この問題を追加'}
-              </button>
-              {questionMsg && (
-                <div
-                  className="rounded-2xl px-4 py-3 text-sm mt-3"
-                  style={{
-                    background: questionMsg.type === 'success' ? '#052e16' : '#450a0a',
-                    border: `1px solid ${questionMsg.type === 'success' ? '#166534' : '#991b1b'}`,
-                    color: questionMsg.type === 'success' ? '#86efac' : '#fca5a5',
-                  }}
-                >
-                  {questionMsg.text}
+                  )}
+                  {questionForm.type === 'true_false' && (
+                    <select
+                      value={questionForm.answer}
+                      onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+                      className="input-surface"
+                    >
+                      <option value="">正解を選ぶ</option>
+                      <option value="○">○</option>
+                      <option value="×">×</option>
+                    </select>
+                  )}
+                  {questionForm.type === 'text' && (
+                    <div>
+                      <input
+                        type="text"
+                        value={questionForm.keywords}
+                        onChange={e => setQuestionForm(current => ({ ...current, keywords: e.target.value }))}
+                        placeholder="空欄にしたいキーワード（任意 / カンマ区切り）"
+                        className="input-surface"
+                      />
+                      <p className="text-slate-500 text-xs mt-2">
+                        `answer` の模範解答文に入る理科キーワードをここへ入れると、生徒はその空欄だけ入力する形になります。
+                      </p>
+                    </div>
+                  )}
+                  {questionForm.type === 'match' && (
+                    <div>
+                      <textarea
+                        value={questionForm.matchPairsText}
+                        onChange={e => setQuestionForm(current => ({ ...current, matchPairsText: e.target.value }))}
+                        placeholder={'左 | 右\nアミラーゼ | デンプン'}
+                        rows={4}
+                        className="input-surface resize-y"
+                      />
+                      <p className="text-slate-500 text-xs mt-2">1行に1組ずつ、`左 | 右` の形で書きます。</p>
+                    </div>
+                  )}
+                  {questionForm.type === 'sort' && (
+                    <div>
+                      <textarea
+                        value={questionForm.sortItemsText}
+                        onChange={e => setQuestionForm(current => ({ ...current, sortItemsText: e.target.value }))}
+                        placeholder={'口\n食道\n胃\n小腸\n大腸'}
+                        rows={4}
+                        className="input-surface resize-y"
+                      />
+                      <p className="text-slate-500 text-xs mt-2">正しい順番で、1行に1つずつ書きます。</p>
+                    </div>
+                  )}
+                  {questionForm.type === 'multi_select' && (
+                    <div>
+                      <textarea
+                        value={questionForm.correctChoicesText}
+                        onChange={e => setQuestionForm(current => ({ ...current, correctChoicesText: e.target.value }))}
+                        placeholder={'デンプン\nエタノール'}
+                        rows={3}
+                        className="input-surface resize-y"
+                      />
+                      <p className="text-slate-500 text-xs mt-2">正解にする選択肢だけを、1行に1つずつ書きます。</p>
+                    </div>
+                  )}
+                  {questionForm.type === 'word_bank' && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <textarea
+                        value={questionForm.wordTokensText}
+                        onChange={e => setQuestionForm(current => ({ ...current, wordTokensText: e.target.value }))}
+                        placeholder={'2Cu\n+\nO₂\n→\n2CuO'}
+                        rows={4}
+                        className="input-surface resize-y"
+                      />
+                      <textarea
+                        value={questionForm.distractorTokensText}
+                        onChange={e => setQuestionForm(current => ({ ...current, distractorTokensText: e.target.value }))}
+                        placeholder={'Cu₂\n2O₂'}
+                        rows={4}
+                        className="input-surface resize-y"
+                      />
+                    </div>
+                  )}
+                  <textarea
+                    value={questionForm.explanation}
+                    onChange={e => setQuestionForm(current => ({ ...current, explanation: e.target.value }))}
+                    placeholder="解説（任意）"
+                    rows={3}
+                    className="input-surface resize-y"
+                  />
                 </div>
-              )}
+                <button
+                  onClick={handleAddQuestion}
+                  className="btn-primary w-full mt-3"
+                  disabled={savingQuestion}
+                  style={{ opacity: savingQuestion ? 0.7 : 1 }}
+                >
+                  {savingQuestion ? '追加中...' : 'この問題を追加'}
+                </button>
+                {questionMsg && (
+                  <div
+                    className="rounded-2xl px-4 py-3 text-sm mt-3"
+                    style={{
+                      background: questionMsg.type === 'success' ? '#052e16' : '#450a0a',
+                      border: `1px solid ${questionMsg.type === 'success' ? '#166534' : '#991b1b'}`,
+                      color: questionMsg.type === 'success' ? '#86efac' : '#fca5a5',
+                    }}
+                  >
+                    {questionMsg.text}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {myQuestions.length === 0 ? (
-                <div className="card text-center text-slate-500 py-10">
-                  まだ自分で作った問題はありません。
+            <div className="space-y-3 lg:sticky lg:top-[5.5rem]">
+              <div className="card">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-slate-300 font-bold">自分の問題</h3>
+                    <div className="mt-1 text-xs text-slate-500">{myQuestions.length}問</div>
+                  </div>
                 </div>
-              ) : (
-                myQuestions.map(question => (
-                  <div key={question.id} className="card">
+              </div>
+
+              <div className="space-y-3 lg:max-h-[calc(100vh-12rem)] lg:overflow-y-auto lg:pr-1">
+                {myQuestions.length === 0 ? (
+                  <div className="card text-center text-slate-500 py-10">
+                    まだ自分で作った問題はありません。
+                  </div>
+                ) : (
+                  myQuestions.map(question => (
+                    <div key={question.id} className="card">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1774,36 +1826,38 @@ export default function MyPage({
                     {question.explanation && (
                       <p className="text-slate-300 text-sm leading-7 mt-2 whitespace-pre-wrap">{question.explanation}</p>
                     )}
-                  </div>
-                ))
-              )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {tab === 'account' && (
-          <div className="space-y-4 anim-fade">
-            <div className="card">
-              <h3 className="text-slate-300 font-bold mb-1">アカウント設定</h3>
-              <p className="text-slate-500 text-xs">
-                {isGuest ? 'テーマ変更だけ使えます。ゲストの成績は毎日リセットされます。' : 'ニックネーム・パスワード・表示テーマを変更できます。'}
-              </p>
-              <div className="mt-3 text-slate-400 text-sm">ログインID: <span className="text-white font-bold">{studentId}</span></div>
-            </div>
-
-            <div className="card">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h3 className="text-slate-300 font-bold">表示テーマ</h3>
-                  <p className="text-slate-500 text-xs mt-1">
-                    ダークは最初から利用できます。ライトは Lv.10、かわいいは Lv.20 で解放されます。
-                  </p>
-                </div>
-                <div className="text-xs text-slate-400">現在レベル: Lv.{levelInfo.level}</div>
+          <div className={`anim-fade ${isGuest ? 'space-y-4' : 'lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-4'}`}>
+            <div className="space-y-4">
+              <div className="card">
+                <h3 className="text-slate-300 font-bold mb-1">アカウント設定</h3>
+                <p className="text-slate-500 text-xs">
+                  {isGuest ? 'テーマ変更だけ使えます。ゲストの成績は毎日リセットされます。' : 'ニックネーム・パスワード・表示テーマを変更できます。'}
+                </p>
+                <div className="mt-3 text-slate-400 text-sm">ログインID: <span className="text-white font-bold">{studentId}</span></div>
               </div>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                {THEME_OPTIONS.map(option => {
+              <div className="card">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="text-slate-300 font-bold">表示テーマ</h3>
+                    <p className="text-slate-500 text-xs mt-1">
+                      ダークは最初から利用できます。ライトは Lv.10、かわいいは Lv.20 で解放されます。
+                    </p>
+                  </div>
+                  <div className="text-xs text-slate-400">現在レベル: Lv.{levelInfo.level}</div>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {THEME_OPTIONS.map(option => {
                   const unlocked = isThemeUnlockedAtLevel(option.id, levelInfo.level)
                   const active = themeReady && theme === option.id
                   const statusLabel = active ? '使用中' : unlocked ? '解放済み' : `Lv.${option.unlockLevel}で解放`
@@ -1889,12 +1943,13 @@ export default function MyPage({
                       </div>
                     </button>
                   )
-                })}
+                  })}
+                </div>
               </div>
             </div>
 
             {!isGuest && (
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                 <div className="card">
                   <h3 className="text-slate-300 font-bold mb-4">ニックネーム変更</h3>
                   <input
@@ -1946,7 +2001,7 @@ export default function MyPage({
 
             {accountMsg && (
               <div
-                className="rounded-2xl px-4 py-3 text-sm"
+                className={`rounded-2xl px-4 py-3 text-sm ${!isGuest ? 'lg:col-span-2' : ''}`}
                 style={{
                   background: accountMsg.type === 'success' ? '#052e16' : '#450a0a',
                   border: `1px solid ${accountMsg.type === 'success' ? '#166534' : '#991b1b'}`,
