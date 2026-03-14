@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { GUEST_STUDENT_ID } from '@/lib/guestStudy'
 import { getStudentAvatarMeta } from '@/lib/studentAvatar'
+import { calculateQuizXp, getJstWeekRange, getLevelInfo } from '@/lib/engagement'
 
 function filterStudents(students: StudentRecord[], query: string) {
   const normalized = query.trim().toLowerCase()
@@ -32,6 +33,15 @@ function getStudentModeMeta(studentId: number) {
     badge: '通常ログイン',
     detail: 'パスワードを入力してログイン',
   }
+}
+
+interface WeeklyLeaderboardEntry {
+  studentId: number
+  nickname: string
+  weeklyXp: number
+  level: number
+  title: string
+  rank: number
 }
 
 function StudentPicker({
@@ -225,6 +235,13 @@ export default function LoginPage({
   const [loginUpdates, setLoginUpdates] = useState<LoginUpdateRow[]>([])
   const [loginUpdatesLoading, setLoginUpdatesLoading] = useState(true)
   const [showLoginUpdates, setShowLoginUpdates] = useState(true)
+  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<WeeklyLeaderboardEntry[]>([])
+  const [weeklyLeaderboardLoading, setWeeklyLeaderboardLoading] = useState(true)
+  const currentWeekRange = useMemo(() => getJstWeekRange(), [])
+  const weekRangeLabel = useMemo(() => {
+    const endDate = new Date(currentWeekRange.endDate.getTime() - 1)
+    return `${format(currentWeekRange.startDate, 'M/d', { locale: ja })} 〜 ${format(endDate, 'M/d', { locale: ja })}`
+  }, [currentWeekRange.endDate, currentWeekRange.startDate])
 
   useEffect(() => {
     let active = true
@@ -285,6 +302,80 @@ export default function LoginPage({
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    let active = true
+
+    const loadWeeklyLeaderboard = async () => {
+      setWeeklyLeaderboardLoading(true)
+      const [fetchedStudents, sessionsResponse] = await Promise.all([
+        fetchStudents(),
+        supabase
+          .from('quiz_sessions')
+          .select('student_id, correct_count, total_questions, duration_seconds')
+          .gte('created_at', currentWeekRange.startDate.toISOString()),
+      ])
+
+      if (!active) return
+
+      if (sessionsResponse.error) {
+        console.error('[login] failed to load weekly leaderboard', sessionsResponse.error)
+        setWeeklyLeaderboard([])
+        setWeeklyLeaderboardLoading(false)
+        return
+      }
+
+      const studentMap = new Map(fetchedStudents.map(student => [student.id, student]))
+      const aggregateMap = new Map<number, { correct: number; total: number; duration: number }>()
+
+      for (const row of sessionsResponse.data || []) {
+        if (!row.student_id || row.student_id === GUEST_STUDENT_ID || row.student_id === 5) continue
+        const current = aggregateMap.get(row.student_id) ?? { correct: 0, total: 0, duration: 0 }
+        current.correct += row.correct_count
+        current.total += row.total_questions
+        current.duration += row.duration_seconds
+        aggregateMap.set(row.student_id, current)
+      }
+
+      const ranked = Array.from(aggregateMap.entries())
+        .map(([currentStudentId, aggregate]) => {
+          const weeklyXp = calculateQuizXp({
+            correctCount: aggregate.correct,
+            totalQuestions: aggregate.total,
+            durationSeconds: aggregate.duration,
+          })
+          const student = studentMap.get(currentStudentId)
+          const currentLevel = getLevelInfo(student?.student_xp ?? 0)
+
+          return {
+            studentId: currentStudentId,
+            nickname: student?.nickname ?? `ID ${currentStudentId}`,
+            weeklyXp,
+            level: currentLevel.level,
+            title: currentLevel.title,
+            total: aggregate.total,
+          }
+        })
+        .sort((left, right) => {
+          if (right.weeklyXp !== left.weeklyXp) return right.weeklyXp - left.weeklyXp
+          return right.total - left.total
+        })
+        .slice(0, 7)
+        .map(({ total: _total, ...entry }, index) => ({
+          ...entry,
+          rank: index + 1,
+        }))
+
+      setWeeklyLeaderboard(ranked)
+      setWeeklyLeaderboardLoading(false)
+    }
+
+    void loadWeeklyLeaderboard()
+
+    return () => {
+      active = false
+    }
+  }, [currentWeekRange.startDate])
 
   const isGuest = studentId === GUEST_STUDENT_ID
   const onlineStudents = useMemo(
@@ -391,33 +482,78 @@ export default function LoginPage({
                     <div className="text-[11px] text-slate-500">{loginUpdates.length}件</div>
                   </div>
 
-                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1">
+                  <div className="mt-3 max-h-40 overflow-y-auto pr-1">
                     {loginUpdatesLoading ? (
-                      <div className="rounded-2xl border border-dashed border-slate-700 px-3 py-4 text-center text-xs text-slate-500">
+                      <div className="px-1 py-3 text-xs text-slate-500">
                         掲示板を読み込み中...
                       </div>
                     ) : loginUpdates.length > 0 ? (
-                      loginUpdates.map(update => (
-                        <div key={update.id} className="rounded-[18px] border border-sky-400/12 bg-sky-400/5 px-3 py-2.5">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-white">{update.title}</div>
-                              <div className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-300">{update.body}</div>
-                            </div>
-                            <div className="shrink-0 text-[10px] text-slate-500">
-                              {format(new Date(update.created_at), 'M/d HH:mm', { locale: ja })}
+                      <div className="space-y-3">
+                        {loginUpdates.map(update => (
+                          <div key={update.id} className="border-b border-white/8 pb-3 last:border-b-0 last:pb-0">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-white">{update.title}</div>
+                                <div className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-300">{update.body}</div>
+                              </div>
+                              <div className="shrink-0 text-[10px] text-slate-500">
+                                {format(new Date(update.created_at), 'M/d HH:mm', { locale: ja })}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-slate-700 px-3 py-4 text-center text-xs text-slate-500">
+                      <div className="px-1 py-3 text-xs text-slate-500">
                         直近のアップデートはまだありません。
                       </div>
                     )}
                   </div>
                 </div>
               )}
+
+              <div className="mt-5 rounded-[24px] border border-white/10 bg-slate-950/38 px-4 py-3 sm:px-5 sm:py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Weekly Ranking</div>
+                    <div className="mt-1 text-sm font-semibold text-white">今週のランキング</div>
+                  </div>
+                  <div className="text-[11px] text-slate-500">{weekRangeLabel}</div>
+                </div>
+
+                <div className="mt-3 max-h-48 overflow-y-auto pr-1">
+                  {weeklyLeaderboardLoading ? (
+                    <div className="px-1 py-3 text-xs text-slate-500">
+                      ランキングを読み込み中...
+                    </div>
+                  ) : weeklyLeaderboard.length > 0 ? (
+                    <div className="space-y-2">
+                      {weeklyLeaderboard.map(entry => (
+                        <div key={`${entry.studentId}-${entry.rank}`} className="flex items-center justify-between gap-3 border-b border-white/8 pb-2 last:border-b-0 last:pb-0">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-semibold text-sky-100">
+                                {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`}
+                              </div>
+                              <div className="truncate text-sm font-semibold text-white">{entry.nickname}</div>
+                              <div className="text-[10px] text-slate-500">Lv.{entry.level}</div>
+                            </div>
+                            <div className="mt-0.5 text-[11px] text-slate-500">{entry.title}</div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <div className="font-display text-xl text-sky-300">{entry.weeklyXp}</div>
+                            <div className="text-[10px] text-slate-500">XP</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-1 py-3 text-xs text-slate-500">
+                      まだ今週の記録はありません。
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="order-1 xl:order-2 rounded-[32px] border border-white/10 bg-slate-950/44 p-4 sm:p-5 lg:p-6">
