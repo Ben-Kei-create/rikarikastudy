@@ -77,6 +77,7 @@ interface SaveGuestQuizSessionInput {
     qId: string
     correct: boolean
     answer: string
+    answerLogValue?: string
   }>
 }
 
@@ -250,7 +251,7 @@ export function saveGuestQuizSession(input: SaveGuestQuizSessionInput) {
       field: input.field,
       unit: input.unit,
       is_correct: answerLog.correct,
-      student_answer: answerLog.answer,
+      student_answer: answerLog.answerLogValue ?? answerLog.answer,
       created_at: createdAt,
     }))
 

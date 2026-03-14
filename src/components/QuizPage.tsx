@@ -154,7 +154,7 @@ export default function QuizPage({
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(true)
   const [dailyLocked, setDailyLocked] = useState(false)
-  const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string; result: TextAnswerResult }[]>([])
+  const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string; answerLogValue: string; result: TextAnswerResult }[]>([])
   const [comboStreak, setComboStreak] = useState(0)
   const [bestCombo, setBestCombo] = useState(0)
   const [celebration, setCelebration] = useState<SuccessCelebrationContent | null>(null)
@@ -382,7 +382,7 @@ export default function QuizPage({
     }
   }, [reviewExpanded, selectedReviewQuestionId, wrongReviewItems])
 
-  const applyEvaluatedAnswer = (result: { result: TextAnswerResult; studentAnswerText: string }) => {
+  const applyEvaluatedAnswer = (result: { result: TextAnswerResult; studentAnswerText: string; answerLogValue: string }) => {
     if (!q) return
 
     if (result.result === 'exact') {
@@ -401,6 +401,7 @@ export default function QuizPage({
       qId: q.id,
       correct: result.result === 'exact',
       answer: result.studentAnswerText,
+      answerLogValue: result.answerLogValue,
       result: result.result,
     }])
     setPhase('result')
@@ -434,6 +435,7 @@ export default function QuizPage({
       qId: q.id,
       correct: false,
       answer: 'わからない',
+      answerLogValue: 'わからない',
       result: 'incorrect',
     }])
     setPhase('result')

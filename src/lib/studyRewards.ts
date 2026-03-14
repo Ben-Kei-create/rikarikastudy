@@ -29,6 +29,7 @@ interface AnswerLogInput {
   qId: string
   correct: boolean
   answer: string
+  answerLogValue?: string
 }
 
 interface RecordStudySessionInput {
@@ -425,7 +426,7 @@ export async function recordStudySession({
           student_id: studentId,
           question_id: log.qId,
           is_correct: log.correct,
-          student_answer: log.answer,
+          student_answer: log.answerLogValue ?? log.answer,
         })),
       )
 

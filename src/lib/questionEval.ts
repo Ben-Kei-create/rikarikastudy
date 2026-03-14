@@ -20,6 +20,7 @@ export type QuestionSubmission =
 export interface EvaluatedQuestionAnswer {
   result: QuestionJudgeResult
   studentAnswerText: string
+  answerLogValue: string
   correctAnswerText: string
 }
 
@@ -44,6 +45,18 @@ function formatMultiSelect(items: string[]) {
 
 function formatWordTokens(tokens: string[]) {
   return tokens.filter(Boolean).join(' ')
+}
+
+function serializeStringArray(items: string[]) {
+  return JSON.stringify(items.filter(Boolean))
+}
+
+function serializeMatchPairs(pairs: MatchPair[]) {
+  return JSON.stringify(
+    pairs
+      .filter(pair => pair.left.trim() && pair.right.trim())
+      .map(pair => ({ left: pair.left, right: pair.right })),
+  )
 }
 
 function compareStringArray(left: string[], right: string[]) {
@@ -99,6 +112,7 @@ export function evaluateQuestionAnswer(
     return {
       result,
       studentAnswerText: submission.value.trim() || getQuestionStudentAnswerFallback(question.type),
+      answerLogValue: submission.value.trim() || getQuestionStudentAnswerFallback(question.type),
       correctAnswerText: prompt.target || correctAnswerText,
     }
   }
@@ -107,6 +121,7 @@ export function evaluateQuestionAnswer(
     return {
       result: normalizeText(submission.value) === normalizeText(question.answer) ? 'exact' : 'incorrect',
       studentAnswerText: submission.value.trim() || getQuestionStudentAnswerFallback(question.type),
+      answerLogValue: submission.value.trim() || getQuestionStudentAnswerFallback(question.type),
       correctAnswerText,
     }
   }
@@ -115,6 +130,7 @@ export function evaluateQuestionAnswer(
     return {
       result: compareMatchPairs(submission.pairs, question.match_pairs ?? []) ? 'exact' : 'incorrect',
       studentAnswerText: formatMatchPairs(submission.pairs) || getQuestionStudentAnswerFallback(question.type),
+      answerLogValue: serializeMatchPairs(submission.pairs),
       correctAnswerText,
     }
   }
@@ -123,6 +139,7 @@ export function evaluateQuestionAnswer(
     return {
       result: compareStringArray(submission.items, question.sort_items ?? []) ? 'exact' : 'incorrect',
       studentAnswerText: formatSortItems(submission.items) || getQuestionStudentAnswerFallback(question.type),
+      answerLogValue: serializeStringArray(submission.items),
       correctAnswerText,
     }
   }
@@ -131,6 +148,7 @@ export function evaluateQuestionAnswer(
     return {
       result: compareStringSet(submission.selected, question.correct_choices ?? []) ? 'exact' : 'incorrect',
       studentAnswerText: formatMultiSelect(submission.selected) || getQuestionStudentAnswerFallback(question.type),
+      answerLogValue: serializeStringArray(submission.selected),
       correctAnswerText,
     }
   }
@@ -139,6 +157,7 @@ export function evaluateQuestionAnswer(
     return {
       result: compareStringArray(submission.tokens, question.word_tokens ?? []) ? 'exact' : 'incorrect',
       studentAnswerText: formatWordTokens(submission.tokens) || getQuestionStudentAnswerFallback(question.type),
+      answerLogValue: formatWordTokens(submission.tokens) || getQuestionStudentAnswerFallback(question.type),
       correctAnswerText,
     }
   }
@@ -146,6 +165,7 @@ export function evaluateQuestionAnswer(
   return {
     result: 'incorrect',
     studentAnswerText: getQuestionStudentAnswerFallback(question.type as QuestionType),
+    answerLogValue: getQuestionStudentAnswerFallback(question.type as QuestionType),
     correctAnswerText,
   }
 }

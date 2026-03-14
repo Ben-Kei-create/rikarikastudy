@@ -2,7 +2,7 @@
 
 # RikaQuiz 📚 - 理科一問一答学習サイト
 
-中学理科4分野（生物・化学・物理・地学）の一問一答学習サイトです。
+中学理科4分野（生物・化学・物理・地学）の一問一答学習サイトです。Duolingo 風の複数出題パターンに対応し、タップ中心で気持ちよく解ける構成になっています。
 
 ---
 
@@ -66,10 +66,10 @@ git push -u origin main
 1. ログイン画面で「先生ログイン」
 2. 管理者PW `rikaadmin2026` を入力
 3. 「問題追加」タブを開く
-4. `分野 / 単元 / 問題文 / 正解` を入力
-5. 選択問題なら `A・B` の2択だけ入力
+4. `分野 / 単元 / 問題文 / 問題タイプ` を選ぶ
+5. 問題タイプに応じて、選択肢 / 組み合わせ / 並べ順 / 語群などの入力欄を埋める
 6. 記述問題なら、必要に応じて `キーワード` をカンマ区切りで入力
-7. 「正解」には choice なら A か B と同じ文、text なら模範解答を入れる
+7. 「正解」には choice / choice4 / fill_choice なら選択肢と同じ文、word_bank なら完成形、text なら模範解答を入れる
 8. 「問題を追加する」を押す
 
 ### 5.1 問題に画像を付ける方法
@@ -118,6 +118,7 @@ npm run questions:import -- - < path/to/questions.json
 
 同じ `field / unit / question` の問題が既にある場合は自動でスキップします。
 記述問題では `keywords` 配列を付けると、回答文にキーワードが1つでも含まれたときに `▲` 判定になります。
+旧 `choice` / `text` 形式からの変換には `npm run questions:migrate-types -- path/to/questions.json` が使えます。
 
 ---
 
@@ -150,7 +151,7 @@ npm run questions:import -- - < path/to/questions.json
 - ✅ 5人のID選択（ニックネーム表示）
 - ✅ 生物・化学・物理・地学の4分野
 - ✅ 単元別 / 全単元ランダム出題
-- ✅ 2択問題・記述問題対応
+- ✅ 9種類の問題タイプ対応
 - ✅ 解説表示
 - ✅ セッション・回答ログをSupabaseに保存
 - ✅ マイページ（正答率・学習履歴）
@@ -173,29 +174,56 @@ npm run questions:import -- - < path/to/questions.json
 
 管理画面 → 「問題追加」タブから入力できます。
 
-**2択問題の場合：**
-- 選択肢A・Bを入力
-- 「正解」に選択肢AかBと**完全一致**する文字列を入力
+**対応している問題タイプ:**
+- `choice` 2択
+- `choice4` 4択
+- `true_false` ○×
+- `fill_choice` 穴埋め選択
+- `match` マッチング
+- `sort` 並べ替え
+- `multi_select` 複数選択
+- `word_bank` 語群組み立て
+- `text` 記述
 
-**記述問題の場合：**
+**記述問題の場合:**
 - 「正解」に模範解答を入力（完全一致なら `◯`）
 - `keywords` を設定した場合、回答文にそのどれか1つが含まれていれば `▲`
 - 完全一致でもキーワード一致でもなければ `❌`
 
 ## 📦 一括投入のJSON形式
 
-`choice` 問題:
+`choice4` 問題:
 
 ```json
 {
   "field": "生物",
   "unit": "植物のつくり",
   "question": "光合成を主に行う部分はどこ？",
-  "type": "choice",
-  "choices": ["葉", "根"],
+  "type": "choice4",
+  "choices": ["葉", "根", "茎", "花"],
   "answer": "葉",
   "explanation": "葉の葉緑体で光合成を行います。",
   "grade": "中1"
+}
+```
+
+`match` 問題:
+
+```json
+{
+  "field": "生物",
+  "unit": "消化と吸収",
+  "question": "次の消化酵素と、それが分解する栄養素を正しく組み合わせなさい。",
+  "type": "match",
+  "answer": null,
+  "choices": null,
+  "match_pairs": [
+    { "left": "アミラーゼ", "right": "デンプン" },
+    { "left": "ペプシン", "right": "タンパク質" },
+    { "left": "リパーゼ", "right": "脂肪" }
+  ],
+  "explanation": "アミラーゼはデンプン、ペプシンはタンパク質、リパーゼは脂肪を分解します。",
+  "grade": "中2"
 }
 ```
 
@@ -210,15 +238,17 @@ npm run questions:import -- - < path/to/questions.json
   "answer": "A",
   "keywords": ["アンペア"],
   "explanation": "電流の単位はアンペアです。",
-  "grade": "中2"
+ "grade": "中2"
 }
 ```
 
 ルール:
 - `field` は `生物 / 化学 / 物理 / 地学`
-- `choice` 問題の `choices` は2件
-- `answer` は `choices` のどちらかと完全一致
+- `type` は `choice / choice4 / true_false / fill_choice / match / sort / multi_select / word_bank / text`
+- `choice` は2件、`choice4` と `fill_choice` は3〜4件、`multi_select` は4〜6件の `choices`
+- `match` は `match_pairs`、`sort` は `sort_items`、`multi_select` は `correct_choices`、`word_bank` は `word_tokens` と `distractor_tokens` を使います
 - `text` 問題では `keywords` を任意で設定可能
+- 詳しい生成ルールは [QUESTION_TYPES_UPGRADE.md](/Users/fumiaki/Desktop/rikarikalove/docs/QUESTION_TYPES_UPGRADE.md) と [QUESTION_GENERATION_PROMPT.md](/Users/fumiaki/Desktop/rikarikalove/docs/QUESTION_GENERATION_PROMPT.md) を参照
 - 配列そのままでも、`{"questions":[...]}` でも投入可能
 
 `glossary` 辞書:

@@ -240,7 +240,7 @@ export const sampleQuestions = [
     field: '地学',
     unit: '岩石と地層',
     question: 'マグマが地表に噴き出して急速に冷えてできた岩石を何というか？',
-    type: 'choice' as const,
+    type: 'choice4' as const,
     choices: ['深成岩', '堆積岩', '変成岩', '火山岩'],
     answer: '火山岩',
     explanation: '火山岩はマグマが地表や地表付近で急冷してできた岩石で、斑晶と石基からなる斑状組織を持ちます。',
