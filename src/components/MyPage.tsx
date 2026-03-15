@@ -98,6 +98,7 @@ const INITIAL_CUSTOM_QUESTION_FORM: CustomQuestionForm = {
 }
 
 import { parseKeywordInput, parseListInput, parseMatchPairsText, getFieldColor, formatStudyTime } from '@/lib/formUtils'
+import { getRateColor } from '@/lib/uiUtils'
 
 function getThemePreview(theme: Theme) {
   if (theme === 'light') {
@@ -1037,7 +1038,7 @@ export default function MyPage({
                           {s && <span className="text-slate-600 text-xs">{s.total}問</span>}
                         </div>
                         <span className="font-bold text-sm" style={{
-                          color: rate === null ? '#475569' : rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444'
+                          color: getRateColor(rate)
                         }}>
                           {rate === null ? '—' : `${rate}%`}
                         </span>
@@ -1146,11 +1147,11 @@ export default function MyPage({
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="font-bold" style={{
-                        color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444',
+                        color: getRateColor(rate),
                         fontSize: 20,
                       }}>{s.correct_count}<span className="text-slate-500 text-sm">/{s.total_questions}</span></div>
                       <div className="text-xs" style={{
-                        color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444'
+                        color: getRateColor(rate)
                       }}>{rate}%</div>
                     </div>
                   </div>

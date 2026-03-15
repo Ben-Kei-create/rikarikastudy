@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth'
 import { ACTIVE_RECALL_UNLOCK_LEVEL } from '@/lib/activeRecall'
 import { BIOLOGY_MODE_META, BiologyPracticeMode } from '@/lib/biologyPractice'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
+import LabModeCard from '@/components/LabModeCard'
 import { CHEMISTRY_MODE_META, ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EARTH_SCIENCE_MODE_META, EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
 import {
@@ -513,80 +514,35 @@ export default function UnitSelectPage({
               </div>
 
               <div className="grid gap-4">
-                <div>
-                  <div className="text-slate-400 text-xs mb-2">学年</div>
-                  <div className="grid gap-2 sm:grid-cols-4">
-                    {customGradeOptions.map(grade => {
-                      const active = customOptions.grade === grade
-                      return (
-                        <button
-                          key={grade}
-                          onClick={() => updateGrade(grade)}
-                          className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
-                          style={{
-                            borderColor: active ? `${color}70` : 'var(--surface-elevated-border)',
-                            background: active ? `${color}18` : 'var(--surface-elevated)',
-                            color: active ? color : 'var(--text)',
-                          }}
-                        >
-                          {getCustomQuizGradeFilterLabel(grade)}
-                        </button>
-                      )
-                    })}
+                {([
+                  { label: '学年', gridClass: 'sm:grid-cols-4', options: customGradeOptions, selected: customOptions.grade, onSelect: updateGrade, getLabel: getCustomQuizGradeFilterLabel, hint: '中1・中2・中3でまとめてしぼれます。' as string | undefined },
+                  { label: '問題タイプ', gridClass: 'sm:grid-cols-3 lg:grid-cols-5', options: ['all', ...QUESTION_TYPES] as const, selected: customOptions.questionType, onSelect: updateQuestionType, getLabel: getCustomQuizQuestionTypeLabel, hint: undefined as string | undefined },
+                  { label: '出題条件', gridClass: 'sm:grid-cols-3', options: ['all', 'unanswered', 'weak'] as const, selected: customOptions.historyFilter, onSelect: updateHistoryFilter, getLabel: getCustomQuizHistoryFilterLabel, hint: '未回答 = まだ解いていない問題 / 苦手だけ = これまでに1回でもまちがえた問題' as string | undefined },
+                ] as const).map(group => (
+                  <div key={group.label}>
+                    <div className="text-slate-400 text-xs mb-2">{group.label}</div>
+                    <div className={`grid gap-2 ${group.gridClass}`}>
+                      {group.options.map(option => {
+                        const active = group.selected === option
+                        return (
+                          <button
+                            key={option}
+                            onClick={() => (group.onSelect as (v: typeof option) => void)(option)}
+                            className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
+                            style={{
+                              borderColor: active ? `${color}70` : 'var(--surface-elevated-border)',
+                              background: active ? `${color}18` : 'var(--surface-elevated)',
+                              color: active ? color : 'var(--text)',
+                            }}
+                          >
+                            {(group.getLabel as (v: typeof option) => string)(option)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {group.hint && <p className="mt-2 text-xs leading-6 text-slate-500">{group.hint}</p>}
                   </div>
-                  <p className="mt-2 text-xs leading-6 text-slate-500">
-                    中1・中2・中3でまとめてしぼれます。
-                  </p>
-                </div>
-
-                <div>
-                  <div className="text-slate-400 text-xs mb-2">問題タイプ</div>
-                  <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                    {(['all', ...QUESTION_TYPES] as const).map(questionType => {
-                      const active = customOptions.questionType === questionType
-                      return (
-                        <button
-                          key={questionType}
-                          onClick={() => updateQuestionType(questionType)}
-                          className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
-                          style={{
-                            borderColor: active ? `${color}70` : 'var(--surface-elevated-border)',
-                            background: active ? `${color}18` : 'var(--surface-elevated)',
-                            color: active ? color : 'var(--text)',
-                          }}
-                        >
-                          {getCustomQuizQuestionTypeLabel(questionType)}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-slate-400 text-xs mb-2">出題条件</div>
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    {(['all', 'unanswered', 'weak'] as const).map(historyFilter => {
-                      const active = customOptions.historyFilter === historyFilter
-                      return (
-                        <button
-                          key={historyFilter}
-                          onClick={() => updateHistoryFilter(historyFilter)}
-                          className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
-                          style={{
-                            borderColor: active ? `${color}70` : 'var(--surface-elevated-border)',
-                            background: active ? `${color}18` : 'var(--surface-elevated)',
-                            color: active ? color : 'var(--text)',
-                          }}
-                        >
-                          {getCustomQuizHistoryFilterLabel(historyFilter)}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <p className="mt-2 text-xs leading-6 text-slate-500">
-                    未回答 = まだ解いていない問題 / 苦手だけ = これまでに1回でもまちがえた問題
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -614,309 +570,63 @@ export default function UnitSelectPage({
           : '単元ごとの開始ボタンはカスタムにまとめました。単元をしぼりたいときは「条件」から選べます。'}
       </div>
 
-      {field === '生物' && (
-        <div className="mt-6">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-slate-100">生物ラボ</h2>
-            <span className="text-xs text-slate-500">special mode</span>
-          </div>
-          <div className="grid gap-3">
-            {(['organ-pairs'] as const).map(mode => {
-              const meta = BIOLOGY_MODE_META[mode]
-              return (
-                <button
-                  key={mode}
-                  onClick={() => onSelectBiologyMode(mode)}
-                  className="card mobile-mini-card text-left"
-                  style={{
-                    borderColor: `${meta.accent}3a`,
-                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
-                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-                  }}
-                  onMouseEnter={event => {
-                    event.currentTarget.style.transform = 'translateY(-2px)'
-                    event.currentTarget.style.borderColor = `${meta.accent}70`
-                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
-                  }}
-                  onMouseLeave={event => {
-                    event.currentTarget.style.transform = ''
-                    event.currentTarget.style.borderColor = `${meta.accent}3a`
-                    event.currentTarget.style.boxShadow = ''
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div
-                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-                        style={{ background: `${meta.accent}18`, color: meta.accent }}
-                      >
-                        <span>{meta.badge}</span>
-                      </div>
-                      <div className="mt-4 flex items-center gap-3">
-                        <span className="text-3xl">{meta.icon}</span>
-                        <div>
-                          <div className="font-display text-2xl text-white">{meta.title}</div>
-                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      {/* Lab mode sections — data-driven rendering */}
+      {(() => {
+        const labSections: Array<{
+          field: string
+          label: string
+          gridClass: string
+          modes: Array<{ key: string; meta: { accent: string; badge: string; icon: string; title: string; description?: string }; onClick: () => void }>
+        }> = []
 
-      {field === '化学' && (
-        <div className="mt-6">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-slate-100">化学ラボ</h2>
-            <span className="text-xs text-slate-500">special modes</span>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {(['flash', 'equation'] as const).map(mode => {
-              const meta = CHEMISTRY_MODE_META[mode]
-              return (
-                <button
-                  key={mode}
-                  onClick={() => onSelectSpecialMode(mode)}
-                  className="card mobile-mini-card text-left"
-                  style={{
-                    borderColor: `${meta.accent}3a`,
-                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
-                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-                  }}
-                  onMouseEnter={event => {
-                    event.currentTarget.style.transform = 'translateY(-2px)'
-                    event.currentTarget.style.borderColor = `${meta.accent}70`
-                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
-                  }}
-                  onMouseLeave={event => {
-                    event.currentTarget.style.transform = ''
-                    event.currentTarget.style.borderColor = `${meta.accent}3a`
-                    event.currentTarget.style.boxShadow = ''
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div
-                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-                        style={{ background: `${meta.accent}18`, color: meta.accent }}
-                      >
-                        <span>{meta.badge}</span>
-                      </div>
-                      <div className="mt-4 flex items-center gap-3">
-                        <span className="text-3xl">{meta.icon}</span>
-                        <div>
-                          <div className="font-display text-2xl text-white">{meta.title}</div>
-                          {meta.description && (
-                            <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-            {CHEMISTRY_WORKBENCH_MODES.map(mode => {
-              const meta = SCIENCE_WORKBENCH_MODE_META[mode]
-              return (
-                <button
-                  key={mode}
-                  onClick={() => onSelectWorkbenchMode(mode)}
-                  className="card mobile-mini-card text-left"
-                  style={{
-                    borderColor: `${meta.accent}3a`,
-                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
-                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-                  }}
-                  onMouseEnter={event => {
-                    event.currentTarget.style.transform = 'translateY(-2px)'
-                    event.currentTarget.style.borderColor = `${meta.accent}70`
-                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
-                  }}
-                  onMouseLeave={event => {
-                    event.currentTarget.style.transform = ''
-                    event.currentTarget.style.borderColor = `${meta.accent}3a`
-                    event.currentTarget.style.boxShadow = ''
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div
-                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-                        style={{ background: `${meta.accent}18`, color: meta.accent }}
-                      >
-                        <span>{meta.badge}</span>
-                      </div>
-                      <div className="mt-4 flex items-center gap-3">
-                        <span className="text-3xl">{meta.icon}</span>
-                        <div>
-                          <div className="font-display text-2xl text-white">{meta.title}</div>
-                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+        if (field === '生物') {
+          labSections.push({
+            field: '生物', label: '生物ラボ', gridClass: 'grid gap-3',
+            modes: (['organ-pairs'] as const).map(m => ({ key: m, meta: BIOLOGY_MODE_META[m], onClick: () => onSelectBiologyMode(m) })),
+          })
+        }
 
-      {field === '物理' && (
-        <div className="mt-6">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-slate-100">物理ラボ</h2>
-            <span className="text-xs text-slate-500">special mode</span>
-          </div>
-          <div className="grid gap-3">
-            {PHYSICS_WORKBENCH_MODES.map(mode => {
-              const meta = SCIENCE_WORKBENCH_MODE_META[mode]
-              return (
-                <button
-                  key={mode}
-                  onClick={() => onSelectWorkbenchMode(mode)}
-                  className="card mobile-mini-card text-left"
-                  style={{
-                    borderColor: `${meta.accent}3a`,
-                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
-                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-                  }}
-                  onMouseEnter={event => {
-                    event.currentTarget.style.transform = 'translateY(-2px)'
-                    event.currentTarget.style.borderColor = `${meta.accent}70`
-                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
-                  }}
-                  onMouseLeave={event => {
-                    event.currentTarget.style.transform = ''
-                    event.currentTarget.style.borderColor = `${meta.accent}3a`
-                    event.currentTarget.style.boxShadow = ''
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div
-                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-                        style={{ background: `${meta.accent}18`, color: meta.accent }}
-                      >
-                        <span>{meta.badge}</span>
-                      </div>
-                      <div className="mt-4 flex items-center gap-3">
-                        <span className="text-3xl">{meta.icon}</span>
-                        <div>
-                          <div className="font-display text-2xl text-white">{meta.title}</div>
-                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+        if (field === '化学') {
+          labSections.push({
+            field: '化学', label: '化学ラボ', gridClass: 'grid gap-3 md:grid-cols-2',
+            modes: [
+              ...(['flash', 'equation'] as const).map(m => ({ key: m, meta: CHEMISTRY_MODE_META[m], onClick: () => onSelectSpecialMode(m) })),
+              ...CHEMISTRY_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
+            ],
+          })
+        }
 
-      {field === '地学' && (
-        <div className="mt-6">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-slate-100">地学ラボ</h2>
-            <span className="text-xs text-slate-500">special modes</span>
+        if (field === '物理') {
+          labSections.push({
+            field: '物理', label: '物理ラボ', gridClass: 'grid gap-3',
+            modes: PHYSICS_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
+          })
+        }
+
+        if (field === '地学') {
+          labSections.push({
+            field: '地学', label: '地学ラボ', gridClass: 'grid gap-3 md:grid-cols-2',
+            modes: [
+              ...(['link-pairs'] as const).map(m => ({ key: m, meta: EARTH_SCIENCE_MODE_META[m], onClick: () => onSelectEarthMode(m) })),
+              ...EARTH_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
+            ],
+          })
+        }
+
+        return labSections.map(section => (
+          <div key={section.field} className="mt-6">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-slate-100">{section.label}</h2>
+              <span className="text-xs text-slate-500">{section.modes.length > 1 ? 'special modes' : 'special mode'}</span>
+            </div>
+            <div className={section.gridClass}>
+              {section.modes.map(({ key, meta, onClick }) => (
+                <LabModeCard key={key} meta={meta} onClick={onClick} />
+              ))}
+            </div>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {(['link-pairs'] as const).map(mode => {
-              const meta = EARTH_SCIENCE_MODE_META[mode]
-              return (
-                <button
-                  key={mode}
-                  onClick={() => onSelectEarthMode(mode)}
-                  className="card mobile-mini-card text-left"
-                  style={{
-                    borderColor: `${meta.accent}3a`,
-                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
-                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-                  }}
-                  onMouseEnter={event => {
-                    event.currentTarget.style.transform = 'translateY(-2px)'
-                    event.currentTarget.style.borderColor = `${meta.accent}70`
-                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
-                  }}
-                  onMouseLeave={event => {
-                    event.currentTarget.style.transform = ''
-                    event.currentTarget.style.borderColor = `${meta.accent}3a`
-                    event.currentTarget.style.boxShadow = ''
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div
-                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-                        style={{ background: `${meta.accent}18`, color: meta.accent }}
-                      >
-                        <span>{meta.badge}</span>
-                      </div>
-                      <div className="mt-4 flex items-center gap-3">
-                        <span className="text-3xl">{meta.icon}</span>
-                        <div>
-                          <div className="font-display text-2xl text-white">{meta.title}</div>
-                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-            {EARTH_WORKBENCH_MODES.map(mode => {
-              const meta = SCIENCE_WORKBENCH_MODE_META[mode]
-              return (
-                <button
-                  key={mode}
-                  onClick={() => onSelectWorkbenchMode(mode)}
-                  className="card mobile-mini-card text-left"
-                  style={{
-                    borderColor: `${meta.accent}3a`,
-                    background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
-                    transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-                  }}
-                  onMouseEnter={event => {
-                    event.currentTarget.style.transform = 'translateY(-2px)'
-                    event.currentTarget.style.borderColor = `${meta.accent}70`
-                    event.currentTarget.style.boxShadow = `0 18px 34px ${meta.accent}22`
-                  }}
-                  onMouseLeave={event => {
-                    event.currentTarget.style.transform = ''
-                    event.currentTarget.style.borderColor = `${meta.accent}3a`
-                    event.currentTarget.style.boxShadow = ''
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div
-                        className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-                        style={{ background: `${meta.accent}18`, color: meta.accent }}
-                      >
-                        <span>{meta.badge}</span>
-                      </div>
-                      <div className="mt-4 flex items-center gap-3">
-                        <span className="text-3xl">{meta.icon}</span>
-                        <div>
-                          <div className="font-display text-2xl text-white">{meta.title}</div>
-                          <div className="mt-1 text-sm leading-6 text-slate-300">{meta.description}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+        ))
+      })()}
     </div>
   )
 }

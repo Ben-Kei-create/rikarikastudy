@@ -6,6 +6,7 @@ import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { PeriodicCardRewardModal } from '@/components/PeriodicCard'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { FIELD_COLORS, FIELD_EMOJI, FIELDS as CORE_FIELDS } from '@/lib/constants'
+import { getRateColor } from '@/lib/uiUtils'
 import { getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
 import { DailyChallengeStatus, loadDailyChallengeStatus, loadTimeAttackBest } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
@@ -445,7 +446,7 @@ export default function HomePage({
                 </div>
                 {rate !== null && (
                   <div className="text-right">
-                    <div className="font-semibold text-base sm:text-lg" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
+                    <div className="font-semibold text-base sm:text-lg" style={{ color: getRateColor(rate) }}>
                       {rate}%
                     </div>
                     <div className="text-slate-500 text-xs mt-1">正答率</div>
