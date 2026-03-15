@@ -51,6 +51,16 @@ export function limitToThreeLines(text: string) {
   return lines.join('\n').trim()
 }
 
+export function limitToFiveLines(text: string) {
+  const lines = text
+    .split(/\r?\n/)
+    .map(trimLine)
+    .filter(Boolean)
+    .slice(0, 5)
+
+  return lines.join('\n').trim()
+}
+
 export function buildThreadTitle(input: string) {
   const singleLine = trimLine(input)
   if (!singleLine) return '新しいテーマ'
@@ -135,4 +145,41 @@ export function makeMockScienceReply(field: ScienceChatField, prompt: string) {
     'いまはプレースホルダー応答です。',
   ]
   return lines.join('\n')
+}
+
+const MOCK_QUIZ_QUESTIONS: Record<ScienceChatField, string[]> = {
+  '生物': [
+    '【問題】光合成のしくみを60文字以内でまとめてみよう。',
+    '【問題】細胞分裂の流れを80文字以内で説明してみよう。',
+    '【問題】植物と動物の細胞の違いを50文字以内で説明してみよう。',
+  ],
+  '化学': [
+    '【問題】酸化と還元の違いを60文字以内でまとめてみよう。',
+    '【問題】イオンとは何かを50文字以内で説明してみよう。',
+    '【問題】化学反応式のつくり方を80文字以内で説明してみよう。',
+  ],
+  '物理': [
+    '【問題】オームの法則を50文字以内で説明してみよう。',
+    '【問題】力のつり合いとは何かを60文字以内でまとめてみよう。',
+    '【問題】光の屈折のしくみを60文字以内で説明してみよう。',
+  ],
+  '地学': [
+    '【問題】地震のP波とS波の違いを60文字以内で説明してみよう。',
+    '【問題】前線の種類と天気の変化を80文字以内でまとめてみよう。',
+    '【問題】火成岩の分類を50文字以内で説明してみよう。',
+  ],
+}
+
+export function makeMockQuizQuestion(field: ScienceChatField) {
+  const questions = MOCK_QUIZ_QUESTIONS[field]
+  return questions[Math.floor(Math.random() * questions.length)]
+}
+
+export function makeMockQuizEvaluation(field: ScienceChatField, _answer: string) {
+  return [
+    '【評価】おしい！方向性は合っています。',
+    '【模範回答】' + MOCK_QUIZ_QUESTIONS[field][0].replace(/^【問題】/, '').replace(/を\d+文字以内で.*$/, 'とは、基本的なしくみのことです。'),
+    '【ポイント】キーワードを含めるともっと良くなります。',
+    '（プレースホルダー応答です）',
+  ].join('\n')
 }

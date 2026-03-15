@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { detectScienceChatModeration } from '@/lib/chatModeration'
 import {
+  limitToFiveLines,
   limitToThreeLines,
+  makeMockQuizEvaluation,
+  makeMockQuizQuestion,
   makeMockScienceReply,
   SCIENCE_CHAT_FIELDS,
   ScienceChatApiReply,
   ScienceChatField,
   ScienceChatRole,
 } from '@/lib/scienceChat'
+
+type ChatMode = 'chat' | 'quiz-question' | 'quiz-evaluate'
 
 interface RequestMessage {
   role: ScienceChatRole
@@ -66,6 +71,35 @@ function buildSystemInstruction(field: ScienceChatField) {
   ].join('\n')
 }
 
+function buildQuizQuestionInstruction(field: ScienceChatField) {
+  return [
+    'あなたは中学生向け理科の先生です。',
+    `対象分野は ${field} です。`,
+    '生徒に1問だけ出題してください。',
+    '「○○について△△文字以内でまとめてみよう」のように、短い記述で回答できる問題を出してください。',
+    '問題の冒頭に【問題】をつけてください。',
+    '問題だけを出し、答えは書かないでください。',
+    '中学理科の範囲内で、基本的だけど説明が必要な内容にしてください。',
+    '会話履歴がある場合は、まだ出していないトピックから出題してください。',
+  ].join('\n')
+}
+
+function buildQuizEvaluateInstruction(field: ScienceChatField) {
+  return [
+    'あなたは中学生向け理科の先生です。',
+    `対象分野は ${field} です。`,
+    '生徒が問題に回答しました。以下のフォーマットで最大5行で評価してください：',
+    '1行目: 【評価】よくできました / おしい！ / もう少し のいずれか + 短い一言コメント',
+    '2行目: 【模範回答】正確で簡潔な模範回答',
+    '3行目: 【ポイント】この問題で押さえるべき重要な点',
+    '4行目: (必要なら) 補足説明や覚え方のコツ',
+    '5行目: (必要なら) 関連する発展的な知識',
+    '',
+    'やさしく励ましつつ、正確な知識を伝えてください。',
+    '生徒の回答が空や的外れでも、叱らず模範回答とポイントを教えてください。',
+  ].join('\n')
+}
+
 function extractText(payload: GenerateContentResponse) {
   const text = payload.candidates
     ?.flatMap(candidate => candidate.content?.parts ?? [])
@@ -105,12 +139,31 @@ function getScienceChatFallbackWarning(error: unknown) {
   return 'Gemini への接続に失敗したため、今回は簡易応答に切り替えました。'
 }
 
+function getSystemInstructionForMode(field: ScienceChatField, chatMode: ChatMode) {
+  if (chatMode === 'quiz-question') return buildQuizQuestionInstruction(field)
+  if (chatMode === 'quiz-evaluate') return buildQuizEvaluateInstruction(field)
+  return buildSystemInstruction(field)
+}
+
+function getMaxTokensForMode(chatMode: ChatMode) {
+  if (chatMode === 'quiz-question') return 120
+  if (chatMode === 'quiz-evaluate') return 300
+  return 160
+}
+
+function postProcessReply(text: string, chatMode: ChatMode) {
+  if (chatMode === 'quiz-evaluate') return limitToFiveLines(text)
+  return limitToThreeLines(text)
+}
+
 async function requestGeminiReply({
   field,
   messages,
+  chatMode = 'chat',
 }: {
   field: ScienceChatField
   messages: RequestMessage[]
+  chatMode?: ChatMode
 }) {
   const apiKey = getScienceChatApiKey()
   if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
@@ -132,15 +185,15 @@ async function requestGeminiReply({
           },
           body: JSON.stringify({
             systemInstruction: {
-              parts: [{ text: buildSystemInstruction(field) }],
+              parts: [{ text: getSystemInstructionForMode(field, chatMode) }],
             },
             contents: messages.map(message => ({
               role: message.role === 'assistant' ? 'model' : 'user',
               parts: [{ text: message.text.trim() }],
             })),
             generationConfig: {
-              temperature: 0.4,
-              maxOutputTokens: 160,
+              temperature: chatMode === 'quiz-question' ? 0.8 : 0.4,
+              maxOutputTokens: getMaxTokensForMode(chatMode),
             },
           }),
           signal: controller.signal,
@@ -157,7 +210,7 @@ async function requestGeminiReply({
       }
 
       const payload = await response.json() as GenerateContentResponse
-      const reply = limitToThreeLines(extractText(payload))
+      const reply = postProcessReply(extractText(payload), chatMode)
       if (!reply) {
         throw new GeminiRequestError('Gemini から応答を取得できませんでした。')
       }
@@ -194,17 +247,28 @@ async function requestGeminiReply({
   throw new GeminiRequestError('Gemini request failed')
 }
 
+function getMockReply(field: ScienceChatField, chatMode: ChatMode, latestUserPrompt: string): string {
+  if (chatMode === 'quiz-question') return makeMockQuizQuestion(field)
+  if (chatMode === 'quiz-evaluate') return makeMockQuizEvaluation(field, latestUserPrompt)
+  return makeMockScienceReply(field, latestUserPrompt)
+}
+
 export async function POST(request: NextRequest) {
   try {
     const mode = getScienceChatMode()
     const body = await request.json() as {
       field?: string
       messages?: RequestMessage[]
+      chatMode?: ChatMode
     }
 
     if (!body.field || !isScienceField(body.field)) {
       return NextResponse.json({ error: 'field が不正です。' }, { status: 400 })
     }
+
+    const chatMode: ChatMode = body.chatMode === 'quiz-question' || body.chatMode === 'quiz-evaluate'
+      ? body.chatMode
+      : 'chat'
 
     const messages = Array.isArray(body.messages)
       ? body.messages
@@ -217,22 +281,28 @@ export async function POST(request: NextRequest) {
           .slice(-12)
       : []
 
+    if (chatMode === 'quiz-question' && messages.length === 0) {
+      messages.push({ role: 'user', text: `${body.field}の問題を1つ出してください。` })
+    }
+
     const latestUserPrompt = [...messages].reverse().find(message => message.role === 'user')?.text?.trim()
     if (!latestUserPrompt) {
       return NextResponse.json({ error: '質問文がありません。' }, { status: 400 })
     }
 
-    const moderation = detectScienceChatModeration(latestUserPrompt)
-    if (moderation.blocked) {
-      return NextResponse.json(
-        { error: moderation.warningMessage, blocked: true },
-        { status: 422 }
-      )
+    if (chatMode === 'chat') {
+      const moderation = detectScienceChatModeration(latestUserPrompt)
+      if (moderation.blocked) {
+        return NextResponse.json(
+          { error: moderation.warningMessage, blocked: true },
+          { status: 422 }
+        )
+      }
     }
 
     if (mode !== 'live') {
       const mockReply: ScienceChatApiReply = {
-        reply: makeMockScienceReply(body.field, latestUserPrompt),
+        reply: getMockReply(body.field, chatMode, latestUserPrompt),
         provider: 'mock',
         model: 'mock',
       }
@@ -243,6 +313,7 @@ export async function POST(request: NextRequest) {
       const reply = await requestGeminiReply({
         field: body.field,
         messages,
+        chatMode,
       })
 
       const apiReply: ScienceChatApiReply = {
@@ -256,7 +327,7 @@ export async function POST(request: NextRequest) {
       console.error('[science-chat] falling back to mock reply', error)
 
       const fallbackReply: ScienceChatApiReply = {
-        reply: makeMockScienceReply(body.field, latestUserPrompt),
+        reply: getMockReply(body.field, chatMode, latestUserPrompt),
         provider: 'mock',
         model: 'mock-fallback',
         warning: getScienceChatFallbackWarning(error),

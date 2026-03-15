@@ -23,10 +23,10 @@ import {
 } from '@/lib/scienceChat'
 
 const FIELD_META: Record<ScienceChatField, { icon: string; color: string; hint: string }> = {
-  '生物': { icon: '🌿', color: '#22c55e', hint: '生き物・細胞・遺伝の質問を3行以内で整理します。' },
-  '化学': { icon: '⚗️', color: '#f97316', hint: '化学式・イオン・反応の疑問を短くまとめます。' },
-  '物理': { icon: '⚡', color: '#4da2ff', hint: '力・電気・エネルギーの要点をコンパクトに返します。' },
-  '地学': { icon: '🌏', color: '#8b7cff', hint: '天気・地震・宇宙の質問をざっくり整理します。' },
+  '生物': { icon: '🌿', color: '#22c55e', hint: '質問したり、Geminiから出題してもらえます。' },
+  '化学': { icon: '⚗️', color: '#f97316', hint: '質問したり、Geminiから出題してもらえます。' },
+  '物理': { icon: '⚡', color: '#4da2ff', hint: '質問したり、Geminiから出題してもらえます。' },
+  '地学': { icon: '🌏', color: '#8b7cff', hint: '質問したり、Geminiから出題してもらえます。' },
 }
 
 function readStoredThreads(storageKey: string) {
@@ -75,6 +75,14 @@ function makeMessage(role: ScienceChatMessage['role'], text: string): ScienceCha
   }
 }
 
+function isQuizQuestion(text: string) {
+  return text.startsWith('【問題】')
+}
+
+function isQuizEvaluation(text: string) {
+  return text.startsWith('【評価】')
+}
+
 export default function ScienceChatPage({
   field,
   onBack,
@@ -96,6 +104,7 @@ export default function ScienceChatPage({
   const [warning, setWarning] = useState('')
   const [loading, setLoading] = useState(false)
   const [provider, setProvider] = useState<ScienceChatProvider>('mock')
+  const [waitingForQuizAnswer, setWaitingForQuizAnswer] = useState(false)
   const messagesRef = useRef<HTMLDivElement | null>(null)
   const reportedBlockedDraftRef = useRef(false)
 
@@ -124,6 +133,7 @@ export default function ScienceChatPage({
     setError('')
     setWarning('')
     setProvider('mock')
+    setWaitingForQuizAnswer(false)
     reportedBlockedDraftRef.current = false
   }, [field, storageKey])
 
@@ -131,6 +141,13 @@ export default function ScienceChatPage({
     if (!messagesRef.current) return
     messagesRef.current.scrollTop = messagesRef.current.scrollHeight
   }, [activeThread.messages.length, loading])
+
+  useEffect(() => {
+    const lastMessage = activeThread.messages[activeThread.messages.length - 1]
+    if (lastMessage && lastMessage.role === 'assistant' && isQuizQuestion(lastMessage.text)) {
+      setWaitingForQuizAnswer(true)
+    }
+  }, [activeThread.messages])
 
   useEffect(() => {
     if (!studentId || isGuest || !input.trim() || !moderation.blocked) {
@@ -181,6 +198,7 @@ export default function ScienceChatPage({
     setInput('')
     setError('')
     setWarning('')
+    setWaitingForQuizAnswer(false)
   }
 
   const handleSelectThread = (threadId: string) => {
@@ -188,13 +206,71 @@ export default function ScienceChatPage({
     setInput('')
     setError('')
     setWarning('')
+    const thread = allThreads.find(t => t.id === threadId)
+    if (thread) {
+      const lastMsg = thread.messages[thread.messages.length - 1]
+      setWaitingForQuizAnswer(lastMsg?.role === 'assistant' && isQuizQuestion(lastMsg.text))
+    }
+  }
+
+  const sendToApi = async (
+    threadToUpdate: ScienceChatThread,
+    chatMode: 'chat' | 'quiz-question' | 'quiz-evaluate',
+  ) => {
+    setError('')
+    setWarning('')
+    setLoading(true)
+
+    try {
+      const response = await fetch('/api/science-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          field,
+          chatMode,
+          messages: threadToUpdate.messages.map(message => ({
+            role: message.role,
+            text: message.text,
+          })),
+        }),
+      })
+
+      const payload = await response.json() as ScienceChatApiReply | { error?: string }
+      if (!response.ok || !('reply' in payload)) {
+        throw new Error(payload && 'error' in payload && payload.error ? payload.error : '送信に失敗しました。')
+      }
+
+      setProvider(payload.provider)
+      setWarning(typeof payload.warning === 'string' ? payload.warning : '')
+      const assistantMessage = makeMessage('assistant', payload.reply)
+
+      const updatedThread = upsertThread({
+        ...threadToUpdate,
+        updatedAt: assistantMessage.createdAt,
+        messages: [...threadToUpdate.messages, assistantMessage],
+      })
+
+      if (isQuizQuestion(payload.reply)) {
+        setWaitingForQuizAnswer(true)
+      } else {
+        setWaitingForQuizAnswer(false)
+      }
+
+      return updatedThread
+    } catch (currentError) {
+      const message = currentError instanceof Error ? currentError.message : '送信に失敗しました。'
+      setError(message)
+      return null
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSend = async () => {
     const prompt = input.trim()
     if (!prompt || loading) return
 
-    if (moderation.blocked) {
+    if (!waitingForQuizAnswer && moderation.blocked) {
       setError(moderation.warningMessage)
       return
     }
@@ -219,44 +295,35 @@ export default function ScienceChatPage({
     }
 
     setInput('')
-    setError('')
-    setWarning('')
-    setLoading(true)
 
-    try {
-      const response = await fetch('/api/science-chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          field,
-          messages: storedThread.messages.map(message => ({
-            role: message.role,
-            text: message.text,
-          })),
-        }),
-      })
+    const chatMode = waitingForQuizAnswer ? 'quiz-evaluate' as const : 'chat' as const
+    await sendToApi(storedThread, chatMode)
+  }
 
-      const payload = await response.json() as ScienceChatApiReply | { error?: string }
-      if (!response.ok || !('reply' in payload)) {
-        throw new Error(payload && 'error' in payload && payload.error ? payload.error : '質問の送信に失敗しました。')
-      }
+  const handleRequestQuiz = async () => {
+    if (loading) return
 
-      setProvider(payload.provider)
-      setWarning(typeof payload.warning === 'string' ? payload.warning : '')
-      const assistantMessage = makeMessage('assistant', payload.reply)
-      upsertThread({
-        ...storedThread,
-        updatedAt: assistantMessage.createdAt,
-        messages: [...storedThread.messages, assistantMessage],
-      })
-    } catch (currentError) {
-      const message = currentError instanceof Error ? currentError.message : '質問の送信に失敗しました。'
-      setError(message)
-    } finally {
-      setLoading(false)
+    if (rallyCount >= maxRallies) {
+      setError(`このテーマは${maxRallies}ラリーに達しました。新しいテーマを作ってください。`)
+      return
     }
+
+    const threadBase = activeStoredThread ?? draftThread
+    const requestMessage = makeMessage('user', `${field}の問題を出してください。`)
+    const optimisticThread: ScienceChatThread = {
+      ...threadBase,
+      title: threadBase.messages.length === 0 ? `${field}クイズ` : threadBase.title,
+      updatedAt: requestMessage.createdAt,
+      messages: [...threadBase.messages, requestMessage],
+    }
+
+    const storedThread = upsertThread(optimisticThread)
+    if (isDraft) {
+      setDraftThread(createThread(field))
+    }
+
+    setInput('')
+    await sendToApi(storedThread, 'quiz-question')
   }
 
   if (isGuest) {
@@ -426,7 +493,7 @@ export default function ScienceChatPage({
                     <div className="text-[11px] text-slate-500">質問をどうぞ</div>
                   </div>
                   <div className="relative rounded-[24px] rounded-tl-[12px] border border-slate-700/80 bg-slate-800/90 px-4 py-3 text-sm leading-7 text-slate-200">
-                    例: 「光合成って何？」「イオンってざっくり何？」「地震のP波とS波の違いは？」
+                    自分から質問したり、「質問してもらう」ボタンで Gemini に出題してもらえます。
                     <div
                       aria-hidden="true"
                       className="absolute -left-1.5 top-3 h-3.5 w-3.5 rotate-45 border-l border-t border-slate-700/80 bg-slate-800/90"
@@ -442,6 +509,8 @@ export default function ScienceChatPage({
             <div className="space-y-4">
               {activeThread.messages.map(message => {
                 const isUser = message.role === 'user'
+                const isQuiz = !isUser && isQuizQuestion(message.text)
+                const isEval = !isUser && isQuizEvaluation(message.text)
                 return (
                   <div
                     key={message.id}
@@ -461,6 +530,18 @@ export default function ScienceChatPage({
                         <div className="text-xs font-semibold text-slate-300">
                           {isUser ? 'あなた' : 'Gemini'}
                         </div>
+                        {(isQuiz || isEval) && (
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                            style={{
+                              background: isQuiz ? '#7c3aed22' : '#05966922',
+                              color: isQuiz ? '#a78bfa' : '#6ee7b7',
+                              border: `1px solid ${isQuiz ? '#7c3aed33' : '#05966933'}`,
+                            }}
+                          >
+                            {isQuiz ? '出題' : '評価'}
+                          </span>
+                        )}
                         <div className="text-[11px] text-slate-500">{formatMessageTime(message.createdAt)}</div>
                       </div>
 
@@ -471,8 +552,17 @@ export default function ScienceChatPage({
                         style={{
                           background: isUser
                             ? `linear-gradient(135deg, ${meta.color}2f, ${meta.color}20)`
-                            : 'rgba(30, 41, 59, 0.9)',
-                          border: `1px solid ${isUser ? `${meta.color}44` : 'rgba(148, 163, 184, 0.16)'}`,
+                            : isQuiz
+                              ? 'linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(30, 41, 59, 0.9))'
+                              : isEval
+                                ? 'linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(30, 41, 59, 0.9))'
+                                : 'rgba(30, 41, 59, 0.9)',
+                          border: `1px solid ${
+                            isUser ? `${meta.color}44`
+                              : isQuiz ? 'rgba(124, 58, 237, 0.3)'
+                                : isEval ? 'rgba(5, 150, 105, 0.25)'
+                                  : 'rgba(148, 163, 184, 0.16)'
+                          }`,
                           color: isUser ? '#f8fafc' : '#e2e8f0',
                           boxShadow: isUser ? `0 14px 28px ${meta.color}18` : '0 14px 28px rgba(15, 23, 42, 0.2)',
                         }}
@@ -517,7 +607,7 @@ export default function ScienceChatPage({
                       <div className="text-[11px] text-slate-500">考え中</div>
                     </div>
                     <div className="relative rounded-[24px] rounded-tl-[12px] border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-400">
-                      回答をまとめています...
+                      {waitingForQuizAnswer ? '回答を評価しています...' : '回答をまとめています...'}
                       <div
                         aria-hidden="true"
                         className="absolute -left-1.5 top-3 h-3.5 w-3.5 rotate-45 border-l border-t border-slate-700 bg-slate-900"
@@ -549,15 +639,19 @@ export default function ScienceChatPage({
                 className="flex h-9 w-9 items-center justify-center rounded-full text-base"
                 style={{ background: `${meta.color}1c`, border: `1px solid ${meta.color}32` }}
               >
-                💬
+                {waitingForQuizAnswer ? '✏️' : '💬'}
               </div>
               <div>
-                <div className="text-sm font-semibold text-white">{field}について質問する</div>
-                <div className="text-xs text-slate-500">やさしく短く返すチャット形式</div>
+                <div className="text-sm font-semibold text-white">
+                  {waitingForQuizAnswer ? '回答を入力する' : `${field}について質問する`}
+                </div>
+                <div className="text-xs text-slate-500">
+                  {waitingForQuizAnswer ? '5行以内で評価・模範回答・ポイントを返します' : 'やさしく短く返すチャット形式'}
+                </div>
               </div>
             </div>
             <div className="rounded-full bg-slate-800/80 px-3 py-1 text-[11px] text-slate-400">
-              3行以内
+              {waitingForQuizAnswer ? '5行以内' : '3行以内'}
             </div>
           </div>
 
@@ -567,13 +661,13 @@ export default function ScienceChatPage({
               setInput(event.target.value)
               setError('')
             }}
-            placeholder={`${field}について質問を書く（3行以内で返答）`}
+            placeholder={waitingForQuizAnswer ? '上の問題に回答を書いてください' : `${field}について質問を書く（3行以内で返答）`}
             rows={3}
             className="input-surface resize-y border-none bg-slate-900/70"
             style={{ boxShadow: 'none' }}
             disabled={loading || rallyCount >= maxRallies}
           />
-          {moderation.blocked && (
+          {!waitingForQuizAnswer && moderation.blocked && (
             <div className="mt-3 rounded-2xl border border-amber-700/70 bg-amber-950/60 px-4 py-3 text-sm text-amber-100">
               {moderation.warningMessage}
             </div>
@@ -584,13 +678,29 @@ export default function ScienceChatPage({
                 ? `ゲストは1テーマ${maxRallies}ラリーまで。履歴はこの端末のブラウザにだけ保存します。`
                 : '1テーマ50ラリーまで。履歴はこの端末のブラウザにだけ保存します。'}
             </div>
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || loading || rallyCount >= maxRallies || moderation.blocked}
-              className="btn-primary whitespace-nowrap disabled:opacity-60"
-            >
-              {loading ? '送信中...' : 'Geminiに聞く'}
-            </button>
+            <div className="flex items-center gap-2">
+              {!waitingForQuizAnswer && (
+                <button
+                  onClick={handleRequestQuiz}
+                  disabled={loading || rallyCount >= maxRallies}
+                  className="whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-60"
+                  style={{
+                    borderColor: '#7c3aed44',
+                    background: '#7c3aed18',
+                    color: '#c4b5fd',
+                  }}
+                >
+                  {loading ? '出題中...' : '質問してもらう'}
+                </button>
+              )}
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || loading || rallyCount >= maxRallies || (!waitingForQuizAnswer && moderation.blocked)}
+                className="btn-primary whitespace-nowrap disabled:opacity-60"
+              >
+                {loading ? '送信中...' : waitingForQuizAnswer ? '回答を送る' : 'Geminiに聞く'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
