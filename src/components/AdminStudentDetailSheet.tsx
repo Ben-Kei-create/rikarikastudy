@@ -2,6 +2,8 @@
 
 import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
 import { FIELD_COLORS, FIELD_EMOJI, FIELDS } from '@/lib/constants'
+import { formatStudyTime } from '@/lib/formUtils'
+import { getFieldColor, getRateColor } from '@/lib/uiUtils'
 import { getLevelInfo } from '@/lib/engagement'
 import { Database } from '@/lib/supabase'
 import { differenceInCalendarDays, eachDayOfInterval, format, startOfDay, subDays } from 'date-fns'
@@ -31,22 +33,6 @@ interface AdminStudentDetailData {
   sessions: QuizSessionRow[]
   answerLogs: AdminStudentDetailAnswerLogRow[]
   studentBadges: StudentBadgeRow[]
-}
-
-function formatStudyTime(totalSeconds: number) {
-  if (totalSeconds <= 0) return '0分'
-
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-
-  if (hours > 0) return `${hours}時間${minutes}分`
-  if (minutes > 0) return `${minutes}分`
-  return `${seconds}秒`
-}
-
-function getFieldColor(field: string) {
-  return FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
 }
 
 function getFieldEmoji(field: string) {
@@ -285,7 +271,7 @@ export default function AdminStudentDetailSheet({
                               <span className="text-sm font-bold" style={{ color }}>{field}</span>
                               {current && <span className="text-xs text-slate-600">{current.total}問</span>}
                             </div>
-                            <span className="text-sm font-bold" style={{ color: rate === null ? '#64748b' : rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
+                            <span className="text-sm font-bold" style={{ color: getRateColor(rate, { nullColor: '#64748b' }) }}>
                               {rate === null ? '—' : `${rate}%`}
                             </span>
                           </div>
@@ -393,10 +379,10 @@ export default function AdminStudentDetailSheet({
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-xl font-bold" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>
+                              <div className="text-xl font-bold" style={{ color: getRateColor(rate) }}>
                                 {session.correct_count}<span className="text-sm text-slate-500">/{session.total_questions}</span>
                               </div>
-                              <div className="text-xs" style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}>{rate}%</div>
+                              <div className="text-xs" style={{ color: getRateColor(rate) }}>{rate}%</div>
                             </div>
                           </div>
                         </div>

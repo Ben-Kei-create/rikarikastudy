@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth'
 import { isCorrectTextAnswerResult, TextAnswerResult } from '@/lib/answerUtils'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { FIELD_COLORS } from '@/lib/constants'
+import { getFieldColor, getRateColor } from '@/lib/uiUtils'
 import { CustomQuizOptions, getCustomQuizSessionLabel, getCustomQuizSummaryParts } from '@/lib/customQuiz'
 import { getLevelInfo } from '@/lib/engagement'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
@@ -65,10 +66,6 @@ function writeFavoriteQuestionIds(studentId: number | null, ids: Set<string>) {
     parsed[String(studentId)] = Array.from(ids)
     window.localStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(parsed))
   } catch {}
-}
-
-function getFieldColor(field: string) {
-  return FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
 }
 
 type Question = QuestionShape
@@ -759,7 +756,7 @@ export default function QuizPage({
           </div>
           <div
             className="text-2xl font-bold mb-1"
-            style={{ color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444' }}
+            style={{ color: getRateColor(rate) }}
           >
             {rate}%
           </div>

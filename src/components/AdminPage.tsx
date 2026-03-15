@@ -43,6 +43,7 @@ import {
   normalizeQuestionRecord,
 } from '@/lib/questionTypes'
 import { parseKeywordInput, parseListInput, parseMatchPairsText, getFieldColor, downloadJsonFile } from '@/lib/formUtils'
+import { getRateColor } from '@/lib/uiUtils'
 import {
   ADMIN_PW,
   BULK_INSERT_CHUNK_SIZE,
@@ -2025,7 +2026,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       </div>
                       <div className="text-right">
                         <div className="font-bold text-2xl" style={{
-                          color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444',
+                          color: getRateColor(rate),
                         }}>{rate}%</div>
                         <div className="text-slate-400 text-sm">{student.totalQ}問</div>
                       </div>
