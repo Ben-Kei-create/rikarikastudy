@@ -807,6 +807,23 @@ body {
   animation: daily-challenge-glow 2.4s ease-in-out infinite;
 }
 
+@keyframes quick-start-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(56, 189, 248, 0.22),
+      0 18px 48px rgba(10, 132, 255, 0.18);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(56, 189, 248, 0),
+      0 24px 56px rgba(10, 132, 255, 0.26);
+  }
+}
+
+.quick-start-cta {
+  animation: quick-start-glow 2.2s ease-in-out infinite;
+}
+
 .badge-toast {
   display: flex;
   align-items: flex-start;
@@ -878,6 +895,18 @@ body {
   .page-shell,
   .page-shell-wide {
     padding: 28px 24px 88px;
+  }
+}
+
+/* iPad / tablet portrait (768-1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .page-shell-dashboard {
+    max-width: 68rem;
+    padding: 28px 28px 88px;
+  }
+
+  .hero-card {
+    border-radius: 32px;
   }
 }
 

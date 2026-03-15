@@ -166,16 +166,59 @@ export default function HomePage({
           onClose={dismissLoginCardReward}
         />
       )}
-      <div className="hero-card science-surface mb-4 p-3.5 sm:mb-6 sm:p-6 lg:p-8 anim-fade-up">
+
+      {/* Quick Start CTA — primary action, always visible at top */}
+      <button
+        onClick={onQuickStartAll}
+        className="quick-start-cta card mb-4 w-full text-left anim-fade-up sm:mb-5"
+        style={{
+          padding: '18px 20px',
+          borderColor: 'rgba(56, 189, 248, 0.36)',
+          background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(34, 197, 94, 0.10) 50%, rgba(15, 23, 42, 0.88))',
+          cursor: 'pointer',
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        }}
+        onMouseEnter={event => {
+          event.currentTarget.style.transform = 'translateY(-2px)'
+        }}
+        onMouseLeave={event => {
+          event.currentTarget.style.transform = ''
+        }}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold tracking-[0.22em] text-sky-200 uppercase sm:text-xs">
+              Quick Start
+            </div>
+            <div className="mt-1.5 font-display text-[1.4rem] text-white sm:text-[1.8rem]">
+              すぐはじめる — 4分野10問
+            </div>
+            <div className="mt-1.5 text-xs leading-5 text-slate-300 sm:text-sm">
+              ランダム総合クイズ
+            </div>
+          </div>
+          <div
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl sm:h-16 sm:w-16 sm:text-3xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.28), rgba(34, 197, 94, 0.18))',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+            }}
+          >
+            ▶
+          </div>
+        </div>
+      </button>
+
+      <div className="hero-card science-surface mb-4 p-3.5 sm:mb-6 sm:p-5 md:p-6 lg:p-8 anim-fade-up" style={{ animationDelay: '0.06s' }}>
         <ScienceBackdrop />
-        <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+        <div className="grid gap-4 md:gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
           <div className="max-w-2xl">
-            <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-3">
+            <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2 sm:mb-3">
               Home
             </div>
-            <div className="font-display text-[1.65rem] leading-tight text-white sm:text-4xl">こんにちは、{nickname}さん</div>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
-              HOME はすぐ始めるための画面にしています。くわしい記録やコレクションはマイページで確認できます。
+            <div className="font-display text-[1.5rem] leading-tight text-white sm:text-3xl md:text-4xl">こんにちは、{nickname}さん</div>
+            <p className="mt-2 max-w-xl text-[13px] leading-6 text-slate-300 sm:mt-3 sm:text-sm">
+              くわしい記録やコレクションはマイページで確認できます。
             </p>
             {nextUnlock && (
               <div className="mt-3 rounded-[20px] border px-3 py-3 sm:mt-4 sm:rounded-[24px] sm:px-4 sm:py-4" style={{
@@ -216,37 +259,12 @@ export default function HomePage({
               </div>
             )}
             {isGuest && (
-              <p className="mt-4 text-sm leading-6 text-sky-200">
+              <p className="mt-3 text-sm leading-6 text-sky-200 sm:mt-4">
                 ゲストは毎日リセット
               </p>
             )}
           </div>
           <div className="grid grid-cols-1 gap-2 sm:gap-3 lg:max-w-sm lg:ml-auto">
-            <div
-              className="rounded-[20px] border p-3 sm:rounded-[24px] sm:p-4"
-              style={{
-                borderColor: 'rgba(255,255,255,0.08)',
-                background: 'rgba(15, 23, 42, 0.38)',
-              }}
-            >
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">すぐはじめる</div>
-              <div className="mt-2 grid gap-2">
-                <button
-                  onClick={onQuickStartAll}
-                  className="subcard mobile-action-card text-left transition-all"
-                  style={{
-                    padding: '13px 14px',
-                    borderColor: 'rgba(56, 189, 248, 0.22)',
-                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(34, 197, 94, 0.08) 64%, rgba(15, 23, 42, 0.84))',
-                  }}
-                >
-                  <div className="text-[10px] font-semibold tracking-[0.18em] text-sky-200 uppercase sm:text-[11px]">Quick</div>
-                  <div className="mt-1 font-display text-[1rem] text-white sm:text-lg">4分野10問</div>
-                  <div className="mt-1 text-[11px] leading-5 text-slate-400 sm:text-xs">総合</div>
-                </button>
-              </div>
-            </div>
-
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <button onClick={onMyPage} className="btn-secondary w-full !py-2.5 text-sm sm:!py-3">
                 マイページ
@@ -260,7 +278,11 @@ export default function HomePage({
               href={scienceNews.item.link}
               target="_blank"
               rel="noreferrer"
-              className="block px-1 py-1.5 transition-all"
+              className="block rounded-[18px] border px-3 py-2.5 transition-all sm:rounded-[22px] sm:px-4 sm:py-3"
+              style={{
+                borderColor: 'rgba(255,255,255,0.06)',
+                background: 'rgba(15, 23, 42, 0.28)',
+              }}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -281,103 +303,105 @@ export default function HomePage({
         </div>
       </div>
 
-      {!dailyCompleted && (
+      <div className={`grid gap-3 mb-4 sm:mb-5 ${!dailyCompleted ? 'md:grid-cols-2' : ''}`}>
+        {!dailyCompleted && (
+          <button
+            onClick={onDailyChallenge}
+            className="card w-full text-left transition-all daily-challenge-cta"
+            style={{
+              padding: '16px 18px',
+              borderColor: 'rgba(245, 158, 11, 0.34)',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.08), rgba(15, 23, 42, 0.84))',
+            }}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-amber-200">
+                  本日の5問
+                </div>
+                <div className="mt-2 flex items-center gap-3 flex-wrap">
+                  <div className="font-display text-[1.25rem] text-white sm:text-[1.6rem]">今日のチャレンジ</div>
+                  <span
+                    className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                    style={{
+                      background: 'rgba(251, 191, 36, 0.14)',
+                      color: '#fde68a',
+                    }}
+                  >
+                    5問 / XP×2
+                  </span>
+                </div>
+                <div className="mt-1.5 text-xs leading-5 text-slate-300 sm:text-sm">
+                  苦手 → まだ解いていない → ランダム
+                </div>
+              </div>
+              <div className="text-[1.8rem] text-amber-200 sm:text-3xl">
+                ☀️
+              </div>
+            </div>
+          </button>
+        )}
+
         <button
-          onClick={onDailyChallenge}
-          className="card mb-4 w-full text-left transition-all sm:mb-5 daily-challenge-cta"
+          onClick={onTimeAttack}
+          disabled={!timeAttackUnlocked}
+          className="card w-full text-left transition-all disabled:opacity-70"
           style={{
-            padding: '14px 16px',
-            borderColor: 'rgba(245, 158, 11, 0.34)',
-            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.08), rgba(15, 23, 42, 0.84))',
+            padding: '16px 18px',
+            cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
+            borderColor: timeAttackUnlocked ? 'rgba(77, 162, 255, 0.32)' : 'rgba(148, 163, 184, 0.14)',
+            background: timeAttackUnlocked
+              ? 'linear-gradient(135deg, rgba(77, 162, 255, 0.18), rgba(14, 116, 144, 0.08), rgba(15, 23, 42, 0.84))'
+              : 'rgba(15, 23, 42, 0.62)',
           }}
         >
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-amber-200">
-                本日の5問
+              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-sky-200">
+                30秒チャレンジ
               </div>
-              <div className="mt-2 flex items-center gap-3 flex-wrap">
-                <div className="font-display text-[1.35rem] text-white sm:text-[1.8rem]">今日のチャレンジ</div>
-                <span
-                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                  style={{
-                    background: 'rgba(251, 191, 36, 0.14)',
-                    color: '#fde68a',
-                  }}
-                >
-                  5問 / XP×2
-                </span>
-              </div>
-              <div className="mt-1.5 text-xs leading-5 text-slate-300 sm:mt-2 sm:text-sm">
-                苦手 → まだ解いていない問題 → ランダム の順で出題
+              <div className="mt-2 font-display text-[1.25rem] text-white sm:text-[1.6rem]">チャレンジモード</div>
+              <div className="mt-1.5 text-xs leading-5 text-slate-300 sm:text-sm">
+                {timeAttackUnlocked ? '30秒 / 正解で +0.5秒' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
               </div>
             </div>
-            <div className="text-[1.8rem] text-amber-200 sm:text-4xl">
-              ☀️
+            <div className={`text-[1.8rem] sm:text-3xl ${timeAttackUnlocked ? 'text-sky-200' : 'text-slate-500'}`}>
+              ⏱️
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
+            <div className="subcard p-3">
+              <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">自己ベスト</div>
+              <div className="mt-1.5 font-display text-2xl text-white sm:text-3xl">
+                {timeAttackUnlocked ? timeAttackSummary.personalBest : '—'}
+              </div>
+            </div>
+            <div className="subcard p-3">
+              <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">全体ベスト</div>
+              <div className="mt-1.5 flex items-end justify-between gap-2 sm:gap-3">
+                <div className="font-display text-2xl text-sky-300 sm:text-3xl">
+                  {timeAttackUnlocked ? timeAttackSummary.allTimeBest : '—'}
+                </div>
+                <div className="text-right text-[11px] text-slate-500">
+                  {timeAttackUnlocked && timeAttackSummary.allTimeLeaderName
+                    ? timeAttackSummary.allTimeLeaderName
+                    : timeAttackUnlocked
+                      ? 'まだ記録なし'
+                      : `あと ${timeAttackUnlockXpLeft} XP`}
+                </div>
+              </div>
             </div>
           </div>
         </button>
-      )}
-
-      <button
-        onClick={onTimeAttack}
-        disabled={!timeAttackUnlocked}
-        className="card mb-4 w-full text-left transition-all sm:mb-5 disabled:opacity-70"
-        style={{
-          padding: '14px 16px',
-          cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
-          borderColor: timeAttackUnlocked ? 'rgba(77, 162, 255, 0.32)' : 'rgba(148, 163, 184, 0.14)',
-          background: timeAttackUnlocked
-            ? 'linear-gradient(135deg, rgba(77, 162, 255, 0.18), rgba(14, 116, 144, 0.08), rgba(15, 23, 42, 0.84))'
-            : 'rgba(15, 23, 42, 0.62)',
-        }}
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-sky-200">
-              30秒チャレンジ
-            </div>
-            <div className="mt-2 font-display text-[1.35rem] text-white sm:text-[1.8rem]">チャレンジモード</div>
-            <div className="mt-1.5 text-xs leading-5 text-slate-300 sm:mt-2 sm:text-sm">
-              {timeAttackUnlocked ? '30秒 / 正解で +0.5秒' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
-            </div>
-          </div>
-          <div className={`text-[1.8rem] sm:text-4xl ${timeAttackUnlocked ? 'text-sky-200' : 'text-slate-500'}`}>
-            ⏱️
-          </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-3">
-          <div className="subcard p-3">
-            <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">自己ベスト</div>
-            <div className="mt-1.5 font-display text-2xl text-white sm:mt-2 sm:text-3xl">
-              {timeAttackUnlocked ? timeAttackSummary.personalBest : '—'}
-            </div>
-          </div>
-          <div className="subcard p-3">
-            <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">全体ベスト</div>
-            <div className="mt-1.5 flex items-end justify-between gap-2 sm:mt-2 sm:gap-3">
-              <div className="font-display text-2xl text-sky-300 sm:text-3xl">
-                {timeAttackUnlocked ? timeAttackSummary.allTimeBest : '—'}
-              </div>
-              <div className="text-right text-[11px] text-slate-500">
-                {timeAttackUnlocked && timeAttackSummary.allTimeLeaderName
-                  ? timeAttackSummary.allTimeLeaderName
-                  : timeAttackUnlocked
-                    ? 'まだ記録なし'
-                    : `あと ${timeAttackUnlockXpLeft} XP`}
-              </div>
-            </div>
-          </div>
-        </div>
-      </button>
+      </div>
 
       <div className="mb-3 flex items-center justify-between sm:mb-4">
         <h2 className="text-lg font-semibold text-slate-100">分野を選ぶ</h2>
         <span className="text-xs text-slate-500">タップですぐ開始</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {CORE_FIELDS.map((fieldName, index) => {
           const stat = stats[fieldName]
           const rate = stat && stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : null
