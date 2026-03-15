@@ -4,7 +4,7 @@ import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/theme'
 import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
-import { FIELD_COLORS, FIELD_EMOJI, FIELDS } from '@/lib/constants'
+import { FIELD_EMOJI, FIELDS } from '@/lib/constants'
 import { getLevelInfo, getTotalXpFromSessions } from '@/lib/engagement'
 import { format, subDays, startOfDay, eachDayOfInterval, differenceInCalendarDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
@@ -97,38 +97,7 @@ const INITIAL_CUSTOM_QUESTION_FORM: CustomQuestionForm = {
   grade: '中3',
 }
 
-function parseKeywordInput(input: string) {
-  const keywords = input
-    .split(/[,、\n]/)
-    .map(keyword => keyword.trim())
-    .filter(Boolean)
-
-  return keywords.length > 0 ? keywords : null
-}
-
-function parseListInput(input: string) {
-  return input
-    .split(/\n|,|、/)
-    .map(item => item.trim())
-    .filter(Boolean)
-}
-
-function parseMatchPairsText(input: string) {
-  const pairs = input
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => {
-      const [left, right] = line.split(/\s*\|\s*/)
-      return {
-        left: (left ?? '').trim(),
-        right: (right ?? '').trim(),
-      }
-    })
-    .filter(pair => pair.left && pair.right)
-
-  return pairs.length > 0 ? pairs : null
-}
+import { parseKeywordInput, parseListInput, parseMatchPairsText, getFieldColor, formatStudyTime } from '@/lib/formUtils'
 
 function getThemePreview(theme: Theme) {
   if (theme === 'light') {
@@ -140,18 +109,6 @@ function getThemePreview(theme: Theme) {
   }
 
   return 'linear-gradient(135deg, #07111f 0%, #12233f 48%, #050816 100%)'
-}
-
-function formatStudyTime(totalSeconds: number) {
-  if (totalSeconds <= 0) return '0分'
-
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-
-  if (hours > 0) return `${hours}時間${minutes}分`
-  if (minutes > 0) return `${minutes}分`
-  return `${seconds}秒`
 }
 
 function toGlossaryEntry(row: GlossaryRow): ScienceGlossaryEntry {
@@ -173,10 +130,6 @@ function normalizeAnswerLogs(rows: AnswerLogQueryRow[] | null | undefined): Answ
     is_correct: row.is_correct,
     questions: Array.isArray(row.questions) ? row.questions[0] ?? null : row.questions,
   }))
-}
-
-function getFieldColor(field: string) {
-  return FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
 }
 
 function getFieldEmoji(field: string) {
