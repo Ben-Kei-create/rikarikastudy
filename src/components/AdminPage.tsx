@@ -1496,7 +1496,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                   onClick={() => setQuestionPage(item)}
                   className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
                   style={{
-                    background: item === questionPage ? 'rgba(56, 189, 248, 0.16)' : 'rgba(15, 23, 42, 0.85)',
+                    background: item === questionPage ? 'rgba(56, 189, 248, 0.16)' : 'var(--card-gradient-base)',
                     border: `1px solid ${item === questionPage ? 'rgba(56, 189, 248, 0.34)' : 'rgba(51, 65, 85, 0.72)'}`,
                     color: item === questionPage ? '#bae6fd' : '#cbd5e1',
                   }}
@@ -1794,7 +1794,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                                 className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em]"
                                 style={{
                                   color: rarityStyle.textColor,
-                                  background: 'rgba(2, 6, 23, 0.42)',
+                                  background: 'var(--card-gradient-base-soft)',
                                 }}
                               >
                                 {rarityStyle.label}
@@ -2696,7 +2696,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     className="rounded-[20px] border px-4 py-4 text-xl font-bold transition-all"
                     style={{
                       borderColor: form.answer === mark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(148, 163, 184, 0.16)',
-                      background: form.answer === mark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.48)',
+                      background: form.answer === mark ? 'rgba(56, 189, 248, 0.12)' : 'var(--card-gradient-base-soft)',
                     }}
                   >
                     {mark}

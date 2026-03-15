@@ -365,7 +365,7 @@ export default function ScienceChatPage({
               className="text-left rounded-2xl px-4 py-3 transition-all"
               style={{
                 border: thread.id === activeThreadId ? `1px solid ${meta.color}55` : '1px solid rgba(148, 163, 184, 0.16)',
-                background: thread.id === activeThreadId ? `${meta.color}12` : 'rgba(15, 23, 42, 0.42)',
+                background: thread.id === activeThreadId ? `${meta.color}12` : 'var(--card-gradient-base-soft)',
               }}
             >
               <div className="flex items-center justify-between gap-3">
@@ -408,7 +408,7 @@ export default function ScienceChatPage({
           style={{
             maxHeight: '52vh',
             overflowY: 'auto',
-            backgroundImage: 'linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.96))',
+            backgroundImage: 'linear-gradient(180deg, var(--card-gradient-base), var(--card-gradient-base))',
           }}
         >
           {activeThread.messages.length === 0 ? (

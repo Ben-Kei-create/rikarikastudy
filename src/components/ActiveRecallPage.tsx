@@ -455,7 +455,7 @@ export default function ActiveRecallPage({
         <div className="card">
           <div className="rounded-[24px] border px-5 py-6 text-center" style={{
             borderColor: 'rgba(148, 163, 184, 0.16)',
-            background: 'rgba(15, 23, 42, 0.28)',
+            background: 'var(--inset-bg)',
           }}>
             <div className="text-5xl">🧠</div>
             <div className="mt-3 font-semibold text-white">Lv.20 でアクティブリコール解放</div>
@@ -748,7 +748,7 @@ export default function ActiveRecallPage({
 
             <div className="mt-5 rounded-[24px] border px-4 py-4" style={{
               borderColor: `${color}30`,
-              background: `linear-gradient(180deg, ${color}12, rgba(15, 23, 42, 0.18))`,
+              background: `linear-gradient(180deg, ${color}12, var(--inset-bg))`,
             }}>
               <div className="text-xs font-semibold tracking-[0.18em]" style={{ color }}>
                 Current Level
@@ -799,7 +799,7 @@ export default function ActiveRecallPage({
                   <>
                     <div className="mt-6 rounded-[28px] border p-5 sm:p-6" style={{
                       borderColor: `${color}30`,
-                      background: `linear-gradient(180deg, ${color}12, rgba(15, 23, 42, 0.5))`,
+                      background: `linear-gradient(180deg, ${color}12, var(--card-gradient-base-soft))`,
                     }}>
                       <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="text-sm font-semibold text-slate-200">
@@ -811,7 +811,7 @@ export default function ActiveRecallPage({
                           className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
                           style={{
                             borderColor: `${color}55`,
-                            background: showHints ? `${color}18` : 'rgba(15, 23, 42, 0.6)',
+                            background: showHints ? `${color}18` : 'var(--card-gradient-base-soft)',
                             color,
                           }}
                         >

@@ -983,7 +983,7 @@ export default function MyPage({
                   ) : (
                     <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
                       borderColor: 'rgba(148, 163, 184, 0.16)',
-                      background: 'rgba(15, 23, 42, 0.28)',
+                      background: 'var(--inset-bg)',
                     }}>
                       <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">LOCKED</div>
                       <div className="mt-2 font-semibold text-white">{getPeriodicCardUnlockText()}</div>
@@ -1249,8 +1249,8 @@ export default function MyPage({
                       style={{
                         borderColor: earned ? `${accent}55` : 'rgba(148, 163, 184, 0.18)',
                         background: earned
-                          ? `linear-gradient(135deg, ${accent}22, rgba(15, 23, 42, 0.88))`
-                          : 'rgba(15, 23, 42, 0.62)',
+                          ? `linear-gradient(135deg, ${accent}22, var(--card-gradient-base))`
+                          : 'var(--card-gradient-base-soft)',
                       }}
                     >
                       <div className="flex items-start gap-4">
@@ -1315,7 +1315,7 @@ export default function MyPage({
               <div className="card">
                 <div className="rounded-[24px] border px-5 py-6 text-center" style={{
                   borderColor: 'rgba(148, 163, 184, 0.16)',
-                  background: 'rgba(15, 23, 42, 0.28)',
+                  background: 'var(--inset-bg)',
                 }}>
                   <div className="text-4xl">🧪</div>
                   <div className="mt-3 font-semibold text-white">{getPeriodicCardUnlockText()}</div>
@@ -1417,10 +1417,10 @@ export default function MyPage({
                               onClick={() => setSelectedPeriodicCardKey(item.definition.key)}
                               className="rounded-[18px] border px-3 py-3 text-left transition-all"
                               style={{
-                                borderColor: selected ? 'rgba(125, 211, 252, 0.45)' : 'rgba(255,255,255,0.08)',
+                                borderColor: selected ? 'rgba(125, 211, 252, 0.45)' : 'var(--border)',
                                 background: selected
-                                  ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.14), rgba(15, 23, 42, 0.84))'
-                                  : 'rgba(15, 23, 42, 0.34)',
+                                  ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.14), var(--card-gradient-base-mid))'
+                                  : 'var(--inset-bg)',
                                 boxShadow: selected ? '0 16px 28px rgba(56, 189, 248, 0.16)' : 'none',
                               }}
                             >
@@ -1975,7 +1975,7 @@ export default function MyPage({
                             ? 'linear-gradient(180deg, rgba(244, 114, 182, 0.16), rgba(255, 255, 255, 0.06))'
                             : option.id === 'light'
                               ? 'linear-gradient(180deg, rgba(148, 163, 184, 0.12), rgba(255, 255, 255, 0.06))'
-                              : 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.24))'
+                              : 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), var(--inset-bg))'
                           : 'var(--surface-elevated)',
                         boxShadow: active ? 'var(--shadow-md)' : 'none',
                         opacity: unlocked ? 1 : 0.66,
@@ -1984,7 +1984,7 @@ export default function MyPage({
                       <div
                         className="rounded-[18px] border p-3"
                         style={{
-                          borderColor: unlocked ? 'rgba(255, 255, 255, 0.08)' : 'rgba(148, 163, 184, 0.12)',
+                          borderColor: unlocked ? 'var(--border)' : 'var(--border-strong)',
                           background: option.id === 'dark'
                             ? 'rgba(2, 6, 23, 0.42)'
                             : option.id === 'light'

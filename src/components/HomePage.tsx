@@ -175,7 +175,7 @@ export default function HomePage({
           style={{
             padding: '16px 14px',
             borderColor: 'rgba(56, 189, 248, 0.36)',
-            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(34, 197, 94, 0.10) 50%, rgba(15, 23, 42, 0.88))',
+            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(34, 197, 94, 0.10) 50%, var(--card-gradient-base))',
             cursor: 'pointer',
             transition: 'transform 0.2s ease, box-shadow 0.2s ease',
           }}
@@ -197,10 +197,10 @@ export default function HomePage({
           style={{
             padding: '16px 14px',
             cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
-            borderColor: timeAttackUnlocked ? 'rgba(77, 162, 255, 0.32)' : 'rgba(148, 163, 184, 0.14)',
+            borderColor: timeAttackUnlocked ? 'rgba(77, 162, 255, 0.32)' : 'var(--border-strong)',
             background: timeAttackUnlocked
-              ? 'linear-gradient(135deg, rgba(77, 162, 255, 0.18), rgba(14, 116, 144, 0.08), rgba(15, 23, 42, 0.84))'
-              : 'rgba(15, 23, 42, 0.62)',
+              ? 'linear-gradient(135deg, rgba(77, 162, 255, 0.18), rgba(14, 116, 144, 0.08), var(--card-gradient-base-mid))'
+              : 'var(--card-gradient-base-soft)',
           }}
           onMouseEnter={event => {
             if (!timeAttackUnlocked) return
@@ -225,8 +225,8 @@ export default function HomePage({
             <div className="font-display text-[1.5rem] leading-tight text-white sm:text-3xl md:text-4xl">こんにちは、{nickname}さん</div>
             {nextUnlock && (
               <div className="mt-3 rounded-[20px] border px-3 py-3 sm:mt-4 sm:rounded-[24px] sm:px-4 sm:py-4" style={{
-                borderColor: 'rgba(255,255,255,0.08)',
-                background: 'rgba(15, 23, 42, 0.28)',
+                borderColor: 'var(--inset-border)',
+                background: 'var(--inset-bg)',
               }}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -252,7 +252,7 @@ export default function HomePage({
                       <span
                         key={reward.key}
                         className="rounded-full px-3 py-1 text-[11px] font-semibold"
-                        style={{ background: 'rgba(34, 197, 94, 0.12)', color: '#86efac' }}
+                        style={{ background: 'var(--badge-success-bg)', color: 'var(--badge-success-text)' }}
                       >
                         {reward.emoji} {reward.title}
                       </span>
@@ -283,8 +283,8 @@ export default function HomePage({
               rel="noreferrer"
               className="block rounded-[18px] border px-3 py-2.5 transition-all sm:rounded-[22px] sm:px-4 sm:py-3"
               style={{
-                borderColor: 'rgba(255,255,255,0.06)',
-                background: 'rgba(15, 23, 42, 0.28)',
+                borderColor: 'var(--inset-border)',
+                background: 'var(--inset-bg)',
               }}
             >
               <div className="flex items-start justify-between gap-3">
@@ -313,7 +313,7 @@ export default function HomePage({
           style={{
             padding: '16px 18px',
             borderColor: 'rgba(245, 158, 11, 0.34)',
-            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.08), rgba(15, 23, 42, 0.84))',
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.08), var(--card-gradient-base-mid))',
             animationDelay: '0.12s',
           }}
         >
@@ -327,8 +327,8 @@ export default function HomePage({
                 <span
                   className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
                   style={{
-                    background: 'rgba(251, 191, 36, 0.14)',
-                    color: '#fde68a',
+                    background: 'var(--badge-amber-bg)',
+                    color: 'var(--badge-amber-text)',
                   }}
                 >
                   5問 / XP×2

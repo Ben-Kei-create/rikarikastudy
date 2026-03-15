@@ -253,7 +253,7 @@ export default function UnitSelectPage({
           className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
           style={{
             borderColor: 'rgba(148, 163, 184, 0.2)',
-            background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), rgba(15, 23, 42, 0.82))',
+            background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), var(--card-gradient-base-mid))',
             animationDelay: '0.04s',
             opacity: 0.88,
           }}
@@ -283,7 +283,7 @@ export default function UnitSelectPage({
           className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
           style={{
             borderColor: `${color}40`,
-            background: `linear-gradient(135deg, ${color}18, rgba(15, 23, 42, 0.82))`,
+            background: `linear-gradient(135deg, ${color}18, var(--card-gradient-base-mid))`,
             animationDelay: '0.04s',
             transition: 'transform 0.18s ease, box-shadow 0.18s ease',
           }}
@@ -322,7 +322,7 @@ export default function UnitSelectPage({
           className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
           style={{
             borderColor: 'rgba(148, 163, 184, 0.2)',
-            background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), rgba(15, 23, 42, 0.82))',
+            background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), var(--card-gradient-base-mid))',
             animationDelay: '0.045s',
             opacity: 0.9,
           }}
@@ -354,8 +354,8 @@ export default function UnitSelectPage({
           style={{
             borderColor: activeRecallUnlocked ? `${color}40` : 'rgba(148, 163, 184, 0.24)',
             background: activeRecallUnlocked
-              ? `linear-gradient(135deg, ${color}18, rgba(15, 23, 42, 0.82))`
-              : 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), rgba(15, 23, 42, 0.82))',
+              ? `linear-gradient(135deg, ${color}18, var(--card-gradient-base-mid))`
+              : 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), var(--card-gradient-base-mid))',
             animationDelay: '0.045s',
             transition: 'transform 0.18s ease, box-shadow 0.18s ease',
           }}
@@ -456,7 +456,7 @@ export default function UnitSelectPage({
         className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
         style={{
           borderColor: `${color}35`,
-          background: `linear-gradient(180deg, ${color}14, rgba(15, 23, 42, 0.82))`,
+          background: `linear-gradient(180deg, ${color}14, var(--card-gradient-base-mid))`,
           animationDelay: '0.06s',
         }}
       >

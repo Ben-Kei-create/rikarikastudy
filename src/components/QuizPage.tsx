@@ -919,7 +919,7 @@ export default function QuizPage({
                         className="w-full rounded-[18px] border px-3.5 py-3 text-left transition-all"
                         style={{
                           borderColor: selectedReviewItem?.id === item.id ? 'rgba(56, 189, 248, 0.3)' : 'rgba(148, 163, 184, 0.14)',
-                          background: selectedReviewItem?.id === item.id ? 'rgba(56, 189, 248, 0.08)' : 'rgba(15, 23, 42, 0.48)',
+                          background: selectedReviewItem?.id === item.id ? 'rgba(56, 189, 248, 0.08)' : 'var(--card-gradient-base-soft)',
                         }}
                       >
                         <div className="text-xs text-slate-500">#{item.index + 1}</div>
@@ -1115,7 +1115,7 @@ export default function QuizPage({
             className="mt-4 rounded-[24px] border px-4 py-4"
             style={{
               borderColor: 'rgba(56, 189, 248, 0.2)',
-              background: 'rgba(15, 23, 42, 0.72)',
+              background: 'var(--card-gradient-base-soft)',
             }}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1138,7 +1138,7 @@ export default function QuizPage({
                   className="rounded-2xl border px-3 py-3 text-left transition-all"
                   style={{
                     borderColor: inquiryCategory === option.value ? 'rgba(56, 189, 248, 0.38)' : 'rgba(148, 163, 184, 0.16)',
-                    background: inquiryCategory === option.value ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.42)',
+                    background: inquiryCategory === option.value ? 'rgba(56, 189, 248, 0.12)' : 'var(--card-gradient-base-soft)',
                   }}
                 >
                   <div className="text-sm font-semibold text-white">{option.label}</div>
@@ -1327,7 +1327,7 @@ export default function QuizPage({
               className="mb-3 rounded-[24px] border px-4 py-3"
               style={{
                 borderColor: 'rgba(56, 189, 248, 0.18)',
-                background: 'rgba(15, 23, 42, 0.62)',
+                background: 'var(--card-gradient-base-soft)',
               }}
             >
               <div

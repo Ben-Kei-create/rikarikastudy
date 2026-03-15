@@ -820,8 +820,8 @@ export default function OnlineLabPage({ onBack }: { onBack: () => void }) {
                 })}
                 className="rounded-2xl border px-4 py-3 text-left transition"
                 style={{
-                  borderColor: state.slots.includes(option.key) ? `${meta?.accent ?? '#2dd4bf'}66` : 'rgba(255,255,255,0.08)',
-                  background: state.slots.includes(option.key) ? `${meta?.accent ?? '#2dd4bf'}20` : 'rgba(15, 23, 42, 0.56)',
+                  borderColor: state.slots.includes(option.key) ? `${meta?.accent ?? '#2dd4bf'}66` : 'var(--border)',
+                  background: state.slots.includes(option.key) ? `${meta?.accent ?? '#2dd4bf'}20` : 'var(--card-gradient-base-soft)',
                 }}
               >
                 <div className="font-semibold text-white">{option.label}</div>
@@ -1006,8 +1006,8 @@ export default function OnlineLabPage({ onBack }: { onBack: () => void }) {
                             style={{
                               borderColor: selected ? `${modeMeta.accent}66` : 'rgba(148, 163, 184, 0.16)',
                               background: selected
-                                ? `linear-gradient(135deg, ${modeMeta.accent}1f, rgba(15, 23, 42, 0.86))`
-                                : 'rgba(15, 23, 42, 0.64)',
+                                ? `linear-gradient(135deg, ${modeMeta.accent}1f, var(--card-gradient-base))`
+                                : 'var(--card-gradient-base-soft)',
                               boxShadow: selected ? `0 0 0 1px ${modeMeta.accent}33 inset` : 'none',
                             }}
                           >
@@ -1196,7 +1196,7 @@ export default function OnlineLabPage({ onBack }: { onBack: () => void }) {
                   ? effectiveFeedback.correct
                     ? 'rgba(34, 197, 94, 0.08)'
                     : 'rgba(127, 29, 29, 0.12)'
-                  : 'rgba(15, 23, 42, 0.42)',
+                  : 'var(--card-gradient-base-soft)',
               }}
             >
               <div className="text-lg font-bold text-white">

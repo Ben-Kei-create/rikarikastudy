@@ -25,7 +25,7 @@ export default function LabModeCard({
       className="card mobile-mini-card text-left"
       style={{
         borderColor: `${meta.accent}3a`,
-        background: `linear-gradient(180deg, ${meta.accent}14, rgba(15, 23, 42, 0.78))`,
+        background: `linear-gradient(180deg, ${meta.accent}14, var(--card-gradient-base))`,
         transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
       }}
       onMouseEnter={hover.onMouseEnter}

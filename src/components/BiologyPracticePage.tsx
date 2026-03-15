@@ -676,7 +676,7 @@ export default function BiologyPracticePage({
                     className="rounded-2xl border px-3 py-3"
                     style={{
                       borderColor: cleared ? 'rgba(74, 222, 128, 0.26)' : 'rgba(148, 163, 184, 0.16)',
-                      background: cleared ? 'rgba(34, 197, 94, 0.08)' : 'rgba(15, 23, 42, 0.46)',
+                      background: cleared ? 'rgba(34, 197, 94, 0.08)' : 'var(--card-gradient-base-soft)',
                     }}
                   >
                     <div className="flex items-center justify-between gap-3">

@@ -765,8 +765,8 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   style={{
                     borderColor: selected ? `${meta.accent}66` : 'rgba(148, 163, 184, 0.14)',
                     background: selected
-                      ? `linear-gradient(135deg, ${meta.accent}1f, rgba(15, 23, 42, 0.9))`
-                      : 'rgba(15, 23, 42, 0.72)',
+                      ? `linear-gradient(135deg, ${meta.accent}1f, var(--card-gradient-base))`
+                      : 'var(--card-gradient-base-soft)',
                     boxShadow: selected ? `0 0 0 1px ${meta.accent}33 inset` : 'none',
                   }}
                 >
@@ -885,7 +885,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                         className="rounded-[18px] border px-4 py-3"
                         style={{
                           borderColor: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.32)' : 'rgba(148, 163, 184, 0.16)',
-                          background: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.08)' : 'rgba(15, 23, 42, 0.56)',
+                          background: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.08)' : 'var(--card-gradient-base-soft)',
                         }}
                       >
                         <div className="flex items-center justify-between gap-3">
@@ -1041,7 +1041,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     className="flex items-center justify-between gap-3 rounded-[16px] border px-3 py-2"
                     style={{
                       borderColor: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.32)' : 'rgba(148, 163, 184, 0.16)',
-                      background: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.08)' : 'rgba(15, 23, 42, 0.48)',
+                      background: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.08)' : 'var(--card-gradient-base-soft)',
                     }}
                   >
                     <div className="min-w-0">
@@ -1252,7 +1252,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     className="mb-3 rounded-[24px] border px-4 py-3"
                     style={{
                       borderColor: 'rgba(245, 158, 11, 0.24)',
-                      background: 'rgba(15, 23, 42, 0.68)',
+                      background: 'var(--card-gradient-base-soft)',
                     }}
                   >
                     <div
@@ -1518,7 +1518,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     className="mb-3 rounded-[24px] border px-4 py-3"
                     style={{
                       borderColor: 'rgba(56, 189, 248, 0.18)',
-                      background: 'rgba(15, 23, 42, 0.62)',
+                      background: 'var(--card-gradient-base-soft)',
                     }}
                   >
                     <div

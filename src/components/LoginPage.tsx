@@ -88,7 +88,7 @@ function StudentPicker({
           className="mt-4 rounded-[24px] border p-3.5 sm:p-4"
           style={{
             borderColor: 'rgba(125, 211, 252, 0.2)',
-            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(15, 23, 42, 0.56))',
+            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1), var(--card-gradient-base-soft))',
           }}
         >
           <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">選択中</div>

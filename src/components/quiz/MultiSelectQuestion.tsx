@@ -39,7 +39,7 @@ export default function MultiSelectQuestion({
               className="min-h-[84px] rounded-[22px] border px-4 py-3 text-left transition-all"
               style={{
                 borderColor: active ? 'rgba(56, 189, 248, 0.45)' : 'rgba(148, 163, 184, 0.16)',
-                background: active ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.5)',
+                background: active ? 'rgba(56, 189, 248, 0.12)' : 'var(--card-gradient-base-soft)',
               }}
             >
               <div className="flex items-center gap-3">

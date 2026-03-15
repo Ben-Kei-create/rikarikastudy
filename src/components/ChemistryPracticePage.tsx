@@ -360,7 +360,7 @@ export default function ChemistryPracticePage({
             className="mt-6 rounded-[28px] border p-5 sm:p-6"
             style={{
               borderColor: `${meta.accent}30`,
-              background: `linear-gradient(180deg, ${meta.accent}12, rgba(15, 23, 42, 0.5))`,
+              background: `linear-gradient(180deg, ${meta.accent}12, var(--card-gradient-base-soft))`,
             }}
           >
             <div className="flex flex-wrap items-center gap-2 text-lg font-semibold text-slate-100 sm:text-2xl">
@@ -387,7 +387,7 @@ export default function ChemistryPracticePage({
                       className="inline-flex min-h-[58px] min-w-[64px] items-center justify-center rounded-2xl border px-3 py-2 font-mono text-base font-bold sm:text-xl"
                       style={{
                         borderColor: currentToken ? `${meta.accent}66` : 'rgba(255,255,255,0.12)',
-                        background: currentToken ? `${meta.accent}22` : 'rgba(2, 6, 23, 0.55)',
+                        background: currentToken ? `${meta.accent}22` : 'var(--card-gradient-base-soft)',
                         color: currentToken ? '#ffffff' : '#7f91aa',
                       }}
                     >
@@ -450,7 +450,7 @@ export default function ChemistryPracticePage({
                     className="rounded-2xl border px-4 py-3 font-mono text-base font-semibold transition-all disabled:opacity-35"
                     style={{
                       borderColor: selected ? `${meta.accent}55` : 'rgba(255,255,255,0.1)',
-                      background: selected ? `${meta.accent}18` : 'rgba(15, 23, 42, 0.72)',
+                      background: selected ? `${meta.accent}18` : 'var(--card-gradient-base-soft)',
                       color: selected ? meta.accent : '#e2e8f0',
                     }}
                   >
