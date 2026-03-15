@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { TextAnswerResult } from '@/lib/answerUtils'
+import { isCorrectTextAnswerResult, TextAnswerResult } from '@/lib/answerUtils'
 import { getBadgeRarityLabel } from '@/lib/badges'
 import { FIELD_COLORS } from '@/lib/constants'
 import { CustomQuizOptions, getCustomQuizSessionLabel, getCustomQuizSummaryParts } from '@/lib/customQuiz'
@@ -72,6 +72,16 @@ function getFieldColor(field: string) {
 }
 
 type Question = QuestionShape
+
+type TextJudgeSource = 'local' | 'gemini' | 'fallback'
+
+interface TextJudgeApiResponse {
+  result: TextAnswerResult
+  judgeSource: TextJudgeSource
+  model: string
+  warning?: string
+  reason?: string
+}
 
 type Phase = 'answering' | 'result' | 'finished'
 
@@ -151,6 +161,10 @@ export default function QuizPage({
   const [selected, setSelected] = useState<string | null>(null)
   const [textInput, setTextInput] = useState('')
   const [answerResult, setAnswerResult] = useState<TextAnswerResult | null>(null)
+  const [textJudgeLoading, setTextJudgeLoading] = useState(false)
+  const [textJudgeSource, setTextJudgeSource] = useState<TextJudgeSource | null>(null)
+  const [textJudgeReason, setTextJudgeReason] = useState('')
+  const [textJudgeWarning, setTextJudgeWarning] = useState('')
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(true)
   const [dailyLocked, setDailyLocked] = useState(false)
@@ -184,6 +198,10 @@ export default function QuizPage({
       setSelected(null)
       setTextInput('')
       setAnswerResult(null)
+      setTextJudgeLoading(false)
+      setTextJudgeSource(null)
+      setTextJudgeReason('')
+      setTextJudgeWarning('')
       setScore(0)
       setAnswerLogs([])
       setComboStreak(0)
@@ -391,7 +409,9 @@ export default function QuizPage({
   const applyEvaluatedAnswer = (result: { result: TextAnswerResult; studentAnswerText: string; answerLogValue: string }) => {
     if (!q) return
 
-    if (result.result === 'exact') {
+    const isCorrect = isCorrectTextAnswerResult(result.result)
+
+    if (isCorrect) {
       const nextCombo = comboStreak + 1
       const isPerfectRun = current + 1 >= questions.length && score + 1 === questions.length
       setComboStreak(nextCombo)
@@ -402,10 +422,10 @@ export default function QuizPage({
       setCelebration(null)
     }
     setAnswerResult(result.result)
-    if (result.result === 'exact') setScore(currentScore => currentScore + 1)
+    if (isCorrect) setScore(currentScore => currentScore + 1)
     setAnswerLogs(logs => [...logs, {
       qId: q.id,
-      correct: result.result === 'exact',
+      correct: isCorrect,
       answer: result.studentAnswerText,
       answerLogValue: result.answerLogValue,
       result: result.result,
@@ -421,20 +441,72 @@ export default function QuizPage({
 
   const handleStructuredSubmit = (submission: QuestionSubmission) => {
     if (phase !== 'answering' || !q) return
+    setTextJudgeLoading(false)
+    setTextJudgeSource(null)
+    setTextJudgeReason('')
+    setTextJudgeWarning('')
     applyEvaluatedAnswer(evaluateQuestionAnswer(q, submission))
   }
 
-  const handleTextSubmit = () => {
-    if (!q) return
+  const handleTextSubmit = async () => {
+    if (!q || phase !== 'answering' || q.type !== 'text' || textJudgeLoading) return
     const answer = textInput.trim()
     if (!answer) return
-    applyEvaluatedAnswer(evaluateQuestionAnswer(q, { kind: 'text', value: answer }))
+
+    const localEvaluated = evaluateQuestionAnswer(q, { kind: 'text', value: answer })
+    setTextJudgeLoading(true)
+    setTextJudgeSource(null)
+    setTextJudgeReason('')
+    setTextJudgeWarning('')
+
+    try {
+      const response = await fetch('/api/question-judge', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          field: q.field,
+          unit: q.unit,
+          question: q.question,
+          correctAnswer: q.answer,
+          acceptAnswers: q.accept_answers,
+          keywords: q.keywords,
+          explanation: q.explanation,
+          studentAnswer: answer,
+        }),
+      })
+
+      const payload = await response.json() as TextJudgeApiResponse | { error?: string }
+      if (!response.ok || !('result' in payload)) {
+        throw new Error(payload && 'error' in payload && payload.error ? payload.error : '記述判定に失敗しました。')
+      }
+
+      setTextJudgeSource(payload.judgeSource)
+      setTextJudgeReason(typeof payload.reason === 'string' ? payload.reason : '')
+      setTextJudgeWarning(typeof payload.warning === 'string' ? payload.warning : '')
+      applyEvaluatedAnswer({
+        ...localEvaluated,
+        result: payload.result,
+      })
+    } catch (error) {
+      setTextJudgeSource('fallback')
+      setTextJudgeReason('')
+      setTextJudgeWarning('通信の都合で通常の記述判定に切り替えました。')
+      applyEvaluatedAnswer(localEvaluated)
+    } finally {
+      setTextJudgeLoading(false)
+    }
   }
 
   const handleDontKnow = () => {
     if (phase !== 'answering' || !q || q.type !== 'text') return
     setComboStreak(0)
     setCelebration(null)
+    setTextJudgeLoading(false)
+    setTextJudgeSource(null)
+    setTextJudgeReason('')
+    setTextJudgeWarning('')
     setTextInput('わからない')
     setAnswerResult('incorrect')
     setAnswerLogs(logs => [...logs, {
@@ -557,6 +629,10 @@ export default function QuizPage({
     setSelected(null)
     setTextInput('')
     setAnswerResult(null)
+    setTextJudgeLoading(false)
+    setTextJudgeSource(null)
+    setTextJudgeReason('')
+    setTextJudgeWarning('')
     setCelebration(null)
   }
 
@@ -568,6 +644,10 @@ export default function QuizPage({
     setSelected(null)
     setTextInput('')
     setAnswerResult(null)
+    setTextJudgeLoading(false)
+    setTextJudgeSource(null)
+    setTextJudgeReason('')
+    setTextJudgeWarning('')
     setAnswerLogs([])
     setComboStreak(0)
     setBestCombo(0)
@@ -588,6 +668,10 @@ export default function QuizPage({
     setSelected(null)
     setTextInput('')
     setAnswerResult(null)
+    setTextJudgeLoading(false)
+    setTextJudgeSource(null)
+    setTextJudgeReason('')
+    setTextJudgeWarning('')
     setAnswerLogs([])
     setComboStreak(0)
     setBestCombo(0)
@@ -696,7 +780,7 @@ export default function QuizPage({
                   height: 12,
                   borderRadius: '50%',
                   background:
-                    answerLogs[index]?.result === 'exact'
+                    answerLogs[index] && isCorrectTextAnswerResult(answerLogs[index].result)
                       ? '#22c55e'
                       : answerLogs[index]?.result === 'keyword'
                         ? '#f59e0b'
@@ -1265,10 +1349,10 @@ export default function QuizPage({
               onKeyDown={event => {
                 if (event.key === 'Enter') {
                   event.preventDefault()
-                  handleTextSubmit()
+                  void handleTextSubmit()
                 }
               }}
-              disabled={phase === 'result'}
+              disabled={phase === 'result' || textJudgeLoading}
               placeholder={textBlankPrompt?.placeholder ?? '答え'}
               enterKeyHint="done"
               autoCapitalize="none"
@@ -1277,17 +1361,25 @@ export default function QuizPage({
               style={{
                 border:
                   phase === 'result'
-                    ? `2px solid ${answerResult === 'exact' ? '#22c55e' : answerResult === 'keyword' ? '#f59e0b' : '#ef4444'}`
+                    ? `2px solid ${
+                      answerResult === 'exact'
+                        ? '#22c55e'
+                        : answerResult === 'semantic'
+                          ? '#10b981'
+                          : answerResult === 'keyword'
+                            ? '#f59e0b'
+                            : '#ef4444'
+                    }`
                     : undefined,
                 fontSize: '1rem',
               }}
             />
             {phase === 'answering' && (
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                <button onClick={handleTextSubmit} disabled={!textInput.trim()} className="btn-primary w-full">
-                  決定
+                <button onClick={() => void handleTextSubmit()} disabled={!textInput.trim() || textJudgeLoading} className="btn-primary w-full">
+                  {textJudgeLoading ? '判定中...' : '決定'}
                 </button>
-                <button onClick={handleDontKnow} className="btn-secondary w-full sm:w-auto">
+                <button onClick={handleDontKnow} disabled={textJudgeLoading} className="btn-secondary w-full sm:w-auto disabled:opacity-60">
                   わからない
                 </button>
               </div>
@@ -1299,21 +1391,30 @@ export default function QuizPage({
       {phase === 'result' && (
         (() => {
           const currentResult = answerResult ?? 'incorrect'
-          const accent = currentResult === 'exact' ? '#22c55e' : currentResult === 'keyword' ? '#f59e0b' : '#ef4444'
-          const background = currentResult === 'exact'
+          const isCorrect = isCorrectTextAnswerResult(currentResult)
+          const accent = currentResult === 'exact'
+            ? '#22c55e'
+            : currentResult === 'semantic'
+              ? '#10b981'
+              : currentResult === 'keyword'
+                ? '#f59e0b'
+                : '#ef4444'
+          const background = isCorrect
             ? 'rgba(34, 197, 94, 0.12)'
             : currentResult === 'keyword'
               ? 'rgba(245, 158, 11, 0.12)'
               : 'rgba(239, 68, 68, 0.12)'
           const title = currentResult === 'exact'
             ? '◯ 正解！'
+            : currentResult === 'semantic'
+              ? '◎ 正解（意味OK）'
             : currentResult === 'keyword'
               ? '▲ あと少し'
               : '❌ 不正解'
 
           return (
             <div className="card mt-4 anim-pop" style={{ borderColor: `${accent}50`, background }}>
-              {currentResult === 'exact' && celebration && (
+              {isCorrect && celebration && (
                 <SuccessBurst celebration={celebration} className="mb-4" />
               )}
               <div className="flex items-center gap-2 mb-2">
@@ -1321,7 +1422,16 @@ export default function QuizPage({
                   {title}
                 </span>
               </div>
-              {currentResult !== 'exact' && (
+              {currentResult === 'semantic' && textJudgeSource === 'gemini' && (
+                <p className="mb-2 text-xs text-emerald-200">
+                  Gemini が意味として正しい回答と判断しました。
+                  {textJudgeReason ? ` ${textJudgeReason}` : ''}
+                </p>
+              )}
+              {textJudgeWarning && (
+                <p className="mb-2 text-xs text-amber-200">{textJudgeWarning}</p>
+              )}
+              {!isCorrect && (
                 <>
                   <p className="text-slate-200 text-sm mb-2">答え: {correctAnswerText}</p>
                   {correctAnswerText !== q.answer && q.answer && (
@@ -1329,7 +1439,7 @@ export default function QuizPage({
                   )}
                 </>
               )}
-              {currentResult !== 'exact' && q.type === 'text' && q.keywords && q.keywords.length > 0 && (
+              {!isCorrect && q.type === 'text' && q.keywords && q.keywords.length > 0 && (
                 <p className="text-slate-300 text-xs mb-2">キーワード: {q.keywords.join(' / ')}</p>
               )}
               {currentResult === 'keyword' && (

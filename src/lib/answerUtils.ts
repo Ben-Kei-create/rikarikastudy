@@ -99,7 +99,7 @@ export function normalizeAnswer(input: string) {
   return toHalfWidthKana(input.trim().normalize('NFKC')).toLowerCase()
 }
 
-export type TextAnswerResult = 'exact' | 'keyword' | 'incorrect'
+export type TextAnswerResult = 'exact' | 'semantic' | 'keyword' | 'incorrect'
 export interface TextBlankPrompt {
   promptText: string
   target: string
@@ -347,4 +347,8 @@ export function isAnswerMatch(
   keywords?: string[] | null
 ) {
   return evaluateTextAnswer(studentAnswer, correctAnswer, acceptAnswers, keywords) === 'exact'
+}
+
+export function isCorrectTextAnswerResult(result: TextAnswerResult) {
+  return result === 'exact' || result === 'semantic'
 }
