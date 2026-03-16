@@ -542,6 +542,13 @@ body {
   display: none;
 }
 
+@media (max-width: 639px) {
+  .segment-bar::after {
+    content: '';
+    flex: 0 0 4px;
+  }
+}
+
 .science-surface {
   position: relative;
   overflow: hidden;
@@ -955,7 +962,7 @@ body {
   .btn-primary,
   .btn-secondary,
   .btn-ghost {
-    min-height: 42px;
+    min-height: 44px;
     padding: 10px 14px;
     border-radius: 14px;
     font-size: 0.93rem;
@@ -967,7 +974,8 @@ body {
   }
 
   .segment-button {
-    padding: 9px 12px;
+    padding: 10px 12px;
+    min-height: 44px;
     font-size: 0.86rem;
   }
 

@@ -894,11 +894,16 @@ export default function MyPage({
       </div>
 
       <div className="sticky top-0 z-10 px-1 pb-3 pt-1 floating-header">
-        <div className="segment-bar">
+        <div className="segment-bar" role="tablist" aria-label="マイページ">
           {tabs.map(([t, label]) => (
             <button
               key={t}
-              onClick={() => handleTabChange(t)}
+              role="tab"
+              aria-selected={tab === t}
+              onClick={(e) => {
+                handleTabChange(t)
+                ;(e.currentTarget as HTMLButtonElement).scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+              }}
               className={`segment-button ${tab === t ? 'is-active' : ''}`}
             >
               {label}
@@ -907,7 +912,7 @@ export default function MyPage({
         </div>
       </div>
 
-      <div ref={tabContentRef} className="px-1">
+      <div ref={tabContentRef} className="px-1" role="tabpanel">
 
         {/* ===== 概要タブ ===== */}
         {tab === 'overview' && (
@@ -1297,6 +1302,9 @@ export default function MyPage({
 
         {tab === 'cards' && (
           <div className="anim-fade space-y-4">
+            {periodicCardsLoading && (
+              <div className="text-center py-8 text-slate-400 text-sm">元素カードを読み込み中...</div>
+            )}
             <div className="card">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
