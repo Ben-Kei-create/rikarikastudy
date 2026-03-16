@@ -657,7 +657,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   style={{
                     width: `${levelInfo.progressRate}%`,
                     height: '100%',
-                    background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                    background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
                     borderRadius: 999,
                   }}
                 />
@@ -724,7 +724,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               style={{
                 width: `${Math.min(100, Math.round((currentLevelInfo.totalXp / Math.max(1, getXpFloorForLevel(TIME_ATTACK_UNLOCK_LEVEL))) * 100))}%`,
                 height: '100%',
-                background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
                 borderRadius: 999,
               }}
             />
@@ -1093,7 +1093,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   style={{
                     width: `${testModeProgress}%`,
                     height: '100%',
-                    background: 'linear-gradient(90deg, #f59e0b, #f97316)',
+                    background: 'linear-gradient(90deg, var(--color-warning), var(--chem))',
                     borderRadius: 999,
                     transition: 'width 0.3s ease',
                   }}
@@ -1115,7 +1115,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
           <div key={`${selectedMode}-${currentQuestion.id}-${currentIndex}`} className="card anim-fade-up mb-4">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f59e0b20', color: '#fbbf24' }}>
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'var(--color-warning-soft-bg)', color: 'var(--color-warning-muted)' }}>
                   {currentQuestion.field} · {currentQuestion.unit}
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(148, 163, 184, 0.14)', color: 'var(--text-muted)' }}>
@@ -1403,8 +1403,8 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               <div
                 className="mt-4 inline-flex rounded-full px-3 py-1.5 text-sm font-semibold"
                 style={{
-                  background: feedback === 'correct' ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)',
-                  color: feedback === 'correct' ? '#86efac' : '#fca5a5',
+                  background: feedback === 'correct' ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)',
+                  color: feedback === 'correct' ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
                 }}
               >
                 {feedback === 'correct' ? '○ 正解' : '× 不正解'}

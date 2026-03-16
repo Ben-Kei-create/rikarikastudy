@@ -75,7 +75,7 @@ export default function UnitSelectPage({
   const [availableGrades, setAvailableGrades] = useState<CustomQuizGradeFilter[]>(['中1', '中2', '中3'])
   const [questionCount, setQuestionCount] = useState<QuizQuestionCount>(10)
   const [currentXp, setCurrentXp] = useState(0)
-  const color = FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
+  const color = FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? 'var(--color-info)'
   const totalQuestionCount = units.reduce((sum, item) => sum + item.questionCount, 0)
   const isGuest = isGuestStudentId(studentId)
   const customGradeOptions = CUSTOM_QUIZ_GRADE_OPTIONS.filter(grade => (
@@ -247,8 +247,8 @@ export default function UnitSelectPage({
         <div
           className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
           style={{
-            borderColor: 'rgba(148, 163, 184, 0.2)',
-            background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), var(--card-gradient-base-mid))',
+            borderColor: 'var(--color-neutral-soft-border)',
+            background: `linear-gradient(135deg, var(--surface-soft), var(--card-gradient-base-mid))`,
             animationDelay: '0.04s',
             opacity: 0.88,
           }}

@@ -1444,7 +1444,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             onKeyDown={e => e.key === 'Enter' && checkPw()}
             placeholder="管理者パスワード"
             className="input-surface text-center mb-3"
-            style={{ borderColor: pwError ? '#ef4444' : undefined }}
+            style={{ borderColor: pwError ? 'var(--color-danger)' : undefined }}
             autoFocus
           />
           {pwError && <p className="text-red-400 text-sm text-center mb-3">パスワードが違います</p>}
@@ -1567,7 +1567,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       生徒には人数だけを出し、管理画面では誰がログイン中か確認できます。
                     </div>
                   </div>
-                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(10, 132, 255, 0.12)', border: '1px solid rgba(10, 132, 255, 0.22)' }}>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'var(--color-accent-soft-bg)', border: '1px solid var(--color-accent-soft-border)' }}>
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ONLINE</div>
                     <div className="mt-2 font-display text-3xl text-white">{activeStudents.length}人</div>
                   </div>
@@ -1609,7 +1609,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     {exportMsg && (
                       <div
                         className="text-sm mt-2"
-                        style={{ color: exportMsg.startsWith('✅') ? '#4ade80' : '#f87171' }}
+                        style={{ color: exportMsg.startsWith('✅') ? 'var(--color-success)' : 'var(--color-danger)' }}
                       >
                         {exportMsg}
                       </div>
@@ -1682,7 +1682,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     {loginUpdateMsg && (
                       <div
                         className="rounded-2xl px-4 py-3 text-sm"
-                        style={{ color: loginUpdateMsg.startsWith('✅') ? '#86efac' : '#fca5a5', background: loginUpdateMsg.startsWith('✅') ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)', border: `1px solid ${loginUpdateMsg.startsWith('✅') ? 'rgba(34, 197, 94, 0.18)' : 'rgba(239, 68, 68, 0.18)'}` }}
+                        style={{ color: loginUpdateMsg.startsWith('✅') ? 'var(--color-success-muted)' : 'var(--color-danger-muted)', background: loginUpdateMsg.startsWith('✅') ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)', border: `1px solid ${loginUpdateMsg.startsWith('✅') ? 'var(--color-success-soft-border)' : 'var(--color-danger-soft-border)'}` }}
                       >
                         {loginUpdateMsg}
                       </div>
@@ -1821,7 +1821,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       生徒が問題文や解答について送ってきた連絡をここで確認できます。
                     </div>
                   </div>
-                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.22)' }}>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'var(--color-info-soft-bg)', border: '1px solid var(--color-info-soft-border)' }}>
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">OPEN</div>
                     <div className="mt-2 font-display text-3xl text-white">
                       {questionInquiries.filter(inquiry => inquiry.status !== 'resolved').length}件
@@ -1889,7 +1889,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       悪口や下ネタを含む入力を検知すると、ここに記録します。
                     </div>
                   </div>
-                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(248, 113, 113, 0.12)', border: '1px solid rgba(248, 113, 113, 0.22)' }}>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'var(--color-danger-soft-bg)', border: '1px solid var(--color-danger-soft-border)' }}>
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ALERT</div>
                     <div className="mt-2 font-display text-3xl text-white">{chatGuardLogs.length}件</div>
                   </div>
@@ -2383,7 +2383,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                         {question.image_url && (
                           <span
                             className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
-                            style={{ background: 'rgba(56, 189, 248, 0.14)', color: '#7dd3fc' }}
+                            style={{ background: 'var(--color-info-soft-bg)', color: 'var(--color-info-muted)' }}
                           >
                             画像あり
                           </span>
@@ -2403,7 +2403,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                           <div
                             className="overflow-hidden rounded-2xl border bg-slate-950/50"
                             style={{
-                              borderColor: 'rgba(148, 163, 184, 0.16)',
+                              borderColor: 'var(--color-neutral-soft-border)',
                               width: `min(100%, ${previewImageSize.width}px)`,
                               aspectRatio: previewImageSize.aspectRatio,
                             }}
@@ -2697,7 +2697,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     onClick={() => setForm(current => ({ ...current, answer: mark }))}
                     className="rounded-[20px] border px-4 py-4 text-xl font-bold transition-all"
                     style={{
-                      borderColor: form.answer === mark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(148, 163, 184, 0.16)',
+                      borderColor: form.answer === mark ? 'var(--color-info-soft-border)' : 'var(--color-neutral-soft-border)',
                       background: form.answer === mark ? 'rgba(56, 189, 248, 0.12)' : 'var(--card-gradient-base-soft)',
                     }}
                   >

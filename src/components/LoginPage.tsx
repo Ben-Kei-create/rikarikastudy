@@ -428,24 +428,24 @@ export default function LoginPage({
               <div className="text-center lg:text-left">
                 <div
                   className="text-[11px] font-semibold tracking-[0.28em] uppercase"
-                  style={{ color: '#8cc7ff' }}
+                  style={{ color: 'var(--color-sky-label)' }}
                 >
                   Science Study
                 </div>
                 <div
                   className="font-display mt-3 text-[3rem] leading-none sm:text-[4rem]"
                   style={{
-                    background: 'linear-gradient(135deg, #f8fbff 0%, #93c5fd 42%, #38bdf8 100%)',
+                    background: 'var(--hero-text-gradient)',
                     WebkitBackgroundClip: 'text',
                     color: 'transparent',
-                    filter: 'drop-shadow(0 18px 34px rgba(56, 189, 248, 0.24))',
+                    filter: 'drop-shadow(0 18px 34px var(--hero-text-shadow))',
                   }}
                 >
                   RikaQuiz
                 </div>
                 <h2
                   className="font-display mt-4 text-[1.9rem] tracking-[0.18em] text-white sm:text-[2.2rem]"
-                  style={{ textShadow: '0 14px 28px rgba(56, 189, 248, 0.18)' }}
+                  style={{ textShadow: '0 14px 28px var(--hero-text-shadow)' }}
                 >
                   Login
                 </h2>
@@ -570,7 +570,7 @@ export default function LoginPage({
               {notice && (
                 <div
                   className="info-banner mt-4 text-sm"
-                  style={{ background: 'rgba(245, 158, 11, 0.14)', borderColor: 'rgba(245, 158, 11, 0.28)', color: '#fcd34d' }}
+                  style={{ background: 'var(--color-warning-soft-bg)', borderColor: 'var(--color-warning-soft-border)', color: 'var(--color-warning-muted)' }}
                 >
                   {notice}
                 </div>
@@ -596,7 +596,7 @@ export default function LoginPage({
                 {isGuest ? (
                   <div
                     className="info-banner text-sm"
-                    style={{ background: 'rgba(56, 189, 248, 0.12)', borderColor: 'rgba(56, 189, 248, 0.22)', color: '#bae6fd' }}
+                    style={{ background: 'var(--color-accent-soft-bg)', borderColor: 'var(--color-accent-soft-border)', color: '#bae6fd' }}
                   >
                     ゲストは PW なしでそのまま開始できます。記録は毎日リセットされます。
                   </div>
@@ -615,7 +615,7 @@ export default function LoginPage({
                       placeholder="Password"
                       className="input-surface text-center text-xl tracking-[0.22em]"
                       style={{
-                        borderColor: error ? '#ef4444' : undefined,
+                        borderColor: error ? 'var(--color-danger)' : undefined,
                       }}
                     />
                     {error && <p className="mt-3 text-center text-sm text-red-400">{error}</p>}

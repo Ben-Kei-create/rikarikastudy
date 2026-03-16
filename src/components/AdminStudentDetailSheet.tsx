@@ -164,10 +164,10 @@ export default function AdminStudentDetailSheet({
 
   const heatColor = (count: number) => {
     if (count === 0) return 'var(--surface-elevated)'
-    if (count < 10) return '#1d4ed8'
-    if (count < 30) return '#3b82f6'
-    if (count < 60) return '#60a5fa'
-    return '#93c5fd'
+    if (count < 10) return 'var(--color-accent-deeper)'
+    if (count < 30) return 'var(--color-accent-strong)'
+    if (count < 60) return 'var(--color-accent)'
+    return 'var(--color-sky-heading)'
   }
 
   if (!student) return null
@@ -210,9 +210,9 @@ export default function AdminStudentDetailSheet({
             <div className="mt-6 space-y-4">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 {[
-                  { label: '総問題数', value: `${totalQ}問`, color: '#3b82f6' },
-                  { label: '総合正答率', value: `${overallRate}%`, color: overallRate >= 70 ? '#22c55e' : overallRate >= 50 ? '#f59e0b' : '#ef4444' },
-                  { label: '総勉強時間', value: formatStudyTime(totalStudySeconds), color: '#38bdf8' },
+                  { label: '総問題数', value: `${totalQ}問`, color: 'var(--color-accent-strong)' },
+                  { label: '総合正答率', value: `${overallRate}%`, color: overallRate >= 70 ? 'var(--color-success)' : overallRate >= 50 ? 'var(--color-warning)' : 'var(--color-danger)' },
+                  { label: '総勉強時間', value: formatStudyTime(totalStudySeconds), color: 'var(--color-info)' },
                   { label: '現在連続', value: `${streak}日`, color: '#f97316' },
                   { label: '最長連続', value: `${maxStreak}日`, color: '#a855f7' },
                 ].map(item => (
@@ -241,7 +241,7 @@ export default function AdminStudentDetailSheet({
                       style={{
                         width: `${levelInfo.progressRate}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                        background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
                         borderRadius: 999,
                       }}
                     />
@@ -310,15 +310,15 @@ export default function AdminStudentDetailSheet({
                                 width: '100%',
                                 height,
                                 background: isToday
-                                  ? 'linear-gradient(180deg, #60a5fa, #3b82f6)'
+                                  ? 'linear-gradient(180deg, var(--color-accent), var(--color-accent-strong))'
                                   : day.count > 0
-                                    ? 'linear-gradient(180deg, #475569, #334155)'
+                                    ? `linear-gradient(180deg, var(--text-soft), var(--text-muted))`
                                     : 'var(--surface-elevated)',
                                 borderRadius: '6px 6px 2px 2px',
                               }}
                             />
                           </div>
-                          <div className="text-xs" style={{ color: isToday ? '#60a5fa' : '#64748b' }}>
+                          <div className="text-xs" style={{ color: isToday ? 'var(--color-accent)' : 'var(--text-soft)' }}>
                             {format(day.date, 'E', { locale: ja })}
                           </div>
                         </div>
@@ -344,7 +344,7 @@ export default function AdminStudentDetailSheet({
                   </div>
                   <div className="mt-3 flex items-center gap-2">
                     <span className="text-xs text-slate-600">0問</span>
-                    {['var(--surface-elevated)', '#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd'].map(color => (
+                    {['var(--surface-elevated)', 'var(--color-accent-deeper)', 'var(--color-accent-strong)', 'var(--color-accent)', 'var(--color-sky-heading)'].map(color => (
                       <div key={color} style={{ width: 14, height: 14, borderRadius: 3, background: color }} />
                     ))}
                     <span className="text-xs text-slate-600">100問+</span>
@@ -374,8 +374,8 @@ export default function AdminStudentDetailSheet({
                               </div>
                               <div className="mt-0.5 text-xs text-slate-500">{format(new Date(session.created_at), 'M月d日(E) HH:mm', { locale: ja })}</div>
                               <div className="mt-2 flex overflow-hidden rounded-full" style={{ height: 5 }}>
-                                <div style={{ width: `${rate}%`, background: '#22c55e' }} />
-                                <div style={{ width: `${100 - rate}%`, background: '#ef444440' }} />
+                                <div style={{ width: `${rate}%`, background: 'var(--color-success)' }} />
+                                <div style={{ width: `${100 - rate}%`, background: 'var(--color-danger-soft-bg)' }} />
                               </div>
                             </div>
                             <div className="text-right">
@@ -413,7 +413,7 @@ export default function AdminStudentDetailSheet({
                                 <div className="mt-2 text-xs text-slate-400">{unit.correct} / {unit.total} 正解</div>
                               </div>
                               <div className="text-right">
-                                <div className="text-2xl font-bold" style={{ color: unit.rate < 50 ? '#ef4444' : '#f59e0b' }}>{unit.rate}%</div>
+                                <div className="text-2xl font-bold" style={{ color: unit.rate < 50 ? 'var(--color-danger)' : 'var(--color-warning)' }}>{unit.rate}%</div>
                               </div>
                             </div>
                           </div>

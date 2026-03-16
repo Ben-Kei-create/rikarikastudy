@@ -174,8 +174,8 @@ export default function HomePage({
           className="quick-start-cta card text-left"
           style={{
             padding: '16px 14px',
-            borderColor: 'rgba(56, 189, 248, 0.36)',
-            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(34, 197, 94, 0.10) 50%, var(--card-gradient-base))',
+            borderColor: 'var(--color-info-soft-border)',
+            background: 'linear-gradient(135deg, var(--color-info-soft-bg), var(--color-success-soft-bg) 50%, var(--card-gradient-base))',
             cursor: 'pointer',
             transition: 'transform 0.2s ease, box-shadow 0.2s ease',
           }}
@@ -197,9 +197,9 @@ export default function HomePage({
           style={{
             padding: '16px 14px',
             cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
-            borderColor: timeAttackUnlocked ? 'rgba(77, 162, 255, 0.32)' : 'var(--border-strong)',
+            borderColor: timeAttackUnlocked ? 'var(--color-accent-soft-border)' : 'var(--border-strong)',
             background: timeAttackUnlocked
-              ? 'linear-gradient(135deg, rgba(77, 162, 255, 0.18), rgba(14, 116, 144, 0.08), var(--card-gradient-base-mid))'
+              ? 'linear-gradient(135deg, var(--color-accent-soft-bg), var(--color-info-soft-bg), var(--card-gradient-base-mid))'
               : 'var(--card-gradient-base-soft)',
           }}
           onMouseEnter={event => {
@@ -312,8 +312,8 @@ export default function HomePage({
           className="card mb-4 w-full text-left transition-all sm:mb-5 daily-challenge-cta anim-fade-up"
           style={{
             padding: '16px 18px',
-            borderColor: 'rgba(245, 158, 11, 0.34)',
-            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.08), var(--card-gradient-base-mid))',
+            borderColor: 'var(--color-warning-soft-border)',
+            background: 'linear-gradient(135deg, var(--color-warning-soft-bg), var(--color-warning-soft-bg), var(--card-gradient-base-mid))',
             animationDelay: '0.12s',
           }}
         >
@@ -408,7 +408,7 @@ export default function HomePage({
                     <span
                       className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]"
                       style={{
-                        background: rate === null ? `${color}16` : 'rgba(148, 163, 184, 0.12)',
+                        background: rate === null ? `${color}16` : 'var(--color-neutral-soft-bg)',
                         color: rate === null ? color : 'var(--text-muted)',
                       }}
                     >
