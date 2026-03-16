@@ -939,8 +939,33 @@ body {
     padding: 28px 28px 88px;
   }
 
+  .page-shell {
+    max-width: 52rem;
+    padding: 28px 32px 88px;
+  }
+
+  .page-shell-wide {
+    padding: 28px 32px 88px;
+  }
+
   .hero-card {
     border-radius: 32px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost {
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+
+  .segment-button {
+    min-height: 46px;
+    padding: 11px 16px;
   }
 }
 

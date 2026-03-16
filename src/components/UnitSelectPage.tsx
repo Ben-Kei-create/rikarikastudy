@@ -235,7 +235,7 @@ export default function UnitSelectPage({
                 </div>
               </div>
             </div>
-            <div className="grid w-full grid-cols-2 gap-2 lg:w-[284px]">
+            <div className="grid w-full grid-cols-2 gap-2 md:w-[284px]">
               <button onClick={onBack} className="btn-secondary w-full !py-2.5 sm:!py-3">もどる</button>
               <button onClick={() => logout()} className="btn-ghost w-full !py-2.5 sm:!py-3">ログアウト</button>
             </div>
@@ -376,7 +376,7 @@ export default function UnitSelectPage({
           animationDelay: '0.06s',
         }}
       >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
               Custom
@@ -409,7 +409,7 @@ export default function UnitSelectPage({
 
         {showCustomPanel && (
             <div className="mt-4 rounded-[22px] border border-white/8 bg-slate-950/24 p-3.5 sm:mt-5 sm:rounded-[24px] sm:p-5">
-            <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="grid gap-4 md:grid-cols-[0.9fr_1.1fr]">
               <div>
                 <label className="text-slate-400 text-xs mb-2 block">対象単元</label>
                 <select

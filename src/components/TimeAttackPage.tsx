@@ -747,7 +747,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
         <div className="hero-card science-surface p-6 sm:p-7">
           <div className="text-xs font-semibold tracking-[0.2em] text-sky-200 uppercase">Challenge</div>
           <h1 className="font-display mt-3 text-4xl text-white">チャレンジモード</h1>
-          <div className="mt-6 grid gap-3 lg:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
             {(Object.keys(CHALLENGE_MODE_META) as ChallengeMode[]).map(mode => {
               const meta = CHALLENGE_MODE_META[mode]
               const selected = mode === selectedMode
@@ -788,7 +788,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
             })}
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="mt-6 grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
             <div className="subcard p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>

@@ -217,7 +217,7 @@ export default function HomePage({
 
       <div className="hero-card science-surface mb-4 p-3.5 sm:mb-6 sm:p-5 md:p-6 lg:p-8 anim-fade-up" style={{ animationDelay: '0.06s' }}>
         <ScienceBackdrop />
-        <div className="grid gap-4 md:gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+        <div className="grid gap-4 md:gap-5 md:grid-cols-[1.15fr_0.85fr] md:items-center">
           <div className="max-w-2xl">
             <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2 sm:mb-3">
               Home
@@ -267,7 +267,7 @@ export default function HomePage({
               </p>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:gap-3 lg:max-w-sm lg:ml-auto">
+          <div className="grid grid-cols-1 gap-2 sm:gap-3 md:max-w-sm md:ml-auto">
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <button onClick={onMyPage} className="btn-secondary w-full !py-2.5 text-sm sm:!py-3">
                 マイページ
@@ -350,7 +350,7 @@ export default function HomePage({
         <span className="text-xs text-slate-500">タップですぐ開始</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {CORE_FIELDS.map((fieldName, index) => {
           const stat = stats[fieldName]
           const rate = stat && stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : null

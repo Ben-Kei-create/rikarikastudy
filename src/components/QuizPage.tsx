@@ -937,7 +937,7 @@ export default function QuizPage({
               </div>
 
               {reviewExpanded && (
-                <div className="mt-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+                <div className="mt-4 grid gap-4 md:grid-cols-[0.9fr_1.1fr]">
                   <div className="space-y-2">
                     {wrongReviewItems.map(item => (
                       <button

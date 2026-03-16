@@ -418,14 +418,14 @@ export default function LoginPage({
   }
 
   return (
-    <div className="page-shell page-shell-dashboard flex min-h-screen items-start justify-center py-4 sm:py-6 xl:items-center">
+    <div className="page-shell page-shell-dashboard flex min-h-screen items-start justify-center py-4 sm:py-6 lg:items-center">
       <div className="w-full max-w-6xl">
         <div className="hero-card science-surface w-full anim-fade-up px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
           <ScienceBackdrop />
 
-          <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
-            <div className="order-2 xl:order-1">
-              <div className="text-center xl:text-left">
+          <div className="grid gap-4 sm:gap-5 lg:gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+            <div className="order-2 lg:order-1">
+              <div className="text-center lg:text-left">
                 <div
                   className="text-[11px] font-semibold tracking-[0.28em] uppercase"
                   style={{ color: '#8cc7ff' }}
@@ -449,12 +449,12 @@ export default function LoginPage({
                 >
                   Login
                 </h2>
-                <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-300 xl:mx-0">
+                <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-300 lg:mx-0">
                   生徒を選んで、そのままパスワード入力。ID が増えても検索とスクロールで迷わず使えるログイン画面にしています。
                 </p>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
                 <div className="subcard px-4 py-3.5">
                   <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Smooth Select</div>
                   <div className="mt-2 text-sm font-semibold text-white">検索つきの生徒一覧</div>
@@ -482,7 +482,7 @@ export default function LoginPage({
                     <div className="text-[11px] text-slate-500">{loginUpdates.length}件</div>
                   </div>
 
-                  <div className="mt-3 max-h-40 overflow-y-auto pr-1">
+                  <div className="mt-3 max-h-40 overflow-y-auto pr-1 md:max-h-56">
                     {loginUpdatesLoading ? (
                       <div className="px-1 py-3 text-xs text-slate-500">
                         掲示板を読み込み中...
@@ -521,7 +521,7 @@ export default function LoginPage({
                   <div className="text-[11px] text-slate-500">{weekRangeLabel}</div>
                 </div>
 
-                <div className="mt-3 max-h-48 overflow-y-auto pr-1">
+                <div className="mt-3 max-h-48 overflow-y-auto pr-1 md:max-h-60">
                   {weeklyLeaderboardLoading ? (
                     <div className="px-1 py-3 text-xs text-slate-500">
                       ランキングを読み込み中...
@@ -556,7 +556,7 @@ export default function LoginPage({
               </div>
             </div>
 
-            <div className="order-1 xl:order-2 rounded-[32px] border border-white/10 bg-slate-950/44 p-4 sm:p-5 lg:p-6">
+            <div className="order-1 lg:order-2 rounded-[32px] border border-white/10 bg-slate-950/44 p-4 sm:p-5 lg:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-200">Student Login</div>

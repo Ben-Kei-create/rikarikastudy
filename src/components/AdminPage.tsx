@@ -1537,10 +1537,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <h1 className="font-display text-3xl text-white">管理画面</h1>
             </div>
           </div>
-          <div className="segment-bar">
+          <div className="segment-bar" role="tablist" aria-label="管理画面">
             {([['overview', '📊 生徒データ'], ['inquiries', '📨 問い合わせ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録']] as const).map(([currentTab, label]) => (
               <button
                 key={currentTab}
+                role="tab"
+                aria-selected={tab === currentTab}
                 onClick={() => setTab(currentTab)}
                 className={`segment-button ${tab === currentTab ? 'is-active' : ''}`}
               >
@@ -1624,7 +1626,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               </div>
 
               <div className="card">
-                <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[0.78fr_1.22fr]">
+                <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[0.78fr_1.22fr]">
                   <div className="space-y-4">
                     <div>
                       <div className="text-white font-bold">ログイン画面アップデート掲示板</div>
@@ -1733,7 +1735,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               </div>
 
               <div className="card">
-                <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[0.72fr_1.28fr]">
+                <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[0.72fr_1.28fr]">
                   <div className="space-y-4">
                     <div>
                       <div className="text-white font-bold">リワード条件一覧</div>
@@ -2162,7 +2164,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                         </div>
                       </div>
 
-                      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
                         <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
                           <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">自動添付された問題内容</div>
                           <div className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
@@ -2803,7 +2805,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       {tab === 'bulk' && (
         <div className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="card">
                 <h3 className="text-white font-bold mb-2">問題 JSON 一括追加</h3>

@@ -917,7 +917,7 @@ export default function MyPage({
         {/* ===== 概要タブ ===== */}
         {tab === 'overview' && (
           <div className="space-y-4 anim-fade">
-            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
               {[
                 { label: '総問題数', display: `${totalQ}問`, color: '#3b82f6' },
                 { label: '総合正答率', display: `${overallRate}%`, color: overallRate >= 70 ? '#22c55e' : overallRate >= 50 ? '#f59e0b' : '#ef4444' },
@@ -1175,7 +1175,7 @@ export default function MyPage({
                 {totalQ < 10 ? 'もっと問題を解くと弱点が分かるよ！' : '弱点単元なし！全部得意だね 🎉'}
               </div>
             ) : (
-              <div className="grid gap-3 lg:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 {weakUnits.map((u, i) => {
                   const color = getFieldColor(u.field)
                   const medal = i === 0 ? '🚨' : i === 1 ? '⚠️' : i === 2 ? '📌' : '📍'
@@ -1339,7 +1339,7 @@ export default function MyPage({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+              <div className="grid gap-4 md:grid-cols-[0.95fr_1.05fr]">
                 <div className="card">
                   {periodicCardsLoading ? (
                     <div className="rounded-[24px] border border-dashed border-slate-700 px-4 py-8 text-sm text-slate-400">
@@ -1474,7 +1474,7 @@ export default function MyPage({
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="mt-4 grid gap-3 md:grid-cols-[1.2fr_0.8fr]">
                 <div>
                   <label className="text-slate-400 text-xs mb-2 block">用語検索</label>
                   <input
@@ -1683,7 +1683,7 @@ export default function MyPage({
         )}
 
         {tab === 'questions' && (
-          <div className="anim-fade lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-4">
+          <div className="anim-fade md:grid md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-start md:gap-4">
             <div className="space-y-4">
               <div className="card">
                 <h3 className="text-slate-300 font-bold mb-1">自分の問題を追加</h3>
@@ -1934,7 +1934,7 @@ export default function MyPage({
         )}
 
         {tab === 'account' && (
-          <div className={`anim-fade ${isGuest ? 'space-y-4' : 'lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-4'}`}>
+          <div className={`anim-fade ${isGuest ? 'space-y-4' : 'md:grid md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-start md:gap-4'}`}>
             <div className="space-y-4">
               <div className="card">
                 <h3 className="text-slate-300 font-bold mb-1">アカウント設定</h3>
