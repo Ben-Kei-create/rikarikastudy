@@ -281,7 +281,6 @@ export default function LoginPage({
 
       if (error) {
         if (!isLoginUpdatesTableMissing(error)) {
-          console.error('[login] failed to load login updates', error)
           setShowLoginUpdates(true)
         } else {
           setShowLoginUpdates(false)
@@ -319,7 +318,6 @@ export default function LoginPage({
       if (!active) return
 
       if (sessionsResponse.error) {
-        console.error('[login] failed to load weekly leaderboard', sessionsResponse.error)
         setWeeklyLeaderboard([])
         setWeeklyLeaderboardLoading(false)
         return

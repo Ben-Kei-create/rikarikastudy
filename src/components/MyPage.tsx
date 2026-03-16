@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/theme'
-import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
+import { BADGE_DEFINITIONS } from '@/lib/badges'
 import { FIELD_EMOJI, FIELDS } from '@/lib/constants'
 import { getLevelInfo, getTotalXpFromSessions } from '@/lib/engagement'
 import { format, subDays, subWeeks, startOfDay, startOfWeek, eachDayOfInterval, eachWeekOfInterval, differenceInCalendarDays } from 'date-fns'
@@ -17,6 +17,9 @@ import {
   markColumnSupported,
 } from '@/lib/schemaCompat'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
+import MyPageBadgesTab from '@/components/MyPageBadgesTab'
+import MyPageGlossaryTab from '@/components/MyPageGlossaryTab'
+import MyPageCardsTab from '@/components/MyPageCardsTab'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { loadEarnedBadgeRecords } from '@/lib/studyRewards'
 import {
@@ -25,18 +28,7 @@ import {
   PeriodicCardCollectionEntry,
 } from '@/lib/periodicCardCollection'
 import {
-  getPeriodicCardByKey,
-  getPeriodicCardUnlockText,
-  isPeriodicCardUnlockedAtLevel,
-  PERIODIC_ELEMENT_CARDS,
-} from '@/lib/periodicCards'
-import {
-  mergeGlossaryEntries,
-  getGlossaryIndexKey,
-  SCIENCE_GLOSSARY,
-  SCIENCE_GLOSSARY_FIELDS,
   ScienceGlossaryEntry,
-  ScienceGlossaryField,
 } from '@/lib/scienceGlossary'
 import {
   getQuestionCorrectAnswerText,
@@ -45,7 +37,6 @@ import {
   QUESTION_TYPES,
   QuestionType,
 } from '@/lib/questionTypes'
-import { PeriodicCardSurface, PeriodicCardViewer } from '@/components/PeriodicCard'
 
 interface Session {
   id: string; field: string; unit: string
@@ -166,15 +157,9 @@ export default function MyPage({
   const [studentXp, setStudentXp] = useState(0)
   const [earnedBadges, setEarnedBadges] = useState<Array<{ badge_key: string; earned_at: string }>>([])
   const [customGlossaryEntries, setCustomGlossaryEntries] = useState<ScienceGlossaryEntry[]>([])
-  const [glossaryQuery, setGlossaryQuery] = useState('')
-  const [glossaryField, setGlossaryField] = useState<ScienceGlossaryField | 'all'>('all')
-  const [glossaryIndex, setGlossaryIndex] = useState<string>('all')
-  const [selectedGlossaryId, setSelectedGlossaryId] = useState<string | null>(SCIENCE_GLOSSARY[0]?.id ?? null)
-  const [glossaryModalOpen, setGlossaryModalOpen] = useState(false)
   const [periodicCards, setPeriodicCards] = useState<PeriodicCardCollectionEntry[]>([])
   const [periodicCardsLoading, setPeriodicCardsLoading] = useState(true)
   const [periodicCardsSchemaMessage, setPeriodicCardsSchemaMessage] = useState<string | null>(null)
-  const [selectedPeriodicCardKey, setSelectedPeriodicCardKey] = useState<string | null>(null)
   const tabContentRef = useRef<HTMLDivElement | null>(null)
   const tabScrollPositionsRef = useRef<Partial<Record<Tab, number>>>({})
   const hasMountedTabRef = useRef(false)
@@ -242,9 +227,6 @@ export default function MyPage({
       if (!active) return
 
       if (response.error) {
-        if (!isMissingRelationError(response.error, 'science_glossary_entries')) {
-          console.error(response.error)
-        }
         setCustomGlossaryEntries([])
         return
       }
@@ -296,30 +278,6 @@ export default function MyPage({
   const totalStudySeconds = sessions.reduce((a, s) => a + (s.duration_seconds ?? 0), 0)
   const overallRate = totalQ > 0 ? Math.round((totalC / totalQ) * 100) : 0
   const levelInfo = useMemo(() => getLevelInfo(studentXp), [studentXp])
-  const periodicUnlocked = isPeriodicCardUnlockedAtLevel(levelInfo.level)
-  const periodicTotalCount = PERIODIC_ELEMENT_CARDS.length
-  const ownedPeriodicCards = useMemo(
-    () => periodicCards
-      .map(entry => {
-        const definition = getPeriodicCardByKey(entry.cardKey)
-        if (!definition) return null
-        return { entry, definition }
-      })
-      .filter((item): item is { entry: PeriodicCardCollectionEntry; definition: NonNullable<ReturnType<typeof getPeriodicCardByKey>> } => item !== null)
-      .sort((left, right) => left.definition.atomicNumber - right.definition.atomicNumber),
-    [periodicCards],
-  )
-  const periodicOwnedCount = ownedPeriodicCards.length
-  const selectedPeriodicCardIndex = useMemo(
-    () => ownedPeriodicCards.findIndex(item => item.definition.key === selectedPeriodicCardKey),
-    [ownedPeriodicCards, selectedPeriodicCardKey],
-  )
-  const selectedPeriodicCard = selectedPeriodicCardIndex >= 0 ? ownedPeriodicCards[selectedPeriodicCardIndex] : null
-  const earnedBadgeMap = useMemo(
-    () => new Map(earnedBadges.map(badge => [badge.badge_key, badge])),
-    [earnedBadges],
-  )
-  const earnedBadgeCount = earnedBadgeMap.size
 
   const byField = useMemo(() => {
     const m: Record<string, { total: number; correct: number }> = {}
@@ -429,121 +387,6 @@ export default function MyPage({
     ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['account', '⚙️ 設定']] as const)
     : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
 
-  const allGlossaryEntries = useMemo(
-    () => mergeGlossaryEntries(SCIENCE_GLOSSARY, customGlossaryEntries),
-    [customGlossaryEntries],
-  )
-  const glossaryTermMap = useMemo(
-    () => new Map(allGlossaryEntries.map(entry => [entry.term, entry])),
-    [allGlossaryEntries],
-  )
-
-  const normalizedGlossaryQuery = glossaryQuery.trim().toLowerCase()
-  const glossaryBaseEntries = useMemo(() => {
-    return allGlossaryEntries.filter(entry => {
-      if (glossaryField !== 'all' && entry.field !== glossaryField) return false
-      if (!normalizedGlossaryQuery) return true
-
-      const target = [
-        entry.term,
-        entry.reading,
-        entry.shortDescription,
-        entry.description,
-        ...entry.related,
-        ...entry.tags,
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return target.includes(normalizedGlossaryQuery)
-    })
-  }, [allGlossaryEntries, glossaryField, normalizedGlossaryQuery])
-
-  const glossaryIndexes = useMemo(() => {
-    const keys = Array.from(new Set(glossaryBaseEntries.map(entry => getGlossaryIndexKey(entry.reading)))).sort()
-    return ['all', ...keys]
-  }, [glossaryBaseEntries])
-
-  const glossaryEntries = useMemo(() => {
-    return glossaryBaseEntries.filter(entry => glossaryIndex === 'all' || getGlossaryIndexKey(entry.reading) === glossaryIndex)
-  }, [glossaryBaseEntries, glossaryIndex])
-
-  const selectedGlossaryEntry = useMemo(() => {
-    if (glossaryEntries.length === 0) return null
-    return glossaryEntries.find(entry => entry.id === selectedGlossaryId) ?? glossaryEntries[0]
-  }, [glossaryEntries, selectedGlossaryId])
-
-  useEffect(() => {
-    if (glossaryIndexes.includes(glossaryIndex)) return
-    setGlossaryIndex('all')
-  }, [glossaryIndex, glossaryIndexes])
-
-  useEffect(() => {
-    if (glossaryEntries.length === 0) {
-      if (selectedGlossaryId !== null) setSelectedGlossaryId(null)
-      if (glossaryModalOpen) setGlossaryModalOpen(false)
-      return
-    }
-
-    const exists = glossaryEntries.some(entry => entry.id === selectedGlossaryId)
-    if (!exists) setSelectedGlossaryId(glossaryEntries[0].id)
-  }, [glossaryEntries, glossaryModalOpen, selectedGlossaryId])
-
-  useEffect(() => {
-    if (!periodicUnlocked) {
-      if (selectedPeriodicCardKey !== null) setSelectedPeriodicCardKey(null)
-      return
-    }
-
-    if (ownedPeriodicCards.length === 0) {
-      if (selectedPeriodicCardKey !== null) setSelectedPeriodicCardKey(null)
-      return
-    }
-
-    const exists = ownedPeriodicCards.some(card => card.definition.key === selectedPeriodicCardKey)
-    if (!exists) setSelectedPeriodicCardKey(ownedPeriodicCards[0].definition.key)
-  }, [ownedPeriodicCards, periodicUnlocked, selectedPeriodicCardKey])
-
-  const showPreviousPeriodicCard = () => {
-    if (ownedPeriodicCards.length <= 1) return
-    const currentIndex = selectedPeriodicCardIndex >= 0 ? selectedPeriodicCardIndex : 0
-    const nextIndex = (currentIndex - 1 + ownedPeriodicCards.length) % ownedPeriodicCards.length
-    setSelectedPeriodicCardKey(ownedPeriodicCards[nextIndex].definition.key)
-  }
-
-  const showNextPeriodicCard = () => {
-    if (ownedPeriodicCards.length <= 1) return
-    const currentIndex = selectedPeriodicCardIndex >= 0 ? selectedPeriodicCardIndex : 0
-    const nextIndex = (currentIndex + 1) % ownedPeriodicCards.length
-    setSelectedPeriodicCardKey(ownedPeriodicCards[nextIndex].definition.key)
-  }
-
-  useEffect(() => {
-    if (tab !== 'glossary' && glossaryModalOpen) {
-      setGlossaryModalOpen(false)
-    }
-  }, [glossaryModalOpen, tab])
-
-  useEffect(() => {
-    if (!glossaryModalOpen || !selectedGlossaryEntry || typeof window === 'undefined') return
-
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setGlossaryModalOpen(false)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [glossaryModalOpen, selectedGlossaryEntry])
-
   const handleSaveNickname = async () => {
     setSaving('nickname')
     const result = await updateProfile({ nickname: nicknameInput })
@@ -566,26 +409,6 @@ export default function MyPage({
       setPasswordInput('')
       setPasswordConfirm('')
     }
-  }
-
-  const handleGlossaryJump = (term: string) => {
-    const target = glossaryTermMap.get(term)
-    if (!target) return
-
-    setGlossaryQuery('')
-    setGlossaryField(target.field)
-    setGlossaryIndex('all')
-    setSelectedGlossaryId(target.id)
-    setGlossaryModalOpen(true)
-  }
-
-  const handleOpenGlossaryEntry = (entryId: string) => {
-    setSelectedGlossaryId(entryId)
-    setGlossaryModalOpen(true)
-  }
-
-  const handleCloseGlossaryModal = () => {
-    setGlossaryModalOpen(false)
   }
 
   const handleTabChange = (nextTab: Tab) => {
@@ -1260,466 +1083,20 @@ export default function MyPage({
         )}
 
         {tab === 'badges' && (
-          <div className="anim-fade space-y-4">
-            <div className="card">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                  <h3 className="text-slate-300 font-bold">バッジコレクション</h3>
-                  <div className="mt-1 text-xs text-slate-500">集めるほど色が増える</div>
-                </div>
-                <div className="rounded-full bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-200">
-                  {earnedBadgeCount} / {BADGE_DEFINITIONS.length}
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {BADGE_DEFINITIONS.map(badge => {
-                  const earned = earnedBadgeMap.get(badge.key)
-                  const lockedLegendary = !earned && badge.rarity === 'legendary'
-                  const accent = badge.rarity === 'legendary'
-                    ? '#c084fc'
-                    : badge.rarity === 'rare'
-                      ? 'var(--color-warning-muted)'
-                      : 'var(--color-accent)'
-                  const rarityLabel = getBadgeRarityLabel(badge.rarity)
-                  const displayIcon = earned ? badge.iconEmoji : lockedLegendary ? '❔' : badge.iconEmoji
-                  const earnedDate = earned ? format(new Date(earned.earned_at), 'M月d日', { locale: ja }) : null
-
-                  return (
-                    <div
-                      key={badge.key}
-                      className="rounded-[24px] border p-4"
-                      style={{
-                        borderColor: earned ? `${accent}55` : 'rgba(148, 163, 184, 0.18)',
-                        background: earned
-                          ? `linear-gradient(135deg, ${accent}22, var(--card-gradient-base))`
-                          : 'var(--card-gradient-base-soft)',
-                      }}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div
-                          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border text-3xl"
-                          style={{
-                            borderColor: earned ? `${accent}66` : 'rgba(148, 163, 184, 0.18)',
-                            background: earned ? `${accent}18` : 'rgba(71, 85, 105, 0.18)',
-                            color: earned ? accent : 'var(--text-muted)',
-                            filter: earned ? 'none' : 'grayscale(1)',
-                            opacity: earned ? 1 : 0.72,
-                          }}
-                        >
-                          {displayIcon}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="font-semibold text-white">{badge.name}</div>
-                            <div
-                              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                              style={{
-                                background: earned ? `${accent}18` : 'var(--color-neutral-soft-bg)',
-                                color: earned ? accent : 'var(--text-muted)',
-                              }}
-                            >
-                              {rarityLabel}
-                            </div>
-                          </div>
-                          <div className="mt-2 text-sm leading-6 text-slate-300">
-                            {lockedLegendary ? '???' : badge.description}
-                          </div>
-                          <div className="mt-3 text-xs text-slate-500">
-                            {earnedDate ? `${earnedDate} に獲得` : '未獲得'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+          <MyPageBadgesTab earnedBadges={earnedBadges} />
         )}
 
         {tab === 'cards' && (
-          <div className="anim-fade space-y-4">
-            {periodicCardsLoading && (
-              <div className="text-center py-8 text-slate-400 text-sm">元素カードを読み込み中...</div>
-            )}
-            <div className="card">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <h3 className="text-slate-300 font-bold">元素カード</h3>
-                  <p className="text-slate-500 text-xs mt-1 leading-6">
-                    ログインボーナスやパーフェクト報酬で集めたカードだけを、元素番号順にスワイプして見返せます。
-                  </p>
-                </div>
-                <div className="rounded-full bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-200">
-                  {periodicOwnedCount} / {periodicTotalCount}
-                </div>
-              </div>
-            </div>
-
-            {!periodicUnlocked ? (
-              <div className="card">
-                <div className="rounded-[24px] border px-5 py-6 text-center" style={{
-                  borderColor: 'rgba(148, 163, 184, 0.16)',
-                  background: 'var(--inset-bg)',
-                }}>
-                  <div className="text-4xl">🧪</div>
-                  <div className="mt-3 font-semibold text-white">{getPeriodicCardUnlockText()}</div>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">
-                    Lv.20 になると元素カードが解放され、ログインボーナスやパーフェクト報酬で集められるようになります。
-                  </p>
-                </div>
-              </div>
-            ) : periodicCardsSchemaMessage ? (
-              <div className="card">
-                <div className="rounded-[24px] border border-amber-400/20 bg-amber-500/10 px-5 py-5 text-sm leading-7 text-amber-100">
-                  {periodicCardsSchemaMessage}
-                </div>
-              </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-[0.95fr_1.05fr]">
-                <div className="card">
-                  {periodicCardsLoading ? (
-                    <div className="rounded-[24px] border border-dashed border-slate-700 px-4 py-8 text-sm text-slate-400">
-                      カードを読み込み中...
-                    </div>
-                  ) : selectedPeriodicCard && selectedPeriodicCardKey ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">Swipe Viewer</div>
-                          <div className="mt-2 text-sm leading-6 text-slate-400">
-                            左右にスワイプ、または矢印ボタンで次のカードへ進めます。
-                          </div>
-                        </div>
-                        <div className="rounded-full bg-sky-300/10 px-3 py-1.5 text-xs font-semibold text-sky-100">
-                          {selectedPeriodicCardIndex + 1} / {ownedPeriodicCards.length}
-                        </div>
-                      </div>
-
-                      <div className="mx-auto w-full max-w-[24rem]">
-                        <PeriodicCardViewer
-                          cardKey={selectedPeriodicCardKey}
-                          entry={selectedPeriodicCard.entry}
-                          size="showcase"
-                          onSwipeLeft={showNextPeriodicCard}
-                          onSwipeRight={showPreviousPeriodicCard}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <button
-                          onClick={showPreviousPeriodicCard}
-                          disabled={ownedPeriodicCards.length <= 1}
-                          className="btn-secondary w-full disabled:opacity-60"
-                        >
-                          ← 前のカード
-                        </button>
-                        <button
-                          onClick={showNextPeriodicCard}
-                          disabled={ownedPeriodicCards.length <= 1}
-                          className="btn-secondary w-full disabled:opacity-60"
-                        >
-                          次のカード →
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-[24px] border border-dashed border-slate-700 px-4 py-8 text-sm text-slate-400">
-                      まだカードがありません。ログインボーナスやパーフェクト報酬でカードを集めてみよう。
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  {selectedPeriodicCard ? (
-                    <div className="card">
-                      <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">コレクション情報</div>
-                      <div className="mt-3 grid gap-2 text-sm text-slate-300">
-                        <div>元素番号: <span className="font-semibold text-white">No.{selectedPeriodicCard.definition.atomicNumber}</span></div>
-                        <div>所持枚数: <span className="font-semibold text-white">{selectedPeriodicCard.entry.obtainCount}枚</span></div>
-                        <div>初回入手: <span className="font-semibold text-white">{format(new Date(selectedPeriodicCard.entry.firstObtainedAt), 'M月d日', { locale: ja })}</span></div>
-                        <div>最近の入手: <span className="font-semibold text-white">{format(new Date(selectedPeriodicCard.entry.lastObtainedAt), 'M月d日 HH:mm', { locale: ja })}</span></div>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="card">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Owned Cards</div>
-                        <div className="mt-1 text-sm text-slate-400">入手したカードだけを元素番号順に表示</div>
-                      </div>
-                      <div className="text-xs text-slate-500">{ownedPeriodicCards.length}枚</div>
-                    </div>
-
-                    {ownedPeriodicCards.length > 0 ? (
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                        {ownedPeriodicCards.map(item => {
-                          const selected = item.definition.key === selectedPeriodicCardKey
-                          return (
-                            <button
-                              key={item.definition.key}
-                              onClick={() => setSelectedPeriodicCardKey(item.definition.key)}
-                              className="rounded-[18px] border px-3 py-3 text-left transition-all"
-                              style={{
-                                borderColor: selected ? 'rgba(125, 211, 252, 0.45)' : 'var(--border)',
-                                background: selected
-                                  ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.14), var(--card-gradient-base-mid))'
-                                  : 'var(--inset-bg)',
-                                boxShadow: selected ? '0 16px 28px rgba(56, 189, 248, 0.16)' : 'none',
-                              }}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <div>
-                                  <div className="text-[10px] font-semibold tracking-[0.18em] text-slate-500">No.{item.definition.atomicNumber}</div>
-                                  <div className="mt-1 font-display text-xl text-white">{item.definition.symbol}</div>
-                                  <div className="mt-1 text-xs text-slate-300">{item.definition.nameJa}</div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-xs font-semibold text-sky-100">{item.entry.obtainCount}枚</div>
-                                  <div className="mt-1 text-[10px] text-slate-500">{selected ? '表示中' : '表示する'}</div>
-                                </div>
-                              </div>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      <div className="mt-4 rounded-[20px] border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
-                        まだカードがありません。
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <MyPageCardsTab
+            periodicCards={periodicCards}
+            periodicCardsLoading={periodicCardsLoading}
+            periodicCardsSchemaMessage={periodicCardsSchemaMessage}
+            level={levelInfo.level}
+          />
         )}
 
         {tab === 'glossary' && (
-          <div className="anim-fade space-y-4">
-            <div className="card">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <h3 className="text-slate-300 font-bold">理科用語ミニ辞典</h3>
-                  <p className="text-slate-500 text-xs mt-1 leading-6">
-                    固定の理科用語集です。検索や索引から用語を選ぶと、分かりやすい説明を読めます。
-                  </p>
-                </div>
-                <div className="rounded-full bg-sky-300/10 px-4 py-2 text-sm font-semibold text-sky-200">
-                  {glossaryEntries.length}語ヒット
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-[1.2fr_0.8fr]">
-                <div>
-                  <label className="text-slate-400 text-xs mb-2 block">用語検索</label>
-                  <input
-                    value={glossaryQuery}
-                    onChange={event => setGlossaryQuery(event.target.value)}
-                    placeholder="例: 光合成 / 電流 / プレート"
-                    className="input-surface"
-                  />
-                </div>
-                <div>
-                  <div className="text-slate-400 text-xs mb-2">分野フィルタ</div>
-                  <div className="flex flex-wrap gap-2">
-                    {SCIENCE_GLOSSARY_FIELDS.map(fieldOption => {
-                      const active = glossaryField === fieldOption
-                      const label = fieldOption === 'all' ? 'すべて' : fieldOption
-                      const color = fieldOption === 'all' ? 'var(--color-info)' : getFieldColor(fieldOption)
-                      return (
-                        <button
-                          key={fieldOption}
-                          onClick={() => setGlossaryField(fieldOption)}
-                          className="rounded-full border px-3 py-2 text-xs font-semibold transition-all"
-                          style={{
-                            borderColor: active ? `${color}70` : 'var(--surface-elevated-border)',
-                            background: active ? `${color}18` : 'var(--surface-elevated)',
-                            color: active ? color : 'var(--text-muted)',
-                          }}
-                        >
-                          {label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <div className="text-slate-400 text-xs mb-2">索引</div>
-                <div className="flex flex-wrap gap-2">
-                  {glossaryIndexes.map(indexKey => {
-                    const active = glossaryIndex === indexKey
-                    return (
-                      <button
-                        key={indexKey}
-                        onClick={() => setGlossaryIndex(indexKey)}
-                        className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-all"
-                        style={{
-                          borderColor: active ? 'rgba(56, 189, 248, 0.45)' : 'var(--surface-elevated-border)',
-                          background: active ? 'var(--color-info-soft-bg)' : 'var(--surface-elevated)',
-                          color: active ? 'var(--color-info-muted)' : 'var(--text-muted)',
-                        }}
-                      >
-                        {indexKey === 'all' ? '全部' : indexKey}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-                <div className="text-slate-400 text-xs font-bold uppercase tracking-wider">用語一覧</div>
-                <div className="text-xs text-slate-500">用語を押すとポップアップで詳細を開きます。</div>
-              </div>
-              {glossaryEntries.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-6 text-sm text-slate-400">
-                  条件に合う用語が見つかりません。
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {glossaryEntries.map(entry => {
-                    const active = selectedGlossaryEntry?.id === entry.id
-                    const color = getFieldColor(entry.field)
-                    return (
-                      <button
-                        key={entry.id}
-                        onClick={() => handleOpenGlossaryEntry(entry.id)}
-                        className="w-full rounded-[22px] border px-4 py-3 text-left transition-all"
-                        style={{
-                          borderColor: active ? `${color}60` : 'var(--surface-elevated-border)',
-                          background: active ? `${color}14` : 'var(--surface-elevated)',
-                        }}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="font-semibold text-white">{entry.term}</div>
-                            <div className="text-xs text-slate-500 mt-1">{entry.reading}</div>
-                          </div>
-                          <span
-                            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                            style={{ background: `${color}18`, color }}
-                          >
-                            {entry.field}
-                          </span>
-                        </div>
-                        <div className="mt-2 text-sm leading-6 text-slate-400 line-clamp-2">
-                          {entry.shortDescription}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {glossaryModalOpen && selectedGlossaryEntry && (
-          <div
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/76 px-3 py-6 sm:px-5"
-            onClick={handleCloseGlossaryModal}
-          >
-            <div
-              className="hero-card science-surface relative w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-[30px] border border-white/10"
-              onClick={event => event.stopPropagation()}
-            >
-              <ScienceBackdrop />
-              <div className="relative z-[1] flex max-h-[88vh] flex-col">
-                <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-4 sm:px-6 sm:py-5">
-                  <div>
-                    <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2">
-                      Science Word
-                    </div>
-                    <h3 className="font-display text-[2rem] leading-none text-white sm:text-4xl">{selectedGlossaryEntry.term}</h3>
-                    <div className="mt-2 text-sm text-slate-500">{selectedGlossaryEntry.reading}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="rounded-full px-3 py-1.5 text-sm font-semibold"
-                      style={{
-                        background: `${getFieldColor(selectedGlossaryEntry.field)}18`,
-                        color: getFieldColor(selectedGlossaryEntry.field),
-                      }}
-                    >
-                      {selectedGlossaryEntry.field}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleCloseGlossaryModal}
-                      className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-slate-950/40 text-lg text-slate-300 transition-colors hover:bg-slate-900/70 hover:text-white"
-                      aria-label="辞典ポップアップを閉じる"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-
-                <div className="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
-                  <div className="rounded-[22px] border border-white/8 bg-slate-950/24 p-4">
-                    <div className="text-slate-300 font-semibold">ひとことで</div>
-                    <p className="mt-2 text-sm leading-7 text-slate-200">
-                      {selectedGlossaryEntry.shortDescription}
-                    </p>
-                  </div>
-
-                  <div className="mt-5">
-                    <div className="text-slate-300 font-semibold">説明</div>
-                    <p className="mt-2 text-sm leading-8 text-slate-300 whitespace-pre-wrap">
-                      {selectedGlossaryEntry.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-6">
-                    <div className="text-slate-400 text-xs mb-2">関連語</div>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedGlossaryEntry.related.length > 0 ? selectedGlossaryEntry.related.map(item => {
-                        const linkedEntry = glossaryTermMap.get(item)
-
-                        if (!linkedEntry) {
-                          return (
-                            <span
-                              key={item}
-                              className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300"
-                            >
-                              {item}
-                            </span>
-                          )
-                        }
-
-                        return (
-                          <button
-                            key={item}
-                            type="button"
-                            onClick={() => handleGlossaryJump(item)}
-                            className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:-translate-y-0.5"
-                            style={{
-                              borderColor: `${getFieldColor(linkedEntry.field)}55`,
-                              background: `${getFieldColor(linkedEntry.field)}18`,
-                              color: getFieldColor(linkedEntry.field),
-                            }}
-                          >
-                            {item}
-                          </button>
-                        )
-                      }) : (
-                        <span className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300">
-                          関連語はまだありません
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <MyPageGlossaryTab customGlossaryEntries={customGlossaryEntries} />
         )}
 
         {tab === 'questions' && (

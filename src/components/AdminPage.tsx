@@ -324,16 +324,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         })
       setActiveStudents(Array.from(activeStudentMap.values()).sort((a, b) => +new Date(b.lastSeenAt) - +new Date(a.lastSeenAt)))
       if (chatGuardLogsResponse.error) {
-        if (!isMissingRelationError(chatGuardLogsResponse.error, 'chat_guard_logs')) {
-          console.error(chatGuardLogsResponse.error)
-        }
         setChatGuardLogs([])
       } else {
         setChatGuardLogs((chatGuardLogsResponse.data || []) as ChatGuardLogRow[])
       }
       if (questionInquiriesResponse.error) {
         if (!isQuestionInquiryTableMissing(questionInquiriesResponse.error)) {
-          console.error(questionInquiriesResponse.error)
           setQuestionInquiryLoadError(questionInquiriesResponse.error.message)
         } else {
           setQuestionInquiryLoadError('')
@@ -346,7 +342,6 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       if (loginUpdatesResponse.error) {
         if (!isLoginUpdatesTableMissing(loginUpdatesResponse.error)) {
-          console.error(loginUpdatesResponse.error)
           setLoginUpdatesLoadError(loginUpdatesResponse.error.message)
         } else {
           setLoginUpdatesLoadError(getLoginUpdatesSchemaErrorMessage(loginUpdatesResponse.error.message))
@@ -378,9 +373,6 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       setQuestions((questionsResponse.data || []) as QuestionRow[])
 
       if (answerLogsResponse.error) {
-        if (!isMissingRelationError(answerLogsResponse.error, 'answer_logs')) {
-          console.error(answerLogsResponse.error)
-        }
         setQuestionAccuracyMap({})
       } else {
         setQuestionAccuracyMap(buildQuestionAccuracyMap((answerLogsResponse.data || []) as QuestionAccuracyAnswerLogRow[]))

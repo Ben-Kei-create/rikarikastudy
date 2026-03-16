@@ -262,7 +262,6 @@ export default function QuizPage({
       }
 
       if (error) {
-        console.error('[quiz] failed to load questions', error)
         if (active) {
           setLoadError('問題の読み込みに失敗しました。通信状況を確認してやり直してください。')
           setLoading(false)

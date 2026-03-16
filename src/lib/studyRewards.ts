@@ -127,9 +127,7 @@ async function updateStudentXp(studentId: number, totalXp: number) {
     .update({ student_xp: totalXp })
     .eq('id', studentId)
 
-  if (fallback.error) {
-    console.error('[engagement] failed to update student xp', fallback.error)
-  }
+  void fallback.error
 }
 
 async function fetchStudentBadgeKeys(studentId: number) {
@@ -138,10 +136,7 @@ async function fetchStudentBadgeKeys(studentId: number) {
     .select('badge_key')
     .eq('student_id', studentId)
 
-  if (error) {
-    console.error('[engagement] failed to load student_badges', error)
-    return []
-  }
+  if (error) return []
 
   return (data || [])
     .map(row => row.badge_key)
@@ -155,10 +150,7 @@ async function fetchStudentSessions(studentId: number) {
     .eq('student_id', studentId)
     .order('created_at', { ascending: true })
 
-  if (error) {
-    console.error('[engagement] failed to load quiz_sessions for badges', error)
-    return []
-  }
+  if (error) return []
 
   return (data || []) as BadgeSessionRow[]
 }
@@ -178,9 +170,7 @@ async function ensureBadgeDefinitionsSeeded() {
       { onConflict: 'key' },
     )
 
-  if (error) {
-    console.error('[engagement] failed to seed badges', error)
-  }
+  void error
 }
 
 async function fetchHasCustomQuestion(studentId: number) {
@@ -189,12 +179,7 @@ async function fetchHasCustomQuestion(studentId: number) {
     .select('id', { count: 'exact', head: true })
     .eq('created_by_student_id', studentId)
 
-  if (error) {
-    if (!String(error.message || '').includes('created_by_student_id')) {
-      console.error('[engagement] failed to check custom question count', error)
-    }
-    return false
-  }
+  if (error) return false
 
   return (count ?? 0) > 0
 }
@@ -213,9 +198,7 @@ async function insertStudentBadges(studentId: number, badgeKeys: string[]) {
       })),
     )
 
-  if (error) {
-    console.error('[engagement] failed to insert student_badges', error)
-  }
+  void error
 }
 
 function resolveNewBadges(badgeKeys: string[]) {
@@ -244,10 +227,7 @@ export async function loadDailyChallengeStatus(studentId: number | null): Promis
     .eq('date', todayKey)
     .maybeSingle()
 
-  if (error) {
-    console.error('[engagement] failed to load daily_challenges', error)
-    return { completed: false, completedAt: null }
-  }
+  if (error) return { completed: false, completedAt: null }
 
   return {
     completed: Boolean(data),
@@ -290,9 +270,7 @@ async function markDailyChallengeCompleted(studentId: number, sessionId: string)
       { onConflict: 'student_id,date' },
     )
 
-  if (fallback.error) {
-    console.error('[engagement] failed to save daily_challenges', fallback.error)
-  }
+  void fallback.error
 }
 
 export async function recordStudySession({
@@ -402,7 +380,6 @@ export async function recordStudySession({
     .single()
 
   if (sessionError) {
-    console.error('[engagement] failed to save quiz_session', sessionError)
     return {
       sessionId: null,
       xpEarned: 0,
@@ -430,9 +407,7 @@ export async function recordStudySession({
         })),
       )
 
-    if (logError) {
-      console.error('[engagement] failed to save answer_logs', logError)
-    }
+    void logError
   }
 
   await updateStudentXp(studentId, totalXp)
@@ -486,10 +461,7 @@ export async function loadEarnedBadgeRecords(studentId: number | null) {
     .eq('student_id', studentId)
     .order('earned_at', { ascending: false })
 
-  if (error) {
-    console.error('[engagement] failed to load earned badges', error)
-    return []
-  }
+  if (error) return []
 
   return (data || []).filter(record => CURRENT_BADGE_KEYS.has(record.badge_key))
 }
@@ -614,9 +586,7 @@ export async function saveTimeAttackBest(studentId: number | null, score: number
       { onConflict: 'student_id' },
     )
 
-  if (fallback.error) {
-    console.error('[engagement] failed to save time_attack_records', fallback.error)
-  }
+  void fallback.error
 
   return nextBest
 }

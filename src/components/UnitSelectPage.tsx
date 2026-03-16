@@ -120,7 +120,6 @@ export default function UnitSelectPage({
       }
 
       if (qError) {
-        console.error('[unit-select] failed to load units', qError)
         setUnits([])
         setLoading(false)
         return
@@ -171,7 +170,6 @@ export default function UnitSelectPage({
       if (!active) return
 
       if (error) {
-        console.error('[unit-select] failed to load xp', error)
         setCurrentXp(0)
         return
       }

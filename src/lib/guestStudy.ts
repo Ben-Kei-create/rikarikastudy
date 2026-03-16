@@ -201,8 +201,8 @@ function writeStore(store: GuestStudyStore) {
 
   try {
     window.localStorage.setItem(GUEST_STUDY_STORAGE_KEY, JSON.stringify(store))
-  } catch (error) {
-    console.warn('[guest-study] failed to write guest study store', error)
+  } catch {
+    // localStorage write failed – ignore
   }
 }
 

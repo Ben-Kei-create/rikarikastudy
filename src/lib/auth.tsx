@@ -183,8 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           pendingLoginCardReward: null,
         })
         return
-      } catch (error) {
-        console.warn('[auth] failed to restore session from storage', error)
+      } catch {
+        // session restore failed – fall through to unauthenticated state
       }
 
       sessionStorage.removeItem(STORAGE_KEY)

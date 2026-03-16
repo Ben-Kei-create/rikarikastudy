@@ -186,7 +186,6 @@ async function loadSessionModeSummary(
   ])
 
   if (response.error) {
-    console.error(`[challenge] failed to load ${mode} summary`, response.error)
     return {
       personalBest: guestPersonalBest,
       leaderboard: guestLeaderboard,
@@ -322,9 +321,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
         markColumnSupported('created_by_student_id')
       }
 
-      if (error) {
-        console.error('[challenge] failed to load questions', error)
-      }
+      void error
 
       const [best, testBestSummary, streakBestSummary, xp] = await Promise.all([
         loadTimeAttackBest(studentId),

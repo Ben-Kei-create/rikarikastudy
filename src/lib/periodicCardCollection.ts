@@ -141,9 +141,7 @@ async function loadSupabaseCollection(studentId: number) {
     .eq('student_id', studentId)
 
   if (response.error) {
-    if (!isMissingRelationError(response.error, 'student_element_cards')) {
-      console.error('[periodic-cards] failed to load collection', response.error)
-    }
+    void response.error
     return { entries: [] as PeriodicCardCollectionEntry[], missingSchema: isMissingRelationError(response.error, 'student_element_cards') }
   }
 
@@ -205,9 +203,7 @@ async function appendRewardLog(studentId: number, cardKey: string, source: Perio
       reward_date: rewardDate,
     })
 
-  if (response.error && !isMissingRelationError(response.error, 'element_card_rewards')) {
-    console.error('[periodic-cards] failed to append reward log', response.error)
-  }
+  void response.error
 }
 
 export function getPeriodicCardSchemaErrorMessage(message: string) {
@@ -263,7 +259,6 @@ export async function claimDailyLoginPeriodicCard(studentId: number | null, leve
     if (isMissingRelationError(todayReward.error, 'element_card_rewards')) {
       return null
     }
-    console.error('[periodic-cards] failed to check daily login reward', todayReward.error)
     return null
   }
 
@@ -277,8 +272,7 @@ export async function claimDailyLoginPeriodicCard(studentId: number | null, leve
     const reward = await upsertSupabaseCard(studentId, cardKey, 'login', entries)
     await appendRewardLog(studentId, cardKey, 'login', todayKey)
     return reward
-  } catch (error) {
-    console.error('[periodic-cards] failed to claim daily login card', error)
+  } catch {
     return null
   }
 }
@@ -307,8 +301,7 @@ export async function claimStudyPeriodicCardReward(
     const reward = await upsertSupabaseCard(studentId, cardKey, source, entries)
     await appendRewardLog(studentId, cardKey, source, getJstDateKey(reward.obtainedAt))
     return reward
-  } catch (error) {
-    console.error('[periodic-cards] failed to grant study reward card', error)
+  } catch {
     return null
   }
 }

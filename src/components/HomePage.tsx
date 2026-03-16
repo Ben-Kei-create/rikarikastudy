@@ -140,8 +140,8 @@ export default function HomePage({
         if (!response.ok) return
         const payload = await response.json() as ScienceNewsResponse
         if (active && payload.item) setScienceNews(payload)
-      } catch (error) {
-        console.warn('[home] failed to load science news', error)
+      } catch {
+        // ignore – news is non-critical
       }
     }
 
