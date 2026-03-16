@@ -6,13 +6,16 @@ import {
   SCIENCE_NEWS_SOURCES,
 } from '@/lib/scienceNews'
 
+// Revalidate every hour so the daily news selection stays fresh
+export const revalidate = 3600
+
 export async function GET() {
   try {
     const sources = await Promise.all(
       SCIENCE_NEWS_SOURCES.map(async sourceConfig => {
         try {
           const response = await fetch(sourceConfig.rssUrl, {
-            next: { revalidate: 60 * 60 },
+            next: { revalidate: 3600 },
             headers: {
               'user-agent': 'RikaQuiz/1.0 (+https://rikarikastudy.vercel.app)',
             },
@@ -33,7 +36,12 @@ export async function GET() {
       return NextResponse.json(FALLBACK_SCIENCE_NEWS_RESPONSE)
     }
 
-    return NextResponse.json(buildScienceNewsResponse(candidates))
+    const payload = buildScienceNewsResponse(candidates)
+    return NextResponse.json(payload, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=1800',
+      },
+    })
   } catch {
     return NextResponse.json(FALLBACK_SCIENCE_NEWS_RESPONSE)
   }
