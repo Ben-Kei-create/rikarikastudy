@@ -1204,8 +1204,8 @@ export default function QuizPage({
               <div
                 className="mt-3 rounded-2xl px-4 py-3 text-sm"
                 style={{
-                  background: inquiryStatus.type === 'success' ? '#052e16' : '#450a0a',
-                  border: `1px solid ${inquiryStatus.type === 'success' ? '#166534' : '#991b1b'}`,
+                  background: inquiryStatus.type === 'success' ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)',
+                  border: `1px solid ${inquiryStatus.type === 'success' ? 'var(--color-success-soft-border)' : 'var(--color-danger-soft-border)'}`,
                   color: inquiryStatus.type === 'success' ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
                 }}
               >
@@ -1389,7 +1389,7 @@ export default function QuizPage({
                       answerResult === 'exact'
                         ? 'var(--color-success)'
                         : answerResult === 'semantic'
-                          ? '#10b981'
+                          ? 'var(--color-success-muted)'
                           : answerResult === 'keyword'
                             ? 'var(--color-warning)'
                             : 'var(--color-danger)'
@@ -1419,7 +1419,7 @@ export default function QuizPage({
           const accent = currentResult === 'exact'
             ? 'var(--color-success)'
             : currentResult === 'semantic'
-              ? '#10b981'
+              ? 'var(--color-success-muted)'
               : currentResult === 'keyword'
                 ? 'var(--color-warning)'
                 : 'var(--color-danger)'
