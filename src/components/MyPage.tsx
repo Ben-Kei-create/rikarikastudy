@@ -6,7 +6,7 @@ import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/th
 import { BADGE_DEFINITIONS, getBadgeRarityLabel } from '@/lib/badges'
 import { FIELD_EMOJI, FIELDS } from '@/lib/constants'
 import { getLevelInfo, getTotalXpFromSessions } from '@/lib/engagement'
-import { format, subDays, startOfDay, eachDayOfInterval, differenceInCalendarDays } from 'date-fns'
+import { format, subDays, subWeeks, startOfDay, startOfWeek, eachDayOfInterval, eachWeekOfInterval, differenceInCalendarDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
 import {
@@ -402,6 +402,25 @@ export default function MyPage({
 
   const weekData = dailyData.slice(-7)
   const weekMax = Math.max(...weekData.map(d => d.count), 1)
+
+  // 週ごとの正答率推移（最大8週間）
+  const weeklyAccuracyTrend = useMemo(() => {
+    const today = startOfDay(new Date())
+    const weeksAgo8 = subWeeks(today, 7)
+    const weekStarts = eachWeekOfInterval({ start: weeksAgo8, end: today }, { weekStartsOn: 1 })
+    return weekStarts.map(ws => {
+      const weekEnd = subDays(startOfWeek(subDays(ws, -7), { weekStartsOn: 1 }), 1)
+      const weekSessions = sessions.filter(s => {
+        const d = startOfDay(new Date(s.created_at))
+        return d >= ws && d <= weekEnd
+      })
+      const total = weekSessions.reduce((a, s) => a + s.total_questions, 0)
+      const correct = weekSessions.reduce((a, s) => a + s.correct_count, 0)
+      const rate = total > 0 ? Math.round((correct / total) * 100) : null
+      return { weekStart: ws, total, correct, rate, label: format(ws, 'M/d') }
+    })
+  }, [sessions])
+
   const historySessions = useMemo(
     () => sessions.slice(0, HISTORY_SESSION_LIMIT),
     [sessions]
@@ -966,65 +985,86 @@ export default function MyPage({
               </div>
             </div>
 
-            <div className="card">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="max-w-2xl">
-                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Element Cards</div>
-                  <div className="mt-2 text-lg font-semibold text-white">元素カードコレクション</div>
-                  <p className="mt-1 text-sm leading-6 text-slate-400">
-                    ログインボーナスやパーフェクト報酬で集めた元素カードを、元素番号順に見返せます。カードには特徴や雑学も入っています。
-                  </p>
-                  {periodicUnlocked ? (
-                    <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
-                      borderColor: 'var(--color-info-soft-border)',
-                      background: 'rgba(56, 189, 248, 0.06)',
-                    }}>
-                      <div className="text-xs font-semibold tracking-[0.18em] text-sky-200">COLLECTION</div>
-                      <div className="mt-2 text-2xl font-display text-white">{periodicOwnedCount}<span className="text-base text-slate-500"> / {periodicTotalCount}</span></div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        {periodicCardsLoading ? 'コレクションを読み込み中...' : 'マイページの「元素カード」タブで、入手したカードだけを左右スワイプできます。'}
-                      </div>
+            {/* 正答率の推移グラフ（週単位） */}
+            {(() => {
+              const points = weeklyAccuracyTrend.filter(w => w.rate !== null) as { weekStart: Date; total: number; correct: number; rate: number; label: string }[]
+              if (points.length < 2) return null
+              const svgW = 320
+              const svgH = 140
+              const padX = 36
+              const padY = 20
+              const padBottom = 28
+              const chartW = svgW - padX * 2
+              const chartH = svgH - padY - padBottom
+              const minRate = Math.max(0, Math.min(...points.map(p => p.rate)) - 10)
+              const maxRate = Math.min(100, Math.max(...points.map(p => p.rate)) + 10)
+              const range = maxRate - minRate || 1
+              const coords = points.map((p, i) => ({
+                x: padX + (i / (points.length - 1)) * chartW,
+                y: padY + chartH - ((p.rate - minRate) / range) * chartH,
+                ...p,
+              }))
+              const pathD = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x},${c.y}`).join(' ')
+              const firstRate = points[0].rate
+              const lastRate = points[points.length - 1].rate
+              const diff = lastRate - firstRate
+              return (
+                <div className="card">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">正答率の推移</h3>
+                    {diff !== 0 && (
+                      <span className="text-xs font-bold" style={{ color: diff > 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                        {diff > 0 ? '↑' : '↓'} {Math.abs(diff)}%
+                      </span>
+                    )}
+                  </div>
+                  <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full" style={{ maxHeight: 180 }}>
+                    {/* grid lines */}
+                    {[0, 0.25, 0.5, 0.75, 1].map(ratio => {
+                      const y = padY + chartH - ratio * chartH
+                      const val = Math.round(minRate + ratio * range)
+                      return (
+                        <g key={ratio}>
+                          <line x1={padX} y1={y} x2={svgW - padX} y2={y} stroke="rgba(148,163,184,0.12)" strokeWidth={1} />
+                          <text x={padX - 6} y={y + 3} textAnchor="end" fill="rgba(148,163,184,0.5)" fontSize={9}>{val}%</text>
+                        </g>
+                      )
+                    })}
+                    {/* area fill */}
+                    <path
+                      d={`${pathD} L${coords[coords.length - 1].x},${padY + chartH} L${coords[0].x},${padY + chartH} Z`}
+                      fill="url(#accuracyGradient)"
+                    />
+                    <defs>
+                      <linearGradient id="accuracyGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    {/* line */}
+                    <path d={pathD} fill="none" stroke="var(--color-accent)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                    {/* dots + labels */}
+                    {coords.map((c, i) => (
+                      <g key={i}>
+                        <circle cx={c.x} cy={c.y} r={4} fill="var(--color-accent)" stroke="var(--surface-main)" strokeWidth={2} />
+                        <text x={c.x} y={c.y - 10} textAnchor="middle" fill="white" fontSize={10} fontWeight={700}>{c.rate}%</text>
+                        <text x={c.x} y={svgH - 6} textAnchor="middle" fill="rgba(148,163,184,0.6)" fontSize={9}>{c.label}</text>
+                      </g>
+                    ))}
+                  </svg>
+                  {diff > 0 && (
+                    <div className="mt-3 rounded-[14px] px-3 py-2 text-xs text-emerald-200" style={{ background: 'rgba(52,211,153,0.08)' }}>
+                      直近 {points.length} 週間で正答率が <span className="font-bold">+{diff}%</span> 上がっています！
                     </div>
-                  ) : (
-                    <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
-                      borderColor: 'rgba(148, 163, 184, 0.16)',
-                      background: 'var(--inset-bg)',
-                    }}>
-                      <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">LOCKED</div>
-                      <div className="mt-2 font-semibold text-white">{getPeriodicCardUnlockText()}</div>
-                      <div className="mt-1 text-xs leading-6 text-slate-400">
-                        Lv.{20} になると、ログインボーナスやパーフェクト報酬で元素カードを集められます。
-                      </div>
+                  )}
+                  {diff < 0 && (
+                    <div className="mt-3 rounded-[14px] px-3 py-2 text-xs text-amber-200" style={{ background: 'rgba(251,191,36,0.08)' }}>
+                      苦手分野を復習して正答率を上げましょう！
                     </div>
                   )}
                 </div>
-
-                <div className="w-full lg:max-w-md">
-                  {periodicUnlocked && ownedPeriodicCards.length > 0 ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {ownedPeriodicCards.slice(0, 2).map(item => (
-                        <PeriodicCardSurface key={item.entry.cardKey} cardKey={item.entry.cardKey} entry={item.entry} compact />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3 rounded-[24px] border border-white/8 bg-slate-950/28 p-3">
-                      {[0, 1].map(index => (
-                        <div
-                          key={index}
-                          className="rounded-[18px] border border-dashed border-white/10 bg-slate-950/40 px-4 py-6"
-                          style={{ opacity: 0.65, minHeight: 176 }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {periodicCardsSchemaMessage && (
-                <div className="mt-4 rounded-[18px] border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                  {periodicCardsSchemaMessage}
-                </div>
-              )}
-            </div>
+              )
+            })()}
 
             {/* 分野別正答率バー */}
             <div className="card">
