@@ -159,12 +159,14 @@ export default function QuizPage({
   const [textInput, setTextInput] = useState('')
   const [answerResult, setAnswerResult] = useState<TextAnswerResult | null>(null)
   const [textJudgeLoading, setTextJudgeLoading] = useState(false)
+  const textSubmittingRef = useRef(false)
   const [textJudgeSource, setTextJudgeSource] = useState<TextJudgeSource | null>(null)
   const [textJudgeReason, setTextJudgeReason] = useState('')
   const [textJudgeWarning, setTextJudgeWarning] = useState('')
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(true)
   const [dailyLocked, setDailyLocked] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string; answerLogValue: string; result: TextAnswerResult }[]>([])
   const [comboStreak, setComboStreak] = useState(0)
   const [bestCombo, setBestCombo] = useState(0)
@@ -182,6 +184,7 @@ export default function QuizPage({
   const [recentInquiries, setRecentInquiries] = useState<QuestionInquiryRow[]>([])
   const [inquiryHistoryLoading, setInquiryHistoryLoading] = useState(false)
   const startedAtRef = useRef<number | null>(null)
+  const finishingRef = useRef(false)
   const activeDailyChallenge = dailyChallenge && !retryWrongOnly
 
   useEffect(() => {
@@ -189,6 +192,8 @@ export default function QuizPage({
 
     const load = async () => {
       setLoading(true)
+      setLoadError(null)
+      finishingRef.current = false
       setQuestions([])
       setCurrent(0)
       setPhase('answering')
@@ -258,7 +263,10 @@ export default function QuizPage({
 
       if (error) {
         console.error('[quiz] failed to load questions', error)
-        if (active) setLoading(false)
+        if (active) {
+          setLoadError('問題の読み込みに失敗しました。通信状況を確認してやり直してください。')
+          setLoading(false)
+        }
         return
       }
 
@@ -446,10 +454,11 @@ export default function QuizPage({
   }
 
   const handleTextSubmit = async () => {
-    if (!q || phase !== 'answering' || q.type !== 'text' || textJudgeLoading) return
+    if (!q || phase !== 'answering' || q.type !== 'text' || textJudgeLoading || textSubmittingRef.current) return
     const answer = textInput.trim()
     if (!answer) return
 
+    textSubmittingRef.current = true
     const localEvaluated = evaluateQuestionAnswer(q, { kind: 'text', value: answer })
     setTextJudgeLoading(true)
     setTextJudgeSource(null)
@@ -493,6 +502,7 @@ export default function QuizPage({
       applyEvaluatedAnswer(localEvaluated)
     } finally {
       setTextJudgeLoading(false)
+      textSubmittingRef.current = false
     }
   }
 
@@ -594,6 +604,8 @@ export default function QuizPage({
     if (!q) return
 
     if (current + 1 >= questions.length) {
+      if (finishingRef.current) return
+      finishingRef.current = true
       const durationSeconds = startedAtRef.current
         ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
         : 0
@@ -634,6 +646,7 @@ export default function QuizPage({
   }
 
   const restart = () => {
+    finishingRef.current = false
     startedAtRef.current = Date.now()
     setCurrent(0)
     setPhase('answering')
@@ -657,6 +670,7 @@ export default function QuizPage({
 
   const retryWrongQuestions = () => {
     if (wrongReviewItems.length === 0) return
+    finishingRef.current = false
     startedAtRef.current = Date.now()
     setQuestions(wrongReviewItems.map(item => item.question))
     setCurrent(0)
@@ -683,6 +697,19 @@ export default function QuizPage({
     return (
       <div className="page-shell flex items-center justify-center">
         <div className="card text-slate-400">問題を読み込み中...</div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="page-shell flex flex-col items-center justify-center">
+        <div className="card w-full max-w-md text-center">
+          <p className="text-red-400 mb-4">{loadError}</p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={onBack} className="btn-secondary">もどる</button>
+          </div>
+        </div>
       </div>
     )
   }

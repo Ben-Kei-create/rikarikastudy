@@ -40,7 +40,7 @@ class GeminiRequestError extends Error {
 }
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
-const GEMINI_TIMEOUT_MS = 12000
+const GEMINI_TIMEOUT_MS = 18000
 const GEMINI_MAX_ATTEMPTS = 2
 
 function getScienceChatApiKey() {
