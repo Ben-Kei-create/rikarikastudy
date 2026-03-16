@@ -1444,7 +1444,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             onKeyDown={e => e.key === 'Enter' && checkPw()}
             placeholder="管理者パスワード"
             className="input-surface text-center mb-3"
-            style={{ borderColor: pwError ? '#ef4444' : undefined }}
+            style={{ borderColor: pwError ? 'var(--color-danger)' : undefined }}
             autoFocus
           />
           {pwError && <p className="text-red-400 text-sm text-center mb-3">パスワードが違います</p>}
@@ -1496,7 +1496,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                   onClick={() => setQuestionPage(item)}
                   className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
                   style={{
-                    background: item === questionPage ? 'rgba(56, 189, 248, 0.16)' : 'rgba(15, 23, 42, 0.85)',
+                    background: item === questionPage ? 'rgba(56, 189, 248, 0.16)' : 'var(--card-gradient-base)',
                     border: `1px solid ${item === questionPage ? 'rgba(56, 189, 248, 0.34)' : 'rgba(51, 65, 85, 0.72)'}`,
                     color: item === questionPage ? '#bae6fd' : '#cbd5e1',
                   }}
@@ -1537,10 +1537,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <h1 className="font-display text-3xl text-white">管理画面</h1>
             </div>
           </div>
-          <div className="segment-bar">
+          <div className="segment-bar" role="tablist" aria-label="管理画面">
             {([['overview', '📊 生徒データ'], ['inquiries', '📨 問い合わせ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録']] as const).map(([currentTab, label]) => (
               <button
                 key={currentTab}
+                role="tab"
+                aria-selected={tab === currentTab}
                 onClick={() => setTab(currentTab)}
                 className={`segment-button ${tab === currentTab ? 'is-active' : ''}`}
               >
@@ -1565,7 +1567,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       生徒には人数だけを出し、管理画面では誰がログイン中か確認できます。
                     </div>
                   </div>
-                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(10, 132, 255, 0.12)', border: '1px solid rgba(10, 132, 255, 0.22)' }}>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'var(--color-accent-soft-bg)', border: '1px solid var(--color-accent-soft-border)' }}>
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ONLINE</div>
                     <div className="mt-2 font-display text-3xl text-white">{activeStudents.length}人</div>
                   </div>
@@ -1607,7 +1609,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     {exportMsg && (
                       <div
                         className="text-sm mt-2"
-                        style={{ color: exportMsg.startsWith('✅') ? '#4ade80' : '#f87171' }}
+                        style={{ color: exportMsg.startsWith('✅') ? 'var(--color-success)' : 'var(--color-danger)' }}
                       >
                         {exportMsg}
                       </div>
@@ -1624,7 +1626,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               </div>
 
               <div className="card">
-                <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[0.78fr_1.22fr]">
+                <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[0.78fr_1.22fr]">
                   <div className="space-y-4">
                     <div>
                       <div className="text-white font-bold">ログイン画面アップデート掲示板</div>
@@ -1680,7 +1682,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     {loginUpdateMsg && (
                       <div
                         className="rounded-2xl px-4 py-3 text-sm"
-                        style={{ color: loginUpdateMsg.startsWith('✅') ? '#86efac' : '#fca5a5', background: loginUpdateMsg.startsWith('✅') ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)', border: `1px solid ${loginUpdateMsg.startsWith('✅') ? 'rgba(34, 197, 94, 0.18)' : 'rgba(239, 68, 68, 0.18)'}` }}
+                        style={{ color: loginUpdateMsg.startsWith('✅') ? 'var(--color-success-muted)' : 'var(--color-danger-muted)', background: loginUpdateMsg.startsWith('✅') ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)', border: `1px solid ${loginUpdateMsg.startsWith('✅') ? 'var(--color-success-soft-border)' : 'var(--color-danger-soft-border)'}` }}
                       >
                         {loginUpdateMsg}
                       </div>
@@ -1733,7 +1735,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               </div>
 
               <div className="card">
-                <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[0.72fr_1.28fr]">
+                <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[0.72fr_1.28fr]">
                   <div className="space-y-4">
                     <div>
                       <div className="text-white font-bold">リワード条件一覧</div>
@@ -1794,7 +1796,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                                 className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em]"
                                 style={{
                                   color: rarityStyle.textColor,
-                                  background: 'rgba(2, 6, 23, 0.42)',
+                                  background: 'var(--card-gradient-base-soft)',
                                 }}
                               >
                                 {rarityStyle.label}
@@ -1819,7 +1821,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       生徒が問題文や解答について送ってきた連絡をここで確認できます。
                     </div>
                   </div>
-                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.22)' }}>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'var(--color-info-soft-bg)', border: '1px solid var(--color-info-soft-border)' }}>
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">OPEN</div>
                     <div className="mt-2 font-display text-3xl text-white">
                       {questionInquiries.filter(inquiry => inquiry.status !== 'resolved').length}件
@@ -1887,7 +1889,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       悪口や下ネタを含む入力を検知すると、ここに記録します。
                     </div>
                   </div>
-                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(248, 113, 113, 0.12)', border: '1px solid rgba(248, 113, 113, 0.22)' }}>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'var(--color-danger-soft-bg)', border: '1px solid var(--color-danger-soft-border)' }}>
                     <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ALERT</div>
                     <div className="mt-2 font-display text-3xl text-white">{chatGuardLogs.length}件</div>
                   </div>
@@ -2162,7 +2164,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                         </div>
                       </div>
 
-                      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
                         <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
                           <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">自動添付された問題内容</div>
                           <div className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
@@ -2381,7 +2383,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                         {question.image_url && (
                           <span
                             className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
-                            style={{ background: 'rgba(56, 189, 248, 0.14)', color: '#7dd3fc' }}
+                            style={{ background: 'var(--color-info-soft-bg)', color: 'var(--color-info-muted)' }}
                           >
                             画像あり
                           </span>
@@ -2401,7 +2403,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                           <div
                             className="overflow-hidden rounded-2xl border bg-slate-950/50"
                             style={{
-                              borderColor: 'rgba(148, 163, 184, 0.16)',
+                              borderColor: 'var(--color-neutral-soft-border)',
                               width: `min(100%, ${previewImageSize.width}px)`,
                               aspectRatio: previewImageSize.aspectRatio,
                             }}
@@ -2695,8 +2697,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     onClick={() => setForm(current => ({ ...current, answer: mark }))}
                     className="rounded-[20px] border px-4 py-4 text-xl font-bold transition-all"
                     style={{
-                      borderColor: form.answer === mark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(148, 163, 184, 0.16)',
-                      background: form.answer === mark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.48)',
+                      borderColor: form.answer === mark ? 'var(--color-info-soft-border)' : 'var(--color-neutral-soft-border)',
+                      background: form.answer === mark ? 'rgba(56, 189, 248, 0.12)' : 'var(--card-gradient-base-soft)',
                     }}
                   >
                     {mark}
@@ -2803,7 +2805,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       {tab === 'bulk' && (
         <div className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="card">
                 <h3 className="text-white font-bold mb-2">問題 JSON 一括追加</h3>

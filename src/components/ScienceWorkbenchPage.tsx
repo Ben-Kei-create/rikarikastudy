@@ -1682,8 +1682,8 @@ export default function ScienceWorkbenchPage({
                 })}
                 className="rounded-2xl border px-4 py-3 text-left transition"
                 style={{
-                  borderColor: state.slots.includes(option.key) ? `${meta.accent}66` : 'rgba(255,255,255,0.08)',
-                  background: state.slots.includes(option.key) ? `${meta.accent}20` : 'rgba(15, 23, 42, 0.56)',
+                  borderColor: state.slots.includes(option.key) ? `${meta.accent}66` : 'var(--border)',
+                  background: state.slots.includes(option.key) ? `${meta.accent}20` : 'var(--card-gradient-base-soft)',
                 }}
               >
                 <div className="font-semibold text-white">{option.label}</div>
@@ -1958,7 +1958,7 @@ export default function ScienceWorkbenchPage({
                   ? feedback.correct
                     ? 'rgba(34, 197, 94, 0.08)'
                     : 'rgba(127, 29, 29, 0.12)'
-                  : 'rgba(15, 23, 42, 0.42)',
+                  : 'var(--card-gradient-base-soft)',
               }}
             >
               <div className="text-lg font-bold text-white">

@@ -14,7 +14,6 @@ import EarthSciencePracticePage from '@/components/EarthSciencePracticePage'
 import ScienceWorkbenchPage from '@/components/ScienceWorkbenchPage'
 import TimeAttackPage from '@/components/TimeAttackPage'
 import OnlineLabPage from '@/components/OnlineLabPage'
-import ActiveRecallPage from '@/components/ActiveRecallPage'
 import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
@@ -23,7 +22,6 @@ import ScienceChatPage from '@/components/ScienceChatPage'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { CustomQuizOptions } from '@/lib/customQuiz'
 import { QuizQuestionCount } from '@/lib/questionPicker'
-import { ScienceField } from '@/lib/constants'
 
 type Screen =
   | 'home'
@@ -37,7 +35,6 @@ type Screen =
   | { type: 'earth-practice'; mode: EarthSciencePracticeMode }
   | { type: 'science-workbench'; mode: ScienceWorkbenchMode }
   | { type: 'chat'; field: ScienceChatField }
-  | { type: 'active-recall'; field: ScienceField }
 
 const BG_THEMES = ['bg-bio', 'bg-chem', 'bg-phys', 'bg-earth'] as const
 
@@ -90,7 +87,6 @@ function App() {
             onSelectEarthMode={mode => setScreen({ type: 'earth-practice', mode })}
             onSelectWorkbenchMode={mode => setScreen({ type: 'science-workbench', mode })}
             onOpenChat={field => setScreen({ type: 'chat', field })}
-            onStartActiveRecall={field => setScreen({ type: 'active-recall', field })}
             onBack={goHome}
           />
         )
@@ -98,10 +94,6 @@ function App() {
       case 'chat': {
         const s = screen as Extract<Screen, { type: 'chat' }>
         return <ScienceChatPage field={s.field} onBack={() => setScreen({ type: 'unit', field: s.field })} />
-      }
-      case 'active-recall': {
-        const s = screen as Extract<Screen, { type: 'active-recall' }>
-        return <ActiveRecallPage field={s.field} onBack={() => setScreen({ type: 'unit', field: s.field })} />
       }
       case 'chemistry-practice': {
         const s = screen as Extract<Screen, { type: 'chemistry-practice' }>

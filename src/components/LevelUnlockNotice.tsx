@@ -16,7 +16,7 @@ export default function LevelUnlockNotice({
   return (
     <div className="mt-5 rounded-[24px] border px-4 py-4 text-left" style={{
       borderColor: 'rgba(56, 189, 248, 0.24)',
-      background: 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.08))',
+      background: 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), var(--inset-bg))',
     }}>
       <div className="text-xs font-semibold tracking-[0.2em] text-sky-200">UNLOCKED</div>
       <div className="mt-2 font-semibold text-white">レベルアップで新しい報酬が解放されました</div>
@@ -26,8 +26,8 @@ export default function LevelUnlockNotice({
             key={reward.key}
             className="rounded-[18px] border px-4 py-3"
             style={{
-              borderColor: 'rgba(255, 255, 255, 0.08)',
-              background: 'rgba(15, 23, 42, 0.36)',
+              borderColor: 'var(--border)',
+              background: 'var(--inset-bg)',
             }}
           >
             <div className="flex items-center gap-3">

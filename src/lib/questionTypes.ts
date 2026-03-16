@@ -75,7 +75,7 @@ export function isChallengeSupportedQuestionType(type: QuestionType) {
 }
 
 export function isTimedChallengeSupportedQuestionType(type: QuestionType) {
-  return type !== 'text'
+  return type === 'choice' || type === 'choice4' || type === 'true_false'
 }
 
 function cleanString(value: unknown) {

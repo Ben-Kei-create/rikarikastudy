@@ -29,7 +29,7 @@ function buildCardStyle(
     overflow: 'hidden',
     borderRadius: compactLike ? 24 : size === 'showcase' ? 26 : 30,
     border: `1px solid ${border}`,
-    background: `linear-gradient(155deg, ${accent}1f 0%, rgba(15, 23, 42, 0.92) 48%, rgba(2, 6, 23, 0.98) 100%)`,
+    background: `linear-gradient(155deg, ${accent}1f 0%, var(--card-gradient-base) 48%, var(--card-gradient-base) 100%)`,
     boxShadow: `0 22px 48px ${glow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
   }
 }
@@ -120,8 +120,8 @@ export function PeriodicCardSurface({
               key={feature}
               className={`rounded-[16px] border px-3 py-2 text-slate-100 ${compactLike ? 'text-[13px]' : 'text-sm'}`}
               style={{
-                borderColor: 'rgba(255,255,255,0.08)',
-                background: 'rgba(15, 23, 42, 0.42)',
+                borderColor: 'var(--border)',
+                background: 'var(--card-gradient-base-soft)',
               }}
             >
               {feature}
@@ -134,7 +134,7 @@ export function PeriodicCardSurface({
             className="mt-4 rounded-[20px] border px-4 py-3"
             style={{
               borderColor: 'rgba(255,255,255,0.08)',
-              background: 'rgba(2, 6, 23, 0.5)',
+              background: 'var(--card-gradient-base-soft)',
             }}
           >
             <div className={`${chipText} font-semibold tracking-[0.18em] text-slate-400`}>TRIVIA</div>
@@ -264,7 +264,7 @@ export function PeriodicCardRewardPanel({
       className="mt-5 rounded-[26px] border px-4 py-4"
       style={{
         borderColor: 'rgba(245, 158, 11, 0.24)',
-        background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.12))',
+        background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.12), var(--inset-bg))',
       }}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -314,13 +314,13 @@ export function PeriodicCardRewardModal({
   return (
     <div
       className="fixed inset-0 z-[120] flex items-center justify-center px-4 py-6"
-      style={{ background: 'rgba(2, 6, 23, 0.72)', backdropFilter: 'blur(14px)' }}
+      style={{ background: 'var(--card-gradient-base-soft)', backdropFilter: 'blur(14px)' }}
     >
       <div
         className="w-full max-w-xl rounded-[30px] border px-5 py-6 anim-fade-up"
         style={{
           borderColor: 'rgba(255,255,255,0.08)',
-          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.98))',
+          background: 'linear-gradient(180deg, var(--card-gradient-base), var(--card-gradient-base))',
           boxShadow: '0 36px 80px rgba(2, 6, 23, 0.5)',
         }}
       >

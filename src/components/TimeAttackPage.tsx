@@ -657,7 +657,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   style={{
                     width: `${levelInfo.progressRate}%`,
                     height: '100%',
-                    background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                    background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
                     borderRadius: 999,
                   }}
                 />
@@ -724,7 +724,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               style={{
                 width: `${Math.min(100, Math.round((currentLevelInfo.totalXp / Math.max(1, getXpFloorForLevel(TIME_ATTACK_UNLOCK_LEVEL))) * 100))}%`,
                 height: '100%',
-                background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
                 borderRadius: 999,
               }}
             />
@@ -747,7 +747,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
         <div className="hero-card science-surface p-6 sm:p-7">
           <div className="text-xs font-semibold tracking-[0.2em] text-sky-200 uppercase">Challenge</div>
           <h1 className="font-display mt-3 text-4xl text-white">チャレンジモード</h1>
-          <div className="mt-6 grid gap-3 lg:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
             {(Object.keys(CHALLENGE_MODE_META) as ChallengeMode[]).map(mode => {
               const meta = CHALLENGE_MODE_META[mode]
               const selected = mode === selectedMode
@@ -765,8 +765,8 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   style={{
                     borderColor: selected ? `${meta.accent}66` : 'rgba(148, 163, 184, 0.14)',
                     background: selected
-                      ? `linear-gradient(135deg, ${meta.accent}1f, rgba(15, 23, 42, 0.9))`
-                      : 'rgba(15, 23, 42, 0.72)',
+                      ? `linear-gradient(135deg, ${meta.accent}1f, var(--card-gradient-base))`
+                      : 'var(--card-gradient-base-soft)',
                     boxShadow: selected ? `0 0 0 1px ${meta.accent}33 inset` : 'none',
                   }}
                 >
@@ -788,7 +788,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
             })}
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="mt-6 grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
             <div className="subcard p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -885,7 +885,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                         className="rounded-[18px] border px-4 py-3"
                         style={{
                           borderColor: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.32)' : 'rgba(148, 163, 184, 0.16)',
-                          background: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.08)' : 'rgba(15, 23, 42, 0.56)',
+                          background: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.08)' : 'var(--card-gradient-base-soft)',
                         }}
                       >
                         <div className="flex items-center justify-between gap-3">
@@ -1041,7 +1041,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     className="flex items-center justify-between gap-3 rounded-[16px] border px-3 py-2"
                     style={{
                       borderColor: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.32)' : 'rgba(148, 163, 184, 0.16)',
-                      background: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.08)' : 'rgba(15, 23, 42, 0.48)',
+                      background: entry.isCurrentUser ? 'rgba(34, 197, 94, 0.08)' : 'var(--card-gradient-base-soft)',
                     }}
                   >
                     <div className="min-w-0">
@@ -1093,7 +1093,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                   style={{
                     width: `${testModeProgress}%`,
                     height: '100%',
-                    background: 'linear-gradient(90deg, #f59e0b, #f97316)',
+                    background: 'linear-gradient(90deg, var(--color-warning), var(--chem))',
                     borderRadius: 999,
                     transition: 'width 0.3s ease',
                   }}
@@ -1115,7 +1115,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
           <div key={`${selectedMode}-${currentQuestion.id}-${currentIndex}`} className="card anim-fade-up mb-4">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f59e0b20', color: '#fbbf24' }}>
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'var(--color-warning-soft-bg)', color: 'var(--color-warning-muted)' }}>
                   {currentQuestion.field} · {currentQuestion.unit}
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(148, 163, 184, 0.14)', color: 'var(--text-muted)' }}>
@@ -1252,7 +1252,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     className="mb-3 rounded-[24px] border px-4 py-3"
                     style={{
                       borderColor: 'rgba(245, 158, 11, 0.24)',
-                      background: 'rgba(15, 23, 42, 0.68)',
+                      background: 'var(--card-gradient-base-soft)',
                     }}
                   >
                     <div
@@ -1403,8 +1403,8 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
               <div
                 className="mt-4 inline-flex rounded-full px-3 py-1.5 text-sm font-semibold"
                 style={{
-                  background: feedback === 'correct' ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)',
-                  color: feedback === 'correct' ? '#86efac' : '#fca5a5',
+                  background: feedback === 'correct' ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)',
+                  color: feedback === 'correct' ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
                 }}
               >
                 {feedback === 'correct' ? '○ 正解' : '× 不正解'}
@@ -1518,7 +1518,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                     className="mb-3 rounded-[24px] border px-4 py-3"
                     style={{
                       borderColor: 'rgba(56, 189, 248, 0.18)',
-                      background: 'rgba(15, 23, 42, 0.62)',
+                      background: 'var(--card-gradient-base-soft)',
                     }}
                   >
                     <div

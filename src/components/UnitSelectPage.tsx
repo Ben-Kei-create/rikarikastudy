@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { ACTIVE_RECALL_UNLOCK_LEVEL } from '@/lib/activeRecall'
 import { BIOLOGY_MODE_META, BiologyPracticeMode } from '@/lib/biologyPractice'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import LabModeCard from '@/components/LabModeCard'
@@ -37,7 +36,7 @@ import {
   markColumnSupported,
 } from '@/lib/schemaCompat'
 import { FIELD_COLORS, FIELD_EMOJI } from '@/lib/constants'
-import { getLevelInfo, getXpFloorForLevel } from '@/lib/engagement'
+import { getLevelInfo } from '@/lib/engagement'
 import { QuizQuestionCount } from '@/lib/questionPicker'
 
 interface UnitStat {
@@ -56,7 +55,6 @@ export default function UnitSelectPage({
   onSelectEarthMode,
   onSelectWorkbenchMode,
   onOpenChat,
-  onStartActiveRecall,
   onBack,
 }: {
   field: string
@@ -67,7 +65,6 @@ export default function UnitSelectPage({
   onSelectEarthMode: (mode: EarthSciencePracticeMode) => void
   onSelectWorkbenchMode: (mode: ScienceWorkbenchMode) => void
   onOpenChat: (field: ScienceChatField) => void
-  onStartActiveRecall: (field: '生物' | '化学' | '物理' | '地学') => void
   onBack: () => void
 }) {
   const { studentId, logout } = useAuth()
@@ -78,15 +75,13 @@ export default function UnitSelectPage({
   const [availableGrades, setAvailableGrades] = useState<CustomQuizGradeFilter[]>(['中1', '中2', '中3'])
   const [questionCount, setQuestionCount] = useState<QuizQuestionCount>(10)
   const [currentXp, setCurrentXp] = useState(0)
-  const color = FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? '#38bdf8'
+  const color = FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? 'var(--color-info)'
   const totalQuestionCount = units.reduce((sum, item) => sum + item.questionCount, 0)
   const isGuest = isGuestStudentId(studentId)
   const customGradeOptions = CUSTOM_QUIZ_GRADE_OPTIONS.filter(grade => (
     grade === 'all' || availableGrades.includes(grade)
   ))
   const levelInfo = getLevelInfo(currentXp)
-  const activeRecallUnlocked = !isGuest && levelInfo.level >= ACTIVE_RECALL_UNLOCK_LEVEL
-  const activeRecallUnlockXpLeft = Math.max(0, getXpFloorForLevel(ACTIVE_RECALL_UNLOCK_LEVEL) - levelInfo.totalXp)
 
   useEffect(() => {
     setShowCustomPanel(false)
@@ -240,7 +235,7 @@ export default function UnitSelectPage({
                 </div>
               </div>
             </div>
-            <div className="grid w-full grid-cols-2 gap-2 lg:w-[284px]">
+            <div className="grid w-full grid-cols-2 gap-2 md:w-[284px]">
               <button onClick={onBack} className="btn-secondary w-full !py-2.5 sm:!py-3">もどる</button>
               <button onClick={() => logout()} className="btn-ghost w-full !py-2.5 sm:!py-3">ログアウト</button>
             </div>
@@ -252,8 +247,8 @@ export default function UnitSelectPage({
         <div
           className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
           style={{
-            borderColor: 'rgba(148, 163, 184, 0.2)',
-            background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), rgba(15, 23, 42, 0.82))',
+            borderColor: 'var(--color-neutral-soft-border)',
+            background: `linear-gradient(135deg, var(--surface-soft), var(--card-gradient-base-mid))`,
             animationDelay: '0.04s',
             opacity: 0.88,
           }}
@@ -283,7 +278,7 @@ export default function UnitSelectPage({
           className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
           style={{
             borderColor: `${color}40`,
-            background: `linear-gradient(135deg, ${color}18, rgba(15, 23, 42, 0.82))`,
+            background: `linear-gradient(135deg, ${color}18, var(--card-gradient-base-mid))`,
             animationDelay: '0.04s',
             transition: 'transform 0.18s ease, box-shadow 0.18s ease',
           }}
@@ -312,85 +307,6 @@ export default function UnitSelectPage({
               className="inline-flex items-center justify-center rounded-full border border-slate-600 bg-slate-800/70 px-3 py-1.5 text-xs font-semibold text-slate-100 sm:px-4 sm:py-2 sm:text-sm"
             >
               Geminiに聞く →
-            </div>
-          </div>
-        </button>
-      )}
-
-      {isGuest ? (
-        <div
-          className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
-          style={{
-            borderColor: 'rgba(148, 163, 184, 0.2)',
-            background: 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), rgba(15, 23, 42, 0.82))',
-            animationDelay: '0.045s',
-            opacity: 0.9,
-          }}
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">
-                Recall Lab
-              </div>
-              <div className="mt-2 font-display text-xl text-slate-100 sm:text-2xl">
-                アクティブリコール
-              </div>
-              <div className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">
-                ゲストは使えません
-              </div>
-            </div>
-            <div
-              className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-400 sm:px-4 sm:py-2 sm:text-sm"
-            >
-              利用不可
-            </div>
-          </div>
-        </div>
-      ) : (
-        <button
-          onClick={() => activeRecallUnlocked && onStartActiveRecall(field as '生物' | '化学' | '物理' | '地学')}
-          disabled={!activeRecallUnlocked}
-          className="card mobile-action-card w-full anim-fade-up mb-4 text-left disabled:cursor-not-allowed disabled:opacity-90"
-          style={{
-            borderColor: activeRecallUnlocked ? `${color}40` : 'rgba(148, 163, 184, 0.24)',
-            background: activeRecallUnlocked
-              ? `linear-gradient(135deg, ${color}18, rgba(15, 23, 42, 0.82))`
-              : 'linear-gradient(135deg, rgba(71, 85, 105, 0.26), rgba(15, 23, 42, 0.82))',
-            animationDelay: '0.045s',
-            transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-          }}
-          onMouseEnter={event => {
-            if (!activeRecallUnlocked) return
-            event.currentTarget.style.transform = 'translateY(-2px)'
-            event.currentTarget.style.boxShadow = `0 18px 34px ${color}20`
-          }}
-          onMouseLeave={event => {
-            event.currentTarget.style.transform = ''
-            event.currentTarget.style.boxShadow = ''
-          }}
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className={`text-[11px] font-semibold tracking-[0.2em] uppercase ${activeRecallUnlocked ? 'text-slate-400' : 'text-slate-500'}`}>
-                Recall Lab
-              </div>
-              <div className={`mt-2 font-display text-xl sm:text-2xl ${activeRecallUnlocked ? 'text-white' : 'text-slate-100'}`}>
-                アクティブリコール
-              </div>
-              <div className={`mt-2 text-[13px] leading-5 sm:text-sm sm:leading-6 ${activeRecallUnlocked ? 'text-slate-300' : 'text-slate-400'}`}>
-                {activeRecallUnlocked
-                  ? '短文で説明して、AI に不足点だけ返してもらう'
-                  : `Lv.${ACTIVE_RECALL_UNLOCK_LEVEL} で解放 / あと ${activeRecallUnlockXpLeft} XP`}
-              </div>
-            </div>
-            <div
-              className={`inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm ${
-                activeRecallUnlocked
-                  ? 'border-slate-600 bg-slate-800/70 text-slate-100'
-                  : 'border-slate-700 bg-slate-900/60 text-slate-400'
-              }`}
-            >
-              {activeRecallUnlocked ? '開始する →' : `Lv.${levelInfo.level}`}
             </div>
           </div>
         </button>
@@ -456,11 +372,11 @@ export default function UnitSelectPage({
         className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
         style={{
           borderColor: `${color}35`,
-          background: `linear-gradient(180deg, ${color}14, rgba(15, 23, 42, 0.82))`,
+          background: `linear-gradient(180deg, ${color}14, var(--card-gradient-base-mid))`,
           animationDelay: '0.06s',
         }}
       >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
               Custom
@@ -493,7 +409,7 @@ export default function UnitSelectPage({
 
         {showCustomPanel && (
             <div className="mt-4 rounded-[22px] border border-white/8 bg-slate-950/24 p-3.5 sm:mt-5 sm:rounded-[24px] sm:p-5">
-            <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="grid gap-4 md:grid-cols-[0.9fr_1.1fr]">
               <div>
                 <label className="text-slate-400 text-xs mb-2 block">対象単元</label>
                 <select

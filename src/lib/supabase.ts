@@ -45,7 +45,6 @@ type SessionMode =
   | 'physics_motion_graph_lab'
   | 'test_mode'
   | 'streak_mode'
-  | 'active_recall'
   | 'time_attack'
 
 export type Database = {

@@ -61,7 +61,7 @@ export default function MatchQuestion({
                   className="w-full rounded-[18px] border px-3 py-3 text-left transition-all"
                   style={{
                     borderColor: active ? 'rgba(56, 189, 248, 0.4)' : 'rgba(148, 163, 184, 0.16)',
-                    background: active ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.48)',
+                    background: active ? 'rgba(56, 189, 248, 0.12)' : 'var(--card-gradient-base-soft)',
                   }}
                 >
                   <div className="text-sm font-semibold text-white">{pair.left}</div>
@@ -85,7 +85,7 @@ export default function MatchQuestion({
                   className="w-full rounded-[18px] border px-3 py-3 text-left transition-all"
                   style={{
                     borderColor: locked ? 'rgba(34, 197, 94, 0.26)' : 'rgba(148, 163, 184, 0.16)',
-                    background: locked ? 'rgba(34, 197, 94, 0.1)' : 'rgba(15, 23, 42, 0.48)',
+                    background: locked ? 'rgba(34, 197, 94, 0.1)' : 'var(--card-gradient-base-soft)',
                     color: locked ? '#bbf7d0' : 'var(--text)',
                     opacity: !selectedLeft && !disabled ? 0.68 : 1,
                   }}

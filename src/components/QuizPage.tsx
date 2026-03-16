@@ -159,12 +159,14 @@ export default function QuizPage({
   const [textInput, setTextInput] = useState('')
   const [answerResult, setAnswerResult] = useState<TextAnswerResult | null>(null)
   const [textJudgeLoading, setTextJudgeLoading] = useState(false)
+  const textSubmittingRef = useRef(false)
   const [textJudgeSource, setTextJudgeSource] = useState<TextJudgeSource | null>(null)
   const [textJudgeReason, setTextJudgeReason] = useState('')
   const [textJudgeWarning, setTextJudgeWarning] = useState('')
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(true)
   const [dailyLocked, setDailyLocked] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string; answerLogValue: string; result: TextAnswerResult }[]>([])
   const [comboStreak, setComboStreak] = useState(0)
   const [bestCombo, setBestCombo] = useState(0)
@@ -182,6 +184,7 @@ export default function QuizPage({
   const [recentInquiries, setRecentInquiries] = useState<QuestionInquiryRow[]>([])
   const [inquiryHistoryLoading, setInquiryHistoryLoading] = useState(false)
   const startedAtRef = useRef<number | null>(null)
+  const finishingRef = useRef(false)
   const activeDailyChallenge = dailyChallenge && !retryWrongOnly
 
   useEffect(() => {
@@ -189,6 +192,8 @@ export default function QuizPage({
 
     const load = async () => {
       setLoading(true)
+      setLoadError(null)
+      finishingRef.current = false
       setQuestions([])
       setCurrent(0)
       setPhase('answering')
@@ -258,7 +263,10 @@ export default function QuizPage({
 
       if (error) {
         console.error('[quiz] failed to load questions', error)
-        if (active) setLoading(false)
+        if (active) {
+          setLoadError('問題の読み込みに失敗しました。通信状況を確認してやり直してください。')
+          setLoading(false)
+        }
         return
       }
 
@@ -446,10 +454,11 @@ export default function QuizPage({
   }
 
   const handleTextSubmit = async () => {
-    if (!q || phase !== 'answering' || q.type !== 'text' || textJudgeLoading) return
+    if (!q || phase !== 'answering' || q.type !== 'text' || textJudgeLoading || textSubmittingRef.current) return
     const answer = textInput.trim()
     if (!answer) return
 
+    textSubmittingRef.current = true
     const localEvaluated = evaluateQuestionAnswer(q, { kind: 'text', value: answer })
     setTextJudgeLoading(true)
     setTextJudgeSource(null)
@@ -493,6 +502,7 @@ export default function QuizPage({
       applyEvaluatedAnswer(localEvaluated)
     } finally {
       setTextJudgeLoading(false)
+      textSubmittingRef.current = false
     }
   }
 
@@ -594,6 +604,8 @@ export default function QuizPage({
     if (!q) return
 
     if (current + 1 >= questions.length) {
+      if (finishingRef.current) return
+      finishingRef.current = true
       const durationSeconds = startedAtRef.current
         ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
         : 0
@@ -634,6 +646,7 @@ export default function QuizPage({
   }
 
   const restart = () => {
+    finishingRef.current = false
     startedAtRef.current = Date.now()
     setCurrent(0)
     setPhase('answering')
@@ -657,6 +670,7 @@ export default function QuizPage({
 
   const retryWrongQuestions = () => {
     if (wrongReviewItems.length === 0) return
+    finishingRef.current = false
     startedAtRef.current = Date.now()
     setQuestions(wrongReviewItems.map(item => item.question))
     setCurrent(0)
@@ -683,6 +697,19 @@ export default function QuizPage({
     return (
       <div className="page-shell flex items-center justify-center">
         <div className="card text-slate-400">問題を読み込み中...</div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="page-shell flex flex-col items-center justify-center">
+        <div className="card w-full max-w-md text-center">
+          <p className="text-red-400 mb-4">{loadError}</p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={onBack} className="btn-secondary">もどる</button>
+          </div>
+        </div>
       </div>
     )
   }
@@ -743,7 +770,7 @@ export default function QuizPage({
                   style={{
                     left: `${6 + ((index * 11) % 88)}%`,
                     animationDelay: `${(index % 6) * 0.08}s`,
-                    background: index % 3 === 0 ? '#38bdf8' : index % 3 === 1 ? '#f59e0b' : '#22c55e',
+                    background: index % 3 === 0 ? 'var(--color-info)' : index % 3 === 1 ? 'var(--color-warning)' : 'var(--color-success)',
                   }}
                 />
               ))}
@@ -778,10 +805,10 @@ export default function QuizPage({
                   borderRadius: '50%',
                   background:
                     answerLogs[index] && isCorrectTextAnswerResult(answerLogs[index].result)
-                      ? '#22c55e'
+                      ? 'var(--color-success)'
                       : answerLogs[index]?.result === 'keyword'
-                        ? '#f59e0b'
-                        : '#ef4444',
+                        ? 'var(--color-warning)'
+                        : 'var(--color-danger)',
                 }}
               />
             ))}
@@ -835,7 +862,7 @@ export default function QuizPage({
                       style={{
                         width: `${levelInfo.progressRate}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                        background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
                         borderRadius: 999,
                       }}
                     />
@@ -910,7 +937,7 @@ export default function QuizPage({
               </div>
 
               {reviewExpanded && (
-                <div className="mt-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+                <div className="mt-4 grid gap-4 md:grid-cols-[0.9fr_1.1fr]">
                   <div className="space-y-2">
                     {wrongReviewItems.map(item => (
                       <button
@@ -918,8 +945,8 @@ export default function QuizPage({
                         onClick={() => setSelectedReviewQuestionId(item.id)}
                         className="w-full rounded-[18px] border px-3.5 py-3 text-left transition-all"
                         style={{
-                          borderColor: selectedReviewItem?.id === item.id ? 'rgba(56, 189, 248, 0.3)' : 'rgba(148, 163, 184, 0.14)',
-                          background: selectedReviewItem?.id === item.id ? 'rgba(56, 189, 248, 0.08)' : 'rgba(15, 23, 42, 0.48)',
+                          borderColor: selectedReviewItem?.id === item.id ? 'var(--color-info-soft-border)' : 'var(--color-neutral-soft-bg)',
+                          background: selectedReviewItem?.id === item.id ? 'var(--color-info-soft-bg)' : 'var(--card-gradient-base-soft)',
                         }}
                       >
                         <div className="text-xs text-slate-500">#{item.index + 1}</div>
@@ -1013,7 +1040,7 @@ export default function QuizPage({
                   width: `${progress}%`,
                   height: '100%',
                   background: activeDailyChallenge
-                    ? 'linear-gradient(90deg, #f59e0b, #f97316)'
+                    ? 'linear-gradient(90deg, var(--color-warning), #f97316)'
                     : `linear-gradient(90deg, ${color}, ${color}80)`,
                   borderRadius: 999,
                   transition: 'width 0.4s ease',
@@ -1022,7 +1049,7 @@ export default function QuizPage({
             </div>
           </div>
           <div className="flex items-center justify-between gap-3 sm:justify-end">
-            <div className="text-sm font-semibold" style={{ color: activeDailyChallenge ? '#f59e0b' : retryWrongOnly ? '#38bdf8' : color }}>
+            <div className="text-sm font-semibold" style={{ color: activeDailyChallenge ? 'var(--color-warning)' : retryWrongOnly ? 'var(--color-info)' : color }}>
               {score}正解
             </div>
             <button onClick={() => logout()} className="btn-ghost hidden text-sm !px-4 !py-2.5 sm:inline-flex">
@@ -1036,19 +1063,19 @@ export default function QuizPage({
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex flex-wrap items-center gap-2">
             {activeDailyChallenge ? (
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f59e0b20', color: '#fbbf24' }}>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'var(--color-warning-soft-bg)', color: 'var(--color-warning-muted)' }}>
                 今日のチャレンジ
               </span>
             ) : retryWrongOnly ? (
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#38bdf820', color: '#7dd3fc' }}>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'var(--color-info-soft-bg)', color: 'var(--color-info-muted)' }}>
                 再チャレンジ
               </span>
             ) : customOptions ? (
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#38bdf820', color: '#7dd3fc' }}>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'var(--color-info-soft-bg)', color: 'var(--color-info-muted)' }}>
                 カスタム
               </span>
             ) : isDrill ? (
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f59e0b20', color: '#fbbf24' }}>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'var(--color-warning-soft-bg)', color: 'var(--color-warning-muted)' }}>
                 復習モード
               </span>
             ) : (
@@ -1056,7 +1083,7 @@ export default function QuizPage({
                 {q.field} · {q.unit}
               </span>
             )}
-            <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(148, 163, 184, 0.14)', color: 'var(--text-muted)' }}>
+            <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'var(--color-neutral-soft-bg)', color: 'var(--text-muted)' }}>
               {getQuestionTypeShortLabel(q.type)}
             </span>
           </div>
@@ -1065,9 +1092,9 @@ export default function QuizPage({
               onClick={handleToggleFavorite}
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-all"
               style={{
-                border: `1px solid ${isFavorite ? '#f59e0b55' : 'var(--surface-elevated-border)'}`,
-                background: isFavorite ? 'rgba(245, 158, 11, 0.14)' : 'var(--surface-elevated)',
-                color: isFavorite ? '#fbbf24' : 'var(--text-muted)',
+                border: `1px solid ${isFavorite ? 'var(--color-warning-soft-border)' : 'var(--surface-elevated-border)'}`,
+                background: isFavorite ? 'var(--color-warning-soft-bg)' : 'var(--surface-elevated)',
+                color: isFavorite ? 'var(--color-warning-muted)' : 'var(--text-muted)',
               }}
               aria-pressed={isFavorite}
               aria-label={isFavorite ? 'お気に入り解除' : 'お気に入り登録'}
@@ -1079,9 +1106,9 @@ export default function QuizPage({
               onClick={handleOpenInquiry}
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-all"
               style={{
-                border: '1px solid rgba(56, 189, 248, 0.24)',
-                background: inquiryOpen ? 'rgba(56, 189, 248, 0.14)' : 'var(--surface-elevated)',
-                color: inquiryOpen ? '#7dd3fc' : 'var(--text-muted)',
+                border: '1px solid var(--color-info-soft-border)',
+                background: inquiryOpen ? 'var(--color-info-soft-bg)' : 'var(--surface-elevated)',
+                color: inquiryOpen ? 'var(--color-info-muted)' : 'var(--text-muted)',
               }}
               aria-label="管理者へ問い合わせ"
             >
@@ -1096,7 +1123,7 @@ export default function QuizPage({
             <div
               className="overflow-hidden rounded-[24px] border bg-slate-950/50"
               style={{
-                borderColor: 'rgba(148, 163, 184, 0.16)',
+                borderColor: 'var(--color-neutral-soft-border)',
                 width: `min(100%, ${questionImageDisplay.width}px)`,
                 aspectRatio: questionImageDisplay.aspectRatio,
               }}
@@ -1114,8 +1141,8 @@ export default function QuizPage({
           <div
             className="mt-4 rounded-[24px] border px-4 py-4"
             style={{
-              borderColor: 'rgba(56, 189, 248, 0.2)',
-              background: 'rgba(15, 23, 42, 0.72)',
+              borderColor: 'var(--color-neutral-soft-border)',
+              background: 'var(--card-gradient-base-soft)',
             }}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1137,8 +1164,8 @@ export default function QuizPage({
                   onClick={() => setInquiryCategory(option.value)}
                   className="rounded-2xl border px-3 py-3 text-left transition-all"
                   style={{
-                    borderColor: inquiryCategory === option.value ? 'rgba(56, 189, 248, 0.38)' : 'rgba(148, 163, 184, 0.16)',
-                    background: inquiryCategory === option.value ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.42)',
+                    borderColor: inquiryCategory === option.value ? 'var(--color-info-soft-border)' : 'var(--color-neutral-soft-border)',
+                    background: inquiryCategory === option.value ? 'var(--color-info-soft-bg)' : 'var(--card-gradient-base-soft)',
                   }}
                 >
                   <div className="text-sm font-semibold text-white">{option.label}</div>
@@ -1177,9 +1204,9 @@ export default function QuizPage({
               <div
                 className="mt-3 rounded-2xl px-4 py-3 text-sm"
                 style={{
-                  background: inquiryStatus.type === 'success' ? '#052e16' : '#450a0a',
-                  border: `1px solid ${inquiryStatus.type === 'success' ? '#166534' : '#991b1b'}`,
-                  color: inquiryStatus.type === 'success' ? '#86efac' : '#fca5a5',
+                  background: inquiryStatus.type === 'success' ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)',
+                  border: `1px solid ${inquiryStatus.type === 'success' ? 'var(--color-success-soft-border)' : 'var(--color-danger-soft-border)'}`,
+                  color: inquiryStatus.type === 'success' ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
                 }}
               >
                 {inquiryStatus.text}
@@ -1326,14 +1353,14 @@ export default function QuizPage({
             <div
               className="mb-3 rounded-[24px] border px-4 py-3"
               style={{
-                borderColor: 'rgba(56, 189, 248, 0.18)',
-                background: 'rgba(15, 23, 42, 0.62)',
+                borderColor: 'var(--color-info-soft-border)',
+                background: 'var(--card-gradient-base-soft)',
               }}
             >
               <div
                 className="rounded-[20px] border px-4 py-3 text-base font-semibold leading-8 text-white"
                 style={{
-                  borderColor: 'rgba(56, 189, 248, 0.16)',
+                  borderColor: 'var(--color-info-soft-border)',
                   background: 'rgba(2, 8, 23, 0.32)',
                 }}
               >
@@ -1360,12 +1387,12 @@ export default function QuizPage({
                   phase === 'result'
                     ? `2px solid ${
                       answerResult === 'exact'
-                        ? '#22c55e'
+                        ? 'var(--color-success)'
                         : answerResult === 'semantic'
-                          ? '#10b981'
+                          ? 'var(--color-success-muted)'
                           : answerResult === 'keyword'
-                            ? '#f59e0b'
-                            : '#ef4444'
+                            ? 'var(--color-warning)'
+                            : 'var(--color-danger)'
                     }`
                     : undefined,
                 fontSize: '1rem',
@@ -1390,17 +1417,17 @@ export default function QuizPage({
           const currentResult = answerResult ?? 'incorrect'
           const isCorrect = isCorrectTextAnswerResult(currentResult)
           const accent = currentResult === 'exact'
-            ? '#22c55e'
+            ? 'var(--color-success)'
             : currentResult === 'semantic'
-              ? '#10b981'
+              ? 'var(--color-success-muted)'
               : currentResult === 'keyword'
-                ? '#f59e0b'
-                : '#ef4444'
+                ? 'var(--color-warning)'
+                : 'var(--color-danger)'
           const background = isCorrect
-            ? 'rgba(34, 197, 94, 0.12)'
+            ? 'var(--color-success-soft-bg)'
             : currentResult === 'keyword'
-              ? 'rgba(245, 158, 11, 0.12)'
-              : 'rgba(239, 68, 68, 0.12)'
+              ? 'var(--color-warning-soft-bg)'
+              : 'var(--color-danger-soft-bg)'
           const title = currentResult === 'exact'
             ? '◯ 正解！'
             : currentResult === 'semantic'

@@ -88,7 +88,7 @@ function StudentPicker({
           className="mt-4 rounded-[24px] border p-3.5 sm:p-4"
           style={{
             borderColor: 'rgba(125, 211, 252, 0.2)',
-            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(15, 23, 42, 0.56))',
+            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1), var(--card-gradient-base-soft))',
           }}
         >
           <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">選択中</div>
@@ -418,43 +418,43 @@ export default function LoginPage({
   }
 
   return (
-    <div className="page-shell page-shell-dashboard flex min-h-screen items-start justify-center py-4 sm:py-6 xl:items-center">
+    <div className="page-shell page-shell-dashboard flex min-h-screen items-start justify-center py-4 sm:py-6 lg:items-center">
       <div className="w-full max-w-6xl">
         <div className="hero-card science-surface w-full anim-fade-up px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
           <ScienceBackdrop />
 
-          <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
-            <div className="order-2 xl:order-1">
-              <div className="text-center xl:text-left">
+          <div className="grid gap-4 sm:gap-5 lg:gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+            <div className="order-2 lg:order-1">
+              <div className="text-center lg:text-left">
                 <div
                   className="text-[11px] font-semibold tracking-[0.28em] uppercase"
-                  style={{ color: '#8cc7ff' }}
+                  style={{ color: 'var(--color-sky-label)' }}
                 >
                   Science Study
                 </div>
                 <div
                   className="font-display mt-3 text-[3rem] leading-none sm:text-[4rem]"
                   style={{
-                    background: 'linear-gradient(135deg, #f8fbff 0%, #93c5fd 42%, #38bdf8 100%)',
+                    background: 'var(--hero-text-gradient)',
                     WebkitBackgroundClip: 'text',
                     color: 'transparent',
-                    filter: 'drop-shadow(0 18px 34px rgba(56, 189, 248, 0.24))',
+                    filter: 'drop-shadow(0 18px 34px var(--hero-text-shadow))',
                   }}
                 >
                   RikaQuiz
                 </div>
                 <h2
                   className="font-display mt-4 text-[1.9rem] tracking-[0.18em] text-white sm:text-[2.2rem]"
-                  style={{ textShadow: '0 14px 28px rgba(56, 189, 248, 0.18)' }}
+                  style={{ textShadow: '0 14px 28px var(--hero-text-shadow)' }}
                 >
                   Login
                 </h2>
-                <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-300 xl:mx-0">
+                <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-300 lg:mx-0">
                   生徒を選んで、そのままパスワード入力。ID が増えても検索とスクロールで迷わず使えるログイン画面にしています。
                 </p>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
                 <div className="subcard px-4 py-3.5">
                   <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Smooth Select</div>
                   <div className="mt-2 text-sm font-semibold text-white">検索つきの生徒一覧</div>
@@ -482,7 +482,7 @@ export default function LoginPage({
                     <div className="text-[11px] text-slate-500">{loginUpdates.length}件</div>
                   </div>
 
-                  <div className="mt-3 max-h-40 overflow-y-auto pr-1">
+                  <div className="mt-3 max-h-40 overflow-y-auto pr-1 md:max-h-56">
                     {loginUpdatesLoading ? (
                       <div className="px-1 py-3 text-xs text-slate-500">
                         掲示板を読み込み中...
@@ -521,7 +521,7 @@ export default function LoginPage({
                   <div className="text-[11px] text-slate-500">{weekRangeLabel}</div>
                 </div>
 
-                <div className="mt-3 max-h-48 overflow-y-auto pr-1">
+                <div className="mt-3 max-h-48 overflow-y-auto pr-1 md:max-h-60">
                   {weeklyLeaderboardLoading ? (
                     <div className="px-1 py-3 text-xs text-slate-500">
                       ランキングを読み込み中...
@@ -556,7 +556,7 @@ export default function LoginPage({
               </div>
             </div>
 
-            <div className="order-1 xl:order-2 rounded-[32px] border border-white/10 bg-slate-950/44 p-4 sm:p-5 lg:p-6">
+            <div className="order-1 lg:order-2 rounded-[32px] border border-white/10 bg-slate-950/44 p-4 sm:p-5 lg:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-200">Student Login</div>
@@ -570,7 +570,7 @@ export default function LoginPage({
               {notice && (
                 <div
                   className="info-banner mt-4 text-sm"
-                  style={{ background: 'rgba(245, 158, 11, 0.14)', borderColor: 'rgba(245, 158, 11, 0.28)', color: '#fcd34d' }}
+                  style={{ background: 'var(--color-warning-soft-bg)', borderColor: 'var(--color-warning-soft-border)', color: 'var(--color-warning-muted)' }}
                 >
                   {notice}
                 </div>
@@ -596,7 +596,7 @@ export default function LoginPage({
                 {isGuest ? (
                   <div
                     className="info-banner text-sm"
-                    style={{ background: 'rgba(56, 189, 248, 0.12)', borderColor: 'rgba(56, 189, 248, 0.22)', color: '#bae6fd' }}
+                    style={{ background: 'var(--color-accent-soft-bg)', borderColor: 'var(--color-accent-soft-border)', color: '#bae6fd' }}
                   >
                     ゲストは PW なしでそのまま開始できます。記録は毎日リセットされます。
                   </div>
@@ -615,7 +615,7 @@ export default function LoginPage({
                       placeholder="Password"
                       className="input-surface text-center text-xl tracking-[0.22em]"
                       style={{
-                        borderColor: error ? '#ef4444' : undefined,
+                        borderColor: error ? 'var(--color-danger)' : undefined,
                       }}
                     />
                     {error && <p className="mt-3 text-center text-sm text-red-400">{error}</p>}

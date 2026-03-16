@@ -394,10 +394,10 @@ export default function MyPage({
 
   const heatColor = (count: number) => {
     if (count === 0) return 'var(--surface-elevated)'
-    if (count < 10) return '#1d4ed8'
-    if (count < 30) return '#3b82f6'
-    if (count < 60) return '#60a5fa'
-    return '#93c5fd'
+    if (count < 10) return 'var(--color-accent-deeper)'
+    if (count < 30) return 'var(--color-accent-strong)'
+    if (count < 60) return 'var(--color-accent)'
+    return 'var(--color-sky-heading)'
   }
 
   const weekData = dailyData.slice(-7)
@@ -833,7 +833,7 @@ export default function MyPage({
                     style={{
                       width: `${levelInfo.progressRate}%`,
                       height: '100%',
-                      background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                      background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
                       borderRadius: 999,
                     }}
                   />
@@ -842,7 +842,7 @@ export default function MyPage({
             </div>
             <div className="hidden gap-2.5 sm:grid md:min-w-[280px] lg:min-w-[320px]">
               <div className="rounded-[20px] border px-3.5 py-3.5 sm:rounded-[22px] sm:px-4 sm:py-4" style={{
-                borderColor: 'rgba(56, 189, 248, 0.16)',
+                borderColor: 'var(--color-info-soft-border)',
                 background: 'rgba(8, 13, 24, 0.48)',
               }}>
                 <div className="flex items-end justify-between gap-3">
@@ -863,7 +863,7 @@ export default function MyPage({
                     style={{
                       width: `${levelInfo.progressRate}%`,
                       height: '100%',
-                      background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
+                      background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
                       borderRadius: 999,
                     }}
                   />
@@ -885,7 +885,7 @@ export default function MyPage({
           {isGuest && (
             <div
               className="mt-2 rounded-[16px] px-3 py-2 text-[11px] leading-5 text-sky-100 sm:mt-4 sm:rounded-[20px] sm:px-4 sm:py-3 sm:text-sm sm:leading-6"
-              style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.2)' }}
+              style={{ background: 'var(--color-info-soft-bg)', border: '1px solid var(--color-info-soft-border)' }}
             >
               ゲストモードでは、成績は当日分だけ保存されます。ニックネーム変更や自分用問題の作成は使えません。
             </div>
@@ -894,11 +894,16 @@ export default function MyPage({
       </div>
 
       <div className="sticky top-0 z-10 px-1 pb-3 pt-1 floating-header">
-        <div className="segment-bar">
+        <div className="segment-bar" role="tablist" aria-label="マイページ">
           {tabs.map(([t, label]) => (
             <button
               key={t}
-              onClick={() => handleTabChange(t)}
+              role="tab"
+              aria-selected={tab === t}
+              onClick={(e) => {
+                handleTabChange(t)
+                ;(e.currentTarget as HTMLButtonElement).scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+              }}
               className={`segment-button ${tab === t ? 'is-active' : ''}`}
             >
               {label}
@@ -907,17 +912,17 @@ export default function MyPage({
         </div>
       </div>
 
-      <div ref={tabContentRef} className="px-1">
+      <div ref={tabContentRef} className="px-1" role="tabpanel">
 
         {/* ===== 概要タブ ===== */}
         {tab === 'overview' && (
           <div className="space-y-4 anim-fade">
-            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
               {[
-                { label: '総問題数', display: `${totalQ}問`, color: '#3b82f6' },
-                { label: '総合正答率', display: `${overallRate}%`, color: overallRate >= 70 ? '#22c55e' : overallRate >= 50 ? '#f59e0b' : '#ef4444' },
-                { label: '総勉強時間', display: formatStudyTime(totalStudySeconds), color: '#38bdf8', compact: true },
-                { label: '最高連続', display: `${maxStreak}日`, color: '#f97316' },
+                { label: '総問題数', display: `${totalQ}問`, color: 'var(--color-accent-strong)' },
+                { label: '総合正答率', display: `${overallRate}%`, color: overallRate >= 70 ? 'var(--color-success)' : overallRate >= 50 ? 'var(--color-warning)' : 'var(--color-danger)' },
+                { label: '総勉強時間', display: formatStudyTime(totalStudySeconds), color: 'var(--color-info)', compact: true },
+                { label: '最高連続', display: `${maxStreak}日`, color: 'var(--chem)' },
               ].map(item => (
                 <div key={item.label} className="card mobile-mini-card text-center !px-2.5 !py-3 sm:!px-3 sm:!py-4">
                   <div
@@ -951,7 +956,7 @@ export default function MyPage({
                   style={{
                     width: `${levelInfo.progressRate}%`,
                     height: '100%',
-                    background: 'linear-gradient(90deg, #7dd3fc, #38bdf8)',
+                    background: 'linear-gradient(90deg, var(--color-info-muted), var(--color-info))',
                     borderRadius: 999,
                   }}
                 />
@@ -971,7 +976,7 @@ export default function MyPage({
                   </p>
                   {periodicUnlocked ? (
                     <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
-                      borderColor: 'rgba(56, 189, 248, 0.18)',
+                      borderColor: 'var(--color-info-soft-border)',
                       background: 'rgba(56, 189, 248, 0.06)',
                     }}>
                       <div className="text-xs font-semibold tracking-[0.18em] text-sky-200">COLLECTION</div>
@@ -983,7 +988,7 @@ export default function MyPage({
                   ) : (
                     <div className="mt-4 rounded-[20px] border px-4 py-4" style={{
                       borderColor: 'rgba(148, 163, 184, 0.16)',
-                      background: 'rgba(15, 23, 42, 0.28)',
+                      background: 'var(--inset-bg)',
                     }}>
                       <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">LOCKED</div>
                       <div className="mt-2 font-semibold text-white">{getPeriodicCardUnlockText()}</div>
@@ -1072,13 +1077,13 @@ export default function MyPage({
                         <div style={{
                           width: '100%', height: h,
                           background: isToday
-                            ? 'linear-gradient(180deg, #60a5fa, #3b82f6)'
-                            : d.count > 0 ? 'linear-gradient(180deg, #475569, #334155)' : 'var(--surface-elevated)',
+                            ? 'linear-gradient(180deg, var(--color-accent), var(--color-accent-strong))'
+                            : d.count > 0 ? 'linear-gradient(180deg, var(--text-soft), var(--text-muted))' : 'var(--surface-elevated)',
                           borderRadius: '6px 6px 2px 2px',
                           transition: 'height 1s ease',
                         }} />
                       </div>
-                      <div className="text-xs" style={{ color: isToday ? '#60a5fa' : '#475569' }}>
+                      <div className="text-xs" style={{ color: isToday ? 'var(--color-accent)' : 'var(--text-soft)' }}>
                         {format(d.date, 'E', { locale: ja })}
                       </div>
                     </div>
@@ -1109,7 +1114,7 @@ export default function MyPage({
               </div>
               <div className="flex items-center gap-2 mt-3">
                 <span className="text-slate-600 text-xs">0問</span>
-                {['var(--surface-elevated)', '#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd'].map(c => (
+                {['var(--surface-elevated)', 'var(--color-accent-deeper)', 'var(--color-accent-strong)', 'var(--color-accent)', 'var(--color-sky-heading)'].map(c => (
                   <div key={c} style={{ width: 14, height: 14, borderRadius: 3, background: c }} />
                 ))}
                 <span className="text-slate-600 text-xs">100問+</span>
@@ -1141,8 +1146,8 @@ export default function MyPage({
                       </div>
                       <div className="text-slate-500 text-xs mt-0.5">{dateStr}</div>
                       <div className="mt-2 flex rounded-full overflow-hidden" style={{ height: 5 }}>
-                        <div style={{ width: `${rate}%`, background: '#22c55e' }} />
-                        <div style={{ width: `${100 - rate}%`, background: '#ef444440' }} />
+                        <div style={{ width: `${rate}%`, background: 'var(--color-success)' }} />
+                        <div style={{ width: `${100 - rate}%`, background: 'var(--color-danger-soft-border)' }} />
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -1170,13 +1175,13 @@ export default function MyPage({
                 {totalQ < 10 ? 'もっと問題を解くと弱点が分かるよ！' : '弱点単元なし！全部得意だね 🎉'}
               </div>
             ) : (
-              <div className="grid gap-3 lg:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 {weakUnits.map((u, i) => {
                   const color = getFieldColor(u.field)
                   const medal = i === 0 ? '🚨' : i === 1 ? '⚠️' : i === 2 ? '📌' : '📍'
                   return (
                     <div key={`${u.field}-${u.unit}`} className="subcard p-4"
-                      style={{ borderColor: u.rate < 50 ? '#ef444430' : 'var(--surface-elevated-border)' }}>
+                      style={{ borderColor: u.rate < 50 ? 'var(--color-danger-soft-border)' : 'var(--surface-elevated-border)' }}>
                       <div className="flex items-center gap-3">
                         <span style={{ fontSize: 24 }}>{medal}</span>
                         <div className="flex-1">
@@ -1188,14 +1193,14 @@ export default function MyPage({
                           <div className="soft-track" style={{ height: 6, borderRadius: 6 }}>
                             <div style={{
                               width: `${u.rate}%`, height: '100%',
-                              background: u.rate < 50 ? '#ef4444' : '#f59e0b',
+                              background: u.rate < 50 ? 'var(--color-danger)' : 'var(--color-warning)',
                               borderRadius: 6,
                             }} />
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className="font-bold text-lg" style={{
-                            color: u.rate < 50 ? '#ef4444' : '#f59e0b'
+                            color: u.rate < 50 ? 'var(--color-danger)' : 'var(--color-warning)'
                           }}>{u.rate}%</div>
                           <div className="text-slate-500 text-xs">{u.total}問</div>
                         </div>
@@ -1236,8 +1241,8 @@ export default function MyPage({
                   const accent = badge.rarity === 'legendary'
                     ? '#c084fc'
                     : badge.rarity === 'rare'
-                      ? '#fbbf24'
-                      : '#60a5fa'
+                      ? 'var(--color-warning-muted)'
+                      : 'var(--color-accent)'
                   const rarityLabel = getBadgeRarityLabel(badge.rarity)
                   const displayIcon = earned ? badge.iconEmoji : lockedLegendary ? '❔' : badge.iconEmoji
                   const earnedDate = earned ? format(new Date(earned.earned_at), 'M月d日', { locale: ja }) : null
@@ -1249,8 +1254,8 @@ export default function MyPage({
                       style={{
                         borderColor: earned ? `${accent}55` : 'rgba(148, 163, 184, 0.18)',
                         background: earned
-                          ? `linear-gradient(135deg, ${accent}22, rgba(15, 23, 42, 0.88))`
-                          : 'rgba(15, 23, 42, 0.62)',
+                          ? `linear-gradient(135deg, ${accent}22, var(--card-gradient-base))`
+                          : 'var(--card-gradient-base-soft)',
                       }}
                     >
                       <div className="flex items-start gap-4">
@@ -1272,7 +1277,7 @@ export default function MyPage({
                             <div
                               className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
                               style={{
-                                background: earned ? `${accent}18` : 'rgba(148, 163, 184, 0.14)',
+                                background: earned ? `${accent}18` : 'var(--color-neutral-soft-bg)',
                                 color: earned ? accent : 'var(--text-muted)',
                               }}
                             >
@@ -1297,6 +1302,9 @@ export default function MyPage({
 
         {tab === 'cards' && (
           <div className="anim-fade space-y-4">
+            {periodicCardsLoading && (
+              <div className="text-center py-8 text-slate-400 text-sm">元素カードを読み込み中...</div>
+            )}
             <div className="card">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
@@ -1315,7 +1323,7 @@ export default function MyPage({
               <div className="card">
                 <div className="rounded-[24px] border px-5 py-6 text-center" style={{
                   borderColor: 'rgba(148, 163, 184, 0.16)',
-                  background: 'rgba(15, 23, 42, 0.28)',
+                  background: 'var(--inset-bg)',
                 }}>
                   <div className="text-4xl">🧪</div>
                   <div className="mt-3 font-semibold text-white">{getPeriodicCardUnlockText()}</div>
@@ -1331,7 +1339,7 @@ export default function MyPage({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+              <div className="grid gap-4 md:grid-cols-[0.95fr_1.05fr]">
                 <div className="card">
                   {periodicCardsLoading ? (
                     <div className="rounded-[24px] border border-dashed border-slate-700 px-4 py-8 text-sm text-slate-400">
@@ -1417,10 +1425,10 @@ export default function MyPage({
                               onClick={() => setSelectedPeriodicCardKey(item.definition.key)}
                               className="rounded-[18px] border px-3 py-3 text-left transition-all"
                               style={{
-                                borderColor: selected ? 'rgba(125, 211, 252, 0.45)' : 'rgba(255,255,255,0.08)',
+                                borderColor: selected ? 'rgba(125, 211, 252, 0.45)' : 'var(--border)',
                                 background: selected
-                                  ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.14), rgba(15, 23, 42, 0.84))'
-                                  : 'rgba(15, 23, 42, 0.34)',
+                                  ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.14), var(--card-gradient-base-mid))'
+                                  : 'var(--inset-bg)',
                                 boxShadow: selected ? '0 16px 28px rgba(56, 189, 248, 0.16)' : 'none',
                               }}
                             >
@@ -1466,7 +1474,7 @@ export default function MyPage({
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="mt-4 grid gap-3 md:grid-cols-[1.2fr_0.8fr]">
                 <div>
                   <label className="text-slate-400 text-xs mb-2 block">用語検索</label>
                   <input
@@ -1482,7 +1490,7 @@ export default function MyPage({
                     {SCIENCE_GLOSSARY_FIELDS.map(fieldOption => {
                       const active = glossaryField === fieldOption
                       const label = fieldOption === 'all' ? 'すべて' : fieldOption
-                      const color = fieldOption === 'all' ? '#38bdf8' : getFieldColor(fieldOption)
+                      const color = fieldOption === 'all' ? 'var(--color-info)' : getFieldColor(fieldOption)
                       return (
                         <button
                           key={fieldOption}
@@ -1514,8 +1522,8 @@ export default function MyPage({
                         className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-all"
                         style={{
                           borderColor: active ? 'rgba(56, 189, 248, 0.45)' : 'var(--surface-elevated-border)',
-                          background: active ? 'rgba(56, 189, 248, 0.12)' : 'var(--surface-elevated)',
-                          color: active ? '#7dd3fc' : 'var(--text-muted)',
+                          background: active ? 'var(--color-info-soft-bg)' : 'var(--surface-elevated)',
+                          color: active ? 'var(--color-info-muted)' : 'var(--text-muted)',
                         }}
                       >
                         {indexKey === 'all' ? '全部' : indexKey}
@@ -1675,7 +1683,7 @@ export default function MyPage({
         )}
 
         {tab === 'questions' && (
-          <div className="anim-fade lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-4">
+          <div className="anim-fade md:grid md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-start md:gap-4">
             <div className="space-y-4">
               <div className="card">
                 <h3 className="text-slate-300 font-bold mb-1">自分の問題を追加</h3>
@@ -1858,9 +1866,9 @@ export default function MyPage({
                   <div
                     className="rounded-2xl px-4 py-3 text-sm mt-3"
                     style={{
-                      background: questionMsg.type === 'success' ? '#052e16' : '#450a0a',
-                      border: `1px solid ${questionMsg.type === 'success' ? '#166534' : '#991b1b'}`,
-                      color: questionMsg.type === 'success' ? '#86efac' : '#fca5a5',
+                      background: questionMsg.type === 'success' ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)',
+                      border: `1px solid ${questionMsg.type === 'success' ? 'var(--color-success-soft-border)' : 'var(--color-danger-soft-border)'}`,
+                      color: questionMsg.type === 'success' ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
                     }}
                   >
                     {questionMsg.text}
@@ -1907,7 +1915,7 @@ export default function MyPage({
                       </div>
                       <span
                         className="px-2 py-1 rounded-full text-xs font-bold"
-                        style={{ background: '#f59e0b20', color: '#fbbf24' }}
+                        style={{ background: 'var(--color-warning-soft-bg)', color: 'var(--color-warning-muted)' }}
                       >
                         自分専用
                       </span>
@@ -1926,7 +1934,7 @@ export default function MyPage({
         )}
 
         {tab === 'account' && (
-          <div className={`anim-fade ${isGuest ? 'space-y-4' : 'lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-4'}`}>
+          <div className={`anim-fade ${isGuest ? 'space-y-4' : 'md:grid md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-start md:gap-4'}`}>
             <div className="space-y-4">
               <div className="card">
                 <h3 className="text-slate-300 font-bold mb-1">アカウント設定</h3>
@@ -1975,7 +1983,7 @@ export default function MyPage({
                             ? 'linear-gradient(180deg, rgba(244, 114, 182, 0.16), rgba(255, 255, 255, 0.06))'
                             : option.id === 'light'
                               ? 'linear-gradient(180deg, rgba(148, 163, 184, 0.12), rgba(255, 255, 255, 0.06))'
-                              : 'linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.24))'
+                              : 'linear-gradient(180deg, var(--color-info-soft-bg), var(--inset-bg))'
                           : 'var(--surface-elevated)',
                         boxShadow: active ? 'var(--shadow-md)' : 'none',
                         opacity: unlocked ? 1 : 0.66,
@@ -1984,7 +1992,7 @@ export default function MyPage({
                       <div
                         className="rounded-[18px] border p-3"
                         style={{
-                          borderColor: unlocked ? 'rgba(255, 255, 255, 0.08)' : 'rgba(148, 163, 184, 0.12)',
+                          borderColor: unlocked ? 'var(--border)' : 'var(--border-strong)',
                           background: option.id === 'dark'
                             ? 'rgba(2, 6, 23, 0.42)'
                             : option.id === 'light'
@@ -2016,16 +2024,16 @@ export default function MyPage({
                             background: active
                               ? option.id === 'cute'
                                 ? 'rgba(236, 72, 153, 0.14)'
-                                : 'rgba(56, 189, 248, 0.14)'
+                                : 'var(--color-info-soft-bg)'
                               : unlocked
-                                ? 'rgba(34, 197, 94, 0.12)'
-                                : 'rgba(148, 163, 184, 0.14)',
+                                ? 'var(--color-success-soft-bg)'
+                                : 'var(--color-neutral-soft-bg)',
                             color: active
                               ? option.id === 'cute'
                                 ? '#ec4899'
-                                : '#38bdf8'
+                                : 'var(--color-info)'
                               : unlocked
-                                ? '#22c55e'
+                                ? 'var(--color-success)'
                                 : 'var(--text-muted)',
                           }}
                         >
@@ -2094,9 +2102,9 @@ export default function MyPage({
               <div
                 className={`rounded-2xl px-4 py-3 text-sm ${!isGuest ? 'lg:col-span-2' : ''}`}
                 style={{
-                  background: accountMsg.type === 'success' ? '#052e16' : '#450a0a',
-                  border: `1px solid ${accountMsg.type === 'success' ? '#166534' : '#991b1b'}`,
-                  color: accountMsg.type === 'success' ? '#86efac' : '#fca5a5',
+                  background: accountMsg.type === 'success' ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)',
+                  border: `1px solid ${accountMsg.type === 'success' ? 'var(--color-success-soft-border)' : 'var(--color-danger-soft-border)'}`,
+                  color: accountMsg.type === 'success' ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
                 }}
               >
                 {accountMsg.text}

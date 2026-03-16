@@ -61,6 +61,53 @@
   --overlay-bg: rgba(15, 23, 42, 0.94);
   --scrollbar-thumb: rgba(148, 163, 184, 0.32);
   --theme-toggle-bg: rgba(8, 13, 24, 0.78);
+  --inset-bg: rgba(15, 23, 42, 0.28);
+  --inset-border: rgba(255, 255, 255, 0.08);
+  --card-gradient-base: rgba(15, 23, 42, 0.88);
+  --card-gradient-base-mid: rgba(15, 23, 42, 0.84);
+  --card-gradient-base-soft: rgba(15, 23, 42, 0.62);
+  --badge-success-bg: rgba(34, 197, 94, 0.12);
+  --badge-success-text: #86efac;
+  --badge-amber-bg: rgba(251, 191, 36, 0.14);
+  --badge-amber-text: #fde68a;
+
+  /* Semantic inline colors */
+  --color-success: #22c55e;
+  --color-success-muted: #86efac;
+  --color-danger: #ef4444;
+  --color-danger-muted: #fca5a5;
+  --color-warning: #f59e0b;
+  --color-warning-muted: #fbbf24;
+  --color-info: #38bdf8;
+  --color-info-muted: #7dd3fc;
+  --color-accent: #60a5fa;
+  --color-accent-strong: #3b82f6;
+  --color-accent-deeper: #1d4ed8;
+  --color-sky-label: #8cc7ff;
+  --color-sky-heading: #93c5fd;
+
+  /* Inline surface helpers */
+  --color-success-soft-bg: rgba(34, 197, 94, 0.12);
+  --color-success-soft-border: rgba(34, 197, 94, 0.22);
+  --color-danger-soft-bg: rgba(239, 68, 68, 0.12);
+  --color-danger-soft-border: rgba(239, 68, 68, 0.22);
+  --color-warning-soft-bg: rgba(245, 158, 11, 0.14);
+  --color-warning-soft-border: rgba(245, 158, 11, 0.28);
+  --color-info-soft-bg: rgba(56, 189, 248, 0.12);
+  --color-info-soft-border: rgba(56, 189, 248, 0.22);
+  --color-accent-soft-bg: rgba(10, 132, 255, 0.12);
+  --color-accent-soft-border: rgba(10, 132, 255, 0.22);
+  --color-neutral-soft-bg: rgba(148, 163, 184, 0.14);
+  --color-neutral-soft-border: rgba(148, 163, 184, 0.2);
+
+  /* Subcard */
+  --subcard-bg: rgba(15, 23, 42, 0.44);
+  --subcard-border: rgba(255, 255, 255, 0.1);
+  --subcard-strong-border: rgba(255, 255, 255, 0.1);
+
+  /* Hero gradient text */
+  --hero-text-gradient: linear-gradient(135deg, #f8fbff 0%, #93c5fd 42%, #38bdf8 100%);
+  --hero-text-shadow: rgba(56, 189, 248, 0.24);
 }
 
 [data-theme='light'] {
@@ -104,6 +151,50 @@
   --overlay-bg: rgba(241, 245, 249, 0.94);
   --scrollbar-thumb: rgba(148, 163, 184, 0.52);
   --theme-toggle-bg: rgba(255, 255, 255, 0.92);
+  --inset-bg: rgba(15, 23, 42, 0.04);
+  --inset-border: rgba(15, 23, 42, 0.08);
+  --card-gradient-base: rgba(255, 255, 255, 0.88);
+  --card-gradient-base-mid: rgba(255, 255, 255, 0.84);
+  --card-gradient-base-soft: rgba(230, 236, 245, 0.62);
+  --badge-success-bg: rgba(34, 197, 94, 0.12);
+  --badge-success-text: #15803d;
+  --badge-amber-bg: rgba(245, 158, 11, 0.14);
+  --badge-amber-text: #b45309;
+  --primary-strong: #0059b8;
+
+  --color-success: #16a34a;
+  --color-success-muted: #15803d;
+  --color-danger: #dc2626;
+  --color-danger-muted: #b91c1c;
+  --color-warning: #d97706;
+  --color-warning-muted: #b45309;
+  --color-info: #0284c7;
+  --color-info-muted: #075985;
+  --color-accent: #2563eb;
+  --color-accent-strong: #1d4ed8;
+  --color-accent-deeper: #1e40af;
+  --color-sky-label: #075985;
+  --color-sky-heading: #0369a1;
+
+  --color-success-soft-bg: rgba(34, 197, 94, 0.1);
+  --color-success-soft-border: rgba(34, 197, 94, 0.22);
+  --color-danger-soft-bg: rgba(239, 68, 68, 0.1);
+  --color-danger-soft-border: rgba(239, 68, 68, 0.2);
+  --color-warning-soft-bg: rgba(245, 158, 11, 0.1);
+  --color-warning-soft-border: rgba(245, 158, 11, 0.24);
+  --color-info-soft-bg: rgba(14, 165, 233, 0.1);
+  --color-info-soft-border: rgba(14, 165, 233, 0.2);
+  --color-accent-soft-bg: rgba(37, 99, 235, 0.08);
+  --color-accent-soft-border: rgba(37, 99, 235, 0.18);
+  --color-neutral-soft-bg: rgba(148, 163, 184, 0.12);
+  --color-neutral-soft-border: rgba(148, 163, 184, 0.2);
+
+  --subcard-bg: rgba(241, 245, 249, 0.68);
+  --subcard-border: rgba(148, 163, 184, 0.22);
+  --subcard-strong-border: rgba(148, 163, 184, 0.22);
+
+  --hero-text-gradient: linear-gradient(135deg, #0f172a 0%, #1e40af 42%, #0369a1 100%);
+  --hero-text-shadow: rgba(37, 99, 235, 0.18);
 }
 
 [data-theme='cute'] {
@@ -149,6 +240,49 @@
   --overlay-bg: rgba(255, 247, 251, 0.95);
   --scrollbar-thumb: rgba(244, 114, 182, 0.36);
   --theme-toggle-bg: rgba(255, 255, 255, 0.94);
+  --inset-bg: rgba(236, 72, 153, 0.06);
+  --inset-border: rgba(236, 72, 153, 0.1);
+  --card-gradient-base: rgba(255, 243, 249, 0.88);
+  --card-gradient-base-mid: rgba(255, 243, 249, 0.84);
+  --card-gradient-base-soft: rgba(255, 230, 243, 0.62);
+  --badge-success-bg: rgba(16, 185, 129, 0.12);
+  --badge-success-text: #059669;
+  --badge-amber-bg: rgba(251, 191, 36, 0.14);
+  --badge-amber-text: #b45309;
+
+  --color-success: #059669;
+  --color-success-muted: #047857;
+  --color-danger: #e11d48;
+  --color-danger-muted: #be123c;
+  --color-warning: #d97706;
+  --color-warning-muted: #b45309;
+  --color-info: #ec4899;
+  --color-info-muted: #db2777;
+  --color-accent: #ec4899;
+  --color-accent-strong: #db2777;
+  --color-accent-deeper: #be185d;
+  --color-sky-label: #db2777;
+  --color-sky-heading: #ec4899;
+
+  --color-success-soft-bg: rgba(16, 185, 129, 0.1);
+  --color-success-soft-border: rgba(16, 185, 129, 0.2);
+  --color-danger-soft-bg: rgba(225, 29, 72, 0.1);
+  --color-danger-soft-border: rgba(225, 29, 72, 0.2);
+  --color-warning-soft-bg: rgba(245, 158, 11, 0.12);
+  --color-warning-soft-border: rgba(245, 158, 11, 0.22);
+  --color-info-soft-bg: rgba(236, 72, 153, 0.1);
+  --color-info-soft-border: rgba(236, 72, 153, 0.18);
+  --color-accent-soft-bg: rgba(236, 72, 153, 0.08);
+  --color-accent-soft-border: rgba(236, 72, 153, 0.16);
+  --color-neutral-soft-bg: rgba(244, 114, 182, 0.08);
+  --color-neutral-soft-border: rgba(244, 114, 182, 0.14);
+
+  --subcard-bg: rgba(255, 241, 248, 0.68);
+  --subcard-border: rgba(244, 114, 182, 0.18);
+  --subcard-strong-border: rgba(244, 114, 182, 0.18);
+
+  --hero-text-gradient: linear-gradient(135deg, #831843 0%, #ec4899 42%, #f472b6 100%);
+  --hero-text-shadow: rgba(236, 72, 153, 0.18);
 }
 
 * {
@@ -515,6 +649,13 @@ body {
   display: none;
 }
 
+@media (max-width: 639px) {
+  .segment-bar::after {
+    content: '';
+    flex: 0 0 4px;
+  }
+}
+
 .science-surface {
   position: relative;
   overflow: hidden;
@@ -763,6 +904,107 @@ body {
   color: #c49eb3 !important;
 }
 
+[data-theme='cute'] .text-amber-100,
+[data-theme='cute'] .text-amber-200 {
+  color: #9a3412 !important;
+}
+
+[data-theme='cute'] .text-sky-100 {
+  color: #be185d !important;
+}
+
+[data-theme='cute'] .text-sky-200,
+[data-theme='cute'] .text-sky-300 {
+  color: #db2777 !important;
+}
+
+[data-theme='cute'] .text-emerald-300 {
+  color: #047857 !important;
+}
+
+[data-theme='cute'] .text-violet-100,
+[data-theme='cute'] .text-violet-200,
+[data-theme='cute'] .text-violet-300 {
+  color: #7e22ce !important;
+}
+
+[data-theme='cute'] .text-rose-200 {
+  color: #be123c !important;
+}
+
+/* Background overrides for light themes */
+[data-theme='light'] .bg-slate-950\/38,
+[data-theme='light'] .bg-slate-950\/44 {
+  background-color: rgba(241, 245, 249, 0.68) !important;
+}
+
+[data-theme='light'] .bg-sky-300\/10 {
+  background-color: rgba(14, 165, 233, 0.08) !important;
+}
+
+[data-theme='light'] .bg-emerald-500\/5 {
+  background-color: rgba(34, 197, 94, 0.06) !important;
+}
+
+[data-theme='light'] .border-emerald-500\/20 {
+  border-color: rgba(34, 197, 94, 0.22) !important;
+}
+
+[data-theme='light'] .border-white\/10,
+[data-theme='light'] .border-white\/8 {
+  border-color: rgba(15, 23, 42, 0.09) !important;
+}
+
+[data-theme='cute'] .bg-slate-950\/38,
+[data-theme='cute'] .bg-slate-950\/44 {
+  background-color: rgba(255, 241, 248, 0.68) !important;
+}
+
+[data-theme='cute'] .bg-sky-300\/10 {
+  background-color: rgba(244, 114, 182, 0.08) !important;
+}
+
+[data-theme='cute'] .bg-emerald-500\/5 {
+  background-color: rgba(16, 185, 129, 0.06) !important;
+}
+
+[data-theme='cute'] .border-emerald-500\/20 {
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+[data-theme='cute'] .border-white\/10,
+[data-theme='cute'] .border-white\/8 {
+  border-color: rgba(236, 72, 153, 0.12) !important;
+}
+
+[data-theme='cute'] .bg-emerald-500\/12 {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+[data-theme='light'] .bg-emerald-500\/12 {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+}
+
+[data-theme='light'] .bg-slate-900\/60 {
+  background-color: rgba(241, 245, 249, 0.82) !important;
+}
+
+[data-theme='cute'] .bg-slate-900\/60 {
+  background-color: rgba(255, 241, 248, 0.82) !important;
+}
+
+[data-theme='light'] .border-sky-300\/20 {
+  border-color: rgba(14, 165, 233, 0.2) !important;
+}
+
+[data-theme='cute'] .border-sky-300\/20 {
+  border-color: rgba(244, 114, 182, 0.18) !important;
+}
+
+[data-theme='light'] .text-sky-100 {
+  color: #075985 !important;
+}
+
 .reward-card {
   position: relative;
   overflow: hidden;
@@ -805,6 +1047,23 @@ body {
 
 .daily-challenge-cta {
   animation: daily-challenge-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes quick-start-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(56, 189, 248, 0.22),
+      0 18px 48px rgba(10, 132, 255, 0.18);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(56, 189, 248, 0),
+      0 24px 56px rgba(10, 132, 255, 0.26);
+  }
+}
+
+.quick-start-cta {
+  animation: quick-start-glow 2.2s ease-in-out infinite;
 }
 
 .badge-toast {
@@ -881,6 +1140,43 @@ body {
   }
 }
 
+/* iPad / tablet portrait (768-1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .page-shell-dashboard {
+    max-width: 68rem;
+    padding: 28px 28px 88px;
+  }
+
+  .page-shell {
+    max-width: 52rem;
+    padding: 28px 32px 88px;
+  }
+
+  .page-shell-wide {
+    padding: 28px 32px 88px;
+  }
+
+  .hero-card {
+    border-radius: 32px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost {
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+
+  .segment-button {
+    min-height: 46px;
+    padding: 11px 16px;
+  }
+}
+
 @media (max-width: 639px) {
   .page-shell,
   .page-shell-wide {
@@ -899,7 +1195,7 @@ body {
   .btn-primary,
   .btn-secondary,
   .btn-ghost {
-    min-height: 42px;
+    min-height: 44px;
     padding: 10px 14px;
     border-radius: 14px;
     font-size: 0.93rem;
@@ -911,7 +1207,8 @@ body {
   }
 
   .segment-button {
-    padding: 9px 12px;
+    padding: 10px 12px;
+    min-height: 44px;
     font-size: 0.86rem;
   }
 
