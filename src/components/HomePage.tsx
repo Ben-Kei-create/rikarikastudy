@@ -136,7 +136,7 @@ export default function HomePage({
 
     const loadNews = async () => {
       try {
-        const response = await fetch('/api/science-news')
+        const response = await fetch('/api/science-news', { cache: 'no-store' })
         if (!response.ok) return
         const payload = await response.json() as ScienceNewsResponse
         if (active && payload.item) setScienceNews(payload)
