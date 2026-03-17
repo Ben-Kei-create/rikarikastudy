@@ -124,7 +124,7 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
     badge: 'Density Lab',
     icon: '⚖️',
     accent: '#f97316',
-    description: '質量と体積を動かして、密度の感覚を手元でつかむラボです。',
+    description: '質量と体積を自由に変えて、密度がどう変わるか体感するラボ。',
     sessionUnit: '密度ラボ',
     sessionMode: 'chemistry_density_lab',
   },
@@ -134,7 +134,7 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
     badge: 'Solution Lab',
     icon: '🧂',
     accent: '#fb7185',
-    description: '溶質と水の量を調整して、質量パーセント濃度を作るラボです。',
+    description: '溶質と水の量を自由に変えて、濃度の変化を目で見るラボ。',
     sessionUnit: '質量パーセント濃度ラボ',
     sessionMode: 'chemistry_concentration_lab',
   },
@@ -144,7 +144,7 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
     badge: 'Battery Lab',
     icon: '🔋',
     accent: '#fbbf24',
-    description: '亜鉛板と銅板の化学電池で、電子・電流・電極の変化を図で理解するラボです。',
+    description: '電極・電子・電流の組み合わせを切り替えて、化学電池のしくみを探るラボ。',
     sessionUnit: '化学電池ラボ',
     sessionMode: 'chemistry_battery_lab',
   },
@@ -154,7 +154,7 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
     badge: 'Humidity Lab',
     icon: '☁️',
     accent: '#8b7cff',
-    description: '温度と水蒸気量を動かして、飽和水蒸気量と露点の関係を目で理解するラボです。',
+    description: '温度と水蒸気量を動かして、飽和・露点・雲の関係を体感するラボ。',
     sessionUnit: '飽和水蒸気量ラボ',
     sessionMode: 'chemistry_humidity_lab',
   },
@@ -164,7 +164,7 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
     badge: 'Strata Lab',
     icon: '🪨',
     accent: '#2dd4bf',
-    description: '地層の特徴を見ながら、柱状図を上から下へ組み立てるラボです。',
+    description: '地層の種類を自由に並べて、柱状図のしくみを探るラボ。',
     sessionUnit: '柱状図ラボ',
     sessionMode: 'earth_column_lab',
   },
@@ -174,7 +174,7 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
     badge: 'Motion Graph',
     icon: '📈',
     accent: '#4da2ff',
-    description: '等速直線運動と加速度の違いを、台車の動きとグラフで見るラボです。',
+    description: '加速度と初速を変えて、台車の動きとグラフの形を自由に試すラボ。',
     sessionUnit: '運動グラフラボ',
     sessionMode: 'physics_motion_graph_lab',
   },
@@ -183,6 +183,15 @@ export const SCIENCE_WORKBENCH_MODE_META: Record<ScienceWorkbenchMode, ScienceWo
 export const CHEMISTRY_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['chem-density', 'chem-concentration', 'chem-battery', 'earth-humidity']
 export const EARTH_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['earth-column']
 export const PHYSICS_WORKBENCH_MODES: ScienceWorkbenchMode[] = ['physics-motion-graph']
+
+export const COLUMN_LAYER_OPTIONS: ColumnLayerOption[] = [
+  { key: 'mudstone', label: '泥岩', detail: '細かい泥がしずんでできる / 深く静かな海', color: '#64748b', pattern: 'lines' },
+  { key: 'sandstone', label: '砂岩', detail: '砂粒が多い / 海岸に近い場所', color: '#d97706', pattern: 'sand' },
+  { key: 'conglomerate', label: 'れき岩', detail: '丸いれきが多い / 流れが強い場所', color: '#78716c', pattern: 'pebbles' },
+  { key: 'ash', label: '火山灰層', detail: '噴火で広く積もる / かぎ層になりやすい', color: '#cbd5e1', pattern: 'ash' },
+  { key: 'limestone', label: '石灰岩', detail: 'サンゴや貝が多い / 浅い海', color: '#f1f5f9', pattern: 'bands' },
+  { key: 'coal', label: '石炭層', detail: '植物が多くたまった湿地', color: '#1f2937', pattern: 'bands' },
+]
 
 export const SATURATED_VAPOR_TABLE = [
   { temperature: 0, amount: 4.8 },
