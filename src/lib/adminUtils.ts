@@ -212,6 +212,8 @@ export interface BulkQuestionPayload {
   correct_choices: string[] | null
   word_tokens: string[] | null
   distractor_tokens: string[] | null
+  column_title: string | null
+  column_body: string | null
   explanation: string | null
   grade: string
 }
@@ -387,6 +389,12 @@ export function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
     const correctChoices = normalizeStringArray(row.correct_choices)
     const wordTokens = normalizeStringArray(row.word_tokens)
     const distractorTokens = normalizeStringArray(row.distractor_tokens)
+    const columnTitle = typeof row.column_title === 'string' && row.column_title.trim()
+      ? row.column_title.trim()
+      : null
+    const columnBody = typeof row.column_body === 'string' && row.column_body.trim()
+      ? row.column_body.trim()
+      : null
 
     if (!FIELDS.includes(field as typeof FIELDS[number])) {
       throw new Error(`${prefix}: field は ${FIELDS.join(' / ')} のどれかにしてください。`)
@@ -410,6 +418,8 @@ export function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
       correct_choices: correctChoices,
       word_tokens: wordTokens,
       distractor_tokens: distractorTokens,
+      column_title: columnTitle,
+      column_body: columnBody,
       explanation,
       grade,
     }

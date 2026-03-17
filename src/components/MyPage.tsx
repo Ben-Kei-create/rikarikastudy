@@ -20,6 +20,7 @@ import ScienceBackdrop from '@/components/ScienceBackdrop'
 import MyPageBadgesTab from '@/components/MyPageBadgesTab'
 import MyPageGlossaryTab from '@/components/MyPageGlossaryTab'
 import MyPageCardsTab from '@/components/MyPageCardsTab'
+import MyPageColumnsTab from '@/components/MyPageColumnsTab'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { loadEarnedBadgeRecords } from '@/lib/studyRewards'
 import {
@@ -128,7 +129,7 @@ function getFieldEmoji(field: string) {
   return FIELD_EMOJI[field as keyof typeof FIELD_EMOJI] ?? '🔬'
 }
 
-type Tab = 'overview' | 'history' | 'weak' | 'badges' | 'cards' | 'glossary' | 'questions' | 'account'
+type Tab = 'overview' | 'history' | 'weak' | 'badges' | 'cards' | 'glossary' | 'columns' | 'questions' | 'account'
 const HISTORY_SESSION_LIMIT = 10
 
 export default function MyPage({
@@ -384,8 +385,8 @@ export default function MyPage({
     [sessions]
   )
   const tabs = isGuest
-    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['account', '⚙️ 設定']] as const)
-    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
+    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['columns', '📖 コラム'], ['account', '⚙️ 設定']] as const)
+    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['columns', '📖 コラム'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
 
   const handleSaveNickname = async () => {
     setSaving('nickname')
@@ -1097,6 +1098,10 @@ export default function MyPage({
 
         {tab === 'glossary' && (
           <MyPageGlossaryTab customGlossaryEntries={customGlossaryEntries} />
+        )}
+
+        {tab === 'columns' && (
+          <MyPageColumnsTab studentId={studentId} />
         )}
 
         {tab === 'questions' && (

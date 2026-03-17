@@ -89,6 +89,8 @@ export type Database = {
           correct_choices: string[] | null
           word_tokens: string[] | null
           distractor_tokens: string[] | null
+          column_title: string | null
+          column_body: string | null
           created_by_student_id: number | null
           explanation: string | null
           image_url: string | null
@@ -112,6 +114,8 @@ export type Database = {
           correct_choices?: string[] | null
           word_tokens?: string[] | null
           distractor_tokens?: string[] | null
+          column_title?: string | null
+          column_body?: string | null
           created_by_student_id?: number | null
           explanation?: string | null
           image_url?: string | null
@@ -134,6 +138,8 @@ export type Database = {
           correct_choices?: string[] | null
           word_tokens?: string[] | null
           distractor_tokens?: string[] | null
+          column_title?: string | null
+          column_body?: string | null
           created_by_student_id?: number | null
           explanation?: string | null
           image_url?: string | null

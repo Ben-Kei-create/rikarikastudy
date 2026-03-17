@@ -36,6 +36,8 @@ export interface QuestionShape {
   correct_choices: string[] | null
   word_tokens: string[] | null
   distractor_tokens: string[] | null
+  column_title: string | null
+  column_body: string | null
   grade?: string
 }
 
@@ -131,6 +133,8 @@ export function normalizeQuestionRecord(question: Partial<QuestionShape>): Quest
     correct_choices: normalizeStringArray(question.correct_choices),
     word_tokens: normalizeStringArray(question.word_tokens),
     distractor_tokens: normalizeStringArray(question.distractor_tokens),
+    column_title: cleanString(question.column_title) || null,
+    column_body: cleanString(question.column_body) || null,
     grade: cleanString(question.grade) || '中3',
   }
 }

@@ -33,6 +33,7 @@ import {
 import BadgeEarnedToastStack from '@/components/BadgeEarnedToastStack'
 import LevelUnlockNotice from '@/components/LevelUnlockNotice'
 import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
+import { incrementCorrectCount, shouldShowColumnButton, markColumnViewed } from '@/lib/questionColumns'
 import SuccessBurst from '@/components/SuccessBurst'
 import Choice4Question from '@/components/quiz/Choice4Question'
 import FillChoiceQuestion from '@/components/quiz/FillChoiceQuestion'
@@ -183,6 +184,8 @@ export default function QuizPage({
   const [inquirySending, setInquirySending] = useState(false)
   const [recentInquiries, setRecentInquiries] = useState<QuestionInquiryRow[]>([])
   const [inquiryHistoryLoading, setInquiryHistoryLoading] = useState(false)
+  const [columnVisible, setColumnVisible] = useState(false)
+  const [columnOpen, setColumnOpen] = useState(false)
   const startedAtRef = useRef<number | null>(null)
   const finishingRef = useRef(false)
   const activeDailyChallenge = dailyChallenge && !retryWrongOnly
@@ -426,7 +429,15 @@ export default function QuizPage({
       setCelebration(null)
     }
     setAnswerResult(result.result)
-    if (isCorrect) setScore(currentScore => currentScore + 1)
+    if (isCorrect) {
+      setScore(currentScore => currentScore + 1)
+      const newCount = incrementCorrectCount(studentId, q.id)
+      const hasColumn = Boolean(q.column_title && q.column_body)
+      setColumnVisible(shouldShowColumnButton(studentId, q.id, hasColumn, newCount))
+    } else {
+      setColumnVisible(false)
+    }
+    setColumnOpen(false)
     setAnswerLogs(logs => [...logs, {
       qId: q.id,
       correct: isCorrect,
@@ -642,6 +653,8 @@ export default function QuizPage({
     setTextJudgeReason('')
     setTextJudgeWarning('')
     setCelebration(null)
+    setColumnVisible(false)
+    setColumnOpen(false)
   }
 
   const restart = () => {
@@ -1470,6 +1483,39 @@ export default function QuizPage({
               )}
               {q.explanation && (
                 <p className="text-slate-300 text-sm leading-relaxed">{q.explanation}</p>
+              )}
+              {columnVisible && !columnOpen && (
+                <button
+                  onClick={() => {
+                    setColumnOpen(true)
+                    setColumnVisible(false)
+                    markColumnViewed(studentId, q.id)
+                  }}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 anim-pop"
+                  style={{
+                    borderColor: 'rgba(250, 204, 21, 0.4)',
+                    background: 'linear-gradient(135deg, rgba(250, 204, 21, 0.12), rgba(245, 158, 11, 0.08))',
+                    color: '#fbbf24',
+                  }}
+                >
+                  <span className="text-lg">📖</span>
+                  コラム：{q.column_title}
+                </button>
+              )}
+              {columnOpen && q.column_title && q.column_body && (
+                <div
+                  className="mt-3 rounded-2xl border p-4 anim-pop"
+                  style={{
+                    borderColor: 'rgba(250, 204, 21, 0.25)',
+                    background: 'linear-gradient(135deg, rgba(250, 204, 21, 0.08), rgba(245, 158, 11, 0.04))',
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">📖</span>
+                    <span className="text-sm font-bold text-amber-200">{q.column_title}</span>
+                  </div>
+                  <p className="text-sm leading-7 text-slate-300 whitespace-pre-wrap">{q.column_body}</p>
+                </div>
               )}
               <button onClick={handleNext} className="btn-primary w-full mt-4">
                 {current + 1 >= questions.length ? '結果を見る' : '次の問題 →'}
