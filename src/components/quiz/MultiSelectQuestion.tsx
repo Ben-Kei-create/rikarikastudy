@@ -36,7 +36,7 @@ export default function MultiSelectQuestion({
               key={`${choice}-${index}`}
               onClick={() => toggleChoice(choice)}
               disabled={disabled}
-              className="min-h-[84px] rounded-[22px] border px-4 py-3 text-left transition-all"
+              className="min-h-[56px] sm:min-h-[84px] rounded-[18px] sm:rounded-[22px] border px-3 py-2.5 sm:px-4 sm:py-3 text-left transition-all"
               style={{
                 borderColor: active ? 'rgba(56, 189, 248, 0.45)' : 'rgba(148, 163, 184, 0.16)',
                 background: active ? 'rgba(56, 189, 248, 0.12)' : 'var(--card-gradient-base-soft)',

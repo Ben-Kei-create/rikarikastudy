@@ -32,7 +32,7 @@ export default function TrueFalseQuestion({
             key={choice}
             onClick={() => onSelect(choice)}
             disabled={disabled}
-            className="min-h-[112px] rounded-[26px] text-center font-display text-4xl transition-all sm:min-h-[132px] sm:text-5xl"
+            className="min-h-[80px] rounded-[22px] sm:rounded-[26px] text-center font-display text-3xl transition-all sm:min-h-[132px] sm:text-5xl"
             style={styles}
           >
             {choice}

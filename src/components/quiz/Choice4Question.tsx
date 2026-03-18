@@ -34,7 +34,7 @@ export default function Choice4Question({
             key={`${choice}-${index}`}
             onClick={() => onSelect(choice)}
             disabled={disabled}
-            className="min-h-[92px] rounded-xl p-4 text-left font-bold transition-all anim-fade-up"
+            className="min-h-[60px] sm:min-h-[92px] rounded-xl p-3 sm:p-4 text-left font-bold transition-all anim-fade-up text-sm sm:text-base"
             style={{ animationDelay: `${index * 0.06}s`, ...styles }}
           >
             <span className="mr-3 opacity-50">{'ABCD'[index] ?? `${index + 1}` }.</span>

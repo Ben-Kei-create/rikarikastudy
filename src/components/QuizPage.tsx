@@ -186,6 +186,8 @@ export default function QuizPage({
   const [inquiryHistoryLoading, setInquiryHistoryLoading] = useState(false)
   const [columnVisible, setColumnVisible] = useState(false)
   const [columnOpen, setColumnOpen] = useState(false)
+  const [quitReward, setQuitReward] = useState<StudyRewardSummary | null>(null)
+  const [quitting, setQuitting] = useState(false)
   const startedAtRef = useRef<number | null>(null)
   const finishingRef = useRef(false)
   const activeDailyChallenge = dailyChallenge && !retryWrongOnly
@@ -610,6 +612,48 @@ export default function QuizPage({
     }
   }
 
+  const handleQuit = async () => {
+    // If no questions answered yet, just go back without saving
+    if (score === 0 && answerLogs.length === 0) {
+      onBack()
+      return
+    }
+
+    // Save partial XP for questions answered so far
+    if (quitting) return
+    setQuitting(true)
+
+    const durationSeconds = startedAtRef.current
+      ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
+      : 0
+    const answeredCount = answerLogs.length
+    const xpBreakdown = calculateQuizXpBreakdown(score, answeredCount, durationSeconds)
+
+    try {
+      const reward = await recordStudySession({
+        studentId,
+        field: retryWrongOnly ? field : getSessionFieldLabel(field, quickStartAll, activeDailyChallenge),
+        unit: retryWrongOnly
+          ? 'まちがえた問題の再挑戦'
+          : customOptions
+            ? getCustomQuizSessionLabel(customOptions)
+            : getSessionUnitLabel(unit, quickStartAll, activeDailyChallenge),
+        totalQuestions: answeredCount,
+        correctCount: score,
+        durationSeconds,
+        answerLogs,
+        sessionMode: retryWrongOnly ? 'drill' : buildSessionMode({ isDrill, quickStartAll, dailyChallenge: activeDailyChallenge, isCustom }),
+        xpMultiplier: activeDailyChallenge ? 2 : 1,
+        xpBreakdown,
+      })
+
+      setQuitReward(reward)
+    } catch {
+      // If saving fails, just go back
+      onBack()
+    }
+  }
+
   const handleNext = async () => {
     if (!q) return
 
@@ -1015,20 +1059,44 @@ export default function QuizPage({
     )
   }
 
+  if (quitReward) {
+    return (
+      <div className="page-shell flex flex-col items-center justify-center anim-fade">
+        <div className="card w-full max-w-md p-6 text-center">
+          <div className="text-4xl mb-3">📘</div>
+          <div className="font-display text-2xl text-white mb-2">途中でおわり</div>
+          <p className="text-slate-400 text-sm mb-4">
+            {answerLogs.length}問中 {score}問正解
+          </p>
+          {quitReward.xpEarned > 0 && (
+            <div className="subcard anim-pop p-4 mb-5 text-left">
+              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">獲得XP</div>
+              <div className="mt-2 font-display text-3xl text-sky-300">+{quitReward.xpEarned}</div>
+              <div className="mt-2 text-xs text-slate-500">ここまでの学習ぶんを加算しました</div>
+            </div>
+          )}
+          <button onClick={onBack} className="btn-primary w-full py-3">
+            もどる
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="page-shell">
-      <div className="card mb-4 anim-fade-up">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center justify-between gap-3 sm:w-auto">
-            <button onClick={onBack} className="btn-secondary text-sm !px-4 !py-2.5">
+      <div className="card mb-3 sm:mb-4 anim-fade-up">
+        <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center justify-between gap-2 sm:gap-3 sm:w-auto">
+            <button onClick={handleQuit} className="btn-secondary text-xs sm:text-sm !px-3 !py-2 sm:!px-4 sm:!py-2.5">
               やめる
             </button>
-            <button onClick={() => logout()} className="btn-ghost text-sm !px-4 !py-2.5 sm:hidden">
+            <button onClick={() => logout()} className="btn-ghost text-xs sm:text-sm !px-3 !py-2 sm:!px-4 sm:!py-2.5 sm:hidden">
               ログアウト
             </button>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex justify-between text-xs text-slate-400 mb-2">
+            <div className="flex justify-between text-xs text-slate-400 mb-1.5 sm:mb-2">
               <span>
                 {activeDailyChallenge
                   ? '今日のチャレンジ'
@@ -1071,8 +1139,8 @@ export default function QuizPage({
         </div>
       </div>
 
-      <div key={current} className="card anim-fade-up mb-4">
-        <div className="flex items-start justify-between gap-3 mb-3">
+      <div key={current} className="card anim-fade-up mb-3 sm:mb-4">
+        <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2 sm:mb-3">
           <div className="flex flex-wrap items-center gap-2">
             {activeDailyChallenge ? (
               <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'var(--color-warning-soft-bg)', color: 'var(--color-warning-muted)' }}>
@@ -1129,7 +1197,7 @@ export default function QuizPage({
             </button>
           </div>
         </div>
-        <p className="text-lg font-bold leading-relaxed sm:text-[1.35rem]" style={{ color: 'var(--text)' }}>{q.question}</p>
+        <p className="text-base sm:text-lg font-bold leading-relaxed sm:text-[1.35rem]" style={{ color: 'var(--text)' }}>{q.question}</p>
         {q.image_url && questionImageDisplay && (
           <div className="mt-4 flex justify-center">
             <div
@@ -1449,78 +1517,82 @@ export default function QuizPage({
               : '❌ 不正解'
 
           return (
-            <div className="card mt-4 anim-pop" style={{ borderColor: `${accent}50`, background }}>
-              {isCorrect && celebration && (
-                <SuccessBurst celebration={celebration} className="mb-4" />
-              )}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-bold text-lg" style={{ color: accent }}>
-                  {title}
-                </span>
-              </div>
-              {currentResult === 'semantic' && textJudgeSource === 'gemini' && (
-                <p className="mb-2 text-xs text-emerald-200">
-                  Gemini が意味として正しい回答と判断しました。
-                  {textJudgeReason ? ` ${textJudgeReason}` : ''}
-                </p>
-              )}
-              {textJudgeWarning && (
-                <p className="mb-2 text-xs text-amber-200">{textJudgeWarning}</p>
-              )}
-              {!isCorrect && (
-                <>
-                  <p className="text-slate-200 text-sm mb-2">答え: {correctAnswerText}</p>
-                  {correctAnswerText !== q.answer && q.answer && (
-                    <p className="text-slate-300 text-xs mb-2">{q.answer}</p>
-                  )}
-                </>
-              )}
-              {!isCorrect && q.type === 'text' && q.keywords && q.keywords.length > 0 && (
-                <p className="text-slate-300 text-xs mb-2">キーワード: {q.keywords.join(' / ')}</p>
-              )}
-              {currentResult === 'keyword' && (
-                <p className="text-amber-200 text-xs mb-2">おしい</p>
-              )}
-              {q.explanation && (
-                <p className="text-slate-300 text-sm leading-relaxed">{q.explanation}</p>
-              )}
-              {columnVisible && !columnOpen && (
-                <button
-                  onClick={() => {
-                    setColumnOpen(true)
-                    setColumnVisible(false)
-                    markColumnViewed(studentId, q.id)
-                  }}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 anim-pop"
-                  style={{
-                    borderColor: 'rgba(250, 204, 21, 0.4)',
-                    background: 'linear-gradient(135deg, rgba(250, 204, 21, 0.12), rgba(245, 158, 11, 0.08))',
-                    color: '#fbbf24',
-                  }}
-                >
-                  <span className="text-lg">📖</span>
-                  コラム：{q.column_title}
-                </button>
-              )}
-              {columnOpen && q.column_title && q.column_body && (
-                <div
-                  className="mt-3 rounded-2xl border p-4 anim-pop"
-                  style={{
-                    borderColor: 'rgba(250, 204, 21, 0.25)',
-                    background: 'linear-gradient(135deg, rgba(250, 204, 21, 0.08), rgba(245, 158, 11, 0.04))',
-                  }}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">📖</span>
-                    <span className="text-sm font-bold text-amber-200">{q.column_title}</span>
-                  </div>
-                  <p className="text-sm leading-7 text-slate-300 whitespace-pre-wrap">{q.column_body}</p>
+            <>
+              <div className="card mt-3 sm:mt-4 anim-pop" style={{ borderColor: `${accent}50`, background }}>
+                {isCorrect && celebration && (
+                  <SuccessBurst celebration={celebration} className="mb-3 sm:mb-4" />
+                )}
+                <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                  <span className="font-bold text-base sm:text-lg" style={{ color: accent }}>
+                    {title}
+                  </span>
                 </div>
-              )}
-              <button onClick={handleNext} className="btn-primary w-full mt-4">
-                {current + 1 >= questions.length ? '結果を見る' : '次の問題 →'}
-              </button>
-            </div>
+                {currentResult === 'semantic' && textJudgeSource === 'gemini' && (
+                  <p className="mb-1.5 text-xs text-emerald-200">
+                    Gemini が意味として正しい回答と判断しました。
+                    {textJudgeReason ? ` ${textJudgeReason}` : ''}
+                  </p>
+                )}
+                {textJudgeWarning && (
+                  <p className="mb-1.5 text-xs text-amber-200">{textJudgeWarning}</p>
+                )}
+                {!isCorrect && (
+                  <>
+                    <p className="text-slate-200 text-sm mb-1.5">答え: {correctAnswerText}</p>
+                    {correctAnswerText !== q.answer && q.answer && (
+                      <p className="text-slate-300 text-xs mb-1.5">{q.answer}</p>
+                    )}
+                  </>
+                )}
+                {!isCorrect && q.type === 'text' && q.keywords && q.keywords.length > 0 && (
+                  <p className="text-slate-300 text-xs mb-1.5">キーワード: {q.keywords.join(' / ')}</p>
+                )}
+                {currentResult === 'keyword' && (
+                  <p className="text-amber-200 text-xs mb-1.5">おしい</p>
+                )}
+                {q.explanation && (
+                  <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">{q.explanation}</p>
+                )}
+                {columnVisible && !columnOpen && (
+                  <button
+                    onClick={() => {
+                      setColumnOpen(true)
+                      setColumnVisible(false)
+                      markColumnViewed(studentId, q.id)
+                    }}
+                    className="mt-2 sm:mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-semibold transition-all hover:-translate-y-0.5 anim-pop"
+                    style={{
+                      borderColor: 'rgba(250, 204, 21, 0.4)',
+                      background: 'linear-gradient(135deg, rgba(250, 204, 21, 0.12), rgba(245, 158, 11, 0.08))',
+                      color: '#fbbf24',
+                    }}
+                  >
+                    <span className="text-lg">📖</span>
+                    コラム：{q.column_title}
+                  </button>
+                )}
+                {columnOpen && q.column_title && q.column_body && (
+                  <div
+                    className="mt-2 sm:mt-3 rounded-2xl border p-3 sm:p-4 anim-pop"
+                    style={{
+                      borderColor: 'rgba(250, 204, 21, 0.25)',
+                      background: 'linear-gradient(135deg, rgba(250, 204, 21, 0.08), rgba(245, 158, 11, 0.04))',
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                      <span className="text-lg">📖</span>
+                      <span className="text-sm font-bold text-amber-200">{q.column_title}</span>
+                    </div>
+                    <p className="text-xs sm:text-sm leading-6 sm:leading-7 text-slate-300 whitespace-pre-wrap">{q.column_body}</p>
+                  </div>
+                )}
+              </div>
+              <div className="sticky bottom-3 z-10 mt-3 sm:relative sm:bottom-auto sm:mt-4">
+                <button onClick={handleNext} className="btn-primary w-full shadow-lg sm:shadow-none">
+                  {current + 1 >= questions.length ? '結果を見る' : '次の問題 →'}
+                </button>
+              </div>
+            </>
           )
         })()
       )}
