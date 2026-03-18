@@ -87,7 +87,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [pw, setPw] = useState('')
   const [pwError, setPwError] = useState(false)
   const [tab, setTab] = useState<AdminTab>('overview')
-  const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string; student_xp: number }>>([])
+  const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string; student_xp: number; is_approved?: boolean }>>([])
   const [stats, setStats] = useState<StudentStats[]>([])
   const [questions, setQuestions] = useState<QuestionRow[]>([])
   const [questionAccuracyMap, setQuestionAccuracyMap] = useState<Record<string, QuestionAccuracySummary>>({})
@@ -119,6 +119,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [restoreInput, setRestoreInput] = useState('')
   const [restoreMsg, setRestoreMsg] = useState('')
   const [restoreLoading, setRestoreLoading] = useState(false)
+  const [userActionId, setUserActionId] = useState<number | null>(null)
 
   const [form, setForm] = useState({
     field: '生物' as typeof FIELDS[number],
@@ -351,6 +352,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         setLoginUpdates((loginUpdatesResponse.data || []) as LoginUpdateRow[])
         setLoginUpdatesLoadError('')
       }
+    } else if (tab === 'users') {
+      const students = await fetchStudents()
+      setStudentsList(students)
     } else if (tab === 'inquiries') {
       const { data, error } = await supabase
         .from('question_inquiries')
@@ -1530,7 +1534,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="segment-bar" role="tablist" aria-label="管理画面">
-            {([['overview', '📊 生徒データ'], ['inquiries', '📨 問い合わせ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録']] as const).map(([currentTab, label]) => (
+            {([['overview', '📊 生徒データ'], ['users', '👤 ユーザー管理'], ['inquiries', '📨 問い合わせ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録']] as const).map(([currentTab, label]) => (
               <button
                 key={currentTab}
                 role="tab"
@@ -2060,6 +2064,96 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                 )
               })}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'users' && (
+        <div>
+          <div className="mb-4">
+            <p className="text-slate-400">
+              登録ユーザー {studentsList.length}人
+              {studentsList.filter(s => s.is_approved === false).length > 0 && (
+                <span className="ml-2 text-amber-400 text-sm">
+                  未承認 {studentsList.filter(s => s.is_approved === false).length}人
+                </span>
+              )}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              新規登録ユーザーを承認すると、チャットなどの機能が使えるようになります。
+            </p>
+          </div>
+
+          {studentsList.length === 0 ? (
+            <p className="text-slate-500">データを読み込み中...</p>
+          ) : (
+            <div className="space-y-2">
+              {studentsList.map(student => {
+                const isApproved = student.is_approved !== false
+                const isPending = student.is_approved === false
+                const isProcessing = userActionId === student.id
+
+                return (
+                  <div
+                    key={student.id}
+                    className="flex items-center justify-between gap-3 rounded-2xl border px-4 py-3"
+                    style={{
+                      borderColor: isPending ? 'rgba(251, 191, 36, 0.25)' : 'var(--surface-elevated-border)',
+                      background: isPending ? 'rgba(251, 191, 36, 0.05)' : 'var(--surface-elevated)',
+                    }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-white">{student.nickname}</span>
+                        <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-slate-400">ID {student.id}</span>
+                        {isApproved && (
+                          <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] text-emerald-300">承認済み</span>
+                        )}
+                        {isPending && (
+                          <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] text-amber-300">未承認</span>
+                        )}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        XP: {student.student_xp}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 gap-2">
+                      {isPending && (
+                        <button
+                          className="rounded-xl bg-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/30"
+                          disabled={isProcessing}
+                          onClick={async () => {
+                            setUserActionId(student.id)
+                            await supabase.from('students').update({ is_approved: true }).eq('id', student.id)
+                            const updated = await fetchStudents()
+                            setStudentsList(updated)
+                            setUserActionId(null)
+                          }}
+                        >
+                          {isProcessing ? '処理中...' : '承認'}
+                        </button>
+                      )}
+                      {isApproved && student.id > 5 && (
+                        <button
+                          className="rounded-xl bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-500/30"
+                          disabled={isProcessing}
+                          onClick={async () => {
+                            setUserActionId(student.id)
+                            await supabase.from('students').update({ is_approved: false }).eq('id', student.id)
+                            const updated = await fetchStudents()
+                            setStudentsList(updated)
+                            setUserActionId(null)
+                          }}
+                        >
+                          {isProcessing ? '処理中...' : '取消'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

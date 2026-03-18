@@ -218,7 +218,7 @@ export default function LoginPage({
   onOnline: () => void
   onAdmin: () => void
 }) {
-  const { login, notice } = useAuth()
+  const { login, register, notice } = useAuth()
   const [studentId, setStudentId] = useState(1)
   const [students, setStudents] = useState(LOGIN_STUDENTS)
   const [studentSearch, setStudentSearch] = useState('')
@@ -226,6 +226,12 @@ export default function LoginPage({
   const [error, setError] = useState('')
   const [shakeKey, setShakeKey] = useState(0)
   const [submitting, setSubmitting] = useState(false)
+  const [registerOpen, setRegisterOpen] = useState(false)
+  const [regNickname, setRegNickname] = useState('')
+  const [regPassword, setRegPassword] = useState('')
+  const [regError, setRegError] = useState('')
+  const [regSuccess, setRegSuccess] = useState('')
+  const [regSubmitting, setRegSubmitting] = useState(false)
   const [onlineOpen, setOnlineOpen] = useState(false)
   const [onlineStudentId, setOnlineStudentId] = useState(1)
   const [onlineStudentSearch, setOnlineStudentSearch] = useState('')
@@ -396,6 +402,26 @@ export default function LoginPage({
     setShakeKey(current => current + 1)
     if (!isGuest) {
       setPw('')
+    }
+  }
+
+  const handleRegister = async () => {
+    setRegSubmitting(true)
+    setRegError('')
+    setRegSuccess('')
+    const result = await register({ nickname: regNickname, password: regPassword })
+    setRegSubmitting(false)
+
+    if (result.ok) {
+      setRegSuccess(result.message)
+      setRegNickname('')
+      setRegPassword('')
+      // 登録後にリストを再取得
+      fetchStudents().then(data => {
+        setStudents([LOGIN_STUDENTS[0], ...data])
+      })
+    } else {
+      setRegError(result.message)
     }
   }
 
@@ -632,7 +658,18 @@ export default function LoginPage({
                 {submitting ? 'ログイン中...' : isGuest ? 'ゲストで始める' : 'ログイン'}
               </button>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <button
+                  onClick={() => {
+                    setRegisterOpen(prev => !prev)
+                    setRegError('')
+                    setRegSuccess('')
+                  }}
+                  className="btn-ghost w-full"
+                >
+                  新規登録
+                </button>
+
                 <button
                   onClick={() => {
                     setOnlineStudentId(studentId === GUEST_STUDENT_ID ? onlineStudents[0]?.id ?? 1 : studentId)
@@ -653,6 +690,77 @@ export default function LoginPage({
                   もぎ先生ログイン
                 </button>
               </div>
+
+              {registerOpen && (
+                <div className="mt-5 rounded-[28px] border border-emerald-300/16 bg-slate-950/45 p-4 sm:p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold tracking-[0.18em] uppercase text-emerald-200">Registration</div>
+                      <div className="mt-2 font-display text-2xl text-white">新規ユーザー登録</div>
+                    </div>
+                    <button
+                      onClick={() => setRegisterOpen(false)}
+                      className="btn-ghost !px-4 !py-2"
+                    >
+                      閉じる
+                    </button>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-slate-300">
+                    ニックネームとパスワードを決めて登録してください。IDは自動で発行されます。管理者が承認するまで一部の機能は制限されます。
+                  </p>
+
+                  <div className="mt-4 space-y-3">
+                    <div>
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Nickname</div>
+                      <input
+                        type="text"
+                        value={regNickname}
+                        onChange={event => setRegNickname(event.target.value)}
+                        placeholder="ニックネーム"
+                        className="input-surface text-center text-lg"
+                        maxLength={20}
+                      />
+                    </div>
+                    <div>
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Password</div>
+                      <input
+                        type="password"
+                        value={regPassword}
+                        onChange={event => setRegPassword(event.target.value)}
+                        onKeyDown={event => {
+                          if (event.key === 'Enter') void handleRegister()
+                        }}
+                        placeholder="パスワード（4文字以上）"
+                        className="input-surface text-center text-lg tracking-[0.18em]"
+                      />
+                    </div>
+                  </div>
+
+                  {regError && <p className="mt-3 text-center text-sm text-red-400">{regError}</p>}
+                  {regSuccess && (
+                    <div
+                      className="info-banner mt-3 text-sm"
+                      style={{ background: 'rgba(52, 211, 153, 0.1)', borderColor: 'rgba(52, 211, 153, 0.25)', color: '#6ee7b7' }}
+                    >
+                      {regSuccess}
+                    </div>
+                  )}
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <button
+                      onClick={() => void handleRegister()}
+                      className="btn-primary w-full"
+                      disabled={regSubmitting || !regNickname.trim() || !regPassword.trim()}
+                      style={{ opacity: regSubmitting || !regNickname.trim() || !regPassword.trim() ? 0.7 : 1 }}
+                    >
+                      {regSubmitting ? '登録中...' : '登録する'}
+                    </button>
+                    <button onClick={() => setRegisterOpen(false)} className="btn-secondary w-full">
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {onlineOpen && (
                 <div className="mt-5 rounded-[28px] border border-sky-300/16 bg-slate-950/45 p-4 sm:p-5">

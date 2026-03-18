@@ -47,10 +47,9 @@ function getApiKey() {
   return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 }
 
-function getJudgeMode() {
-  const configuredMode = process.env.SCIENCE_CHAT_MODE?.trim().toLowerCase()
-  if (configuredMode === 'live' || configuredMode === 'mock') return configuredMode
-  return getApiKey() ? 'live' : 'mock'
+function getJudgeMode(): 'live' | 'mock' {
+  // Gemini API は使用しない（常にローカル判定）
+  return 'mock'
 }
 
 function extractText(payload: GeminiJudgeResponse) {

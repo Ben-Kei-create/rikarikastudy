@@ -90,7 +90,7 @@ export default function ScienceChatPage({
   field: ScienceChatField
   onBack: () => void
 }) {
-  const { studentId } = useAuth()
+  const { studentId, isApproved } = useAuth()
   const meta = FIELD_META[field]
   const isGuest = isGuestStudentId(studentId)
   const maxThreads = isGuest ? SCIENCE_CHAT_GUEST_MAX_THREADS_PER_FIELD : SCIENCE_CHAT_MAX_THREADS_PER_FIELD
@@ -326,7 +326,12 @@ export default function ScienceChatPage({
     await sendToApi(storedThread, 'quiz-question')
   }
 
-  if (isGuest) {
+  if (isGuest || !isApproved) {
+    const reason = isGuest
+      ? 'ゲストモードでは Gemini などの質問機能は使えません。'
+      : '管理者の承認がまだのため、質問チャットは利用できません。'
+    const title = isGuest ? 'ゲストでは利用できません' : '承認待ちです'
+
     return (
       <div className="page-shell page-shell-dashboard">
         <div className="hero-card science-surface p-5 sm:p-6 lg:p-7 mb-5 anim-fade-up">
@@ -344,9 +349,7 @@ export default function ScienceChatPage({
                   Gemini Chat
                 </div>
                 <div className="font-display text-3xl text-white">{field}に質問</div>
-                <p className="text-slate-300 text-sm mt-1 leading-6">
-                  ゲストモードでは Gemini などの質問機能は使えません。
-                </p>
+                <p className="text-slate-300 text-sm mt-1 leading-6">{reason}</p>
               </div>
             </div>
             <button onClick={onBack} className="btn-secondary w-full lg:w-auto">
@@ -357,10 +360,8 @@ export default function ScienceChatPage({
 
         <div className="card text-center py-10">
           <div className="text-5xl mb-4">🔒</div>
-          <div className="font-display text-2xl text-white">ゲストでは利用できません</div>
-          <p className="mt-3 text-sm leading-7 text-slate-400">
-            Gemini や質問チャットは、通常ログインした生徒だけが使えます。
-          </p>
+          <div className="font-display text-2xl text-white">{title}</div>
+          <p className="mt-3 text-sm leading-7 text-slate-400">{reason}</p>
         </div>
       </div>
     )

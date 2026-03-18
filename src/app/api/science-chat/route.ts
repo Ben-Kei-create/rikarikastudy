@@ -47,13 +47,9 @@ function getScienceChatApiKey() {
   return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 }
 
-function getScienceChatMode() {
-  const configuredMode = process.env.SCIENCE_CHAT_MODE?.trim().toLowerCase()
-  if (configuredMode === 'live' || configuredMode === 'mock') {
-    return configuredMode
-  }
-
-  return getScienceChatApiKey() ? 'live' : 'mock'
+function getScienceChatMode(): 'live' | 'mock' {
+  // Gemini API は使用しない（常にモック応答）
+  return 'mock'
 }
 
 function isScienceField(value: string): value is ScienceChatField {

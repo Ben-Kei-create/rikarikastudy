@@ -3,18 +3,23 @@
 -- Run this in Supabase SQL Editor
 -- ========================================
 
--- 生徒テーブル（ID 1-5固定）
+-- 生徒テーブル（自動登録対応）
 CREATE TABLE IF NOT EXISTS students (
-  id INTEGER PRIMARY KEY CHECK (id BETWEEN 1 AND 5),
+  id INTEGER PRIMARY KEY,
   nickname TEXT NOT NULL,
   password TEXT NOT NULL,
+  is_approved BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 既存環境向けの移行
 ALTER TABLE students ADD COLUMN IF NOT EXISTS password TEXT;
 ALTER TABLE students DROP CONSTRAINT IF EXISTS students_id_check;
-ALTER TABLE students ADD CONSTRAINT students_id_check CHECK (id BETWEEN 1 AND 5);
+ALTER TABLE students ADD COLUMN IF NOT EXISTS is_approved BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- 新規登録用シーケンス（ID 6以降を発行）
+CREATE SEQUENCE IF NOT EXISTS students_id_seq START WITH 6;
+SELECT setval('students_id_seq', GREATEST(6, (SELECT COALESCE(MAX(id), 5) + 1 FROM students)), false);
 
 -- 初期データ挿入
 INSERT INTO students (id, nickname, password) VALUES
@@ -39,6 +44,9 @@ UPDATE students SET password = 'rikalove3' WHERE id = 3 AND (password IS NULL OR
 UPDATE students SET password = 'rikalove4' WHERE id = 4 AND (password IS NULL OR BTRIM(password) = '' OR password = 'rikarikalove');
 UPDATE students SET password = 'rikaadmin2026' WHERE id = 5 AND (password IS NULL OR BTRIM(password) = '');
 ALTER TABLE students ALTER COLUMN password SET NOT NULL;
+
+-- 既存の生徒（ID 1-5）は承認済みにする
+UPDATE students SET is_approved = TRUE WHERE id BETWEEN 1 AND 5;
 
 -- 問題テーブル
 CREATE TABLE IF NOT EXISTS questions (

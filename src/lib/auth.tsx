@@ -21,14 +21,15 @@ export interface StudentRecord {
   nickname: string
   password: string
   student_xp: number
+  is_approved: boolean
 }
 
 export const DEFAULT_STUDENTS: StudentRecord[] = [
-  { id: 1, nickname: 'S', password: 'rikalove1', student_xp: 0 },
-  { id: 2, nickname: 'M', password: 'rikalove2', student_xp: 0 },
-  { id: 3, nickname: 'T', password: 'rikalove3', student_xp: 0 },
-  { id: 4, nickname: 'K', password: 'rikalove4', student_xp: 0 },
-  { id: 5, nickname: '先生', password: 'rikaadmin2026', student_xp: 0 },
+  { id: 1, nickname: 'S', password: 'rikalove1', student_xp: 0, is_approved: true },
+  { id: 2, nickname: 'M', password: 'rikalove2', student_xp: 0, is_approved: true },
+  { id: 3, nickname: 'T', password: 'rikalove3', student_xp: 0, is_approved: true },
+  { id: 4, nickname: 'K', password: 'rikalove4', student_xp: 0, is_approved: true },
+  { id: 5, nickname: '先生', password: 'rikaadmin2026', student_xp: 0, is_approved: true },
 ]
 
 export const LOGIN_STUDENTS: StudentRecord[] = [GUEST_STUDENTS_ENTRY(), ...DEFAULT_STUDENTS]
@@ -39,28 +40,53 @@ function GUEST_STUDENTS_ENTRY(): StudentRecord {
     nickname: GUEST_STUDENT.nickname,
     password: GUEST_STUDENT.password,
     student_xp: 0,
+    is_approved: false,
   }
 }
 
 function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number }>) {
-  return DEFAULT_STUDENTS.map(defaultStudent => {
+  const defaultIds = new Set(DEFAULT_STUDENTS.map(s => s.id))
+  const merged: StudentRecord[] = DEFAULT_STUDENTS.map(defaultStudent => {
     const current = students.find(student => student.id === defaultStudent.id)
     return {
       id: defaultStudent.id,
       nickname: current?.nickname?.trim() || defaultStudent.nickname,
       password: current?.password?.trim() || defaultStudent.password,
       student_xp: typeof current?.student_xp === 'number' ? current.student_xp : defaultStudent.student_xp,
+      is_approved: typeof current?.is_approved === 'boolean' ? current.is_approved : defaultStudent.is_approved,
     }
   })
+
+  // 登録済みユーザー（ID 6以降）も含める
+  for (const student of students) {
+    if (defaultIds.has(student.id)) continue
+    merged.push({
+      id: student.id,
+      nickname: student.nickname?.trim() || `ID ${student.id}`,
+      password: student.password?.trim() || '',
+      student_xp: typeof student.student_xp === 'number' ? student.student_xp : 0,
+      is_approved: typeof student.is_approved === 'boolean' ? student.is_approved : false,
+    })
+  }
+
+  return merged
 }
 
 async function queryStudents(): Promise<StudentRecord[] | null> {
   const { data, error } = await supabase
     .from('students')
-    .select('id, nickname, password, student_xp')
+    .select('id, nickname, password, student_xp, is_approved')
     .order('id', { ascending: true })
 
   if (!error && data) return mergeWithDefaults(data)
+
+  // is_approved 列がない旧スキーマにフォールバック
+  const { data: fallbackData, error: fallbackError } = await supabase
+    .from('students')
+    .select('id, nickname, password, student_xp')
+    .order('id', { ascending: true })
+
+  if (!fallbackError && fallbackData) return mergeWithDefaults(fallbackData)
 
   const { data: legacyData, error: legacyError } = await supabase
     .from('students')
@@ -94,6 +120,7 @@ function getUpdateErrorMessage(message: string) {
 interface AuthState {
   studentId: number | null
   nickname: string | null
+  isApproved: boolean
   ready: boolean
   notice: string | null
   pendingLoginCardReward: PeriodicCardReward | null
@@ -109,9 +136,15 @@ interface UpdateProfileResult {
   message: string
 }
 
+interface RegisterInput {
+  nickname: string
+  password: string
+}
+
 interface AuthContextType extends AuthState {
   login: (studentId: number, password: string) => Promise<UpdateProfileResult>
   logout: (reason?: 'manual' | 'expired') => void
+  register: (input: RegisterInput) => Promise<UpdateProfileResult & { studentId?: number }>
   refreshProfile: () => Promise<void>
   updateProfile: (updates: UpdateProfileInput) => Promise<UpdateProfileResult>
   dismissLoginCardReward: () => void
@@ -130,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     studentId: null,
     nickname: null,
+    isApproved: false,
     ready: false,
     notice: null,
     pendingLoginCardReward: null,
@@ -161,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               ...prev,
               studentId: null,
               nickname: null,
+              isApproved: false,
               notice: '10分操作がなかったため、ログアウトしました。',
               pendingLoginCardReward: null,
             }))
@@ -178,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setState({
           studentId: student.id,
           nickname: student.nickname,
+          isApproved: student.is_approved,
           ready: true,
           notice: null,
           pendingLoginCardReward: null,
@@ -189,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       sessionStorage.removeItem(STORAGE_KEY)
       if (!cancelled) {
-        setState(prev => ({ ...prev, studentId: null, nickname: null, pendingLoginCardReward: null }))
+        setState(prev => ({ ...prev, studentId: null, nickname: null, isApproved: false, pendingLoginCardReward: null }))
       }
     }
 
@@ -239,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const next = {
       studentId: student.id,
       nickname: student.nickname,
+      isApproved: student.is_approved,
       ready: true,
       notice: null,
       pendingLoginCardReward,
@@ -251,6 +288,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: true, message: '' }
   }
 
+  const register = async (input: RegisterInput): Promise<UpdateProfileResult & { studentId?: number }> => {
+    const nickname = input.nickname.trim()
+    const password = input.password.trim()
+    if (!nickname) return { ok: false, message: 'ニックネームを入力してください。' }
+    if (!password) return { ok: false, message: 'パスワードを入力してください。' }
+    if (password.length < 4) return { ok: false, message: 'パスワードは4文字以上にしてください。' }
+
+    // シーケンスから新しいIDを取得
+    const { data: seqData, error: seqError } = await supabase.rpc('nextval', { seq_name: 'students_id_seq' })
+
+    let newId: number | null = null
+    if (!seqError && seqData != null) {
+      newId = typeof seqData === 'number' ? seqData : Number(seqData)
+    }
+
+    // rpc が使えない場合のフォールバック: MAX(id) + 1
+    if (newId === null || isNaN(newId)) {
+      const { data: maxData } = await supabase
+        .from('students')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1)
+        .single()
+      newId = (maxData?.id ?? 5) + 1
+    }
+
+    const { error: insertError } = await supabase
+      .from('students')
+      .insert({
+        id: newId,
+        nickname,
+        password,
+        is_approved: false,
+        student_xp: 0,
+      })
+
+    if (insertError) {
+      return { ok: false, message: `登録に失敗しました: ${insertError.message}` }
+    }
+
+    return {
+      ok: true,
+      message: `登録完了！ あなたのIDは ${newId} です。管理者の承認後にすべての機能が使えるようになります。`,
+      studentId: newId ?? undefined,
+    }
+  }
+
   const logout = (reason: 'manual' | 'expired' = 'manual') => {
     void removeActiveSession(sessionTokenRef.current)
     lastActivityAtRef.current = null
@@ -259,6 +343,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...prev,
       studentId: null,
       nickname: null,
+      isApproved: false,
       ready: true,
       notice: reason === 'expired' ? '10分操作がなかったため、ログアウトしました。' : null,
       pendingLoginCardReward: null,
@@ -379,7 +464,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [state.studentId])
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshProfile, updateProfile, dismissLoginCardReward: () => setState(prev => ({ ...prev, pendingLoginCardReward: null })) }}>
+    <AuthContext.Provider value={{ ...state, login, logout, register, refreshProfile, updateProfile, dismissLoginCardReward: () => setState(prev => ({ ...prev, pendingLoginCardReward: null })) }}>
       {children}
     </AuthContext.Provider>
   )
