@@ -1,14 +1,11 @@
 'use client'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
-import { getBadgeRarityLabel } from '@/lib/badges'
-import { getLevelInfo } from '@/lib/engagement'
-import BadgeEarnedToastStack from '@/components/BadgeEarnedToastStack'
-import LevelUnlockNotice from '@/components/LevelUnlockNotice'
-import { PeriodicCardRewardPanel } from '@/components/PeriodicCard'
 import {
   CHEMISTRY_WORKBENCH_MODES,
+  COLUMN_LAYER_OPTIONS,
+  ColumnLayerOption,
   EARTH_WORKBENCH_MODES,
   getScienceWorkbenchRounds,
   MotionWorkbenchRound,
@@ -19,7 +16,6 @@ import {
   ScienceWorkbenchRound,
   SCIENCE_WORKBENCH_MODE_META,
 } from '@/lib/scienceWorkbench'
-import { recordStudySession, StudyRewardSummary } from '@/lib/studyRewards'
 
 declare global {
   interface Window {
@@ -43,7 +39,7 @@ export type WorkbenchState =
     }
   | { kind: 'earth-humidity'; temperature: number; vaporAmount: number }
   | { kind: 'earth-column'; slots: [string | null, string | null, string | null]; activeSlot: 0 | 1 | 2 }
-  | { kind: 'physics-motion-graph'; acceleration: number; time: number }
+  | { kind: 'physics-motion-graph'; acceleration: number; initialVelocity: number; time: number }
 
 export interface RoundFeedback {
   correct: boolean
@@ -215,7 +211,26 @@ export function getInitialState(round: ScienceWorkbenchRound): WorkbenchState {
     case 'earth-column':
       return { kind: round.kind, slots: [null, null, null], activeSlot: 0 }
     case 'physics-motion-graph':
-      return { kind: round.kind, acceleration: round.startAcceleration, time: 2 }
+      return { kind: round.kind, acceleration: round.startAcceleration, initialVelocity: round.initialVelocity, time: 2 }
+    default:
+      return { kind: 'chem-density', mass: 40, volume: 20 }
+  }
+}
+
+function getSimInitialState(mode: ScienceWorkbenchMode): WorkbenchState {
+  switch (mode) {
+    case 'chem-density':
+      return { kind: 'chem-density', mass: 40, volume: 20 }
+    case 'chem-concentration':
+      return { kind: 'chem-concentration', soluteMass: 10, waterMass: 90 }
+    case 'chem-battery':
+      return { kind: 'chem-battery', negativeElectrode: null, electronDirection: null, currentDirection: null, zincChange: null, copperChange: null }
+    case 'earth-humidity':
+      return { kind: 'earth-humidity', temperature: 20, vaporAmount: 9.4 }
+    case 'earth-column':
+      return { kind: 'earth-column', slots: [null, null, null], activeSlot: 0 }
+    case 'physics-motion-graph':
+      return { kind: 'physics-motion-graph', acceleration: 0, initialVelocity: 4, time: 2 }
     default:
       return { kind: 'chem-density', mass: 40, volume: 20 }
   }
@@ -277,10 +292,14 @@ function describeBatteryState(state: Extract<WorkbenchState, { kind: 'chem-batte
 function describeMotion(round: MotionWorkbenchRound, state: Extract<WorkbenchState, { kind: 'physics-motion-graph' }>) {
   const currentVelocity = Math.max(0, round.initialVelocity + state.acceleration * state.time)
   const currentPosition = round.initialVelocity * state.time + 0.5 * state.acceleration * state.time * state.time
-  return {
-    currentVelocity,
-    currentPosition,
-  }
+  return { currentVelocity, currentPosition }
+}
+
+function describeMotionSim(state: Extract<WorkbenchState, { kind: 'physics-motion-graph' }>) {
+  const v0 = state.initialVelocity
+  const currentVelocity = Math.max(0, v0 + state.acceleration * state.time)
+  const currentPosition = v0 * state.time + 0.5 * state.acceleration * state.time * state.time
+  return { currentVelocity, currentPosition }
 }
 
 export function evaluateRound(round: ScienceWorkbenchRound, state: WorkbenchState): RoundFeedback {
@@ -378,10 +397,10 @@ export function evaluateRound(round: ScienceWorkbenchRound, state: WorkbenchStat
 
 function drawDensityScene(
   ctx: CanvasRenderingContext2D,
-  round: Extract<ScienceWorkbenchRound, { kind: 'chem-density' }>,
   state: Extract<WorkbenchState, { kind: 'chem-density' }>,
   accent: string,
   visuals?: WorkbenchVisualOptions,
+  targetDensity?: number,
 ) {
   const clock = (visuals?.clockMs ?? 0) / 1000
   const intensity = visuals?.intensity ?? 1
@@ -459,11 +478,14 @@ function drawDensityScene(
     ctx.fillText(`${mark}cm3`, cylinderX + 222, y + 5)
   })
 
-  ctx.fillStyle = '#fff7ed'
-  ctx.font = '700 26px "Zen Kaku Gothic New", sans-serif'
-  ctx.fillText(`目標 ${formatNumber(round.targetDensity)} g/cm3`, 80, 132)
+  if (targetDensity !== undefined) {
+    ctx.fillStyle = '#fff7ed'
+    ctx.font = '700 26px "Zen Kaku Gothic New", sans-serif'
+    ctx.fillText(`目標 ${formatNumber(targetDensity)} g/cm3`, 80, 132)
+  }
   ctx.fillStyle = '#ffffff'
-  ctx.fillText(`現在 ${formatNumber(density)} g/cm3`, 478, 134)
+  ctx.font = '700 26px "Zen Kaku Gothic New", sans-serif'
+  ctx.fillText(`現在 ${formatNumber(density)} g/cm3`, targetDensity !== undefined ? 478 : 80, 132)
 
   const gaugeX = 96
   const gaugeY = 468
@@ -474,21 +496,29 @@ function drawDensityScene(
   ctx.fillStyle = createGradient(ctx, gaugeX, gaugeY, gaugeWidth, 24, '#fdba74', '#fb923c')
   drawRoundedRect(ctx, gaugeX, gaugeY, clamp((density / 4) * gaugeWidth, 40, gaugeWidth), 24, 12)
   ctx.fill()
-  const targetX = gaugeX + (round.targetDensity / 4) * gaugeWidth
-  ctx.strokeStyle = '#fff7ed'
-  ctx.lineWidth = 3
-  ctx.beginPath()
-  ctx.moveTo(targetX, gaugeY - 8)
-  ctx.lineTo(targetX, gaugeY + 32)
-  ctx.stroke()
+  if (targetDensity !== undefined) {
+    const targetX = gaugeX + (targetDensity / 4) * gaugeWidth
+    ctx.strokeStyle = '#fff7ed'
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.moveTo(targetX, gaugeY - 8)
+    ctx.lineTo(targetX, gaugeY + 32)
+    ctx.stroke()
+  }
+
+  if (targetDensity === undefined) {
+    ctx.fillStyle = density < 1.0 ? '#86efac' : density < 2.0 ? '#fde68a' : '#fca5a5'
+    ctx.font = '600 16px "Zen Kaku Gothic New", sans-serif'
+    ctx.fillText(density < 1.0 ? '水に浮く' : density < 2.0 ? '水に沈む (軽い固体)' : '重い固体', gaugeX, gaugeY + 54)
+  }
 }
 
 function drawConcentrationScene(
   ctx: CanvasRenderingContext2D,
-  round: Extract<ScienceWorkbenchRound, { kind: 'chem-concentration' }>,
   state: Extract<WorkbenchState, { kind: 'chem-concentration' }>,
   accent: string,
   visuals?: WorkbenchVisualOptions,
+  targetPercent?: number,
 ) {
   const clock = (visuals?.clockMs ?? 0) / 1000
   const intensity = visuals?.intensity ?? 1
@@ -548,8 +578,13 @@ function drawConcentrationScene(
 
   ctx.fillStyle = '#ffffff'
   ctx.font = '700 24px "Zen Kaku Gothic New", sans-serif'
-  ctx.fillText(`目標 ${formatNumber(round.targetPercent)}%`, 80, 132)
-  ctx.fillText(`現在 ${formatNumber(concentration)}%`, 416, 132)
+  if (targetPercent !== undefined) {
+    ctx.fillText(`目標 ${formatNumber(targetPercent)}%`, 80, 132)
+    ctx.fillText(`現在 ${formatNumber(concentration)}%`, 416, 132)
+  } else {
+    ctx.fillText(`現在 ${formatNumber(concentration)}%`, 80, 132)
+    ctx.fillText(`溶液 ${total}g`, 416, 132)
+  }
 
   ctx.font = '700 22px "Zen Kaku Gothic New", sans-serif'
   ctx.fillStyle = '#fff1f2'
@@ -653,10 +688,10 @@ function fillPattern(
 
 function drawBatteryScene(
   ctx: CanvasRenderingContext2D,
-  round: Extract<ScienceWorkbenchRound, { kind: 'chem-battery' }>,
   state: Extract<WorkbenchState, { kind: 'chem-battery' }>,
   accent: string,
   visuals?: WorkbenchVisualOptions,
+  bottomText?: string,
 ) {
   const clock = (visuals?.clockMs ?? 0) / 1000
   const intensity = visuals?.intensity ?? 1
@@ -793,16 +828,17 @@ function drawBatteryScene(
   ctx.font = '700 24px "Zen Kaku Gothic New", sans-serif'
   ctx.fillText('化学電池のしくみ', 82, 94)
   ctx.font = '500 15px "Zen Kaku Gothic New", sans-serif'
-  ctx.fillText(round.supportText, 82, 474)
+  ctx.fillText(bottomText ?? 'パラメータを変えて、化学電池の流れを観察しよう', 82, 474)
 }
 
 function drawColumnScene(
   ctx: CanvasRenderingContext2D,
-  round: Extract<ScienceWorkbenchRound, { kind: 'earth-column' }>,
   state: Extract<WorkbenchState, { kind: 'earth-column' }>,
   accent: string,
   visuals?: WorkbenchVisualOptions,
+  options?: ColumnLayerOption[],
 ) {
+  const columnOptions = options ?? COLUMN_LAYER_OPTIONS
   const clock = (visuals?.clockMs ?? 0) / 1000
   const intensity = visuals?.intensity ?? 1
   const columnX = 136
@@ -818,11 +854,12 @@ function drawColumnScene(
 
   ctx.fillStyle = '#ffffff'
   ctx.font = '700 24px "Zen Kaku Gothic New", sans-serif'
-  ctx.fillText('柱状図を上から下へ完成', 88, 94)
+  ctx.fillText('柱状図を上から下へ並べる', 88, 94)
 
   ;(['上', '中', '下'] as const).forEach((label, index) => {
     const y = columnY + index * slotHeight
-    const option = getColumnOption(round, state.slots[index])
+    const slotKey = state.slots[index]
+    const option = slotKey ? columnOptions.find(o => o.key === slotKey) ?? null : null
     const fillColor = option?.color ?? 'rgba(100, 116, 139, 0.18)'
     ctx.fillStyle = fillColor
     drawRoundedRect(ctx, columnX, y, slotWidth, slotHeight - 10, 20)
@@ -861,7 +898,7 @@ function drawColumnScene(
   ctx.fillStyle = '#99f6e4'
   ctx.font = '500 14px "Zen Kaku Gothic New", sans-serif'
   ctx.fillText('上ほど新しい地層', 246, 132)
-  round.options.forEach((option, index) => {
+  columnOptions.forEach((option, index) => {
     const boxY = 166 + index * 92
     ctx.fillStyle = option.color
     drawRoundedRect(ctx, 504, boxY, 286, 76, 18)
@@ -882,7 +919,6 @@ function drawColumnScene(
 
 function drawHumidityScene(
   ctx: CanvasRenderingContext2D,
-  round: Extract<ScienceWorkbenchRound, { kind: 'earth-humidity' }>,
   state: Extract<WorkbenchState, { kind: 'earth-humidity' }>,
   accent: string,
   visuals?: WorkbenchVisualOptions,
@@ -1021,14 +1057,16 @@ function drawGraphAxes(ctx: CanvasRenderingContext2D, x: number, y: number, widt
 
 function drawMotionScene(
   ctx: CanvasRenderingContext2D,
-  round: Extract<ScienceWorkbenchRound, { kind: 'physics-motion-graph' }>,
   state: Extract<WorkbenchState, { kind: 'physics-motion-graph' }>,
   accent: string,
   visuals?: WorkbenchVisualOptions,
+  overrideInitialVelocity?: number,
 ) {
   const clock = (visuals?.clockMs ?? 0) / 1000
   const intensity = visuals?.intensity ?? 1
-  const { currentPosition, currentVelocity } = describeMotion(round, state)
+  const v0 = overrideInitialVelocity ?? state.initialVelocity
+  const currentVelocity = Math.max(0, v0 + state.acceleration * state.time)
+  const currentPosition = v0 * state.time + 0.5 * state.acceleration * state.time * state.time
   const trackX = 78
   const trackY = 150
   const trackWidth = 720
@@ -1091,7 +1129,7 @@ function drawMotionScene(
   ctx.beginPath()
   for (let step = 0; step <= 40; step += 1) {
     const time = (step / 40) * 4
-    const position = round.initialVelocity * time + 0.5 * state.acceleration * time * time
+    const position = v0 * time + 0.5 * state.acceleration * time * time
     const x = graph1X + (time / 4) * graphWidth
     const y = graphY + graphHeight - clamp(position / 28, 0, 1) * graphHeight
     if (step === 0) ctx.moveTo(x, y)
@@ -1102,7 +1140,7 @@ function drawMotionScene(
   ctx.beginPath()
   for (let step = 0; step <= 40; step += 1) {
     const time = (step / 40) * 4
-    const velocity = Math.max(0, round.initialVelocity + state.acceleration * time)
+    const velocity = Math.max(0, v0 + state.acceleration * time)
     const x = graph2X + (time / 4) * graphWidth
     const y = graphY + graphHeight - clamp(velocity / 12, 0, 1) * graphHeight
     if (step === 0) ctx.moveTo(x, y)
@@ -1145,27 +1183,131 @@ export function drawWorkbenchScene(
   drawBackground(ctx, meta)
   switch (round.kind) {
     case 'chem-density':
-      if (state.kind === round.kind) drawDensityScene(ctx, round, state, meta.accent, visuals)
+      if (state.kind === round.kind) drawDensityScene(ctx, state, meta.accent, visuals, round.targetDensity)
       break
     case 'chem-concentration':
-      if (state.kind === round.kind) drawConcentrationScene(ctx, round, state, meta.accent, visuals)
+      if (state.kind === round.kind) drawConcentrationScene(ctx, state, meta.accent, visuals, round.targetPercent)
       break
     case 'chem-battery':
-      if (state.kind === round.kind) drawBatteryScene(ctx, round, state, meta.accent, visuals)
+      if (state.kind === round.kind) drawBatteryScene(ctx, state, meta.accent, visuals, round.supportText)
       break
     case 'earth-humidity':
-      if (state.kind === round.kind) drawHumidityScene(ctx, round, state, meta.accent, visuals)
+      if (state.kind === round.kind) drawHumidityScene(ctx, state, meta.accent, visuals)
       break
     case 'earth-column':
-      if (state.kind === round.kind) drawColumnScene(ctx, round, state, meta.accent, visuals)
+      if (state.kind === round.kind) drawColumnScene(ctx, state, meta.accent, visuals, round.options)
       break
     case 'physics-motion-graph':
-      if (state.kind === round.kind) drawMotionScene(ctx, round, state, meta.accent, visuals)
+      if (state.kind === round.kind) drawMotionScene(ctx, state, meta.accent, visuals, round.initialVelocity)
       break
     default:
       break
   }
 }
+
+function drawSimulationScene(
+  ctx: CanvasRenderingContext2D,
+  meta: ScienceWorkbenchMeta,
+  mode: ScienceWorkbenchMode,
+  state: WorkbenchState,
+  visuals?: WorkbenchVisualOptions,
+) {
+  drawBackground(ctx, meta)
+  switch (mode) {
+    case 'chem-density':
+      if (state.kind === mode) drawDensityScene(ctx, state, meta.accent, visuals)
+      break
+    case 'chem-concentration':
+      if (state.kind === mode) drawConcentrationScene(ctx, state, meta.accent, visuals)
+      break
+    case 'chem-battery':
+      if (state.kind === mode) drawBatteryScene(ctx, state, meta.accent, visuals)
+      break
+    case 'earth-humidity':
+      if (state.kind === mode) drawHumidityScene(ctx, state, meta.accent, visuals)
+      break
+    case 'earth-column':
+      if (state.kind === mode) drawColumnScene(ctx, state, meta.accent, visuals, COLUMN_LAYER_OPTIONS)
+      break
+    case 'physics-motion-graph':
+      if (state.kind === mode) drawMotionScene(ctx, state, meta.accent, visuals)
+      break
+    default:
+      break
+  }
+}
+
+/* ─── Dynamic insight functions ─── */
+
+function getDensityInsight(density: number, mass: number, volume: number): string {
+  const formula = `${mass}g / ${volume}cm3 = ${formatNumber(density)} g/cm3`
+  if (density < 0.5) return `${formula}。発泡スチロール（約0.03）のように非常に軽い。水に浮きます。`
+  if (density < 1.0) return `${formula}。水（1.0）より軽いので水に浮きます。木材はこの範囲が多い。`
+  if (Math.abs(density - 1.0) < 0.02) return `${formula}。水とほぼ同じ密度。浮きも沈みもしない境目です。`
+  if (density < 2.7) return `${formula}。水に沈む固体。ガラス（約2.5）に近い。`
+  if (density < 5.0) return `${formula}。アルミニウム（2.7）～鉄（7.9）の間。金属に近い重さ。`
+  return `${formula}。鉄（7.9）に近づくかなり重い物体です。`
+}
+
+function getConcentrationInsight(percent: number, soluteMass: number, waterMass: number): string {
+  const total = soluteMass + waterMass
+  const formula = `${soluteMass}g / ${total}g x 100 = ${formatNumber(percent)}%`
+  if (percent < 1) return `${formula}。ほとんど水。味はほぼしません。`
+  if (Math.abs(percent - 0.9) < 0.5) return `${formula}。生理食塩水（0.9%）に近い濃度。体液と同じ浸透圧。`
+  if (Math.abs(percent - 3.5) < 1.5) return `${formula}。海水（約3.5%）に近いしょっぱさです。`
+  if (percent < 15) return `${formula}。料理にも使われる範囲の濃さ。`
+  if (percent < 27) return `${formula}。かなり濃い食塩水。常温での飽和（約26%）に近づいています。`
+  return `${formula}。飽和に近い超高濃度。これ以上は溶けにくい。`
+}
+
+function getBatteryInsight(state: Extract<WorkbenchState, { kind: 'chem-battery' }>): string {
+  const parts: string[] = []
+  if (state.negativeElectrode === 'zinc') {
+    parts.push('亜鉛板が－極。亜鉛はイオンになりやすく、電子を放出します。')
+  } else if (state.negativeElectrode === 'copper') {
+    parts.push('銅板を－極にしていますが、実際は亜鉛のほうがイオンになりやすいため亜鉛が－極です。')
+  }
+  if (state.electronDirection === 'zinc-to-copper') {
+    parts.push('電子は亜鉛→銅へ。外部回路を通って流れます。')
+  } else if (state.electronDirection === 'copper-to-zinc') {
+    parts.push('電子が銅→亜鉛に設定されていますが、実際は亜鉛から銅へ流れます。')
+  }
+  if (state.currentDirection === 'copper-to-zinc') {
+    parts.push('電流は電子と逆向き（銅→亜鉛）。')
+  } else if (state.currentDirection === 'zinc-to-copper') {
+    parts.push('電流は電子と逆向きなので、銅→亜鉛が正しい向きです。')
+  }
+  if (state.zincChange === 'dissolve') parts.push('亜鉛板はとけて Zn2+ イオンに。')
+  if (state.copperChange === 'attach') parts.push('銅板には Cu が析出して付着。')
+  if (parts.length === 0) return '各パラメータを選んで、化学電池の流れを組み立ててみよう。'
+  return parts.join(' ')
+}
+
+function getHumidityInsight(temperature: number, vaporAmount: number, saturation: number, humidityRatio: number, cloudReady: boolean): string {
+  if (cloudReady) {
+    const excess = roundTo(vaporAmount - saturation, 1)
+    return `${temperature}℃では飽和水蒸気量が${formatNumber(saturation)}gしかないので、${formatNumber(excess)}gぶんの水蒸気が水滴になり、雲や霧が発生します。湿度${formatNumber(humidityRatio)}%。`
+  }
+  if (humidityRatio > 80) return `湿度${formatNumber(humidityRatio)}%。飽和に近く、少し冷えれば露点に達して結露します。あと${formatNumber(saturation - vaporAmount)}gで飽和。`
+  if (humidityRatio > 40) return `湿度${formatNumber(humidityRatio)}%。まだ余裕があります。飽和水蒸気量${formatNumber(saturation)}gに対して実際は${formatNumber(vaporAmount)}g。`
+  return `湿度${formatNumber(humidityRatio)}%。乾燥した空気です。飽和水蒸気量${formatNumber(saturation)}gに対して実際は${formatNumber(vaporAmount)}g。`
+}
+
+function getColumnInsight(slots: [string | null, string | null, string | null]): string {
+  const filled = slots.filter(Boolean).length
+  if (filled === 0) return '地層を上から下へ並べてみましょう。上ほど新しい地層、下ほど古い地層です。'
+  if (filled < 3) return `${filled}段が入りました。残りの段も埋めてみましょう。上ほど新しい地層になります。`
+  const labels = slots.map(key => COLUMN_LAYER_OPTIONS.find(o => o.key === key)?.label ?? '?')
+  return `上（新）: ${labels[0]} → 中: ${labels[1]} → 下（古）: ${labels[2]}。この並びは、${labels[2]}ができた環境から${labels[0]}ができた環境へと変化したことを示しています。`
+}
+
+function getMotionInsight(acceleration: number, initialVelocity: number, currentVelocity: number): string {
+  if (acceleration === 0) return `等速直線運動: 初速${initialVelocity} m/sのまま速さは変わりません。x-tグラフは直線、v-tグラフは水平線。`
+  if (acceleration > 0) return `加速運動: 毎秒${acceleration} m/sずつ速くなります。現在${formatNumber(currentVelocity)} m/s。v-tグラフの傾き＝加速度。`
+  return `減速運動: 毎秒${Math.abs(acceleration)} m/sずつ遅くなります。現在${formatNumber(currentVelocity)} m/s。速さが0になると停止。`
+}
+
+/* ─── Simulation Component ─── */
 
 export default function ScienceWorkbenchPage({
   mode,
@@ -1174,222 +1316,75 @@ export default function ScienceWorkbenchPage({
   mode: ScienceWorkbenchMode
   onBack: () => void
 }) {
-  const { studentId, logout } = useAuth()
+  const { logout } = useAuth()
   const meta = SCIENCE_WORKBENCH_MODE_META[mode]
-  const rounds = useMemo(() => getScienceWorkbenchRounds(mode), [mode])
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const startedAtRef = useRef<number | null>(null)
-  const phaseRef = useRef<Phase>('adjusting')
-  const roundRef = useRef<ScienceWorkbenchRound>(rounds[0])
-  const stateRef = useRef<WorkbenchState>(getInitialState(rounds[0]))
-  const scoreRef = useRef(0)
-  const feedbackRef = useRef<RoundFeedback | null>(null)
+  const stateRef = useRef<WorkbenchState>(getSimInitialState(mode))
 
-  const [current, setCurrent] = useState(0)
-  const [phase, setPhase] = useState<Phase>('adjusting')
-  const [score, setScore] = useState(0)
-  const [state, setState] = useState<WorkbenchState>(getInitialState(rounds[0]))
-  const [feedback, setFeedback] = useState<RoundFeedback | null>(null)
-  const [history, setHistory] = useState<boolean[]>([])
-  const [rewardSummary, setRewardSummary] = useState<StudyRewardSummary | null>(null)
+  const [state, setState] = useState<WorkbenchState>(getSimInitialState(mode))
   const [visualClock, setVisualClock] = useState(0)
-  const animationSpeed = 1
-  const visualIntensity = 1
-
-  const round = rounds[current]
-  const progress = rounds.length > 0 ? (current / rounds.length) * 100 : 0
 
   useEffect(() => {
-    const initialRound = rounds[0]
-    const initialState = getInitialState(initialRound)
-    startedAtRef.current = Date.now()
-    phaseRef.current = 'adjusting'
-    roundRef.current = initialRound
-    stateRef.current = initialState
-    scoreRef.current = 0
-    feedbackRef.current = null
-    setCurrent(0)
-    setPhase('adjusting')
-    setScore(0)
-    setState(initialState)
-    setFeedback(null)
-    setHistory([])
-    setRewardSummary(null)
+    const initial = getSimInitialState(mode)
+    stateRef.current = initial
+    setState(initial)
     setVisualClock(0)
-  }, [mode, rounds])
-
-  useEffect(() => {
-    roundRef.current = round
-  }, [round])
+  }, [mode])
 
   useEffect(() => {
     stateRef.current = state
   }, [state])
 
   useEffect(() => {
-    phaseRef.current = phase
-  }, [phase])
-
-  useEffect(() => {
-    scoreRef.current = score
-  }, [score])
-
-  useEffect(() => {
-    feedbackRef.current = feedback
-  }, [feedback])
-
-  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    drawWorkbenchScene(ctx, meta, round, state, {
-      clockMs: visualClock,
-      intensity: visualIntensity,
-    })
-  }, [meta, round, state, visualClock, visualIntensity])
+    drawSimulationScene(ctx, meta, mode, state, { clockMs: visualClock, intensity: 1 })
+  }, [meta, mode, state, visualClock])
 
   useEffect(() => {
     let rafId = 0
     let last = performance.now()
-
     const tick = (now: number) => {
       const delta = now - last
       last = now
-      setVisualClock(currentClock => currentClock + delta * animationSpeed)
+      setVisualClock(c => c + delta)
       rafId = window.requestAnimationFrame(tick)
     }
-
     rafId = window.requestAnimationFrame(tick)
-    return () => {
-      window.cancelAnimationFrame(rafId)
-    }
-  }, [animationSpeed])
+    return () => { window.cancelAnimationFrame(rafId) }
+  }, [])
 
   useEffect(() => {
     window.render_game_to_text = () => {
-      const currentRound = roundRef.current
-      const currentState = stateRef.current
-      const payload = {
-        mode,
-        phase: phaseRef.current,
-        field: meta.field,
-        round: current + 1,
-        totalRounds: rounds.length,
-        score: scoreRef.current,
-        prompt: currentRound.prompt,
-        supportText: currentRound.supportText,
-        state: currentState,
-        feedback: feedbackRef.current,
-      }
-      return JSON.stringify(payload, null, 2)
+      return JSON.stringify({ mode, field: meta.field, state: stateRef.current }, null, 2)
     }
-
     window.advanceTime = (ms: number) => {
-      if (phaseRef.current !== 'adjusting') return
-      const currentRound = roundRef.current
-      if (currentRound.kind !== 'physics-motion-graph') return
-
-      setState(currentState => {
-        if (currentState.kind !== 'physics-motion-graph') return currentState
-        return {
-          ...currentState,
-          time: clamp(roundTo(currentState.time + ms / 1000, 1), 0, 4),
-        }
+      if (mode !== 'physics-motion-graph') return
+      setState(s => {
+        if (s.kind !== 'physics-motion-graph') return s
+        return { ...s, time: clamp(roundTo(s.time + ms / 1000, 1), 0, 4) }
       })
-      setVisualClock(currentClock => currentClock + ms * animationSpeed)
+      setVisualClock(c => c + ms)
     }
+    return () => { delete window.render_game_to_text; delete window.advanceTime }
+  }, [meta.field, mode])
 
-    return () => {
-      delete window.render_game_to_text
-      delete window.advanceTime
-    }
-  }, [animationSpeed, current, meta.field, mode, rounds.length])
-
-  const updateState = (updater: (currentState: WorkbenchState) => WorkbenchState) => {
-    if (phase !== 'adjusting') return
-    setState(currentState => updater(currentState))
+  const updateState = (updater: (s: WorkbenchState) => WorkbenchState) => {
+    setState(s => updater(s))
   }
 
-  const handleSubmit = () => {
-    if (phase !== 'adjusting') return
-    const nextFeedback = evaluateRound(round, state)
-    if (nextFeedback.correct) {
-      setScore(currentScore => currentScore + 1)
-      setHistory(currentHistory => [...currentHistory, true])
-    } else {
-      setHistory(currentHistory => [...currentHistory, false])
-    }
-    setFeedback(nextFeedback)
-    setPhase('result')
-  }
-
-  const saveSession = async (finalScore: number) => {
-    if (studentId === null) return
-    const durationSeconds = startedAtRef.current
-      ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
-      : 0
-
-    const reward = await recordStudySession({
-      studentId,
-      field: meta.field,
-      unit: meta.sessionUnit,
-      totalQuestions: rounds.length,
-      correctCount: finalScore,
-      durationSeconds,
-      sessionMode: meta.sessionMode,
-    })
-
-    setRewardSummary(reward)
-  }
-
-  const handleNext = async () => {
-    if (current + 1 >= rounds.length) {
-      const finalScore = scoreRef.current
-      await saveSession(finalScore)
-      setPhase('finished')
-      return
-    }
-
-    const nextIndex = current + 1
-    const nextRound = rounds[nextIndex]
-    const nextState = getInitialState(nextRound)
-    roundRef.current = nextRound
-    stateRef.current = nextState
-    setCurrent(nextIndex)
-    setState(nextState)
-    setFeedback(null)
-    setPhase('adjusting')
-  }
-
-  const restart = () => {
-    const firstRound = rounds[0]
-    const firstState = getInitialState(firstRound)
-    startedAtRef.current = Date.now()
-    roundRef.current = firstRound
-    stateRef.current = firstState
-    phaseRef.current = 'adjusting'
-    scoreRef.current = 0
-    feedbackRef.current = null
-    setCurrent(0)
-    setPhase('adjusting')
-    setScore(0)
-    setState(firstState)
-    setFeedback(null)
-    setHistory([])
-    setRewardSummary(null)
+  const reset = () => {
+    const initial = getSimInitialState(mode)
+    stateRef.current = initial
+    setState(initial)
     setVisualClock(0)
   }
 
   const renderRangeField = (
-    label: string,
-    value: number,
-    min: number,
-    max: number,
-    step: number,
-    unit: string,
-    onChange: (next: number) => void,
-    hint?: string,
+    label: string, value: number, min: number, max: number, step: number, unit: string,
+    onChange: (next: number) => void, hint?: string,
   ) => (
     <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
       <div className="flex items-end justify-between gap-3">
@@ -1398,39 +1393,44 @@ export default function ScienceWorkbenchPage({
           {hint && <div className="mt-1 text-[11px] leading-5 text-slate-500">{hint}</div>}
         </div>
         <div className="text-xl font-bold text-white">
-          {value}
-          <span className="ml-1 text-sm text-slate-400">{unit}</span>
+          {value}<span className="ml-1 text-sm text-slate-400">{unit}</span>
         </div>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={event => onChange(Number(event.target.value))}
-        className="mt-3 w-full"
-        style={{ accentColor: meta.accent }}
-      />
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(Number(e.target.value))} className="mt-3 w-full" style={{ accentColor: meta.accent }} />
       <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
-        <span>{min}{unit}</span>
-        <span>{max}{unit}</span>
+        <span>{min}{unit}</span><span>{max}{unit}</span>
       </div>
     </div>
   )
+
+  const renderInsight = (): string => {
+    if (state.kind === 'chem-density') return getDensityInsight(getCurrentDensity(state), state.mass, state.volume)
+    if (state.kind === 'chem-concentration') return getConcentrationInsight(getCurrentConcentration(state), state.soluteMass, state.waterMass)
+    if (state.kind === 'chem-battery') return getBatteryInsight(state)
+    if (state.kind === 'earth-humidity') {
+      const sat = getSaturatedAmount(state.temperature)
+      return getHumidityInsight(state.temperature, state.vaporAmount, sat, getHumidityRatio(state.vaporAmount, sat), state.vaporAmount >= sat)
+    }
+    if (state.kind === 'earth-column') return getColumnInsight(state.slots)
+    if (state.kind === 'physics-motion-graph') {
+      const { currentVelocity } = describeMotionSim(state)
+      return getMotionInsight(state.acceleration, state.initialVelocity, currentVelocity)
+    }
+    return ''
+  }
 
   const renderControls = () => {
     if (state.kind === 'chem-density') {
       const density = getCurrentDensity(state)
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">パラメータ調整</div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {renderRangeField('質量', state.mass, 10, 120, 10, 'g', next => updateState(currentState => currentState.kind !== 'chem-density' ? currentState : ({ ...currentState, mass: next })), '重さを変える')}
-            {renderRangeField('体積', state.volume, 5, 60, 5, 'cm3', next => updateState(currentState => currentState.kind !== 'chem-density' ? currentState : ({ ...currentState, volume: next })), '大きさを変える')}
+            {renderRangeField('質量', state.mass, 10, 120, 10, 'g', next => updateState(s => s.kind !== 'chem-density' ? s : ({ ...s, mass: next })), '重さを変える')}
+            {renderRangeField('体積', state.volume, 5, 60, 5, 'cm3', next => updateState(s => s.kind !== 'chem-density' ? s : ({ ...s, volume: next })), '大きさを変える')}
           </div>
           <div className="rounded-2xl border border-orange-400/20 bg-orange-500/10 p-3 text-sm text-orange-100">
-            現在の密度: <span className="font-bold">{formatNumber(density)} g/cm3</span>
+            密度 = 質量 / 体積 = <span className="font-bold">{formatNumber(density)} g/cm3</span>
           </div>
         </div>
       )
@@ -1441,127 +1441,86 @@ export default function ScienceWorkbenchPage({
       const total = state.soluteMass + state.waterMass
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">パラメータ調整</div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {renderRangeField('溶質', state.soluteMass, 5, 60, 5, 'g', next => updateState(currentState => currentState.kind !== 'chem-concentration' ? currentState : ({ ...currentState, soluteMass: next })), 'ピンク粒の量')}
-            {renderRangeField('水', state.waterMass, 5, 120, 5, 'g', next => updateState(currentState => currentState.kind !== 'chem-concentration' ? currentState : ({ ...currentState, waterMass: next })), '青い液体の量')}
+            {renderRangeField('溶質', state.soluteMass, 5, 60, 5, 'g', next => updateState(s => s.kind !== 'chem-concentration' ? s : ({ ...s, soluteMass: next })), 'ピンク粒の量')}
+            {renderRangeField('水', state.waterMass, 5, 120, 5, 'g', next => updateState(s => s.kind !== 'chem-concentration' ? s : ({ ...s, waterMass: next })), '青い液体の量')}
           </div>
           <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">
-            現在の濃度: <span className="font-bold">{formatNumber(concentration)}%</span> / 溶液 {total}g
+            濃度 = 溶質 / 溶液 x 100 = <span className="font-bold">{formatNumber(concentration)}%</span> / 溶液 {total}g
           </div>
         </div>
       )
     }
 
-    if (state.kind === 'chem-battery' && round.kind === 'chem-battery') {
+    if (state.kind === 'chem-battery') {
       const choiceClassName = (selected: boolean) => `rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
-        selected
-          ? 'text-white'
-          : 'border-white/10 bg-slate-950/30 text-slate-300'
+        selected ? 'text-white' : 'border-white/10 bg-slate-950/30 text-slate-300'
       }`
-
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">しくみを選ぶ</div>
           <div className="grid gap-3">
             <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
               <div className="text-xs tracking-[0.18em] text-slate-400">－極</div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {[
-                  { key: 'zinc', label: '亜鉛板' },
-                  { key: 'copper', label: '銅板' },
-                ].map(choice => (
-                  <button
-                    key={choice.key}
-                    onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, negativeElectrode: choice.key as 'zinc' | 'copper' }))}
+                {([{ key: 'zinc', label: '亜鉛板' }, { key: 'copper', label: '銅板' }] as const).map(choice => (
+                  <button key={choice.key}
+                    onClick={() => updateState(s => s.kind !== 'chem-battery' ? s : ({ ...s, negativeElectrode: choice.key as 'zinc' | 'copper' }))}
                     className={choiceClassName(state.negativeElectrode === choice.key)}
                     style={state.negativeElectrode === choice.key ? { borderColor: '#fcd34d', background: 'rgba(251, 191, 36, 0.18)' } : undefined}
-                  >
-                    {choice.label}
-                  </button>
+                  >{choice.label}</button>
                 ))}
               </div>
             </div>
-
             <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
               <div className="text-xs tracking-[0.18em] text-slate-400">電子の向き</div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {[
-                  { key: 'zinc-to-copper', label: '亜鉛 → 銅' },
-                  { key: 'copper-to-zinc', label: '銅 → 亜鉛' },
-                ].map(choice => (
-                  <button
-                    key={choice.key}
-                    onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, electronDirection: choice.key as 'zinc-to-copper' | 'copper-to-zinc' }))}
+                {([{ key: 'zinc-to-copper', label: '亜鉛 → 銅' }, { key: 'copper-to-zinc', label: '銅 → 亜鉛' }] as const).map(choice => (
+                  <button key={choice.key}
+                    onClick={() => updateState(s => s.kind !== 'chem-battery' ? s : ({ ...s, electronDirection: choice.key as 'zinc-to-copper' | 'copper-to-zinc' }))}
                     className={choiceClassName(state.electronDirection === choice.key)}
                     style={state.electronDirection === choice.key ? { borderColor: '#f8fafc', background: 'rgba(248, 250, 252, 0.16)' } : undefined}
-                  >
-                    {choice.label}
-                  </button>
+                  >{choice.label}</button>
                 ))}
               </div>
             </div>
-
             <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
               <div className="text-xs tracking-[0.18em] text-slate-400">電流の向き</div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {[
-                  { key: 'zinc-to-copper', label: '亜鉛 → 銅' },
-                  { key: 'copper-to-zinc', label: '銅 → 亜鉛' },
-                ].map(choice => (
-                  <button
-                    key={choice.key}
-                    onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, currentDirection: choice.key as 'zinc-to-copper' | 'copper-to-zinc' }))}
+                {([{ key: 'zinc-to-copper', label: '亜鉛 → 銅' }, { key: 'copper-to-zinc', label: '銅 → 亜鉛' }] as const).map(choice => (
+                  <button key={choice.key}
+                    onClick={() => updateState(s => s.kind !== 'chem-battery' ? s : ({ ...s, currentDirection: choice.key as 'zinc-to-copper' | 'copper-to-zinc' }))}
                     className={choiceClassName(state.currentDirection === choice.key)}
                     style={state.currentDirection === choice.key ? { borderColor: '#93c5fd', background: 'rgba(59, 130, 246, 0.18)' } : undefined}
-                  >
-                    {choice.label}
-                  </button>
+                  >{choice.label}</button>
                 ))}
               </div>
             </div>
-
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
                 <div className="text-xs tracking-[0.18em] text-slate-400">亜鉛板の変化</div>
                 <div className="mt-3 grid gap-2">
-                  {[
-                    { key: 'dissolve', label: 'とけてイオンになる' },
-                    { key: 'attach', label: '表面に付着する' },
-                  ].map(choice => (
-                    <button
-                      key={choice.key}
-                      onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, zincChange: choice.key as 'dissolve' | 'attach' }))}
+                  {([{ key: 'dissolve', label: 'とけてイオンになる' }, { key: 'attach', label: '表面に付着する' }] as const).map(choice => (
+                    <button key={choice.key}
+                      onClick={() => updateState(s => s.kind !== 'chem-battery' ? s : ({ ...s, zincChange: choice.key as 'dissolve' | 'attach' }))}
                       className={choiceClassName(state.zincChange === choice.key)}
                       style={state.zincChange === choice.key ? { borderColor: '#60a5fa', background: 'rgba(96, 165, 250, 0.18)' } : undefined}
-                    >
-                      {choice.label}
-                    </button>
+                    >{choice.label}</button>
                   ))}
                 </div>
               </div>
               <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-3">
                 <div className="text-xs tracking-[0.18em] text-slate-400">銅板の変化</div>
                 <div className="mt-3 grid gap-2">
-                  {[
-                    { key: 'attach', label: '表面に付着する' },
-                    { key: 'dissolve', label: 'とけてイオンになる' },
-                  ].map(choice => (
-                    <button
-                      key={choice.key}
-                      onClick={() => updateState(currentState => currentState.kind !== 'chem-battery' ? currentState : ({ ...currentState, copperChange: choice.key as 'dissolve' | 'attach' }))}
+                  {([{ key: 'attach', label: '表面に付着する' }, { key: 'dissolve', label: 'とけてイオンになる' }] as const).map(choice => (
+                    <button key={choice.key}
+                      onClick={() => updateState(s => s.kind !== 'chem-battery' ? s : ({ ...s, copperChange: choice.key as 'dissolve' | 'attach' }))}
                       className={choiceClassName(state.copperChange === choice.key)}
                       style={state.copperChange === choice.key ? { borderColor: '#fb923c', background: 'rgba(251, 146, 60, 0.18)' } : undefined}
-                    >
-                      {choice.label}
-                    </button>
+                    >{choice.label}</button>
                   ))}
                 </div>
               </div>
             </div>
-          </div>
-          <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-3 text-sm text-amber-100">
-            現在の設定: <span className="font-bold">{describeBatteryState(state)}</span>
           </div>
         </div>
       )
@@ -1573,140 +1532,86 @@ export default function ScienceWorkbenchPage({
       const cloudReady = state.vaporAmount >= saturation
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">パラメータ調整</div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {renderRangeField(
-              '温度',
-              state.temperature,
-              0,
-              40,
-              10,
-              '℃',
-              next => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, temperature: next })),
-              '空気を冷やしたり温めたりする',
-            )}
-            {renderRangeField(
-              '水蒸気量',
-              roundTo(state.vaporAmount, 1),
-              0,
-              SATURATED_VAPOR_TABLE[SATURATED_VAPOR_TABLE.length - 1].amount,
-              0.1,
-              'g',
-              next => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, vaporAmount: roundTo(next, 1) })),
-              '1m3 の空気にふくまれる実際の水蒸気',
-            )}
+            {renderRangeField('温度', state.temperature, 0, 40, 10, '℃',
+              next => updateState(s => s.kind !== 'earth-humidity' ? s : ({ ...s, temperature: next })),
+              '空気を冷やしたり温めたりする')}
+            {renderRangeField('水蒸気量', roundTo(state.vaporAmount, 1), 0, SATURATED_VAPOR_TABLE[SATURATED_VAPOR_TABLE.length - 1].amount, 0.1, 'g',
+              next => updateState(s => s.kind !== 'earth-humidity' ? s : ({ ...s, vaporAmount: roundTo(next, 1) })),
+              '1m3 の空気にふくまれる水蒸気')}
           </div>
           <div className="grid grid-cols-5 gap-2">
             {SATURATED_VAPOR_TABLE.map(item => (
-              <button
-                key={item.temperature}
-                onClick={() => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, temperature: item.temperature }))}
+              <button key={item.temperature}
+                onClick={() => updateState(s => s.kind !== 'earth-humidity' ? s : ({ ...s, temperature: item.temperature }))}
                 className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
-                  state.temperature === item.temperature
-                    ? 'border-violet-300 bg-violet-500/20 text-white'
-                    : 'border-white/10 bg-slate-950/30 text-slate-300'
-                }`}
-              >
-                {item.temperature}℃
-              </button>
+                  state.temperature === item.temperature ? 'border-violet-300 bg-violet-500/20 text-white' : 'border-white/10 bg-slate-950/30 text-slate-300'
+                }`}>{item.temperature}℃</button>
             ))}
           </div>
           <div className="grid grid-cols-2 gap-2">
             {SATURATED_VAPOR_TABLE.map(item => (
-              <button
-                key={`${item.temperature}-${item.amount}`}
-                onClick={() => updateState(currentState => currentState.kind !== 'earth-humidity' ? currentState : ({ ...currentState, vaporAmount: item.amount }))}
+              <button key={`${item.temperature}-${item.amount}`}
+                onClick={() => updateState(s => s.kind !== 'earth-humidity' ? s : ({ ...s, vaporAmount: item.amount }))}
                 className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
-                  Math.abs(state.vaporAmount - item.amount) < 0.051
-                    ? 'border-violet-300 bg-violet-500/20 text-white'
-                    : 'border-white/10 bg-slate-950/30 text-slate-300'
-                }`}
-              >
-                {formatNumber(item.amount)}g
-              </button>
+                  Math.abs(state.vaporAmount - item.amount) < 0.051 ? 'border-violet-300 bg-violet-500/20 text-white' : 'border-white/10 bg-slate-950/30 text-slate-300'
+                }`}>{formatNumber(item.amount)}g</button>
             ))}
           </div>
           <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-3 text-sm text-violet-100">
-            この温度の飽和水蒸気量: <span className="font-bold">{formatNumber(saturation)} g</span>
-            <br />
-            実際の水蒸気量: <span className="font-bold">{formatNumber(state.vaporAmount)} g</span>
-            <br />
-            湿度: <span className="font-bold">{formatNumber(humidityRatio)}%</span>
-            <br />
-            状態: <span className="font-bold">{cloudReady ? '飽和してくもり始める' : 'まだ飽和していない'}</span>
+            飽和水蒸気量: <span className="font-bold">{formatNumber(saturation)} g</span> / 実際: <span className="font-bold">{formatNumber(state.vaporAmount)} g</span>
+            <br />湿度: <span className="font-bold">{formatNumber(humidityRatio)}%</span> / 状態: <span className="font-bold">{cloudReady ? '飽和 → くもり・雨' : 'まだ飽和していない'}</span>
           </div>
         </div>
       )
     }
 
-    if (state.kind === 'earth-column' && round.kind === 'earth-column') {
+    if (state.kind === 'earth-column') {
       return (
         <div className="space-y-3">
           <div className="text-sm font-semibold text-slate-200">段を選んで入れる</div>
           <div className="grid grid-cols-3 gap-2">
             {(['上', '中', '下'] as const).map((label, index) => (
-              <button
-                key={label}
-                onClick={() => updateState(currentState => currentState.kind !== 'earth-column' ? currentState : ({ ...currentState, activeSlot: index as 0 | 1 | 2 }))}
+              <button key={label}
+                onClick={() => updateState(s => s.kind !== 'earth-column' ? s : ({ ...s, activeSlot: index as 0 | 1 | 2 }))}
                 className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
-                  state.activeSlot === index
-                    ? 'border-teal-300 bg-teal-500/20 text-white'
-                    : 'border-white/10 bg-slate-950/30 text-slate-300'
-                }`}
-              >
+                  state.activeSlot === index ? 'border-teal-300 bg-teal-500/20 text-white' : 'border-white/10 bg-slate-950/30 text-slate-300'
+                }`}>
                 {label}
                 <div className="mt-1 text-xs font-normal text-slate-400">
-                  {getColumnOption(round, state.slots[index])?.label ?? '未設定'}
+                  {(state.slots[index] ? COLUMN_LAYER_OPTIONS.find(o => o.key === state.slots[index]) : null)?.label ?? '未設定'}
                 </div>
               </button>
             ))}
           </div>
           <div className="text-sm font-semibold text-slate-200">地層を選ぶ</div>
           <div className="grid gap-2">
-            {round.options.map(option => (
-              <button
-                key={option.key}
-                onClick={() => updateState(currentState => {
-                  if (currentState.kind !== 'earth-column') return currentState
-                  const nextSlots = [...currentState.slots] as [string | null, string | null, string | null]
-                  nextSlots.forEach((slot, index) => {
-                    if (slot === option.key) nextSlots[index] = null
-                  })
-                  nextSlots[currentState.activeSlot] = option.key
-                  const nextActiveSlot = currentState.activeSlot < 2 ? ((currentState.activeSlot + 1) as 0 | 1 | 2) : currentState.activeSlot
-                  return {
-                    ...currentState,
-                    slots: nextSlots,
-                    activeSlot: nextActiveSlot,
-                  }
+            {COLUMN_LAYER_OPTIONS.map(option => (
+              <button key={option.key}
+                onClick={() => updateState(s => {
+                  if (s.kind !== 'earth-column') return s
+                  const nextSlots = [...s.slots] as [string | null, string | null, string | null]
+                  nextSlots.forEach((slot, i) => { if (slot === option.key) nextSlots[i] = null })
+                  nextSlots[s.activeSlot] = option.key
+                  const nextActiveSlot = s.activeSlot < 2 ? ((s.activeSlot + 1) as 0 | 1 | 2) : s.activeSlot
+                  return { ...s, slots: nextSlots, activeSlot: nextActiveSlot }
                 })}
                 className="rounded-2xl border px-4 py-3 text-left transition"
                 style={{
                   borderColor: state.slots.includes(option.key) ? `${meta.accent}66` : 'var(--border)',
                   background: state.slots.includes(option.key) ? `${meta.accent}20` : 'var(--card-gradient-base-soft)',
-                }}
-              >
+                }}>
                 <div className="font-semibold text-white">{option.label}</div>
                 <div className="mt-1 text-xs leading-6 text-slate-400">{option.detail}</div>
               </button>
             ))}
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => updateState(currentState => currentState.kind !== 'earth-column' ? currentState : ({
-                ...currentState,
-                slots: currentState.slots.map((slot, index) => index === currentState.activeSlot ? null : slot) as [string | null, string | null, string | null],
-              }))}
-              className="btn-ghost !px-4 !py-2"
-            >
-              今の段をクリア
-            </button>
-            <button
-              onClick={() => updateState(currentState => currentState.kind !== 'earth-column' ? currentState : ({ ...currentState, slots: [null, null, null], activeSlot: 0 }))}
-              className="btn-secondary !px-4 !py-2"
-            >
-              3段ともリセット
-            </button>
+            <button onClick={() => updateState(s => s.kind !== 'earth-column' ? s : ({
+              ...s, slots: s.slots.map((slot, i) => i === s.activeSlot ? null : slot) as [string | null, string | null, string | null],
+            }))} className="btn-ghost !px-4 !py-2">今の段をクリア</button>
+            <button onClick={() => updateState(s => s.kind !== 'earth-column' ? s : ({ ...s, slots: [null, null, null], activeSlot: 0 }))}
+              className="btn-secondary !px-4 !py-2">3段ともリセット</button>
           </div>
         </div>
       )
@@ -1715,46 +1620,28 @@ export default function ScienceWorkbenchPage({
     if (state.kind === 'physics-motion-graph') {
       return (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-200">パラメータ調整</div>
-          {renderRangeField(
-            '加速度',
-            state.acceleration,
-            -1,
-            2,
-            1,
-            'm/s2',
-            next => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, acceleration: next })),
-            'グラフの傾きが変わる',
-          )}
+          {renderRangeField('初速', state.initialVelocity, 0, 8, 1, 'm/s',
+            next => updateState(s => s.kind !== 'physics-motion-graph' ? s : ({ ...s, initialVelocity: next })),
+            '台車のスタート速さ')}
+          {renderRangeField('加速度', state.acceleration, -1, 2, 1, 'm/s2',
+            next => updateState(s => s.kind !== 'physics-motion-graph' ? s : ({ ...s, acceleration: next })),
+            'グラフの傾きが変わる')}
           <div className="grid grid-cols-4 gap-2">
             {[-1, 0, 1, 2].map(value => (
-              <button
-                key={value}
-                onClick={() => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, acceleration: value }))}
+              <button key={value}
+                onClick={() => updateState(s => s.kind !== 'physics-motion-graph' ? s : ({ ...s, acceleration: value }))}
                 className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
-                  state.acceleration === value
-                    ? 'border-sky-300 bg-sky-500/20 text-white'
-                    : 'border-white/10 bg-slate-950/30 text-slate-300'
-                }`}
-              >
-                {value} m/s2
-              </button>
+                  state.acceleration === value ? 'border-sky-300 bg-sky-500/20 text-white' : 'border-white/10 bg-slate-950/30 text-slate-300'
+                }`}>{value} m/s2</button>
             ))}
           </div>
-          {renderRangeField(
-            '時刻',
-            roundTo(state.time, 1),
-            0,
-            4,
-            0.1,
-            's',
-            next => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, time: next })),
-            '台車とグラフの位置が同期',
-          )}
+          {renderRangeField('時刻', roundTo(state.time, 1), 0, 4, 0.1, 's',
+            next => updateState(s => s.kind !== 'physics-motion-graph' ? s : ({ ...s, time: next })),
+            '台車とグラフの位置が同期')}
           <div className="flex gap-2">
-            <button onClick={() => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, time: clamp(currentState.time - 1, 0, 4) }))} className="btn-ghost !px-4 !py-2">-1秒</button>
-            <button onClick={() => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, time: clamp(currentState.time + 1, 0, 4) }))} className="btn-secondary !px-4 !py-2">+1秒</button>
-            <button onClick={() => updateState(currentState => currentState.kind !== 'physics-motion-graph' ? currentState : ({ ...currentState, time: 0 }))} className="btn-ghost !px-4 !py-2">0秒へ</button>
+            <button onClick={() => updateState(s => s.kind !== 'physics-motion-graph' ? s : ({ ...s, time: clamp(s.time - 1, 0, 4) }))} className="btn-ghost !px-4 !py-2">-1秒</button>
+            <button onClick={() => updateState(s => s.kind !== 'physics-motion-graph' ? s : ({ ...s, time: clamp(s.time + 1, 0, 4) }))} className="btn-secondary !px-4 !py-2">+1秒</button>
+            <button onClick={() => updateState(s => s.kind !== 'physics-motion-graph' ? s : ({ ...s, time: 0 }))} className="btn-ghost !px-4 !py-2">0秒へ</button>
           </div>
         </div>
       )
@@ -1762,109 +1649,6 @@ export default function ScienceWorkbenchPage({
 
     return null
   }
-
-  if (phase === 'finished') {
-    const rate = rounds.length > 0 ? Math.round((score / rounds.length) * 100) : 0
-    const levelInfo = rewardSummary ? getLevelInfo(rewardSummary.totalXp) : null
-    const message = rate >= 90
-      ? '図と数値の関係がかなり安定しています。'
-      : rate >= 70
-        ? '考え方の筋がかなり見えてきました。'
-        : 'もう一度動かしてみると、式とイメージがつながりやすくなります。'
-
-    return (
-      <div className="page-shell page-shell-dashboard flex items-center justify-center">
-        <BadgeEarnedToastStack badges={rewardSummary?.newBadges ?? []} />
-        <div className={`hero-card reward-card w-full max-w-3xl px-6 py-7 text-center sm:px-8 ${rewardSummary?.leveledUp ? 'is-level-up' : ''}`}>
-          <div className="text-5xl">{meta.icon}</div>
-          <div className="mt-4 text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: meta.accent }}>
-            {meta.badge}
-          </div>
-          <div className="mt-3 font-display text-4xl text-white">{score} / {rounds.length}</div>
-          <div className="mt-2 text-2xl font-bold" style={{ color: meta.accent }}>{rate}%</div>
-          <p className="mt-3 text-slate-300">{message}</p>
-
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {history.map((correct, index) => (
-              <div
-                key={`${mode}-${index}`}
-                className="h-3 w-3 rounded-full"
-                style={{ background: correct ? '#22c55e' : '#ef4444' }}
-              />
-            ))}
-          </div>
-
-          {rewardSummary && (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="subcard p-4 text-left">
-                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">獲得XP</div>
-                <div className="mt-2 font-display text-3xl text-sky-300">+{rewardSummary.xpEarned}</div>
-                <div className="mt-1 text-xs text-slate-500">ラボ学習の結果</div>
-              </div>
-              {levelInfo && (
-                <div className="subcard p-4 text-left">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">現在レベル</div>
-                      <div className="mt-2 font-display text-2xl text-white">Lv.{levelInfo.level}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-sky-200">{levelInfo.title}</div>
-                      <div className="text-xs text-slate-500">{levelInfo.totalXp} XP</div>
-                    </div>
-                  </div>
-                  <div className="mt-4 soft-track" style={{ height: 8 }}>
-                    <div
-                      style={{
-                        width: `${levelInfo.progressRate}%`,
-                        height: '100%',
-                        background: 'linear-gradient(90deg, #60a5fa, #38bdf8)',
-                        borderRadius: 999,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <LevelUnlockNotice rewardSummary={rewardSummary} />
-          {rewardSummary?.periodicCardReward && (
-            <PeriodicCardRewardPanel reward={rewardSummary.periodicCardReward} />
-          )}
-
-          {rewardSummary?.newBadges.length ? (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 text-left">
-              {rewardSummary.newBadges.map((badge, index) => (
-                <div
-                  key={badge.key}
-                  className={`badge-toast badge-toast--${badge.rarity}`}
-                  style={{ animationDelay: `${index * 0.08}s` }}
-                >
-                  <div className="text-2xl">{badge.iconEmoji}</div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-white">{badge.name}</span>
-                      <span className="text-[10px] tracking-[0.18em] text-slate-400">{getBadgeRarityLabel(badge.rarity)}</span>
-                    </div>
-                    <div className="text-xs text-slate-300 mt-1">{badge.description}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <button onClick={restart} className="btn-secondary w-full">もう一度</button>
-            <button onClick={onBack} className="btn-primary w-full">分野へ戻る</button>
-            <button onClick={() => logout()} className="btn-ghost w-full">ログアウト</button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const disabled = phase !== 'adjusting'
 
   return (
     <div className="page-shell page-shell-dashboard">
@@ -1887,32 +1671,10 @@ export default function ScienceWorkbenchPage({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 lg:min-w-[320px]">
-            <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">進行</div>
-              <div className="mt-2 font-display text-2xl text-white">{current + 1}<span className="text-base text-slate-400"> / {rounds.length}</span></div>
-              <div className="mt-1 text-xs text-slate-500">round</div>
-            </div>
-            <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">正解</div>
-              <div className="mt-2 font-display text-2xl" style={{ color: meta.accent }}>{score}</div>
-              <div className="mt-1 text-xs text-slate-500">correct</div>
-            </div>
+          <div className="grid grid-cols-2 gap-3 lg:min-w-[240px]">
             <button onClick={onBack} className="btn-secondary w-full">もどる</button>
             <button onClick={() => logout()} className="btn-ghost w-full">ログアウト</button>
           </div>
-        </div>
-
-        <div className="mt-5 soft-track" style={{ height: 8 }}>
-          <div
-            style={{
-              width: `${progress}%`,
-              height: '100%',
-              background: `linear-gradient(90deg, ${meta.accent}, ${meta.accent}88)`,
-              borderRadius: 999,
-              transition: 'width 0.4s ease',
-            }}
-          />
         </div>
       </div>
 
@@ -1929,53 +1691,23 @@ export default function ScienceWorkbenchPage({
 
         <div className="space-y-4">
           <div className="card anim-fade-up">
-            <div className="text-sm font-semibold text-slate-200">{round.prompt}</div>
-            <p className="mt-2 text-sm leading-7 text-slate-400">{round.supportText}</p>
-          </div>
-
-          <div className={`card anim-fade-up ${disabled ? 'opacity-90' : ''}`}>
             {renderControls()}
-
-            <div className="mt-4 flex gap-2">
-              <button onClick={handleSubmit} className="btn-primary w-full" disabled={disabled}>判定する</button>
-              <button onClick={restart} className="btn-ghost w-full">最初から</button>
+            <div className="mt-4">
+              <button onClick={reset} className="btn-ghost w-full">リセット</button>
             </div>
           </div>
 
           <div className="card anim-fade-up">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-semibold text-slate-200">今回の判定</div>
-              {phase === 'result' && (
-                <button onClick={() => void handleNext()} className="btn-secondary text-sm !px-4 !py-2.5">次へ</button>
-              )}
-            </div>
-
-            <div
-              className="mt-4 rounded-[24px] border p-4"
-              style={{
-                borderColor: feedback?.correct ? 'rgba(74, 222, 128, 0.28)' : 'rgba(248, 113, 113, 0.24)',
-                background: feedback
-                  ? feedback.correct
-                    ? 'rgba(34, 197, 94, 0.08)'
-                    : 'rgba(127, 29, 29, 0.12)'
-                  : 'var(--card-gradient-base-soft)',
-              }}
-            >
-              <div className="text-lg font-bold text-white">
-                {feedback?.message ?? 'まだ判定していません'}
-              </div>
-              <p className="mt-3 text-sm leading-7 text-slate-300">
-                {feedback?.detail ?? round.hint}
-              </p>
-            </div>
+            <div className="text-sm font-semibold text-slate-200">いま何が起きている？</div>
+            <p className="mt-3 text-sm leading-7 text-slate-300">{renderInsight()}</p>
           </div>
 
           <div className="card anim-fade-up">
             <div className="text-sm font-semibold text-slate-200">このラボのねらい</div>
             <ul className="mt-3 space-y-2 text-sm leading-7 text-slate-400">
-              <li>式だけでなく、図と数値を同時に見て関係をつかみます。</li>
-              <li>1ラウンドごとに手を動かして、目標の状態を自分で作ります。</li>
-              <li>正解後の説明で、式とイメージがどうつながるかを確かめられます。</li>
+              <li>パラメータを自由に動かして、変化の仕組みを体感する。</li>
+              <li>式と図を同時に見て、数値と現象の関係をつかむ。</li>
+              <li>答えはなし。遊びながら「なるほど」を見つけよう。</li>
             </ul>
           </div>
         </div>
