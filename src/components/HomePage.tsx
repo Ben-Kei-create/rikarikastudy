@@ -7,7 +7,7 @@ import { PeriodicCardRewardModal } from '@/components/PeriodicCard'
 import { FALLBACK_SCIENCE_NEWS_RESPONSE, ScienceNewsResponse } from '@/lib/scienceNews'
 import { FIELD_COLORS, FIELD_EMOJI, FIELDS as CORE_FIELDS } from '@/lib/constants'
 import { getRateColor } from '@/lib/uiUtils'
-import { getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getUnlockedLevelRewards, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
+import { getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
 import { DailyChallengeStatus, loadDailyChallengeStatus, loadTimeAttackBest } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 
@@ -56,7 +56,6 @@ export default function HomePage({
   const timeAttackUnlocked = levelInfo.level >= TIME_ATTACK_UNLOCK_LEVEL
   const timeAttackUnlockXpLeft = Math.max(0, getXpFloorForLevel(TIME_ATTACK_UNLOCK_LEVEL) - levelInfo.totalXp)
   const nextUnlock = getNextLevelUnlock(levelInfo.level)
-  const unlockedRewards = getUnlockedLevelRewards(levelInfo.level)
   const dailyCompleted = dailyStatus.completed
 
   useEffect(() => {
@@ -215,49 +214,17 @@ export default function HomePage({
         </button>
       </div>
 
-      <div className="hero-card science-surface mb-4 p-3.5 sm:mb-6 sm:p-5 md:p-6 lg:p-8 anim-fade-up" style={{ animationDelay: '0.06s' }}>
+      <div className="hero-card science-surface mb-3 p-3 sm:mb-6 sm:p-5 md:p-6 lg:p-8 anim-fade-up" style={{ animationDelay: '0.06s' }}>
         <ScienceBackdrop />
-        <div className="grid gap-4 md:gap-5 md:grid-cols-[1.15fr_0.85fr] md:items-center">
+        <div className="grid gap-3 sm:gap-4 md:gap-5 md:grid-cols-[1.15fr_0.85fr] md:items-center">
           <div className="max-w-2xl">
-            <div className="text-slate-400 text-xs font-semibold tracking-[0.18em] uppercase mb-2 sm:mb-3">
-              Home
-            </div>
-            <div className="font-display text-[1.5rem] leading-tight text-white sm:text-3xl md:text-4xl">こんにちは、{nickname}さん</div>
+            <div className="font-display text-[1.3rem] leading-tight text-white sm:text-3xl md:text-4xl">こんにちは、{nickname}さん</div>
             {nextUnlock && (
-              <div className="mt-3 rounded-[20px] border px-3 py-3 sm:mt-4 sm:rounded-[24px] sm:px-4 sm:py-4" style={{
-                borderColor: 'var(--inset-border)',
-                background: 'var(--inset-bg)',
-              }}>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">次の解放</div>
-                    <div className="mt-2 flex items-center gap-3">
-                      <div className="text-xl sm:text-2xl">{nextUnlock.emoji}</div>
-                      <div>
-                        <div className="font-semibold text-white text-sm sm:text-base">{nextUnlock.title}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-slate-500">UNLOCK</div>
-                    <div className="mt-1 font-display text-xl text-white sm:text-2xl">Lv.{nextUnlock.level}</div>
-                    <div className="text-xs text-slate-500">
-                      あと {Math.max(0, getXpFloorForLevel(nextUnlock.level) - levelInfo.totalXp)} XP
-                    </div>
-                  </div>
-                </div>
-                {unlockedRewards.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
-                    {unlockedRewards.map(reward => (
-                      <span
-                        key={reward.key}
-                        className="text-[11px] font-semibold text-emerald-300/70"
-                      >
-                        {reward.emoji} {reward.title}
-                      </span>
-                    ))}
-                  </div>
-                )}
+              <div className="mt-2 sm:mt-4 flex items-center gap-3 text-sm text-slate-400">
+                <span>{nextUnlock.emoji}</span>
+                <span className="text-white font-semibold">{nextUnlock.title}</span>
+                <span>Lv.{nextUnlock.level}</span>
+                <span className="text-xs">あと {Math.max(0, getXpFloorForLevel(nextUnlock.level) - levelInfo.totalXp)} XP</span>
               </div>
             )}
             {isGuest && (

@@ -833,31 +833,31 @@ export default function QuizPage({
             </div>
           )}
 
-          <div className="text-5xl mb-4">{activeDailyChallenge ? '☀️' : retryWrongOnly ? '🔁' : rate >= 70 ? '🏆' : '📚'}</div>
-          <div className="font-display text-4xl mb-2" style={{ color }}>
+          <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">{activeDailyChallenge ? '☀️' : retryWrongOnly ? '🔁' : rate >= 70 ? '🏆' : '📚'}</div>
+          <div className="font-display text-3xl sm:text-4xl mb-1 sm:mb-2" style={{ color }}>
             {score} / {questions.length}
           </div>
           <div
-            className="text-2xl font-bold mb-1"
+            className="text-xl sm:text-2xl font-bold"
             style={{ color: getRateColor(rate) }}
           >
             {rate}%
           </div>
-          <p className="text-slate-300 mb-5">{message}</p>
+          <p className="text-slate-300 text-sm sm:text-base mt-1 mb-3 sm:mb-5">{message}</p>
 
           {rate === 100 && (
-            <div className="mx-auto mb-5 max-w-md">
+            <div className="mx-auto mb-3 sm:mb-5 max-w-md">
               <SuccessBurst celebration={getSuccessCelebration(Math.max(1, bestCombo), { perfect: true })} />
             </div>
           )}
 
-          <div className="flex gap-2 justify-center mb-6">
+          <div className="flex gap-1.5 sm:gap-2 justify-center mb-4 sm:mb-6 flex-wrap">
             {questions.map((_, index) => (
               <div
                 key={`result-${index}`}
                 style={{
-                  width: 12,
-                  height: 12,
+                  width: 10,
+                  height: 10,
                   borderRadius: '50%',
                   background:
                     answerLogs[index] && isCorrectTextAnswerResult(answerLogs[index].result)
@@ -870,180 +870,10 @@ export default function QuizPage({
             ))}
           </div>
 
-          {rewardSummary && (
-            <div className="grid gap-4 sm:grid-cols-3 mb-6">
-              <div className="subcard anim-pop p-4 text-left">
-                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">獲得XP</div>
-                <div className="mt-2 font-display text-3xl text-sky-300">+{rewardSummary.xpEarned}</div>
-                <div className="mt-3 space-y-1.5 text-xs text-slate-400">
-                  <div className="flex items-center justify-between gap-3">
-                    <span>正解XP</span>
-                    <span>{rewardSummary.xpBreakdown.base} XP</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>スピード</span>
-                    <span>{rewardSummary.xpBreakdown.speed} XP</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>パーフェクト</span>
-                    <span>{rewardSummary.xpBreakdown.perfect} XP</span>
-                  </div>
-                  {rewardSummary.xpBreakdown.multiplier > 1 && (
-                    <div className="flex items-center justify-between gap-3 text-amber-200">
-                      <span>今日のチャレンジ</span>
-                      <span>x{rewardSummary.xpBreakdown.multiplier}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-3 text-xs text-slate-500">
-                  {activeDailyChallenge ? '今日のチャレンジボーナス込み' : retryWrongOnly ? '再挑戦ぶんの結果' : '今回の学習で加算'}
-                </div>
-              </div>
-              {levelInfo && (
-                <div className="subcard p-4 text-left">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">現在レベル</div>
-                      <div className={`mt-2 inline-flex items-center rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1.5 font-display text-2xl text-white ${rewardSummary.leveledUp ? 'level-badge--up' : ''}`}>
-                        Lv.{levelInfo.level}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-sky-200">{levelInfo.title}</div>
-                      <div className="text-xs text-slate-500">{levelInfo.totalXp} XP</div>
-                    </div>
-                  </div>
-                  <div className="mt-4 soft-track" style={{ height: 8 }}>
-                    <div
-                      style={{
-                        width: `${levelInfo.progressRate}%`,
-                        height: '100%',
-                        background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
-                        borderRadius: 999,
-                      }}
-                    />
-                  </div>
-                  <div className="mt-2 text-xs text-slate-500">
-                    次のレベルまで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP
-                  </div>
-                </div>
-              )}
-              <div className="subcard p-4 text-left">
-                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">最高コンボ</div>
-                <div className="mt-2 font-display text-3xl text-emerald-300">{bestCombo}</div>
-                <div className="mt-2 text-xs text-slate-500">連続正解の自己ベスト</div>
-              </div>
-            </div>
-          )}
-
-          {rewardSummary?.leveledUp && levelInfo && (
-            <div className="reward-banner mb-5">
-              <div className="text-xs font-semibold tracking-[0.22em] text-sky-200">LEVEL UP</div>
-              <div className="mt-1 font-display text-3xl text-white">Lv.{levelInfo.level}</div>
-              <div className="mt-1 text-sm text-sky-100">{levelInfo.title}</div>
-            </div>
-          )}
-
-          <LevelUnlockNotice rewardSummary={rewardSummary} />
-          {rewardSummary?.periodicCardReward && (
-            <PeriodicCardRewardPanel reward={rewardSummary.periodicCardReward} />
-          )}
-
-          {rewardSummary && rewardSummary.newBadges.length > 0 && (
-            <div className="mb-6 text-left">
-              <div className="text-sm font-semibold text-white mb-3">新しいバッジ</div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {rewardSummary.newBadges.map((badge, index) => (
-                  <div
-                    key={badge.key}
-                    className={`badge-toast badge-toast--${badge.rarity}`}
-                    style={{ animationDelay: `${index * 0.08}s` }}
-                  >
-                    <div className="text-2xl">{badge.iconEmoji}</div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="font-semibold text-white">{badge.name}</div>
-                        <span className="text-[10px] tracking-[0.18em] text-slate-400">
-                          {getBadgeRarityLabel(badge.rarity)}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-300 mt-1">{badge.description}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {wrongReviewItems.length > 0 && (
-            <div className="mb-6 rounded-[26px] border border-white/10 bg-slate-950/28 p-4 text-left sm:p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="text-sm font-semibold text-white">間違えた問題を確認</div>
-                  <div className="mt-1 text-xs text-slate-400">{wrongReviewItems.length}問</div>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button onClick={() => setReviewExpanded(current => !current)} className="btn-secondary text-sm !py-2.5">
-                    {reviewExpanded ? '閉じる' : '開く'}
-                  </button>
-                  <button onClick={retryWrongQuestions} className="btn-primary text-sm !py-2.5">
-                    間違えた問題だけ再チャレンジ
-                  </button>
-                </div>
-              </div>
-
-              {reviewExpanded && (
-                <div className="mt-4 grid gap-4 md:grid-cols-[0.9fr_1.1fr]">
-                  <div className="space-y-2">
-                    {wrongReviewItems.map(item => (
-                      <button
-                        key={`review-${item.id}`}
-                        onClick={() => setSelectedReviewQuestionId(item.id)}
-                        className="w-full rounded-[18px] border px-3.5 py-3 text-left transition-all"
-                        style={{
-                          borderColor: selectedReviewItem?.id === item.id ? 'var(--color-info-soft-border)' : 'var(--color-neutral-soft-bg)',
-                          background: selectedReviewItem?.id === item.id ? 'var(--color-info-soft-bg)' : 'var(--card-gradient-base-soft)',
-                        }}
-                      >
-                        <div className="text-xs text-slate-500">#{item.index + 1}</div>
-                        <div className="mt-1 line-clamp-2 text-sm font-semibold text-white">{item.question.question}</div>
-                        <div className="mt-2 text-xs text-slate-400">あなた: {item.studentAnswer || '未入力'}</div>
-                      </button>
-                    ))}
-                  </div>
-
-                  {selectedReviewItem && (
-                    <div className="rounded-[20px] border border-white/10 bg-slate-950/36 p-4">
-                      <div className="text-xs text-slate-500">問題 {selectedReviewItem.index + 1}</div>
-                      <div className="mt-2 text-base font-semibold leading-7 text-white">
-                        {selectedReviewItem.question.question}
-                      </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-[18px] border border-red-400/18 bg-red-500/8 px-3.5 py-3">
-                          <div className="text-xs font-semibold tracking-[0.16em] text-red-200">あなたの答え</div>
-                          <div className="mt-2 text-sm leading-6 text-slate-100">{selectedReviewItem.studentAnswer || '未入力'}</div>
-                        </div>
-                        <div className="rounded-[18px] border border-emerald-400/18 bg-emerald-500/8 px-3.5 py-3">
-                          <div className="text-xs font-semibold tracking-[0.16em] text-emerald-200">正解</div>
-                          <div className="mt-2 text-sm leading-6 text-slate-100">{selectedReviewItem.correctAnswer}</div>
-                        </div>
-                      </div>
-                      {selectedReviewItem.question.explanation && (
-                        <div className="mt-4 rounded-[18px] border border-white/8 bg-slate-950/45 px-3.5 py-3">
-                          <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">解説</div>
-                          <div className="mt-2 text-sm leading-7 text-slate-200">{selectedReviewItem.question.explanation}</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className={`grid gap-3 ${activeDailyChallenge ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+          {/* Action buttons - right after score on mobile */}
+          <div className={`grid gap-2 sm:gap-3 mb-4 sm:mb-6 ${activeDailyChallenge ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
             {!activeDailyChallenge && (
-              <button onClick={restart} className="btn-secondary !px-0 !py-3">
+              <button onClick={restart} className="btn-secondary !px-0 !py-2.5 sm:!py-3 text-sm">
                 もう一度
               </button>
             )}
@@ -1054,6 +884,92 @@ export default function QuizPage({
               ログアウト
             </button>
           </div>
+
+          {/* Compact reward summary */}
+          {rewardSummary && (
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mb-4 text-sm text-slate-400">
+              <span className="font-display text-lg text-sky-300">+{rewardSummary.xpEarned} XP</span>
+              {levelInfo && (
+                <span>Lv.{levelInfo.level} {levelInfo.title}</span>
+              )}
+              {bestCombo > 0 && (
+                <span>{bestCombo}コンボ</span>
+              )}
+              {rewardSummary.xpBreakdown.multiplier > 1 && (
+                <span className="text-amber-200">x{rewardSummary.xpBreakdown.multiplier}</span>
+              )}
+            </div>
+          )}
+
+          {rewardSummary?.leveledUp && levelInfo && (
+            <div className="reward-banner mb-4">
+              <div className="text-xs font-semibold tracking-[0.22em] text-sky-200">LEVEL UP</div>
+              <div className="mt-1 font-display text-2xl sm:text-3xl text-white">Lv.{levelInfo.level}</div>
+              <div className="mt-1 text-sm text-sky-100">{levelInfo.title}</div>
+            </div>
+          )}
+
+          <LevelUnlockNotice rewardSummary={rewardSummary} />
+          {rewardSummary?.periodicCardReward && (
+            <PeriodicCardRewardPanel reward={rewardSummary.periodicCardReward} />
+          )}
+
+          {rewardSummary && rewardSummary.newBadges.length > 0 && (
+            <div className="mb-4 text-left">
+              <div className="text-sm font-semibold text-white mb-2">新しいバッジ</div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {rewardSummary.newBadges.map((badge, index) => (
+                  <div
+                    key={badge.key}
+                    className={`badge-toast badge-toast--${badge.rarity}`}
+                    style={{ animationDelay: `${index * 0.08}s` }}
+                  >
+                    <div className="text-xl">{badge.iconEmoji}</div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-white text-sm">{badge.name}</div>
+                      <div className="text-xs text-slate-300">{badge.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {wrongReviewItems.length > 0 && (
+            <div className="mb-4 rounded-[20px] border border-white/10 bg-slate-950/28 p-3 sm:p-4 text-left">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-semibold text-white">間違えた問題 ({wrongReviewItems.length}問)</div>
+                <div className="flex gap-2">
+                  <button onClick={() => setReviewExpanded(current => !current)} className="btn-secondary text-xs !py-2 !px-3">
+                    {reviewExpanded ? '閉じる' : '確認'}
+                  </button>
+                  <button onClick={retryWrongQuestions} className="btn-primary text-xs !py-2 !px-3">
+                    再チャレンジ
+                  </button>
+                </div>
+              </div>
+
+              {reviewExpanded && (
+                <div className="mt-3 space-y-2">
+                  {wrongReviewItems.map(item => (
+                    <div
+                      key={`review-${item.id}`}
+                      className="rounded-[14px] border border-white/8 bg-slate-950/40 px-3 py-2.5"
+                    >
+                      <div className="text-sm font-semibold text-white">{item.question.question}</div>
+                      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                        <span className="text-red-300">あなた: {item.studentAnswer || '未入力'}</span>
+                        <span className="text-emerald-300">正解: {item.correctAnswer}</span>
+                      </div>
+                      {item.question.explanation && (
+                        <div className="mt-1.5 text-xs text-slate-400 leading-5">{item.question.explanation}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     )
@@ -1087,12 +1003,9 @@ export default function QuizPage({
     <div className="page-shell">
       <div className="card mb-3 sm:mb-4 anim-fade-up">
         <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center justify-between gap-2 sm:gap-3 sm:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3 sm:w-auto">
             <button onClick={handleQuit} className="btn-secondary text-xs sm:text-sm !px-3 !py-2 sm:!px-4 sm:!py-2.5">
               やめる
-            </button>
-            <button onClick={() => logout()} className="btn-ghost text-xs sm:text-sm !px-3 !py-2 sm:!px-4 sm:!py-2.5 sm:hidden">
-              ログアウト
             </button>
           </div>
           <div className="flex-1 min-w-0">
