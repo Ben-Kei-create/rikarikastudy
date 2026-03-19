@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/theme'
+import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds'
 import { BADGE_DEFINITIONS } from '@/lib/badges'
 import { FIELD_EMOJI, FIELDS } from '@/lib/constants'
 import { getLevelInfo, getTotalXpFromSessions } from '@/lib/engagement'
@@ -141,6 +142,8 @@ export default function MyPage({
 }) {
   const { studentId, nickname, updateProfile, logout } = useAuth()
   const { theme, setTheme, ready: themeReady } = useTheme()
+  const [soundOn, setSoundOn] = useState(false)
+  useEffect(() => { setSoundOn(isSoundEnabled()) }, [])
   const isGuest = isGuestStudentId(studentId)
   const [sessions, setSessions] = useState<Session[]>([])
   const [answerLogs, setAnswerLogs] = useState<AnswerLog[]>([])
@@ -1465,6 +1468,32 @@ export default function MyPage({
                     </button>
                   )
                   })}
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-slate-300 font-bold">効果音</h3>
+                    <p className="text-slate-500 text-xs mt-1">正解・不正解・コンボ時にサウンドを鳴らします</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const next = !soundOn
+                      setSoundOn(next)
+                      setSoundEnabled(next)
+                    }}
+                    className="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors"
+                    style={{ background: soundOn ? 'var(--color-info)' : 'var(--border-strong)' }}
+                    role="switch"
+                    aria-checked={soundOn}
+                    aria-label="効果音の切り替え"
+                  >
+                    <span
+                      className="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+                      style={{ transform: soundOn ? 'translateX(22px)' : 'translateX(4px)' }}
+                    />
+                  </button>
                 </div>
               </div>
             </div>

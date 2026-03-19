@@ -3,10 +3,25 @@
 // Web Audio API synthesized sound effects
 // Lightweight Duolingo-style feedback sounds — no audio files needed
 
+const STORAGE_KEY = 'rikaquiz-sound'
+
 let audioCtx: AudioContext | null = null
+
+/** サウンド設定の読み取り */
+export function isSoundEnabled(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.localStorage.getItem(STORAGE_KEY) === 'on'
+}
+
+/** サウンド設定の書き込み */
+export function setSoundEnabled(enabled: boolean) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(STORAGE_KEY, enabled ? 'on' : 'off')
+}
 
 function getCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null
+  if (!isSoundEnabled()) return null
   if (!audioCtx) {
     audioCtx = new AudioContext()
   }
