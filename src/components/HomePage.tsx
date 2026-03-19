@@ -10,6 +10,7 @@ import { getRateColor } from '@/lib/uiUtils'
 import { getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getXpFloorForLevel, TIME_ATTACK_UNLOCK_LEVEL } from '@/lib/engagement'
 import { DailyChallengeStatus, loadDailyChallengeStatus, loadTimeAttackBest } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
+import { getDueCount } from '@/lib/srs'
 
 const FIELD_DESCRIPTIONS: Record<(typeof CORE_FIELDS)[number], string> = {
   '生物': '細胞・遺伝・消化',
@@ -32,12 +33,14 @@ export default function HomePage({
   onSelectField,
   onQuickStartAll,
   onDailyChallenge,
+  onReview,
   onTimeAttack,
   onMyPage,
 }: {
   onSelectField: (field: string) => void
   onQuickStartAll: () => void
   onDailyChallenge: () => void
+  onReview: () => void
   onTimeAttack: () => void
   onMyPage: () => void
 }) {
@@ -46,6 +49,7 @@ export default function HomePage({
   const [stats, setStats] = useState<FieldStats>({})
   const [scienceNews, setScienceNews] = useState<ScienceNewsResponse>(FALLBACK_SCIENCE_NEWS_RESPONSE)
   const [totalXp, setTotalXp] = useState(0)
+  const [dueCount, setDueCount] = useState(0)
   const [dailyStatus, setDailyStatus] = useState<DailyChallengeStatus>({ completed: false, completedAt: null })
   const [timeAttackSummary, setTimeAttackSummary] = useState<HomeTimeAttackSummary>({
     personalBest: 0,
@@ -78,6 +82,7 @@ export default function HomePage({
           completed: store.dailyChallenge.date === store.dayKey,
           completedAt: store.dailyChallenge.completed_at,
         })
+        setDueCount(getDueCount(studentId))
         return
       }
 
@@ -104,6 +109,7 @@ export default function HomePage({
       setStats(nextStats)
       setTotalXp(studentXpResponse.data?.student_xp ?? 0)
       setDailyStatus(dailyChallengeStatus)
+      setDueCount(getDueCount(studentId))
     }
 
     void load()
@@ -300,6 +306,37 @@ export default function HomePage({
             </div>
             <div className="text-[1.8rem] text-amber-200 sm:text-4xl">
               ☀️
+            </div>
+          </div>
+        </button>
+      )}
+
+      {dueCount > 0 && (
+        <button
+          onClick={onReview}
+          className="card mb-4 w-full text-left transition-all sm:mb-5 anim-fade-up"
+          style={{
+            padding: '14px 18px',
+            borderColor: 'rgba(139, 92, 246, 0.25)',
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.10), rgba(59, 130, 246, 0.06), var(--card-gradient-base-mid))',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = '' }}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-violet-300">
+                復習
+              </div>
+              <div className="mt-1.5 flex items-center gap-3">
+                <div className="font-display text-[1.2rem] text-white sm:text-[1.5rem]">忘れる前にもう一度</div>
+                <span className="rounded-full px-2 py-0.5 text-xs font-bold text-violet-200" style={{ background: 'rgba(139, 92, 246, 0.2)' }}>
+                  {dueCount}問
+                </span>
+              </div>
+            </div>
+            <div className="text-[1.8rem] text-violet-300 sm:text-4xl">
+              🧠
             </div>
           </div>
         </button>

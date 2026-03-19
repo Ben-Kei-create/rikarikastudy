@@ -159,6 +159,37 @@ export function pickDailyChallengeQuestions<T extends QuizQuestionLike>(
   return picked.slice(0, count)
 }
 
+/**
+ * SRS復習モード — due な問題IDに一致する問題を優先的に返す
+ * dueIds の順序（古い順）を尊重しつつ、足りなければ pool から補う
+ */
+export function pickReviewQuestions<T extends QuizQuestionLike>(
+  pool: T[],
+  dueIds: string[],
+  count: QuizQuestionCount = 10,
+) {
+  const targetCount = count === 'all' ? pool.length : count
+  const dueSet = new Set(dueIds)
+  const poolMap = new Map(pool.map(q => [q.id, q]))
+
+  // Due questions in SRS order (oldest review first)
+  const dueQuestions: T[] = []
+  for (const id of dueIds) {
+    const q = poolMap.get(id)
+    if (q) dueQuestions.push(q)
+    if (dueQuestions.length >= targetCount) break
+  }
+
+  if (dueQuestions.length >= targetCount) {
+    return dueQuestions.slice(0, targetCount)
+  }
+
+  // Fill remaining with random non-due questions
+  const usedIds = new Set(dueQuestions.map(q => q.id))
+  const filler = shuffleArray(pool.filter(q => !usedIds.has(q.id) && !dueSet.has(q.id)))
+  return [...dueQuestions, ...filler].slice(0, targetCount)
+}
+
 export function pickTimeAttackQuestions<T extends QuizQuestionLike>(pool: T[]) {
   return shuffleArray(pool.filter(question => isTimedChallengeSupportedQuestionType(question.type)))
 }

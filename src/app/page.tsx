@@ -29,7 +29,7 @@ type Screen =
   | 'time-attack'
   | 'online-lab'
   | { type: 'unit'; field: string }
-  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; customOptions?: CustomQuizOptions; questionCount?: QuizQuestionCount }
+  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; reviewMode?: boolean; customOptions?: CustomQuizOptions; questionCount?: QuizQuestionCount }
   | { type: 'biology-practice'; mode: BiologyPracticeMode }
   | { type: 'chemistry-practice'; mode: ChemistryPracticeMode }
   | { type: 'earth-practice'; mode: EarthSciencePracticeMode }
@@ -121,11 +121,12 @@ function App() {
             quickStartAll={s.quickStartAll}
             quickStartDaily={s.quickStartDaily}
             dailyChallenge={s.dailyChallenge}
+            reviewMode={s.reviewMode}
             customOptions={s.customOptions}
             questionCount={s.questionCount}
             onBack={() => setScreen(
               s.isDrill ? 'mypage'
-                : s.quickStartAll || s.quickStartDaily || s.dailyChallenge ? 'home'
+                : s.quickStartAll || s.quickStartDaily || s.dailyChallenge || s.reviewMode ? 'home'
                   : { type: 'unit', field: s.field }
             )}
           />
@@ -137,6 +138,7 @@ function App() {
             onSelectField={field => setScreen({ type: 'unit', field })}
             onQuickStartAll={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', quickStartAll: true })}
             onDailyChallenge={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', quickStartDaily: true, dailyChallenge: true })}
+            onReview={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', reviewMode: true })}
             onTimeAttack={() => setScreen('time-attack')}
             onMyPage={() => setScreen('mypage')}
           />

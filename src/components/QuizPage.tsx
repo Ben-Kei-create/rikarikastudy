@@ -12,9 +12,10 @@ import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { getQuestionImageDisplaySize } from '@/lib/questionImages'
 import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
 import { evaluateQuestionAnswer, getQuestionBlankPrompt, QuestionSubmission } from '@/lib/questionEval'
-import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions, QuizQuestionCount } from '@/lib/questionPicker'
+import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickReviewQuestions, pickStandardQuizQuestions, QuizQuestionCount } from '@/lib/questionPicker'
 import { getQuestionCorrectAnswerText, getQuestionTypeShortLabel, QuestionShape, normalizeQuestionRecord } from '@/lib/questionTypes'
 import { playCorrect, playWrong, playCombo, playPerfect } from '@/lib/sounds'
+import { getDueQuestionIds, updateSrsAfterQuiz } from '@/lib/srs'
 import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
 import { calculateQuizXp as calculateQuizXpBreakdown } from '@/lib/xp'
 import {
@@ -135,6 +136,7 @@ export default function QuizPage({
   quickStartAll = false,
   quickStartDaily = false,
   dailyChallenge = false,
+  reviewMode = false,
   customOptions,
   questionCount = 10,
   onBack,
@@ -145,6 +147,7 @@ export default function QuizPage({
   quickStartAll?: boolean
   quickStartDaily?: boolean
   dailyChallenge?: boolean
+  reviewMode?: boolean
   customOptions?: CustomQuizOptions
   questionCount?: QuizQuestionCount
   onBack: () => void
@@ -325,7 +328,11 @@ export default function QuizPage({
             })()
         : []
 
-      if (dailyChallenge) {
+      if (reviewMode) {
+        const dueIds = getDueQuestionIds(studentId)
+        if (!active) return
+        setQuestions(pickReviewQuestions(pool, dueIds, questionCount))
+      } else if (dailyChallenge) {
         if (!active) return
         setQuestions(pickDailyChallengeQuestions(pool, history, 5))
       } else if (customOptions) {
@@ -710,6 +717,12 @@ export default function QuizPage({
         xpMultiplier: activeDailyChallenge ? 2 : 1,
         xpBreakdown,
       })
+
+      // Update SRS cards with quiz results
+      updateSrsAfterQuiz(
+        studentId,
+        answerLogs.map(log => ({ questionId: log.qId, correct: log.correct })),
+      )
 
       setRewardSummary(reward)
       setPhase('finished')
