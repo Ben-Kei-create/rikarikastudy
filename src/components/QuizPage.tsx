@@ -1527,6 +1527,35 @@ export default function QuizPage({
                 )}
               </div>
               <div className="sticky bottom-3 z-10 mt-3 sm:relative sm:bottom-auto sm:mt-4">
+                {/* Momentum nudge */}
+                {isCorrect && current + 1 < questions.length && (() => {
+                  const remaining = questions.length - (current + 1)
+                  const isPerfectSoFar = score === current + 1
+                  const nextMilestone = [3, 6, 10].find(m => m === comboStreak + 1)
+
+                  if (isPerfectSoFar && remaining <= 3) {
+                    return (
+                      <div className="mb-2 text-center text-xs font-semibold text-amber-300 anim-pop">
+                        全問正解中！あと{remaining}問でパーフェクトボーナス +50 XP
+                      </div>
+                    )
+                  }
+                  if (nextMilestone) {
+                    return (
+                      <div className="mb-2 text-center text-xs font-semibold text-sky-300 anim-pop">
+                        あと1問で{nextMilestone}コンボ！
+                      </div>
+                    )
+                  }
+                  if (remaining <= 2) {
+                    return (
+                      <div className="mb-2 text-center text-xs font-semibold text-slate-400">
+                        あと{remaining}問！
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
                 <button onClick={handleNext} className="btn-primary w-full shadow-lg sm:shadow-none">
                   {current + 1 >= questions.length ? '結果を見る' : '次の問題 →'}
                 </button>
