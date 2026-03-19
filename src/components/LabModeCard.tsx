@@ -34,10 +34,10 @@ export default function LabModeCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <div
-            className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-            style={{ background: `${meta.accent}18`, color: meta.accent }}
+            className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: meta.accent }}
           >
-            <span>{meta.badge}</span>
+            {meta.badge}
           </div>
           <div className="mt-4 flex items-center gap-3">
             <span className="text-3xl">{meta.icon}</span>

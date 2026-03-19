@@ -263,9 +263,7 @@ export default function UnitSelectPage({
                 ゲストは使えません
               </div>
             </div>
-            <div
-              className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-400 sm:px-4 sm:py-2 sm:text-sm"
-            >
+            <div className="text-xs font-semibold text-slate-500 sm:text-sm">
               利用不可
             </div>
           </div>
@@ -302,7 +300,7 @@ export default function UnitSelectPage({
               </div>
             </div>
             <div
-              className="inline-flex items-center justify-center rounded-full border border-slate-600 bg-slate-800/70 px-3 py-1.5 text-xs font-semibold text-slate-100 sm:px-4 sm:py-2 sm:text-sm"
+              className="text-xs font-semibold text-slate-100 sm:text-sm"
             >
               Geminiに聞く →
             </div>
@@ -333,11 +331,8 @@ export default function UnitSelectPage({
               <div className="font-semibold text-base sm:text-lg" style={{ color }}>全単元ランダム</div>
               <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">まとめて解く</div>
             </div>
-          <div
-            className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] sm:px-3 sm:text-xs"
-            style={{ background: `${color}18`, color }}
-          >
-            quick start
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] sm:text-xs" style={{ color }}>
+            quick start →
           </div>
         </div>
       </button>
@@ -385,12 +380,12 @@ export default function UnitSelectPage({
             <div className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">
               しぼって出す
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
               {getCustomQuizSummaryParts(customOptions).map(part => (
                 <span
                   key={part}
-                  className="rounded-full px-3 py-1 text-[11px] font-semibold"
-                  style={{ background: `${color}18`, color }}
+                  className="text-[11px] font-semibold"
+                  style={{ color }}
                 >
                   {part}
                 </span>
@@ -478,11 +473,11 @@ export default function UnitSelectPage({
         )}
       </div>
 
-      <div className="mb-4 rounded-[24px] border border-white/8 bg-slate-950/22 px-4 py-3 text-sm text-slate-400">
+      <p className="mb-4 px-1 text-xs text-slate-500">
         {loading
           ? '単元データを読み込み中...'
-          : '単元ごとの開始ボタンはカスタムにまとめました。単元をしぼりたいときは「条件」から選べます。'}
-      </div>
+          : '単元をしぼりたいときは「条件」から選べます。'}
+      </p>
 
       {/* Lab mode sections — data-driven rendering */}
       {(() => {

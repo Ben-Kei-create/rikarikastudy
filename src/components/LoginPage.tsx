@@ -78,7 +78,7 @@ function StudentPicker({
           <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-200">{title}</div>
           <div className="mt-1 text-base font-semibold text-white sm:text-lg">{subtitle}</div>
         </div>
-        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-slate-400">
+        <div className="text-[11px] text-slate-500">
           {students.length}人
         </div>
       </div>
@@ -107,13 +107,13 @@ function StudentPicker({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="truncate font-display text-2xl text-white">{selectedStudent.nickname}</div>
-                <span className="rounded-full bg-white/8 px-2.5 py-1 text-[10px] font-semibold text-sky-100">
+                <span className="text-[10px] font-semibold text-sky-100/60">
                   ID {selectedStudent.id}
                 </span>
               </div>
               <div className="mt-1 text-xs leading-5 text-slate-300">{selectedMeta.detail}</div>
             </div>
-            <div className="hidden rounded-full border border-emerald-300/22 bg-emerald-300/10 px-3 py-1 text-[11px] font-semibold text-emerald-200 sm:block">
+            <div className="hidden text-[11px] font-semibold text-emerald-200/70 sm:block">
               {selectedMeta.badge}
             </div>
           </div>
@@ -173,7 +173,7 @@ function StudentPicker({
                     <div className="flex items-center gap-2">
                       <div className="truncate font-semibold text-white">{student.nickname}</div>
                       {student.id === GUEST_STUDENT_ID && (
-                        <span className="rounded-full border border-sky-300/18 bg-sky-300/10 px-2 py-0.5 text-[10px] font-semibold text-sky-100">
+                        <span className="text-[10px] font-semibold text-sky-200/60">
                           ゲスト
                         </span>
                       )}
@@ -183,13 +183,10 @@ function StudentPicker({
                     </div>
                   </div>
                   <div
-                    className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                    style={{
-                      background: checked ? 'rgba(125, 211, 252, 0.16)' : 'rgba(255, 255, 255, 0.06)',
-                      color: checked ? '#e0f2fe' : '#94a3b8',
-                    }}
+                    className="shrink-0 text-[10px] font-semibold"
+                    style={{ color: checked ? '#7dd3fc' : '#64748b' }}
                   >
-                    {checked ? '選択中' : '選ぶ'}
+                    {checked ? '✓' : ''}
                   </div>
                 </label>
               )
@@ -478,23 +475,11 @@ export default function LoginPage({
                 </p>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                <div className="subcard px-4 py-3.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Smooth Select</div>
-                  <div className="mt-2 text-sm font-semibold text-white">検索つきの生徒一覧</div>
-                  <div className="mt-1 text-xs leading-5 text-slate-400">人数が増えても、スクロールで選びやすい構成です。</div>
-                </div>
-                <div className="subcard px-4 py-3.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Guest Ready</div>
-                  <div className="mt-2 text-sm font-semibold text-white">ゲスト体験もすぐ開始</div>
-                  <div className="mt-1 text-xs leading-5 text-slate-400">パスワード不要で、その日の学習だけさっと試せます。</div>
-                </div>
-                <div className="subcard px-4 py-3.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Online Lab</div>
-                  <div className="mt-2 text-sm font-semibold text-white">オンライン導線も同じ操作感</div>
-                  <div className="mt-1 text-xs leading-5 text-slate-400">通常ログインと同じ並びで、生徒を迷わず選べます。</div>
-                </div>
-              </div>
+              <ul className="mt-5 space-y-2 text-sm leading-6 text-slate-400">
+                <li>検索つきの生徒一覧 — 人数が増えてもスクロールで選びやすい</li>
+                <li>ゲスト体験もすぐ開始 — PW 不要でその日の学習をさっと試せる</li>
+                <li>オンライン導線も同じ操作感 — 通常ログインと同じ並びで迷わない</li>
+              </ul>
 
               {showLoginUpdates && (
                 <div className="mt-5 rounded-[24px] border border-white/10 bg-slate-950/38 px-4 py-3 sm:px-5 sm:py-4">
@@ -586,7 +571,7 @@ export default function LoginPage({
                   <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-200">Student Login</div>
                   <div className="mt-1 font-display text-2xl text-white sm:text-[2rem]">生徒を選んでログイン</div>
                 </div>
-                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-slate-400">
+                <div className="text-[11px] text-slate-500">
                   {students.length} IDs
                 </div>
               </div>

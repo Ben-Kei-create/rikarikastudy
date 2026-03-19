@@ -247,12 +247,11 @@ export default function HomePage({
                   </div>
                 </div>
                 {unlockedRewards.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
                     {unlockedRewards.map(reward => (
                       <span
                         key={reward.key}
-                        className="rounded-full px-3 py-1 text-[11px] font-semibold"
-                        style={{ background: 'var(--badge-success-bg)', color: 'var(--badge-success-text)' }}
+                        className="text-[11px] font-semibold text-emerald-300/70"
                       >
                         {reward.emoji} {reward.title}
                       </span>
@@ -324,13 +323,7 @@ export default function HomePage({
               </div>
               <div className="mt-2 flex items-center gap-3 flex-wrap">
                 <div className="font-display text-[1.35rem] text-white sm:text-[1.8rem]">今日のチャレンジ</div>
-                <span
-                  className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                  style={{
-                    background: 'var(--badge-amber-bg)',
-                    color: 'var(--badge-amber-text)',
-                  }}
-                >
+                <span className="text-[10px] font-semibold text-amber-200/80">
                   5問 / XP×2
                 </span>
               </div>
@@ -406,13 +399,10 @@ export default function HomePage({
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="font-display text-[1.05rem] sm:text-[1.35rem]" style={{ color }}>{fieldName}</div>
                     <span
-                      className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]"
-                      style={{
-                        background: rate === null ? `${color}16` : 'var(--color-neutral-soft-bg)',
-                        color: rate === null ? color : 'var(--text-muted)',
-                      }}
+                      className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+                      style={{ color: rate === null ? color : 'var(--text-muted)' }}
                     >
-                      {rate === null ? 'はじめる' : `${stat?.total}問`}
+                      {rate === null ? 'はじめる →' : `${stat?.total}問`}
                     </span>
                   </div>
                   <div className="mt-1 text-[12px] leading-5 text-slate-400 sm:text-sm sm:leading-6">{FIELD_DESCRIPTIONS[fieldName]}</div>
