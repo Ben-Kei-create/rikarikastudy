@@ -57,6 +57,7 @@ export type Database = {
           password: string
           student_xp: number
           xp: number
+          gemini_enabled: boolean
           created_at: string
         }
         Insert: {
@@ -65,12 +66,14 @@ export type Database = {
           password?: string
           student_xp?: number
           xp?: number
+          gemini_enabled?: boolean
         }
         Update: {
           nickname?: string
           password?: string
           student_xp?: number
           xp?: number
+          gemini_enabled?: boolean
         }
       }
       questions: {

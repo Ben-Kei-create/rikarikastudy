@@ -228,6 +228,7 @@ export default function ScienceChatPage({
         body: JSON.stringify({
           field,
           chatMode,
+          studentId,
           messages: threadToUpdate.messages.map(message => ({
             role: message.role,
             text: message.text,

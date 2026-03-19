@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { evaluateTextAnswer, type TextAnswerResult } from '@/lib/answerUtils'
+import { supabase } from '@/lib/supabase'
 
 interface JudgeRequestBody {
   field?: string
@@ -10,6 +11,7 @@ interface JudgeRequestBody {
   keywords?: string[] | null
   explanation?: string | null
   studentAnswer?: string
+  studentId?: number
 }
 
 interface GeminiJudgeResponse {
@@ -47,9 +49,19 @@ function getApiKey() {
   return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 }
 
-function getJudgeMode(): 'live' | 'mock' {
-  // Gemini API は使用しない（常にローカル判定）
-  return 'mock'
+async function getJudgeMode(studentId?: number): Promise<'live' | 'mock'> {
+  if (typeof studentId !== 'number' || studentId <= 0) return 'mock'
+
+  const apiKey = getApiKey()
+  if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') return 'mock'
+
+  const { data } = await supabase
+    .from('students')
+    .select('gemini_enabled')
+    .eq('id', studentId)
+    .single()
+
+  return data?.gemini_enabled ? 'live' : 'mock'
 }
 
 function extractText(payload: GeminiJudgeResponse) {
@@ -259,7 +271,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (getJudgeMode() !== 'live') {
+    if ((await getJudgeMode(body.studentId)) !== 'live') {
       return NextResponse.json({
         result: localResult satisfies TextAnswerResult,
         judgeSource: 'local' satisfies JudgeSource,

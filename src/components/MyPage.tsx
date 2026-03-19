@@ -959,26 +959,78 @@ export default function MyPage({
               </div>
             </div>
 
-            {/* 30日ヒートマップ */}
+            {/* ストリーク＆カレンダー */}
             <div className="card">
-              <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">30日間の学習記録</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 6 }}>
-                {dailyData.map((d, i) => (
-                  <div
-                    key={i}
-                    title={`${format(d.date, 'M/d')} : ${d.count}問`}
-                    style={{
-                      aspectRatio: '1',
-                      borderRadius: 5,
-                      background: heatColor(d.count),
-                      transition: 'transform 0.15s',
-                      cursor: 'default',
-                    }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.25)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = '' }}
-                  />
-                ))}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">学習カレンダー（30日間）</h3>
+                {streak > 0 && (
+                  <div className="flex items-center gap-1.5 streak-fire">
+                    <span className="text-lg">🔥</span>
+                    <span className="font-display text-lg text-orange-300">{streak}</span>
+                    <span className="text-[11px] text-slate-500">日連続</span>
+                  </div>
+                )}
               </div>
+
+              {/* GitHub風カレンダー: 曜日ラベル + 週カラム */}
+              {(() => {
+                const weeks: typeof dailyData[number][][] = []
+                let currentWeek: typeof dailyData[number][] = []
+                // 最初の日の曜日分だけパディング
+                const firstDow = dailyData[0]?.date.getDay() ?? 0
+                for (let pad = 0; pad < firstDow; pad++) currentWeek.push(null as unknown as typeof dailyData[number])
+                for (const d of dailyData) {
+                  currentWeek.push(d)
+                  if (currentWeek.length === 7) {
+                    weeks.push(currentWeek)
+                    currentWeek = []
+                  }
+                }
+                if (currentWeek.length > 0) weeks.push(currentWeek)
+
+                const dayLabels = ['日', '月', '火', '水', '木', '金', '土']
+
+                return (
+                  <div className="flex gap-1">
+                    <div className="flex flex-col gap-1 pr-1 pt-0">
+                      {dayLabels.map((label, i) => (
+                        <div key={label} className="text-[9px] text-slate-600 flex items-center justify-end" style={{ height: 16, width: 16 }}>
+                          {i % 2 === 1 ? label : ''}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-1 flex-1">
+                      {weeks.map((week, wi) => (
+                        <div key={wi} className="flex flex-col gap-1 flex-1">
+                          {Array.from({ length: 7 }).map((_, di) => {
+                            const d = week[di]
+                            if (!d) return <div key={di} style={{ height: 16, borderRadius: 3 }} />
+                            const isToday = format(d.date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+                            return (
+                              <div
+                                key={di}
+                                title={`${format(d.date, 'M/d(E)', { locale: ja })} : ${d.count}問`}
+                                style={{
+                                  height: 16,
+                                  borderRadius: 3,
+                                  background: heatColor(d.count),
+                                  outline: isToday ? '2px solid var(--color-accent)' : 'none',
+                                  outlineOffset: -1,
+                                  transition: 'transform 0.15s',
+                                  cursor: 'default',
+                                }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.3)' }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = '' }}
+                              />
+                            )
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
               <div className="flex items-center gap-2 mt-3">
                 <span className="text-slate-600 text-xs">0問</span>
                 {['var(--surface-elevated)', 'var(--color-accent-deeper)', 'var(--color-accent-strong)', 'var(--color-accent)', 'var(--color-sky-heading)'].map(c => (
@@ -986,6 +1038,29 @@ export default function MyPage({
                 ))}
                 <span className="text-slate-600 text-xs">100問+</span>
               </div>
+
+              {/* ストリーク推移 */}
+              {maxStreak >= 3 && (
+                <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="text-slate-500">連続記録</span>
+                    <span className="text-orange-300 font-bold">最高 {maxStreak}日</span>
+                  </div>
+                  <div className="soft-track" style={{ height: 8 }}>
+                    <div style={{
+                      width: `${Math.min(100, (streak / Math.max(maxStreak, 1)) * 100)}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #f97316, #fbbf24)',
+                      borderRadius: 8,
+                      transition: 'width 1.2s ease',
+                    }} />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-600 mt-1.5">
+                    <span>現在 {streak}日</span>
+                    <span>目標 {maxStreak}日</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1037,6 +1112,46 @@ export default function MyPage({
         {tab === 'weak' && (
           <div className="anim-fade">
             <p className="text-slate-500 text-xs mb-4">3問以上解いた単元を正答率の低い順に表示</p>
+
+            {/* 診断サマリー */}
+            {weakUnits.length > 0 && (
+              <div className="card mb-4" style={{
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.06), rgba(251, 191, 36, 0.06))',
+                borderColor: 'rgba(239, 68, 68, 0.15)',
+              }}>
+                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase mb-2">AI 診断</div>
+                <div className="space-y-2">
+                  {weakUnits.map(u => {
+                    const advice = u.rate < 30
+                      ? `${u.field}の「${u.unit}」が特に苦手です。基礎からじっくり復習しましょう！`
+                      : u.rate < 50
+                        ? `${u.field}の「${u.unit}」がまだ不安定。繰り返し解いて定着させよう！`
+                        : `${u.field}の「${u.unit}」はもう少し。あと少しで得意になれるよ！`
+                    return (
+                      <div key={`advice-${u.field}-${u.unit}`} className="flex items-start gap-2">
+                        <span className="text-sm mt-0.5">{u.rate < 30 ? '🚨' : u.rate < 50 ? '⚠️' : '💡'}</span>
+                        <p className="text-sm text-slate-300 leading-6">{advice}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+                {/* 分野バランス診断 */}
+                {(() => {
+                  const weakFields = Array.from(new Set(weakUnits.map(u => u.field)))
+                  if (weakFields.length >= 2) {
+                    return (
+                      <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                        <p className="text-xs text-amber-200">
+                          {weakFields.join('と')}に弱点が集中しています。まずは{weakFields[0]}から攻略しよう！
+                        </p>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
+              </div>
+            )}
+
             {weakUnits.length === 0 ? (
               <div className="card text-center text-slate-500 py-12">
                 {totalQ < 10 ? 'もっと問題を解くと弱点が分かるよ！' : '弱点単元なし！全部得意だね 🎉'}

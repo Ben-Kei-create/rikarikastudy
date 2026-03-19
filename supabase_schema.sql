@@ -45,8 +45,12 @@ UPDATE students SET password = 'rikalove4' WHERE id = 4 AND (password IS NULL OR
 UPDATE students SET password = 'rikaadmin2026' WHERE id = 5 AND (password IS NULL OR BTRIM(password) = '');
 ALTER TABLE students ALTER COLUMN password SET NOT NULL;
 
--- 既存の生徒（ID 1-5）は承認済みにする
+-- Gemini API 利用権限（デフォルトは無効）
+ALTER TABLE students ADD COLUMN IF NOT EXISTS gemini_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- 既存の生徒（ID 1-5）は承認済み＆Gemini有効にする
 UPDATE students SET is_approved = TRUE WHERE id BETWEEN 1 AND 5;
+UPDATE students SET gemini_enabled = TRUE WHERE id BETWEEN 1 AND 5;
 
 -- 問題テーブル
 CREATE TABLE IF NOT EXISTS questions (

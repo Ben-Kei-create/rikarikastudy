@@ -528,6 +528,7 @@ export default function QuizPage({
           keywords: q.keywords,
           explanation: q.explanation,
           studentAnswer: answer,
+          studentId,
         }),
       })
 
@@ -859,24 +860,26 @@ export default function QuizPage({
     return (
       <div className="page-shell flex flex-col items-center justify-center anim-fade">
         <BadgeEarnedToastStack badges={rewardSummary?.newBadges ?? []} />
-        <div className={`hero-card reward-card w-full max-w-3xl p-6 text-center sm:p-7 ${rewardSummary?.leveledUp ? 'is-level-up' : ''}`}>
-          {rewardSummary?.leveledUp && (
+        <div className={`hero-card reward-card w-full max-w-3xl p-6 text-center sm:p-7 ${rewardSummary?.leveledUp ? 'is-level-up' : ''} ${rate === 100 ? 'perfect-shimmer' : ''}`}>
+          {(rewardSummary?.leveledUp || rate === 100) && (
             <div className="reward-confetti" aria-hidden="true">
-              {Array.from({ length: 18 }).map((_, index) => (
+              {Array.from({ length: rate === 100 ? 28 : 18 }).map((_, index) => (
                 <span
                   key={`confetti-${index}`}
                   className="reward-confetti__piece"
                   style={{
-                    left: `${6 + ((index * 11) % 88)}%`,
-                    animationDelay: `${(index % 6) * 0.08}s`,
-                    background: index % 3 === 0 ? 'var(--color-info)' : index % 3 === 1 ? 'var(--color-warning)' : 'var(--color-success)',
+                    left: `${4 + ((index * 7) % 92)}%`,
+                    animationDelay: `${(index % 8) * 0.06}s`,
+                    background: rate === 100
+                      ? ['#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#a855f7'][index % 5]
+                      : index % 3 === 0 ? 'var(--color-info)' : index % 3 === 1 ? 'var(--color-warning)' : 'var(--color-success)',
                   }}
                 />
               ))}
             </div>
           )}
 
-          <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">{activeDailyChallenge ? '☀️' : retryWrongOnly ? '🔁' : rate >= 70 ? '🏆' : '📚'}</div>
+          <div className={`text-3xl sm:text-5xl mb-2 sm:mb-4 ${rate === 100 ? 'perfect-rainbow' : ''}`}>{activeDailyChallenge ? '☀️' : retryWrongOnly ? '🔁' : rate === 100 ? '👑' : rate >= 70 ? '🏆' : '📚'}</div>
           <div className="font-display text-3xl sm:text-4xl mb-1 sm:mb-2" style={{ color }}>
             {score} / {questions.length}
           </div>
@@ -945,10 +948,15 @@ export default function QuizPage({
           )}
 
           {rewardSummary?.leveledUp && levelInfo && (
-            <div className="reward-banner mb-4">
+            <div className="reward-banner level-up-burst mb-4" style={{
+              background: 'linear-gradient(180deg, rgba(56, 189, 248, 0.18), rgba(56, 189, 248, 0.04))',
+              boxShadow: '0 0 40px rgba(56, 189, 248, 0.2), inset 0 1px 0 rgba(255,255,255,0.12)',
+            }}>
               <div className="text-xs font-semibold tracking-[0.22em] text-sky-200">LEVEL UP</div>
-              <div className="mt-1 font-display text-2xl sm:text-3xl text-white">Lv.{levelInfo.level}</div>
-              <div className="mt-1 text-sm text-sky-100">{levelInfo.title}</div>
+              <div className="mt-1 font-display text-3xl sm:text-4xl text-white" style={{
+                textShadow: '0 0 24px rgba(56, 189, 248, 0.5)',
+              }}>Lv.{levelInfo.level}</div>
+              <div className="mt-1 text-sm font-semibold text-sky-100">{levelInfo.title}</div>
             </div>
           )}
 

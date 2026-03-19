@@ -22,14 +22,15 @@ export interface StudentRecord {
   password: string
   student_xp: number
   is_approved: boolean
+  gemini_enabled: boolean
 }
 
 export const DEFAULT_STUDENTS: StudentRecord[] = [
-  { id: 1, nickname: 'S', password: 'rikalove1', student_xp: 0, is_approved: true },
-  { id: 2, nickname: 'M', password: 'rikalove2', student_xp: 0, is_approved: true },
-  { id: 3, nickname: 'T', password: 'rikalove3', student_xp: 0, is_approved: true },
-  { id: 4, nickname: 'K', password: 'rikalove4', student_xp: 0, is_approved: true },
-  { id: 5, nickname: '先生', password: 'rikaadmin2026', student_xp: 0, is_approved: true },
+  { id: 1, nickname: 'S', password: 'rikalove1', student_xp: 0, is_approved: true, gemini_enabled: true },
+  { id: 2, nickname: 'M', password: 'rikalove2', student_xp: 0, is_approved: true, gemini_enabled: true },
+  { id: 3, nickname: 'T', password: 'rikalove3', student_xp: 0, is_approved: true, gemini_enabled: true },
+  { id: 4, nickname: 'K', password: 'rikalove4', student_xp: 0, is_approved: true, gemini_enabled: true },
+  { id: 5, nickname: '先生', password: 'rikaadmin2026', student_xp: 0, is_approved: true, gemini_enabled: true },
 ]
 
 export const LOGIN_STUDENTS: StudentRecord[] = [GUEST_STUDENTS_ENTRY(), ...DEFAULT_STUDENTS]
@@ -41,6 +42,7 @@ function GUEST_STUDENTS_ENTRY(): StudentRecord {
     password: GUEST_STUDENT.password,
     student_xp: 0,
     is_approved: false,
+    gemini_enabled: false,
   }
 }
 
@@ -54,6 +56,7 @@ function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number
       password: current?.password?.trim() || defaultStudent.password,
       student_xp: typeof current?.student_xp === 'number' ? current.student_xp : defaultStudent.student_xp,
       is_approved: typeof current?.is_approved === 'boolean' ? current.is_approved : defaultStudent.is_approved,
+      gemini_enabled: typeof current?.gemini_enabled === 'boolean' ? current.gemini_enabled : defaultStudent.gemini_enabled,
     }
   })
 
@@ -66,6 +69,7 @@ function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number
       password: student.password?.trim() || '',
       student_xp: typeof student.student_xp === 'number' ? student.student_xp : 0,
       is_approved: typeof student.is_approved === 'boolean' ? student.is_approved : false,
+      gemini_enabled: typeof student.gemini_enabled === 'boolean' ? student.gemini_enabled : false,
     })
   }
 
@@ -75,12 +79,12 @@ function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number
 async function queryStudents(): Promise<StudentRecord[] | null> {
   const { data, error } = await supabase
     .from('students')
-    .select('id, nickname, password, student_xp, is_approved')
+    .select('id, nickname, password, student_xp, is_approved, gemini_enabled')
     .order('id', { ascending: true })
 
   if (!error && data) return mergeWithDefaults(data)
 
-  // is_approved 列がない旧スキーマにフォールバック
+  // gemini_enabled or is_approved 列がない旧スキーマにフォールバック
   const { data: fallbackData, error: fallbackError } = await supabase
     .from('students')
     .select('id, nickname, password, student_xp')

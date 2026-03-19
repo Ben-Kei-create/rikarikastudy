@@ -422,6 +422,50 @@ body {
 .anim-pop { animation: pop 0.3s ease both; }
 .anim-shake { animation: shake 0.4s ease; }
 
+.streak-fire { animation: streakPulse 2s ease-in-out infinite; }
+@keyframes streakPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.perfect-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.perfect-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.14) 45%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.14) 55%,
+    transparent 60%
+  );
+  animation: shimmerSlide 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes shimmerSlide {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+@keyframes levelUpBurst {
+  0% { opacity: 0; transform: scale(0.6) rotate(-8deg); }
+  40% { opacity: 1; transform: scale(1.12) rotate(2deg); }
+  70% { transform: scale(0.96) rotate(-1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.level-up-burst { animation: levelUpBurst 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@keyframes perfectRainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+.perfect-rainbow { animation: perfectRainbow 3s linear infinite; }
+
 /* カード */
 .card {
   background: var(--card-bg);

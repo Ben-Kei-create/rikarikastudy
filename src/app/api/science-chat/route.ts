@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { detectScienceChatModeration } from '@/lib/chatModeration'
+import { supabase } from '@/lib/supabase'
 import {
   limitToFiveLines,
   limitToThreeLines,
@@ -47,9 +48,19 @@ function getScienceChatApiKey() {
   return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 }
 
-function getScienceChatMode(): 'live' | 'mock' {
-  // Gemini API は使用しない（常にモック応答）
-  return 'mock'
+async function getScienceChatMode(studentId?: number): Promise<'live' | 'mock'> {
+  if (typeof studentId !== 'number' || studentId <= 0) return 'mock'
+
+  const apiKey = getScienceChatApiKey()
+  if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') return 'mock'
+
+  const { data } = await supabase
+    .from('students')
+    .select('gemini_enabled')
+    .eq('id', studentId)
+    .single()
+
+  return data?.gemini_enabled ? 'live' : 'mock'
 }
 
 function isScienceField(value: string): value is ScienceChatField {
@@ -251,12 +262,13 @@ function getMockReply(field: ScienceChatField, chatMode: ChatMode, latestUserPro
 
 export async function POST(request: NextRequest) {
   try {
-    const mode = getScienceChatMode()
     const body = await request.json() as {
       field?: string
       messages?: RequestMessage[]
       chatMode?: ChatMode
+      studentId?: number
     }
+    const mode = await getScienceChatMode(body.studentId)
 
     if (!body.field || !isScienceField(body.field)) {
       return NextResponse.json({ error: 'field が不正です。' }, { status: 400 })

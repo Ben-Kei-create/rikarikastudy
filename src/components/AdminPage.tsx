@@ -87,7 +87,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [pw, setPw] = useState('')
   const [pwError, setPwError] = useState(false)
   const [tab, setTab] = useState<AdminTab>('overview')
-  const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string; student_xp: number; is_approved?: boolean }>>([])
+  const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string; student_xp: number; is_approved?: boolean; gemini_enabled?: boolean }>>([])
   const [stats, setStats] = useState<StudentStats[]>([])
   const [questions, setQuestions] = useState<QuestionRow[]>([])
   const [questionAccuracyMap, setQuestionAccuracyMap] = useState<Record<string, QuestionAccuracySummary>>({})
@@ -2083,6 +2083,34 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <p className="mt-1 text-xs text-slate-500">
               新規登録ユーザーを承認すると、チャットなどの機能が使えるようになります。
             </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                className="rounded-xl bg-sky-500/20 px-3 py-1.5 text-xs font-semibold text-sky-300 transition-colors hover:bg-sky-500/30"
+                disabled={userActionId !== null}
+                onClick={async () => {
+                  setUserActionId(-1)
+                  await supabase.from('students').update({ gemini_enabled: true }).neq('id', 0)
+                  const updated = await fetchStudents()
+                  setStudentsList(updated)
+                  setUserActionId(null)
+                }}
+              >
+                全員 Gemini ON
+              </button>
+              <button
+                className="rounded-xl bg-slate-500/20 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-500/30"
+                disabled={userActionId !== null}
+                onClick={async () => {
+                  setUserActionId(-1)
+                  await supabase.from('students').update({ gemini_enabled: false }).neq('id', 0)
+                  const updated = await fetchStudents()
+                  setStudentsList(updated)
+                  setUserActionId(null)
+                }}
+              >
+                全員 Gemini OFF
+              </button>
+            </div>
           </div>
 
           {studentsList.length === 0 ? (
@@ -2104,7 +2132,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     }}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-white">{student.nickname}</span>
                         <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-slate-400">ID {student.id}</span>
                         {isApproved && (
@@ -2112,6 +2140,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                         )}
                         {isPending && (
                           <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] text-amber-300">未承認</span>
+                        )}
+                        {student.gemini_enabled && (
+                          <span className="rounded-full bg-sky-400/10 px-2 py-0.5 text-[10px] text-sky-300">Gemini</span>
                         )}
                       </div>
                       <div className="mt-1 text-xs text-slate-500">
@@ -2150,6 +2181,23 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                           {isProcessing ? '処理中...' : '取消'}
                         </button>
                       )}
+                      <button
+                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          student.gemini_enabled
+                            ? 'bg-sky-500/20 text-sky-300 hover:bg-sky-500/30'
+                            : 'bg-slate-500/20 text-slate-400 hover:bg-slate-500/30'
+                        }`}
+                        disabled={isProcessing}
+                        onClick={async () => {
+                          setUserActionId(student.id)
+                          await supabase.from('students').update({ gemini_enabled: !student.gemini_enabled }).eq('id', student.id)
+                          const updated = await fetchStudents()
+                          setStudentsList(updated)
+                          setUserActionId(null)
+                        }}
+                      >
+                        {isProcessing ? '...' : student.gemini_enabled ? 'Gemini OFF' : 'Gemini ON'}
+                      </button>
                     </div>
                   </div>
                 )
