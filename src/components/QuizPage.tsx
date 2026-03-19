@@ -14,6 +14,7 @@ import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionCh
 import { evaluateQuestionAnswer, getQuestionBlankPrompt, QuestionSubmission } from '@/lib/questionEval'
 import { pickCustomQuizQuestions, pickDailyChallengeQuestions, pickStandardQuizQuestions, QuizQuestionCount } from '@/lib/questionPicker'
 import { getQuestionCorrectAnswerText, getQuestionTypeShortLabel, QuestionShape, normalizeQuestionRecord } from '@/lib/questionTypes'
+import { playCorrect, playWrong, playCombo, playPerfect } from '@/lib/sounds'
 import { getSuccessCelebration, SuccessCelebrationContent } from '@/lib/successCelebration'
 import { calculateQuizXp as calculateQuizXpBreakdown } from '@/lib/xp'
 import {
@@ -447,9 +448,16 @@ export default function QuizPage({
       setComboStreak(nextCombo)
       setBestCombo(currentBest => Math.max(currentBest, nextCombo))
       setCelebration(getSuccessCelebration(nextCombo, { perfect: isPerfectRun }))
+      // Sound: combo milestone (3/6/10) gets special arpeggio, otherwise normal correct chime
+      if ([3, 6, 10].includes(nextCombo)) {
+        playCombo()
+      } else {
+        playCorrect()
+      }
     } else {
       setComboStreak(0)
       setCelebration(null)
+      playWrong()
     }
     setAnswerResult(result.result)
     if (isCorrect) {
@@ -705,6 +713,7 @@ export default function QuizPage({
 
       setRewardSummary(reward)
       setPhase('finished')
+      playPerfect()
       return
     }
 
