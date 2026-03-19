@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isCorrectTextAnswerResult, TextAnswerResult } from '@/lib/answerUtils'
@@ -188,9 +188,30 @@ export default function QuizPage({
   const [columnOpen, setColumnOpen] = useState(false)
   const [quitReward, setQuitReward] = useState<StudyRewardSummary | null>(null)
   const [quitting, setQuitting] = useState(false)
+  const [headerHidden, setHeaderHidden] = useState(false)
+  const lastScrollY = useRef(0)
   const startedAtRef = useRef<number | null>(null)
   const finishingRef = useRef(false)
   const activeDailyChallenge = dailyChallenge && !retryWrongOnly
+
+  // Auto-hide header on scroll down during answering (zone protection)
+  const handleScroll = useCallback(() => {
+    const y = window.scrollY
+    if (y > 60 && y > lastScrollY.current) {
+      setHeaderHidden(true)
+    } else {
+      setHeaderHidden(false)
+    }
+    lastScrollY.current = y
+  }, [])
+
+  useEffect(() => {
+    if (phase === 'answering') {
+      window.addEventListener('scroll', handleScroll, { passive: true })
+      return () => window.removeEventListener('scroll', handleScroll)
+    }
+    setHeaderHidden(false)
+  }, [phase, handleScroll])
 
   useEffect(() => {
     let active = true
@@ -1001,7 +1022,7 @@ export default function QuizPage({
 
   return (
     <div className="page-shell">
-      <div className="card mb-3 sm:mb-4 anim-fade-up">
+      <div className={`card mb-3 sm:mb-4 anim-fade-up transition-all duration-300 ${headerHidden ? 'opacity-0 -translate-y-2 pointer-events-none h-0 !mb-0 !p-0 overflow-hidden' : ''}`}>
         <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 sm:gap-3 sm:w-auto">
             <button onClick={handleQuit} className="btn-secondary text-xs sm:text-sm !px-3 !py-2 sm:!px-4 sm:!py-2.5">
@@ -1440,6 +1461,11 @@ export default function QuizPage({
                     {title}
                   </span>
                 </div>
+                {retryWrongOnly && isCorrect && (
+                  <p className="mb-2 text-xs font-semibold text-emerald-300 anim-pop">
+                    前回間違えた問題をクリア！
+                  </p>
+                )}
                 {currentResult === 'semantic' && textJudgeSource === 'gemini' && (
                   <p className="mb-1.5 text-xs text-emerald-200">
                     Gemini が意味として正しい回答と判断しました。
