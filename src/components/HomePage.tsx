@@ -50,6 +50,7 @@ export default function HomePage({
   const [scienceNews, setScienceNews] = useState<ScienceNewsResponse>(FALLBACK_SCIENCE_NEWS_RESPONSE)
   const [totalXp, setTotalXp] = useState(0)
   const [dueCount, setDueCount] = useState(0)
+  const [showSrsReminder, setShowSrsReminder] = useState(false)
   const [dailyStatus, setDailyStatus] = useState<DailyChallengeStatus>({ completed: false, completedAt: null })
   const [timeAttackSummary, setTimeAttackSummary] = useState<HomeTimeAttackSummary>({
     personalBest: 0,
@@ -61,6 +62,14 @@ export default function HomePage({
   const timeAttackUnlockXpLeft = Math.max(0, getXpFloorForLevel(TIME_ATTACK_UNLOCK_LEVEL) - levelInfo.totalXp)
   const nextUnlock = getNextLevelUnlock(levelInfo.level)
   const dailyCompleted = dailyStatus.completed
+
+  // SRSリマインダー: dueCount が読み込まれたら表示、8秒後に自動消去
+  useEffect(() => {
+    if (dueCount <= 0) return
+    setShowSrsReminder(true)
+    const timer = window.setTimeout(() => setShowSrsReminder(false), 8000)
+    return () => clearTimeout(timer)
+  }, [dueCount])
 
   useEffect(() => {
     if (studentId === null) return
@@ -170,6 +179,43 @@ export default function HomePage({
           reward={pendingLoginCardReward}
           onClose={dismissLoginCardReward}
         />
+      )}
+
+      {/* SRS復習リマインダー */}
+      {showSrsReminder && (
+        <div
+          className="fixed top-4 left-1/2 z-[110] w-[calc(100%-2rem)] max-w-md -translate-x-1/2"
+          style={{ animation: 'badgeToastIn 0.35s ease both' }}
+        >
+          <div
+            className="flex items-center gap-3 rounded-2xl border px-4 py-3"
+            style={{
+              borderColor: 'rgba(139, 92, 246, 0.3)',
+              background: 'linear-gradient(135deg, rgba(30, 20, 60, 0.97), rgba(20, 20, 40, 0.97))',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            }}
+          >
+            <span className="text-2xl shrink-0">🧠</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-white">{dueCount}問の復習がたまっています</div>
+              <div className="text-xs text-slate-400 mt-0.5">忘れる前にサクッと復習しよう</div>
+            </div>
+            <button
+              onClick={() => { setShowSrsReminder(false); onReview() }}
+              className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-white"
+              style={{ background: 'rgba(139, 92, 246, 0.5)' }}
+            >
+              復習する
+            </button>
+            <button
+              onClick={() => setShowSrsReminder(false)}
+              className="shrink-0 text-xs text-slate-500 hover:text-slate-300"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Quick Start + Challenge Mode CTAs */}
