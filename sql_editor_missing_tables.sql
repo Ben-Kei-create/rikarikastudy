@@ -79,3 +79,9 @@ CREATE INDEX IF NOT EXISTS idx_admin_messages_status ON admin_messages(status);
 CREATE INDEX IF NOT EXISTS idx_admin_messages_created_at ON admin_messages(created_at DESC);
 
 ALTER TABLE admin_messages DISABLE ROW LEVEL SECURITY;
+
+-- ----------------------------------------
+-- 3. questions テーブルにコラム用カラムを追加
+-- ----------------------------------------
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS column_title TEXT DEFAULT NULL;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS column_body TEXT DEFAULT NULL;

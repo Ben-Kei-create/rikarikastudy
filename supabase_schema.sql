@@ -88,6 +88,8 @@ ALTER TABLE questions ADD COLUMN IF NOT EXISTS created_by_student_id INTEGER REF
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_display_width INTEGER;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_display_height INTEGER;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS column_title TEXT DEFAULT NULL;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS column_body TEXT DEFAULT NULL;
 ALTER TABLE questions DROP CONSTRAINT IF EXISTS questions_type_check;
 ALTER TABLE questions ADD CONSTRAINT questions_type_check
   CHECK (type IN ('choice', 'choice4', 'true_false', 'fill_choice', 'match', 'sort', 'multi_select', 'word_bank', 'text'));
