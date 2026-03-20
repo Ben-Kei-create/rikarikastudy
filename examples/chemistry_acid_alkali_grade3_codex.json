@@ -1,0 +1,222 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "水溶液にしたとき水素イオン（H⁺）を生じる物質を何といいますか。",
+    "choices": ["酸", "アルカリ", "塩", "酸化物"],
+    "answer": "酸",
+    "keywords": null,
+    "explanation": "水にとかしたとき水素イオン（H⁺）を生じる物質を酸といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "水溶液にしたとき水酸化物イオン（OH⁻）を生じる物質を何といいますか。",
+    "choices": ["アルカリ", "酸", "塩", "還元剤"],
+    "answer": "アルカリ",
+    "keywords": null,
+    "explanation": "水にとかしたとき水酸化物イオン（OH⁻）を生じる物質をアルカリといいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "酸性の水溶液にBTB溶液を加えると何色になりますか。",
+    "choices": ["黄色", "青色", "緑色", "赤色"],
+    "answer": "黄色",
+    "keywords": null,
+    "explanation": "BTB溶液は酸性で黄色、中性で緑色、アルカリ性で青色になります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "アルカリ性の水溶液にBTB溶液を加えると何色になりますか。",
+    "choices": ["青色", "黄色", "緑色", "赤色"],
+    "answer": "青色",
+    "keywords": null,
+    "explanation": "BTB溶液はアルカリ性で青色になります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "酸性の水溶液に共通して含まれるイオンは何ですか。",
+    "choices": ["水素イオン", "水酸化物イオン", "ナトリウムイオン", "塩化物イオン"],
+    "answer": "水素イオン",
+    "keywords": null,
+    "explanation": "酸性の水溶液には共通して水素イオン（H⁺）が含まれています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "アルカリ性の水溶液に共通して含まれるイオンは何ですか。",
+    "choices": ["水酸化物イオン", "水素イオン", "塩化物イオン", "硫酸イオン"],
+    "answer": "水酸化物イオン",
+    "keywords": null,
+    "explanation": "アルカリ性の水溶液には共通して水酸化物イオン（OH⁻）が含まれています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "pH（ピーエイチ）が7のとき、水溶液は何性ですか。",
+    "choices": ["中性", "酸性", "アルカリ性", "弱酸性"],
+    "answer": "中性",
+    "keywords": null,
+    "explanation": "pH7は中性です。7より小さいと酸性、7より大きいとアルカリ性です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "pH2の水溶液はどのような性質ですか。",
+    "choices": ["強い酸性", "弱い酸性", "中性", "アルカリ性"],
+    "answer": "強い酸性",
+    "keywords": null,
+    "explanation": "pHが小さいほど酸性が強く、pH2は強い酸性です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "酸の水溶液とアルカリの水溶液を混ぜると、互いの性質を打ち消し合う反応を何といいますか。",
+    "choices": ["中和", "酸化", "還元", "分解"],
+    "answer": "中和",
+    "keywords": null,
+    "explanation": "酸とアルカリが互いの性質を打ち消し合う反応を中和といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "中和によってできる水素イオンと水酸化物イオンの反応で生じる物質は何ですか。",
+    "choices": ["水", "塩", "酸素", "水素"],
+    "answer": "水",
+    "keywords": null,
+    "explanation": "H⁺ + OH⁻ → H₂O で、中和では水が生じます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "中和で酸の陰イオンとアルカリの陽イオンが結びついてできる物質を何といいますか。",
+    "choices": ["塩（えん）", "水", "酸化物", "水酸化物"],
+    "answer": "塩（えん）",
+    "keywords": null,
+    "explanation": "中和では水と塩（えん）ができます。塩は酸の陰イオンとアルカリの陽イオンが結びついた物質です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "塩酸と水酸化ナトリウム水溶液を中和させるとできる塩は何ですか。",
+    "choices": ["塩化ナトリウム", "硫酸ナトリウム", "炭酸ナトリウム", "硝酸ナトリウム"],
+    "answer": "塩化ナトリウム",
+    "keywords": null,
+    "explanation": "HCl + NaOH → NaCl + H₂O で、塩化ナトリウム（食塩）ができます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "硫酸と水酸化バリウム水溶液を混ぜると白い沈殿ができます。この沈殿は何ですか。",
+    "choices": ["硫酸バリウム", "塩化バリウム", "炭酸バリウム", "水酸化バリウム"],
+    "answer": "硫酸バリウム",
+    "keywords": null,
+    "explanation": "硫酸と水酸化バリウムの中和で、硫酸バリウムの白い沈殿ができます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "酸性の水溶液にマグネシウムリボンを入れるとどうなりますか。",
+    "choices": ["水素が発生してとける", "酸素が発生する", "変化しない", "沈殿ができる"],
+    "answer": "水素が発生してとける",
+    "keywords": null,
+    "explanation": "酸性の水溶液に金属を入れると水素が発生し、金属がとけます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "赤色リトマス紙を青色に変えるのは何性の水溶液ですか。",
+    "choices": ["アルカリ性", "酸性", "中性", "弱酸性"],
+    "answer": "アルカリ性",
+    "keywords": null,
+    "explanation": "アルカリ性の水溶液は赤色リトマス紙を青色に変えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "青色リトマス紙を赤色に変えるのは何性の水溶液ですか。",
+    "choices": ["酸性", "アルカリ性", "中性", "弱アルカリ性"],
+    "answer": "酸性",
+    "keywords": null,
+    "explanation": "酸性の水溶液は青色リトマス紙を赤色に変えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "フェノールフタレイン溶液はアルカリ性の水溶液中で何色になりますか。",
+    "choices": ["赤色", "青色", "黄色", "無色"],
+    "answer": "赤色",
+    "keywords": null,
+    "explanation": "フェノールフタレイン溶液はアルカリ性で赤色（濃いピンク色）になり、酸性・中性では無色のままです。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "塩酸の電離を表す式として正しいものはどれですか。",
+    "choices": ["HCl → H⁺ + Cl⁻", "HCl → H⁻ + Cl⁺", "HCl → H₂ + Cl₂", "HCl → H + Cl"],
+    "answer": "HCl → H⁺ + Cl⁻",
+    "keywords": null,
+    "explanation": "塩酸（HCl）は電離して水素イオン（H⁺）と塩化物イオン（Cl⁻）になります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "水酸化ナトリウムの電離を表す式として正しいものはどれですか。",
+    "choices": ["NaOH → Na⁺ + OH⁻", "NaOH → Na⁻ + OH⁺", "NaOH → Na + O + H", "NaOH → Na²⁺ + OH²⁻"],
+    "answer": "NaOH → Na⁺ + OH⁻",
+    "keywords": null,
+    "explanation": "水酸化ナトリウム（NaOH）は電離してナトリウムイオン（Na⁺）と水酸化物イオン（OH⁻）になります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸・アルカリ・中和",
+    "grade": "中3",
+    "question": "次のうち、酸性の水溶液はどれですか。",
+    "choices": ["レモン汁", "石けん水", "食塩水", "石灰水"],
+    "answer": "レモン汁",
+    "keywords": null,
+    "explanation": "レモン汁はクエン酸を含む酸性の水溶液です。石けん水と石灰水はアルカリ性、食塩水は中性です。"
+  }
+]
