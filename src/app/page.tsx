@@ -14,6 +14,7 @@ import EarthSciencePracticePage from '@/components/EarthSciencePracticePage'
 import ScienceWorkbenchPage from '@/components/ScienceWorkbenchPage'
 import TimeAttackPage from '@/components/TimeAttackPage'
 import OnlineLabPage from '@/components/OnlineLabPage'
+import OnlineGatePage from '@/components/OnlineGatePage'
 import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
@@ -27,6 +28,7 @@ type Screen =
   | 'home'
   | 'mypage'
   | 'time-attack'
+  | 'online-gate'
   | 'online-lab'
   | { type: 'unit'; field: string }
   | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; reviewMode?: boolean; customOptions?: CustomQuizOptions; questionCount?: QuizQuestionCount }
@@ -60,19 +62,23 @@ function App() {
     )
   }
 
+  const ADMIN_STUDENT_ID = 5
   const screenType = typeof screen === 'object' ? screen.type : screen
   const goHome = () => setScreen('home')
+  const goOnline = () => setScreen(studentId === ADMIN_STUDENT_ID ? 'online-lab' : 'online-gate')
 
   const renderScreen = (): JSX.Element => {
     if (!studentId) {
-      return <LoginPage onDone={goHome} onOnline={() => setScreen('online-lab')} onAdmin={() => setAdminOpen(true)} />
+      return <LoginPage onDone={goHome} onAdmin={() => setAdminOpen(true)} />
     }
 
     switch (screenType) {
       case 'mypage':
-        return <MyPage onBack={goHome} onStartDrill={(field, unit) => setScreen({ type: 'quiz', field, unit, isDrill: true })} />
+        return <MyPage onBack={goHome} onStartDrill={(field, unit) => setScreen({ type: 'quiz', field, unit, isDrill: true })} onOnline={goOnline} />
       case 'time-attack':
         return <TimeAttackPage onBack={goHome} />
+      case 'online-gate':
+        return <OnlineGatePage onBack={goHome} onEnter={() => setScreen('online-lab')} />
       case 'online-lab':
         return <OnlineLabPage onBack={goHome} />
       case 'unit': {
@@ -141,6 +147,7 @@ function App() {
             onReview={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', reviewMode: true })}
             onTimeAttack={() => setScreen('time-attack')}
             onMyPage={() => setScreen('mypage')}
+            onOnline={goOnline}
           />
         )
     }

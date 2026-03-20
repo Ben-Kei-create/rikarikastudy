@@ -208,11 +208,9 @@ function StudentPicker({
 
 export default function LoginPage({
   onDone,
-  onOnline,
   onAdmin,
 }: {
   onDone: () => void
-  onOnline: () => void
   onAdmin: () => void
 }) {
   const { login, register, notice } = useAuth()
@@ -229,12 +227,6 @@ export default function LoginPage({
   const [regError, setRegError] = useState('')
   const [regSuccess, setRegSuccess] = useState('')
   const [regSubmitting, setRegSubmitting] = useState(false)
-  const [onlineOpen, setOnlineOpen] = useState(false)
-  const [onlineStudentId, setOnlineStudentId] = useState(1)
-  const [onlineStudentSearch, setOnlineStudentSearch] = useState('')
-  const [onlinePw, setOnlinePw] = useState('')
-  const [onlineError, setOnlineError] = useState('')
-  const [onlineSubmitting, setOnlineSubmitting] = useState(false)
   const [loginUpdates, setLoginUpdates] = useState<LoginUpdateRow[]>([])
   const [loginUpdatesLoading, setLoginUpdatesLoading] = useState(true)
   const [showLoginUpdates, setShowLoginUpdates] = useState(true)
@@ -263,11 +255,7 @@ export default function LoginPage({
       setStudentId(students[0]?.id ?? 1)
     }
 
-    const firstOnlineStudentId = students.find(student => student.id !== GUEST_STUDENT_ID)?.id ?? 1
-    if (!students.some(student => student.id === onlineStudentId && student.id !== GUEST_STUDENT_ID)) {
-      setOnlineStudentId(firstOnlineStudentId)
-    }
-  }, [onlineStudentId, studentId, students])
+  }, [studentId, students])
 
   useEffect(() => {
     let active = true
@@ -379,10 +367,6 @@ export default function LoginPage({
   }, [currentWeekRange.startDate])
 
   const isGuest = studentId === GUEST_STUDENT_ID
-  const onlineStudents = useMemo(
-    () => students.filter(student => student.id !== GUEST_STUDENT_ID),
-    [students],
-  )
 
   const handleLogin = async () => {
     setSubmitting(true)
@@ -422,21 +406,6 @@ export default function LoginPage({
     }
   }
 
-  const handleOnlineLogin = async () => {
-    setOnlineSubmitting(true)
-    const result = await login(onlineStudentId, onlinePw)
-    setOnlineSubmitting(false)
-
-    if (result.ok) {
-      setOnlineError('')
-      setOnlinePw('')
-      setOnlineOpen(false)
-      onOnline()
-      return
-    }
-
-    setOnlineError(result.message)
-  }
 
   return (
     <div className="page-shell page-shell-dashboard flex min-h-screen items-start justify-center py-4 sm:py-6 lg:items-center">
@@ -643,7 +612,7 @@ export default function LoginPage({
                 {submitting ? 'ログイン中...' : isGuest ? 'ゲストで始める' : 'ログイン'}
               </button>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <button
                   onClick={() => {
                     setRegisterOpen(prev => !prev)
@@ -653,19 +622,6 @@ export default function LoginPage({
                   className="btn-ghost w-full"
                 >
                   新規登録
-                </button>
-
-                <button
-                  onClick={() => {
-                    setOnlineStudentId(studentId === GUEST_STUDENT_ID ? onlineStudents[0]?.id ?? 1 : studentId)
-                    setOnlinePw('')
-                    setOnlineError('')
-                    setOnlineStudentSearch('')
-                    setOnlineOpen(true)
-                  }}
-                  className="btn-ghost w-full"
-                >
-                  オンライン
                 </button>
 
                 <button
@@ -747,71 +703,6 @@ export default function LoginPage({
                 </div>
               )}
 
-              {onlineOpen && (
-                <div className="mt-5 rounded-[28px] border border-sky-300/16 bg-slate-950/45 p-4 sm:p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-semibold tracking-[0.18em] uppercase text-sky-200">Online Lab</div>
-                      <div className="mt-2 font-display text-2xl text-white">オンライン入室</div>
-                    </div>
-                    <button
-                      onClick={() => setOnlineOpen(false)}
-                      className="btn-ghost !px-4 !py-2"
-                    >
-                      閉じる
-                    </button>
-                  </div>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">毎回 ID / PW で入室します。</p>
-
-                  <div className="mt-4">
-                    <StudentPicker
-                      title="Online ID"
-                      subtitle="オンライン参加する生徒を選択"
-                      students={onlineStudents}
-                      selectedId={onlineStudentId}
-                      onSelect={nextStudentId => {
-                        setOnlineStudentId(nextStudentId)
-                        setOnlineError('')
-                        setOnlinePw('')
-                      }}
-                      searchValue={onlineStudentSearch}
-                      onSearchChange={setOnlineStudentSearch}
-                      compact
-                    />
-                  </div>
-
-                  <div className="mt-4">
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Password</div>
-                    <input
-                      type="password"
-                      value={onlinePw}
-                      onChange={event => setOnlinePw(event.target.value)}
-                      onKeyDown={event => {
-                        if (event.key === 'Enter') {
-                          void handleOnlineLogin()
-                        }
-                      }}
-                      placeholder="Password"
-                      className="input-surface text-center text-xl tracking-[0.22em]"
-                    />
-                    {onlineError && <p className="mt-3 text-center text-sm text-red-400">{onlineError}</p>}
-                  </div>
-
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <button
-                      onClick={() => void handleOnlineLogin()}
-                      className="btn-primary w-full"
-                      disabled={onlineSubmitting || !onlinePw.trim()}
-                      style={{ opacity: onlineSubmitting || !onlinePw.trim() ? 0.7 : 1 }}
-                    >
-                      {onlineSubmitting ? '入室中...' : 'オンラインへ入る'}
-                    </button>
-                    <button onClick={() => setOnlineOpen(false)} className="btn-secondary w-full">
-                      キャンセル
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

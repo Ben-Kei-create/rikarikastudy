@@ -91,6 +91,26 @@ export async function clearOnlineLabRoom(controllerStudentId: number | null, con
   })
 }
 
+export async function fetchOnlineLabEntryPassword(): Promise<string> {
+  if (onlineLabRoomTableAvailable === false) return ''
+
+  const { data, error } = await supabase
+    .from('online_lab_rooms')
+    .select('entry_password')
+    .eq('room_key', ONLINE_LAB_ROOM_KEY)
+    .maybeSingle()
+
+  if (handleOnlineLabRoomError(error)) return ''
+  if (error) return ''
+
+  markOnlineLabRoomSupported()
+  return (data as { entry_password?: string } | null)?.entry_password ?? ''
+}
+
+export async function updateOnlineLabEntryPassword(password: string): Promise<boolean> {
+  return upsertOnlineLabRoom({ entry_password: password })
+}
+
 export function subscribeOnlineLabRoom(onChange: (room: OnlineLabRoomRow | null) => void) {
   const channel = supabase
     .channel(`online-lab-room-${ONLINE_LAB_ROOM_KEY}`)

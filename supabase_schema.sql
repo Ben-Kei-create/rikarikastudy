@@ -186,9 +186,12 @@ CREATE TABLE IF NOT EXISTS online_lab_rooms (
   feedback_json JSONB DEFAULT NULL,
   memo_text TEXT NOT NULL DEFAULT '',
   whiteboard_strokes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  entry_password TEXT NOT NULL DEFAULT '',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE online_lab_rooms ADD COLUMN IF NOT EXISTS entry_password TEXT NOT NULL DEFAULT '';
 
 INSERT INTO online_lab_rooms (room_key, is_live)
 VALUES ('main', FALSE)

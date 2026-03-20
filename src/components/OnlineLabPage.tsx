@@ -28,6 +28,8 @@ import {
 import {
   clearOnlineLabRoom,
   fetchOnlineLabRoom,
+  fetchOnlineLabEntryPassword,
+  updateOnlineLabEntryPassword,
   isOnlineLabRoomLive,
   ONLINE_LAB_STALE_MS,
   OnlineLabRoomRow,
@@ -255,6 +257,8 @@ export default function OnlineLabPage({ onBack }: { onBack: () => void }) {
   const [strokes, setStrokes] = useState<WhiteboardStroke[]>([])
   const [tool, setTool] = useState<WhiteboardTool>('none')
   const [visualClock, setVisualClock] = useState(0)
+  const [entryPassword, setEntryPassword] = useState('')
+  const [entryPasswordSaved, setEntryPasswordSaved] = useState(false)
   const baseCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const whiteboardCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawingStrokeRef = useRef<WhiteboardStroke | null>(null)
@@ -305,6 +309,11 @@ export default function OnlineLabPage({ onBack }: { onBack: () => void }) {
     }
 
     void loadRoom()
+    if (isController) {
+      fetchOnlineLabEntryPassword().then(pw => {
+        if (active) setEntryPassword(pw)
+      })
+    }
     const unsubscribe = subscribeOnlineLabRoom(nextRoom => {
       if (active) setRoom(nextRoom)
     })
@@ -1040,12 +1049,52 @@ export default function OnlineLabPage({ onBack }: { onBack: () => void }) {
                 </div>
               </div>
               <p className="mt-4 text-sm leading-7 text-slate-300">{SCIENCE_WORKBENCH_MODE_META[selectedMode].description}</p>
-              <div className="mt-6 grid gap-3">
-                <button onClick={() => void startBroadcast(selectedMode)} className="btn-primary w-full">
+
+              <div className="mt-5 rounded-[20px] border border-sky-300/16 bg-sky-300/5 p-4">
+                <div className="text-xs font-semibold tracking-[0.18em] text-sky-200 uppercase">Entry Password</div>
+                <p className="mt-1 text-[11px] text-slate-400">生徒が入室に使う5文字の合言葉</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="text"
+                    maxLength={5}
+                    value={entryPassword}
+                    onChange={event => {
+                      setEntryPassword(event.target.value.toUpperCase().slice(0, 5))
+                      setEntryPasswordSaved(false)
+                    }}
+                    placeholder="ABCDE"
+                    className="input-surface text-center font-display text-lg tracking-[0.3em] uppercase"
+                    style={{ flex: 1, maxWidth: '180px' }}
+                  />
+                  <button
+                    className="btn-secondary text-sm !px-3 !py-2"
+                    disabled={entryPassword.length !== 5}
+                    style={{ opacity: entryPassword.length !== 5 ? 0.5 : 1 }}
+                    onClick={() => {
+                      void updateOnlineLabEntryPassword(entryPassword).then(ok => {
+                        if (ok) setEntryPasswordSaved(true)
+                      })
+                    }}
+                  >
+                    {entryPasswordSaved ? '保存済み' : '保存'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                <button
+                  onClick={() => void startBroadcast(selectedMode)}
+                  className="btn-primary w-full"
+                  disabled={entryPassword.length !== 5}
+                  style={{ opacity: entryPassword.length !== 5 ? 0.6 : 1 }}
+                >
                   このラボを配信開始
                 </button>
+                {entryPassword.length !== 5 && (
+                  <p className="text-center text-xs text-amber-300">配信開始には5文字の合言葉を設定してください</p>
+                )}
                 <div className="rounded-[20px] border border-white/10 bg-slate-950/30 p-4 text-sm leading-7 text-slate-300">
-                  生徒がログイン画面の <span className="font-semibold text-white">オンライン</span> から入ると、この配信を閲覧モードで確認できます。
+                  生徒はマイページの <span className="font-semibold text-white">オンライン</span> ボタンから合言葉を入力して入室できます。
                 </div>
               </div>
             </div>

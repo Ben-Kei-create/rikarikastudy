@@ -36,6 +36,7 @@ export default function HomePage({
   onReview,
   onTimeAttack,
   onMyPage,
+  onOnline,
 }: {
   onSelectField: (field: string) => void
   onQuickStartAll: () => void
@@ -43,6 +44,7 @@ export default function HomePage({
   onReview: () => void
   onTimeAttack: () => void
   onMyPage: () => void
+  onOnline: () => void
 }) {
   const { nickname, studentId, logout, pendingLoginCardReward, dismissLoginCardReward } = useAuth()
   const isGuest = isGuestStudentId(studentId)
@@ -286,9 +288,24 @@ export default function HomePage({
             )}
           </div>
           <div className="grid grid-cols-1 gap-2 sm:gap-3 md:max-w-sm md:ml-auto">
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button onClick={onMyPage} className="btn-secondary w-full !py-2.5 text-sm sm:!py-3">
                 マイページ
+              </button>
+              <button
+                onClick={onOnline}
+                className="w-full !py-2.5 text-sm sm:!py-3"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(99, 102, 241, 0.15))',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  borderRadius: '16px',
+                  color: '#7dd3fc',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                オンライン
               </button>
               <button onClick={() => logout()} className="btn-ghost whitespace-nowrap !py-2.5 text-sm sm:!py-3">
                 ログアウト

@@ -136,9 +136,11 @@ const HISTORY_SESSION_LIMIT = 10
 export default function MyPage({
   onBack,
   onStartDrill,
+  onOnline,
 }: {
   onBack: () => void
   onStartDrill: (field: string, unit: string) => void
+  onOnline: () => void
 }) {
   const { studentId, nickname, updateProfile, logout } = useAuth()
   const { theme, setTheme, ready: themeReady } = useTheme()
@@ -641,12 +643,29 @@ export default function MyPage({
           <button onClick={onBack} className="btn-secondary text-sm !px-3 !py-1.5 sm:!px-4 sm:!py-2.5">
             もどる
           </button>
-          <button
-            onClick={() => logout()}
-            className="btn-ghost text-sm !px-3 !py-1.5 sm:!px-4 sm:!py-2.5"
-          >
-            ログアウト
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOnline}
+              className="text-sm !px-3 !py-1.5 sm:!px-4 sm:!py-2.5"
+              style={{
+                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.18))',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                borderRadius: '16px',
+                color: '#7dd3fc',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              オンライン
+            </button>
+            <button
+              onClick={() => logout()}
+              className="btn-ghost text-sm !px-3 !py-1.5 sm:!px-4 sm:!py-2.5"
+            >
+              ログアウト
+            </button>
+          </div>
         </div>
         <div className="hero-card science-surface px-3 py-3 sm:px-5 sm:py-5 lg:px-6">
           <ScienceBackdrop />
