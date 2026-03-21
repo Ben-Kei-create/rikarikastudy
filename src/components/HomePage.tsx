@@ -35,14 +35,18 @@ export default function HomePage({
   onDailyChallenge,
   onReview,
   onTimeAttack,
+  onTerritoryQuiz,
   onMyPage,
+  onOnline,
 }: {
   onSelectField: (field: string) => void
   onQuickStartAll: () => void
   onDailyChallenge: () => void
   onReview: () => void
   onTimeAttack: () => void
+  onTerritoryQuiz: () => void
   onMyPage: () => void
+  onOnline: () => void
 }) {
   const { nickname, studentId, logout, pendingLoginCardReward, dismissLoginCardReward } = useAuth()
   const isGuest = isGuestStudentId(studentId)
@@ -218,8 +222,8 @@ export default function HomePage({
         </div>
       )}
 
-      {/* Quick Start + Challenge Mode CTAs */}
-      <div className="grid grid-cols-2 gap-3 mb-4 sm:gap-3 sm:mb-5 anim-fade-up">
+      {/* Quick Start + Challenge Mode + Territory Quiz CTAs */}
+      <div className="grid grid-cols-3 gap-3 mb-4 sm:gap-3 sm:mb-5 anim-fade-up">
         <button
           onClick={onQuickStartAll}
           className="quick-start-cta card text-left"
@@ -264,6 +268,26 @@ export default function HomePage({
           <div className={`text-[10px] font-semibold tracking-[0.18em] uppercase ${timeAttackUnlocked ? 'text-sky-200' : 'text-slate-500'}`}>Challenge</div>
           <div className={`mt-1.5 font-display text-[1.1rem] sm:text-[1.35rem] ${timeAttackUnlocked ? 'text-white' : 'text-slate-400'}`}>30秒</div>
         </button>
+
+        <button
+          onClick={onTerritoryQuiz}
+          className="card text-left transition-all"
+          style={{
+            padding: '16px 14px',
+            cursor: 'pointer',
+            borderColor: 'rgba(251, 191, 36, 0.25)',
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(59, 130, 246, 0.12), var(--card-gradient-base-mid))',
+          }}
+          onMouseEnter={event => {
+            event.currentTarget.style.transform = 'translateY(-2px)'
+          }}
+          onMouseLeave={event => {
+            event.currentTarget.style.transform = ''
+          }}
+        >
+          <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase">Strategy</div>
+          <div className="mt-1.5 font-display text-[1.1rem] text-white sm:text-[1.35rem]">陣取り</div>
+        </button>
       </div>
 
       <div className="hero-card science-surface mb-3 p-3 sm:mb-6 sm:p-5 md:p-6 lg:p-8 anim-fade-up" style={{ animationDelay: '0.06s' }}>
@@ -286,9 +310,24 @@ export default function HomePage({
             )}
           </div>
           <div className="grid grid-cols-1 gap-2 sm:gap-3 md:max-w-sm md:ml-auto">
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button onClick={onMyPage} className="btn-secondary w-full !py-2.5 text-sm sm:!py-3">
                 マイページ
+              </button>
+              <button
+                onClick={onOnline}
+                className="w-full !py-2.5 text-sm sm:!py-3"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(99, 102, 241, 0.15))',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  borderRadius: '16px',
+                  color: '#7dd3fc',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                オンライン
               </button>
               <button onClick={() => logout()} className="btn-ghost whitespace-nowrap !py-2.5 text-sm sm:!py-3">
                 ログアウト

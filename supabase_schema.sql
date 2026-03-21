@@ -88,6 +88,8 @@ ALTER TABLE questions ADD COLUMN IF NOT EXISTS created_by_student_id INTEGER REF
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_display_width INTEGER;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_display_height INTEGER;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS column_title TEXT DEFAULT NULL;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS column_body TEXT DEFAULT NULL;
 ALTER TABLE questions DROP CONSTRAINT IF EXISTS questions_type_check;
 ALTER TABLE questions ADD CONSTRAINT questions_type_check
   CHECK (type IN ('choice', 'choice4', 'true_false', 'fill_choice', 'match', 'sort', 'multi_select', 'word_bank', 'text'));
@@ -184,9 +186,12 @@ CREATE TABLE IF NOT EXISTS online_lab_rooms (
   feedback_json JSONB DEFAULT NULL,
   memo_text TEXT NOT NULL DEFAULT '',
   whiteboard_strokes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  entry_password TEXT NOT NULL DEFAULT '',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE online_lab_rooms ADD COLUMN IF NOT EXISTS entry_password TEXT NOT NULL DEFAULT '';
 
 INSERT INTO online_lab_rooms (room_key, is_live)
 VALUES ('main', FALSE)
@@ -309,6 +314,34 @@ AFTER INSERT ON login_updates
 FOR EACH STATEMENT
 EXECUTE FUNCTION trim_login_updates();
 
+-- 管理者メッセージ / 要望掲示板
+CREATE TABLE IF NOT EXISTS admin_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  student_nickname TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'reviewing', 'resolved')),
+  category TEXT NOT NULL DEFAULT 'other' CHECK (category IN ('request', 'update', 'other')),
+  message TEXT NOT NULL DEFAULT '',
+  admin_note TEXT NOT NULL DEFAULT '',
+  admin_reply TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  replied_at TIMESTAMPTZ DEFAULT NULL,
+  resolved_at TIMESTAMPTZ DEFAULT NULL
+);
+
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS student_id INTEGER REFERENCES students(id) ON DELETE CASCADE;
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS student_nickname TEXT;
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'open';
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'other';
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS message TEXT NOT NULL DEFAULT '';
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS admin_note TEXT NOT NULL DEFAULT '';
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS admin_reply TEXT NOT NULL DEFAULT '';
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE admin_messages ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ DEFAULT NULL;
+
 -- 周期表カード所持テーブル
 CREATE TABLE IF NOT EXISTS student_element_cards (
   student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
@@ -364,6 +397,9 @@ CREATE INDEX IF NOT EXISTS idx_question_inquiries_created_at ON question_inquiri
 CREATE UNIQUE INDEX IF NOT EXISTS idx_science_glossary_field_term ON science_glossary_entries(field, term);
 CREATE INDEX IF NOT EXISTS idx_science_glossary_reading ON science_glossary_entries(reading);
 CREATE INDEX IF NOT EXISTS idx_login_updates_created_at ON login_updates(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_messages_student ON admin_messages(student_id);
+CREATE INDEX IF NOT EXISTS idx_admin_messages_status ON admin_messages(status);
+CREATE INDEX IF NOT EXISTS idx_admin_messages_created_at ON admin_messages(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_student_element_cards_student ON student_element_cards(student_id);
 CREATE INDEX IF NOT EXISTS idx_element_card_rewards_student ON element_card_rewards(student_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_element_card_rewards_daily_login
@@ -382,6 +418,7 @@ ALTER TABLE chat_guard_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE question_inquiries DISABLE ROW LEVEL SECURITY;
 ALTER TABLE science_glossary_entries DISABLE ROW LEVEL SECURITY;
 ALTER TABLE login_updates DISABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_messages DISABLE ROW LEVEL SECURITY;
 ALTER TABLE student_element_cards DISABLE ROW LEVEL SECURITY;
 ALTER TABLE element_card_rewards DISABLE ROW LEVEL SECURITY;
 

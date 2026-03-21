@@ -14,11 +14,13 @@ import EarthSciencePracticePage from '@/components/EarthSciencePracticePage'
 import ScienceWorkbenchPage from '@/components/ScienceWorkbenchPage'
 import TimeAttackPage from '@/components/TimeAttackPage'
 import OnlineLabPage from '@/components/OnlineLabPage'
+import OnlineGatePage from '@/components/OnlineGatePage'
 import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
 import { ScienceWorkbenchMode, SCIENCE_WORKBENCH_MODE_META } from '@/lib/scienceWorkbench'
 import ScienceChatPage from '@/components/ScienceChatPage'
+import TerritoryQuizPage from '@/components/TerritoryQuizPage'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { CustomQuizOptions } from '@/lib/customQuiz'
 import { QuizQuestionCount } from '@/lib/questionPicker'
@@ -27,6 +29,8 @@ type Screen =
   | 'home'
   | 'mypage'
   | 'time-attack'
+  | 'territory-quiz'
+  | 'online-gate'
   | 'online-lab'
   | { type: 'unit'; field: string }
   | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; reviewMode?: boolean; customOptions?: CustomQuizOptions; questionCount?: QuizQuestionCount }
@@ -60,19 +64,25 @@ function App() {
     )
   }
 
+  const ADMIN_STUDENT_ID = 5
   const screenType = typeof screen === 'object' ? screen.type : screen
   const goHome = () => setScreen('home')
+  const goOnline = () => setScreen(studentId === ADMIN_STUDENT_ID ? 'online-lab' : 'online-gate')
 
   const renderScreen = (): JSX.Element => {
     if (!studentId) {
-      return <LoginPage onDone={goHome} onOnline={() => setScreen('online-lab')} onAdmin={() => setAdminOpen(true)} />
+      return <LoginPage onDone={goHome} onAdmin={() => setAdminOpen(true)} />
     }
 
     switch (screenType) {
       case 'mypage':
-        return <MyPage onBack={goHome} onStartDrill={(field, unit) => setScreen({ type: 'quiz', field, unit, isDrill: true })} />
+        return <MyPage onBack={goHome} onStartDrill={(field, unit) => setScreen({ type: 'quiz', field, unit, isDrill: true })} onOnline={goOnline} />
       case 'time-attack':
         return <TimeAttackPage onBack={goHome} />
+      case 'territory-quiz':
+        return <TerritoryQuizPage onBack={goHome} />
+      case 'online-gate':
+        return <OnlineGatePage onBack={goHome} onEnter={() => setScreen('online-lab')} />
       case 'online-lab':
         return <OnlineLabPage onBack={goHome} />
       case 'unit': {
@@ -140,7 +150,9 @@ function App() {
             onDailyChallenge={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', quickStartDaily: true, dailyChallenge: true })}
             onReview={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', reviewMode: true })}
             onTimeAttack={() => setScreen('time-attack')}
+            onTerritoryQuiz={() => setScreen('territory-quiz')}
             onMyPage={() => setScreen('mypage')}
+            onOnline={goOnline}
           />
         )
     }

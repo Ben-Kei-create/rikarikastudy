@@ -292,6 +292,7 @@ export type Database = {
           feedback_json: Json | null
           memo_text: string
           whiteboard_strokes: Json
+          entry_password: string
           updated_at: string
           created_at: string
         }
@@ -309,6 +310,7 @@ export type Database = {
           feedback_json?: Json | null
           memo_text?: string
           whiteboard_strokes?: Json
+          entry_password?: string
           updated_at?: string
         }
         Update: {
@@ -324,6 +326,7 @@ export type Database = {
           feedback_json?: Json | null
           memo_text?: string
           whiteboard_strokes?: Json
+          entry_password?: string
           updated_at?: string
         }
       }
