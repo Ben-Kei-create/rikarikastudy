@@ -20,6 +20,7 @@ import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
 import { ScienceWorkbenchMode, SCIENCE_WORKBENCH_MODE_META } from '@/lib/scienceWorkbench'
 import ScienceChatPage from '@/components/ScienceChatPage'
+import TerritoryQuizPage from '@/components/TerritoryQuizPage'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { CustomQuizOptions } from '@/lib/customQuiz'
 import { QuizQuestionCount } from '@/lib/questionPicker'
@@ -28,6 +29,7 @@ type Screen =
   | 'home'
   | 'mypage'
   | 'time-attack'
+  | 'territory-quiz'
   | 'online-gate'
   | 'online-lab'
   | { type: 'unit'; field: string }
@@ -77,6 +79,8 @@ function App() {
         return <MyPage onBack={goHome} onStartDrill={(field, unit) => setScreen({ type: 'quiz', field, unit, isDrill: true })} onOnline={goOnline} />
       case 'time-attack':
         return <TimeAttackPage onBack={goHome} />
+      case 'territory-quiz':
+        return <TerritoryQuizPage onBack={goHome} />
       case 'online-gate':
         return <OnlineGatePage onBack={goHome} onEnter={() => setScreen('online-lab')} />
       case 'online-lab':
@@ -146,6 +150,7 @@ function App() {
             onDailyChallenge={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', quickStartDaily: true, dailyChallenge: true })}
             onReview={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', reviewMode: true })}
             onTimeAttack={() => setScreen('time-attack')}
+            onTerritoryQuiz={() => setScreen('territory-quiz')}
             onMyPage={() => setScreen('mypage')}
             onOnline={goOnline}
           />

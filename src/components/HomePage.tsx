@@ -35,6 +35,7 @@ export default function HomePage({
   onDailyChallenge,
   onReview,
   onTimeAttack,
+  onTerritoryQuiz,
   onMyPage,
   onOnline,
 }: {
@@ -43,6 +44,7 @@ export default function HomePage({
   onDailyChallenge: () => void
   onReview: () => void
   onTimeAttack: () => void
+  onTerritoryQuiz: () => void
   onMyPage: () => void
   onOnline: () => void
 }) {
@@ -220,8 +222,8 @@ export default function HomePage({
         </div>
       )}
 
-      {/* Quick Start + Challenge Mode CTAs */}
-      <div className="grid grid-cols-2 gap-3 mb-4 sm:gap-3 sm:mb-5 anim-fade-up">
+      {/* Quick Start + Challenge Mode + Territory Quiz CTAs */}
+      <div className="grid grid-cols-3 gap-3 mb-4 sm:gap-3 sm:mb-5 anim-fade-up">
         <button
           onClick={onQuickStartAll}
           className="quick-start-cta card text-left"
@@ -265,6 +267,26 @@ export default function HomePage({
         >
           <div className={`text-[10px] font-semibold tracking-[0.18em] uppercase ${timeAttackUnlocked ? 'text-sky-200' : 'text-slate-500'}`}>Challenge</div>
           <div className={`mt-1.5 font-display text-[1.1rem] sm:text-[1.35rem] ${timeAttackUnlocked ? 'text-white' : 'text-slate-400'}`}>30秒</div>
+        </button>
+
+        <button
+          onClick={onTerritoryQuiz}
+          className="card text-left transition-all"
+          style={{
+            padding: '16px 14px',
+            cursor: 'pointer',
+            borderColor: 'rgba(251, 191, 36, 0.25)',
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(59, 130, 246, 0.12), var(--card-gradient-base-mid))',
+          }}
+          onMouseEnter={event => {
+            event.currentTarget.style.transform = 'translateY(-2px)'
+          }}
+          onMouseLeave={event => {
+            event.currentTarget.style.transform = ''
+          }}
+        >
+          <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase">Strategy</div>
+          <div className="mt-1.5 font-display text-[1.1rem] text-white sm:text-[1.35rem]">陣取り</div>
         </button>
       </div>
 
