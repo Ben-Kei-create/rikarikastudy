@@ -85,3 +85,38 @@ ALTER TABLE admin_messages DISABLE ROW LEVEL SECURITY;
 -- ----------------------------------------
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS column_title TEXT DEFAULT NULL;
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS column_body TEXT DEFAULT NULL;
+
+-- ----------------------------------------
+-- 4. online_territory_rooms（オンライン陣取り対戦）
+-- ----------------------------------------
+CREATE TABLE IF NOT EXISTS online_territory_rooms (
+  room_key TEXT PRIMARY KEY,
+  player_student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  player_nickname TEXT,
+  cpu_student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  cpu_nickname TEXT,
+  current_turn TEXT NOT NULL DEFAULT 'player' CHECK (current_turn IN ('player', 'cpu')),
+  status TEXT NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'playing', 'finished')),
+  winner TEXT DEFAULT NULL CHECK (winner IS NULL OR winner IN ('player', 'cpu', 'draw')),
+  board_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+  last_move_json JSONB DEFAULT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO online_territory_rooms (room_key)
+VALUES ('main')
+ON CONFLICT (room_key) DO NOTHING;
+
+CREATE INDEX IF NOT EXISTS idx_online_territory_rooms_updated_at ON online_territory_rooms(updated_at DESC);
+
+ALTER TABLE online_territory_rooms DISABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE online_territory_rooms;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+  WHEN undefined_object THEN NULL;
+END
+$$;

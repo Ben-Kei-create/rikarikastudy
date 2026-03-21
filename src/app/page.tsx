@@ -15,6 +15,7 @@ import ScienceWorkbenchPage from '@/components/ScienceWorkbenchPage'
 import TimeAttackPage from '@/components/TimeAttackPage'
 import OnlineLabPage from '@/components/OnlineLabPage'
 import OnlineGatePage from '@/components/OnlineGatePage'
+import OnlineTerritoryPage from '@/components/OnlineTerritoryPage'
 import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
@@ -31,6 +32,7 @@ type Screen =
   | 'time-attack'
   | 'territory-quiz'
   | 'online-gate'
+  | 'online-territory'
   | 'online-lab'
   | { type: 'unit'; field: string }
   | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; reviewMode?: boolean; customOptions?: CustomQuizOptions; questionCount?: QuizQuestionCount }
@@ -67,7 +69,7 @@ function App() {
   const ADMIN_STUDENT_ID = 5
   const screenType = typeof screen === 'object' ? screen.type : screen
   const goHome = () => setScreen('home')
-  const goOnline = () => setScreen(studentId === ADMIN_STUDENT_ID ? 'online-lab' : 'online-gate')
+  const goOnline = () => setScreen(studentId === ADMIN_STUDENT_ID ? 'online-territory' : 'online-gate')
 
   const renderScreen = (): JSX.Element => {
     if (!studentId) {
@@ -82,9 +84,11 @@ function App() {
       case 'territory-quiz':
         return <TerritoryQuizPage onBack={goHome} />
       case 'online-gate':
-        return <OnlineGatePage onBack={goHome} onEnter={() => setScreen('online-lab')} />
+        return <OnlineGatePage onBack={goHome} onEnter={() => setScreen('online-territory')} />
+      case 'online-territory':
+        return <OnlineTerritoryPage onBack={goHome} onOpenLab={() => setScreen('online-lab')} />
       case 'online-lab':
-        return <OnlineLabPage onBack={goHome} />
+        return <OnlineLabPage onBack={goHome} onOpenTerritory={() => setScreen('online-territory')} />
       case 'unit': {
         const s = screen as Extract<Screen, { type: 'unit' }>
         return (

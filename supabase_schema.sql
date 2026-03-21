@@ -197,6 +197,26 @@ INSERT INTO online_lab_rooms (room_key, is_live)
 VALUES ('main', FALSE)
 ON CONFLICT (room_key) DO NOTHING;
 
+-- オンライン陣取りゲーム共有ルーム
+CREATE TABLE IF NOT EXISTS online_territory_rooms (
+  room_key TEXT PRIMARY KEY,
+  player_student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  player_nickname TEXT,
+  cpu_student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  cpu_nickname TEXT,
+  current_turn TEXT NOT NULL DEFAULT 'player' CHECK (current_turn IN ('player', 'cpu')),
+  status TEXT NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'playing', 'finished')),
+  winner TEXT DEFAULT NULL CHECK (winner IS NULL OR winner IN ('player', 'cpu', 'draw')),
+  board_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+  last_move_json JSONB DEFAULT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO online_territory_rooms (room_key)
+VALUES ('main')
+ON CONFLICT (room_key) DO NOTHING;
+
 -- チャット警告ログ
 CREATE TABLE IF NOT EXISTS chat_guard_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -389,6 +409,7 @@ CREATE INDEX IF NOT EXISTS idx_questions_created_by_student ON questions(created
 CREATE INDEX IF NOT EXISTS idx_active_sessions_student ON active_sessions(student_id);
 CREATE INDEX IF NOT EXISTS idx_active_sessions_last_seen ON active_sessions(last_seen_at);
 CREATE INDEX IF NOT EXISTS idx_online_lab_rooms_updated_at ON online_lab_rooms(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_online_territory_rooms_updated_at ON online_territory_rooms(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_student ON chat_guard_logs(student_id);
 CREATE INDEX IF NOT EXISTS idx_chat_guard_logs_created_at ON chat_guard_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_question_inquiries_student ON question_inquiries(student_id);
@@ -414,6 +435,7 @@ ALTER TABLE answer_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE active_recall_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE active_sessions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE online_lab_rooms DISABLE ROW LEVEL SECURITY;
+ALTER TABLE online_territory_rooms DISABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_guard_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE question_inquiries DISABLE ROW LEVEL SECURITY;
 ALTER TABLE science_glossary_entries DISABLE ROW LEVEL SECURITY;
@@ -425,6 +447,15 @@ ALTER TABLE element_card_rewards DISABLE ROW LEVEL SECURITY;
 DO $$
 BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE online_lab_rooms;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+  WHEN undefined_object THEN NULL;
+END
+$$;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE online_territory_rooms;
 EXCEPTION
   WHEN duplicate_object THEN NULL;
   WHEN undefined_object THEN NULL;

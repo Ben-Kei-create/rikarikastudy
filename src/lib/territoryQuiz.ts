@@ -14,6 +14,25 @@ export function createEmptyBoard(): TerritoryBoard {
   )
 }
 
+export function parseTerritoryBoard(value: unknown): TerritoryBoard {
+  if (!Array.isArray(value) || value.length !== BOARD_SIZE) {
+    return createEmptyBoard()
+  }
+
+  const board = value.map(row => {
+    if (!Array.isArray(row) || row.length !== BOARD_SIZE) return null
+    return row.map(cell => (
+      cell === 'player' || cell === 'cpu' ? cell : null
+    ))
+  })
+
+  return board.some(row => row === null) ? createEmptyBoard() : board as TerritoryBoard
+}
+
+export function getOpponentOwner(owner: Exclude<CellOwner, null>): Exclude<CellOwner, null> {
+  return owner === 'player' ? 'cpu' : 'player'
+}
+
 // 8方向
 const DIRECTIONS = [
   [-1, -1], [-1, 0], [-1, 1],

@@ -74,3 +74,7 @@ Original prompt: 地学特有のミニゲームを追加。これは地学の岩
 - 2026-03-13: `QuizPage.tsx` の結果画面に「間違えた問題を確認」を追加。誤答一覧から問題を開いて、自分の答え・正解・解説を見られるようにし、そのまま `間違えた問題だけ再チャレンジ` で再出題できるようにした。daily challenge からの再挑戦は通常の再挑戦扱いに切り替え、`npm run build` 成功。
 - 2026-03-13: Phase 7 として `src/lib/constants.ts` を追加し、`FIELD_COLORS / FIELD_EMOJI / FIELDS` を共通化。`HomePage.tsx`、`QuizPage.tsx`、`MyPage.tsx`、`UnitSelectPage.tsx` に加えて管理画面側の色定義も shared constants を使うように整理し、物理の色を `#4da2ff` に統一した。
 - 2026-03-13: `HomePage.tsx`、`auth.tsx`、`guestStudy.ts` の空 catch を `console.warn` 付きに変更。`MyPage.tsx` では `answer_logs` のレスポンス型を `AnswerLogQueryRow` と `normalizeAnswerLogs` で正しく扱うようにし、不要な `any` cast を削除した。`npm run build` 成功。
+- 2026-03-21: `Home -> 陣取り` は既存の CPU 戦 `TerritoryQuizPage`、`オンライン -> 入室` は新規の `OnlineTerritoryPage` へ分岐する構成を追加。`app/page.tsx`、`OnlineLabPage.tsx`、`onlineTerritory.ts`、`territoryQuiz.ts`、`supabase_schema.sql`、`sql_editor_missing_tables.sql` を更新し、`online_territory_rooms` を使う共有ルームを追加した。
+- 2026-03-21: `online_territory_rooms` 作成後の実ブラウザ確認で、管理者 ID 5 は `オンライン` から直接オンライン陣取りに入り、通常ユーザー ID 1 は `オンラインの広場 -> 合言葉 ABCDE -> オンライン陣取り` で 2 人目として参加できることを確認。ルーム行も `player_student_id=5 / cpu_student_id=1 / status=playing` まで更新された。
+- 2026-03-21: オンライン陣取りの `ログアウト` / `ホームへ` で席を解放するよう修正。実ブラウザ + Supabase REST 確認で、退出後に `cpu_student_id` が `null` に戻ることを確認した。
+- 2026-03-21: ゲスト ID 100 は `students` 外部キーへ入れずオンライン対戦に参加できなかったため、`OnlineGatePage.tsx` と `OnlineTerritoryPage.tsx` にゲスト向けガードを追加。ゲストには「通常ユーザーでログインして利用」と案内し、外部キーエラーで止まらないようにした。`npm run build` 成功。

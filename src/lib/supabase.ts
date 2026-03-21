@@ -330,6 +330,47 @@ export type Database = {
           updated_at?: string
         }
       }
+      online_territory_rooms: {
+        Row: {
+          room_key: string
+          player_student_id: number | null
+          player_nickname: string | null
+          cpu_student_id: number | null
+          cpu_nickname: string | null
+          current_turn: 'player' | 'cpu'
+          status: 'waiting' | 'playing' | 'finished'
+          winner: 'player' | 'cpu' | 'draw' | null
+          board_json: Json
+          last_move_json: Json | null
+          updated_at: string
+          created_at: string
+        }
+        Insert: {
+          room_key?: string
+          player_student_id?: number | null
+          player_nickname?: string | null
+          cpu_student_id?: number | null
+          cpu_nickname?: string | null
+          current_turn?: 'player' | 'cpu'
+          status?: 'waiting' | 'playing' | 'finished'
+          winner?: 'player' | 'cpu' | 'draw' | null
+          board_json?: Json
+          last_move_json?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          player_student_id?: number | null
+          player_nickname?: string | null
+          cpu_student_id?: number | null
+          cpu_nickname?: string | null
+          current_turn?: 'player' | 'cpu'
+          status?: 'waiting' | 'playing' | 'finished'
+          winner?: 'player' | 'cpu' | 'draw' | null
+          board_json?: Json
+          last_move_json?: Json | null
+          updated_at?: string
+        }
+      }
       chat_guard_logs: {
         Row: {
           id: string
