@@ -55,6 +55,7 @@ export default function HomePage({
   const [totalXp, setTotalXp] = useState(0)
   const [dueCount, setDueCount] = useState(0)
   const [showSrsReminder, setShowSrsReminder] = useState(false)
+  const [showExtraActions, setShowExtraActions] = useState(false)
   const [dailyStatus, setDailyStatus] = useState<DailyChallengeStatus>({ completed: false, completedAt: null })
   const [timeAttackSummary, setTimeAttackSummary] = useState<HomeTimeAttackSummary>({
     personalBest: 0,
@@ -66,6 +67,52 @@ export default function HomePage({
   const timeAttackUnlockXpLeft = Math.max(0, getXpFloorForLevel(TIME_ATTACK_UNLOCK_LEVEL) - levelInfo.totalXp)
   const nextUnlock = getNextLevelUnlock(levelInfo.level)
   const dailyCompleted = dailyStatus.completed
+  const activeFieldCount = useMemo(
+    () => CORE_FIELDS.filter(field => (stats[field]?.total ?? 0) > 0).length,
+    [stats],
+  )
+  const totalAnswered = useMemo(
+    () => Object.values(stats).reduce((sum, fieldStat) => sum + fieldStat.total, 0),
+    [stats],
+  )
+  const primaryMission = useMemo(() => {
+    if (dueCount > 0) {
+      return {
+        kind: 'review' as const,
+        eyebrow: 'Today First',
+        title: `${dueCount}問の復習を先に進めよう`,
+        description: '忘却リスクが高い問題から順に出題します。短く終わっても学習効率が高いパートです。',
+        badge: `復習 ${dueCount}問`,
+        actionLabel: '復習する',
+        icon: '🧠',
+        onClick: onReview,
+      }
+    }
+
+    if (!dailyCompleted) {
+      return {
+        kind: 'daily' as const,
+        eyebrow: 'Today Mission',
+        title: '今日の5問で学習を開始',
+        description: '苦手 → 未回答 → ランダムの順で出題します。毎日の入口を迷わず固定するためのミッションです。',
+        badge: '5問 / XP×2',
+        actionLabel: '今日の5問へ',
+        icon: '☀️',
+        onClick: onDailyChallenge,
+      }
+    }
+
+    return {
+      kind: 'quick' as const,
+      eyebrow: 'Recommended',
+      title: totalAnswered > 0 ? '4分野10問で次の学習へ' : '4分野10問でスタート',
+      description: 'その日に何をやるか迷ったら、まずは全分野を短く回してから弱点に戻る流れがおすすめです。',
+      badge: '4分野 / 10問',
+      actionLabel: 'はじめる',
+      icon: '🚀',
+      onClick: onQuickStartAll,
+    }
+  }, [dailyCompleted, dueCount, onDailyChallenge, onQuickStartAll, onReview, totalAnswered])
 
   // SRSリマインダー: dueCount が読み込まれたら表示、8秒後に自動消去
   useEffect(() => {
@@ -133,6 +180,17 @@ export default function HomePage({
     let active = true
 
     const loadBestSummary = async () => {
+      if (isGuest) {
+        const store = loadGuestStudyStore()
+        if (!active) return
+        setTimeAttackSummary({
+          personalBest: store.timeAttackBest,
+          allTimeBest: 0,
+          allTimeLeaderName: null,
+        })
+        return
+      }
+
       const summary = await loadTimeAttackBest(studentId)
       if (!active) return
       setTimeAttackSummary({
@@ -147,7 +205,7 @@ export default function HomePage({
     return () => {
       active = false
     }
-  }, [studentId])
+  }, [isGuest, studentId])
 
   useEffect(() => {
     let active = true
@@ -222,74 +280,6 @@ export default function HomePage({
         </div>
       )}
 
-      {/* Quick Start + Challenge Mode + Territory Quiz CTAs */}
-      <div className="grid grid-cols-3 gap-3 mb-4 sm:gap-3 sm:mb-5 anim-fade-up">
-        <button
-          onClick={onQuickStartAll}
-          className="quick-start-cta card text-left"
-          style={{
-            padding: '16px 14px',
-            borderColor: 'var(--color-info-soft-border)',
-            background: 'linear-gradient(135deg, var(--color-info-soft-bg), var(--color-success-soft-bg) 50%, var(--card-gradient-base))',
-            cursor: 'pointer',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-          }}
-          onMouseEnter={event => {
-            event.currentTarget.style.transform = 'translateY(-2px)'
-          }}
-          onMouseLeave={event => {
-            event.currentTarget.style.transform = ''
-          }}
-        >
-          <div className="text-[10px] font-semibold tracking-[0.18em] text-sky-200 uppercase">Quick</div>
-          <div className="mt-1.5 font-display text-[1.1rem] text-white sm:text-[1.35rem]">4分野10問</div>
-        </button>
-
-        <button
-          onClick={onTimeAttack}
-          disabled={!timeAttackUnlocked}
-          className="card text-left transition-all disabled:opacity-70"
-          style={{
-            padding: '16px 14px',
-            cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
-            borderColor: timeAttackUnlocked ? 'var(--color-accent-soft-border)' : 'var(--border-strong)',
-            background: timeAttackUnlocked
-              ? 'linear-gradient(135deg, var(--color-accent-soft-bg), var(--color-info-soft-bg), var(--card-gradient-base-mid))'
-              : 'var(--card-gradient-base-soft)',
-          }}
-          onMouseEnter={event => {
-            if (!timeAttackUnlocked) return
-            event.currentTarget.style.transform = 'translateY(-2px)'
-          }}
-          onMouseLeave={event => {
-            event.currentTarget.style.transform = ''
-          }}
-        >
-          <div className={`text-[10px] font-semibold tracking-[0.18em] uppercase ${timeAttackUnlocked ? 'text-sky-200' : 'text-slate-500'}`}>Challenge</div>
-          <div className={`mt-1.5 font-display text-[1.1rem] sm:text-[1.35rem] ${timeAttackUnlocked ? 'text-white' : 'text-slate-400'}`}>30秒</div>
-        </button>
-
-        <button
-          onClick={onTerritoryQuiz}
-          className="card text-left transition-all"
-          style={{
-            padding: '16px 14px',
-            cursor: 'pointer',
-            borderColor: 'rgba(251, 191, 36, 0.25)',
-            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(59, 130, 246, 0.12), var(--card-gradient-base-mid))',
-          }}
-          onMouseEnter={event => {
-            event.currentTarget.style.transform = 'translateY(-2px)'
-          }}
-          onMouseLeave={event => {
-            event.currentTarget.style.transform = ''
-          }}
-        >
-          <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase">Strategy</div>
-          <div className="mt-1.5 font-display text-[1.1rem] text-white sm:text-[1.35rem]">陣取り</div>
-        </button>
-      </div>
-
       <div className="hero-card science-surface mb-3 p-3 sm:mb-6 sm:p-5 md:p-6 lg:p-8 anim-fade-up" style={{ animationDelay: '0.06s' }}>
         <ScienceBackdrop />
         <div className="grid gap-3 sm:gap-4 md:gap-5 md:grid-cols-[1.15fr_0.85fr] md:items-center">
@@ -334,24 +324,170 @@ export default function HomePage({
               </button>
             </div>
 
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <div className="rounded-[18px] border px-3 py-3" style={{ borderColor: 'var(--inset-border)', background: 'var(--inset-bg)' }}>
+                <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-slate-400">Progress</div>
+                <div className="mt-1 font-display text-[1.3rem] text-white">{totalAnswered}</div>
+                <div className="text-[11px] text-slate-500">{activeFieldCount} / 4 分野で学習済み</div>
+              </div>
+              <div className="rounded-[18px] border px-3 py-3" style={{ borderColor: 'var(--inset-border)', background: 'var(--inset-bg)' }}>
+                <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-slate-400">Challenge</div>
+                <div className="mt-1 font-display text-[1.3rem] text-white">
+                  {timeAttackUnlocked ? (timeAttackSummary.personalBest > 0 ? timeAttackSummary.personalBest : '未挑戦') : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}`}
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  {timeAttackUnlocked ? 'TimeAttack 自己ベスト' : `あと ${timeAttackUnlockXpLeft} XP`}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="card mb-4 w-full text-left transition-all sm:mb-5 anim-fade-up"
+        style={{
+          padding: '16px 18px',
+          borderColor: primaryMission.kind === 'review'
+            ? 'rgba(139, 92, 246, 0.28)'
+            : primaryMission.kind === 'daily'
+              ? 'var(--color-warning-soft-border)'
+              : 'var(--color-info-soft-border)',
+          background: primaryMission.kind === 'review'
+            ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(59, 130, 246, 0.06), var(--card-gradient-base-mid))'
+            : primaryMission.kind === 'daily'
+              ? 'linear-gradient(135deg, var(--color-warning-soft-bg), rgba(245, 158, 11, 0.08), var(--card-gradient-base-mid))'
+              : 'linear-gradient(135deg, var(--color-info-soft-bg), var(--color-success-soft-bg), var(--card-gradient-base-mid))',
+          animationDelay: '0.12s',
+        }}
+      >
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 max-w-2xl">
+            <div
+              className={`text-[11px] font-semibold tracking-[0.18em] uppercase ${
+                primaryMission.kind === 'review'
+                  ? 'text-violet-300'
+                  : primaryMission.kind === 'daily'
+                    ? 'text-amber-200'
+                    : 'text-sky-200'
+              }`}
+            >
+              {primaryMission.eyebrow}
+            </div>
+            <div className="mt-2 flex items-center gap-3 flex-wrap">
+              <div className="font-display text-[1.35rem] text-white sm:text-[1.8rem]">{primaryMission.title}</div>
+              <span
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{
+                  background: primaryMission.kind === 'review'
+                    ? 'rgba(139, 92, 246, 0.18)'
+                    : primaryMission.kind === 'daily'
+                      ? 'rgba(245, 158, 11, 0.18)'
+                      : 'rgba(56, 189, 248, 0.16)',
+                  color: primaryMission.kind === 'review'
+                    ? '#ddd6fe'
+                    : primaryMission.kind === 'daily'
+                      ? '#fde68a'
+                      : '#bae6fd',
+                }}
+              >
+                {primaryMission.badge}
+              </span>
+            </div>
+            <div className="mt-1.5 text-xs leading-6 text-slate-300 sm:text-sm">
+              {primaryMission.description}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {primaryMission.kind !== 'review' && dueCount > 0 && (
+                <button onClick={onReview} className="btn-secondary !px-3 !py-2 text-xs">
+                  復習 {dueCount}問
+                </button>
+              )}
+              {primaryMission.kind !== 'daily' && !dailyCompleted && (
+                <button onClick={onDailyChallenge} className="btn-secondary !px-3 !py-2 text-xs">
+                  今日の5問
+                </button>
+              )}
+              {primaryMission.kind !== 'quick' && (
+                <button onClick={onQuickStartAll} className="btn-secondary !px-3 !py-2 text-xs">
+                  4分野10問
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 md:block md:text-right">
+            <div className="text-[2rem] text-white/90 sm:text-[2.3rem]">{primaryMission.icon}</div>
+            <button onClick={primaryMission.onClick} className="btn-primary mt-0 md:mt-3">
+              {primaryMission.actionLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card mb-4 sm:mb-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">More</div>
+            <div className="mt-1 text-sm text-slate-300">タイムアタック、陣取り、ニュースは必要なときだけ開けます。</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowExtraActions(current => !current)}
+            className="btn-secondary whitespace-nowrap"
+          >
+            {showExtraActions ? '閉じる' : 'もっと見る'}
+          </button>
+        </div>
+
+        {showExtraActions && (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <button
+              onClick={onQuickStartAll}
+              className="card text-left transition-all"
+              style={{ padding: '16px 14px', borderColor: 'var(--color-info-soft-border)', background: 'linear-gradient(135deg, var(--color-info-soft-bg), var(--color-success-soft-bg) 50%, var(--card-gradient-base))' }}
+            >
+              <div className="text-[10px] font-semibold tracking-[0.18em] text-sky-200 uppercase">Quick</div>
+              <div className="mt-1.5 font-display text-[1.1rem] text-white">4分野10問</div>
+            </button>
+
+            <button
+              onClick={onTimeAttack}
+              disabled={!timeAttackUnlocked}
+              className="card text-left transition-all disabled:opacity-70"
+              style={{
+                padding: '16px 14px',
+                cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
+                borderColor: timeAttackUnlocked ? 'var(--color-accent-soft-border)' : 'var(--border-strong)',
+                background: timeAttackUnlocked
+                  ? 'linear-gradient(135deg, var(--color-accent-soft-bg), var(--color-info-soft-bg), var(--card-gradient-base-mid))'
+                  : 'var(--card-gradient-base-soft)',
+              }}
+            >
+              <div className={`text-[10px] font-semibold tracking-[0.18em] uppercase ${timeAttackUnlocked ? 'text-sky-200' : 'text-slate-500'}`}>Challenge</div>
+              <div className={`mt-1.5 font-display text-[1.1rem] ${timeAttackUnlocked ? 'text-white' : 'text-slate-400'}`}>30秒</div>
+            </button>
+
+            <button
+              onClick={onTerritoryQuiz}
+              className="card text-left transition-all"
+              style={{ padding: '16px 14px', borderColor: 'rgba(251, 191, 36, 0.25)', background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(59, 130, 246, 0.12), var(--card-gradient-base-mid))' }}
+            >
+              <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase">Strategy</div>
+              <div className="mt-1.5 font-display text-[1.1rem] text-white">陣取り</div>
+            </button>
+
             <a
               href={scienceNews.item.link}
               target="_blank"
               rel="noreferrer"
-              className="block rounded-[18px] border px-3 py-2.5 transition-all sm:rounded-[22px] sm:px-4 sm:py-3"
-              style={{
-                borderColor: 'var(--inset-border)',
-                background: 'var(--inset-bg)',
-              }}
+              className="block rounded-[22px] border px-4 py-4 transition-all"
+              style={{ borderColor: 'var(--inset-border)', background: 'var(--inset-bg)' }}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase">
-                    Science News
-                  </div>
-                  <div className="mt-1 text-sm font-semibold leading-5 text-white line-clamp-2">
-                    {scienceNews.item.title}
-                  </div>
+                  <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase">Science News</div>
+                  <div className="mt-1 text-sm font-semibold leading-5 text-white line-clamp-2">{scienceNews.item.title}</div>
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-[10px] text-slate-500">{newsDateFormatter.format(new Date(scienceNews.item.publishedAt))}</div>
@@ -360,72 +496,8 @@ export default function HomePage({
               </div>
             </a>
           </div>
-        </div>
+        )}
       </div>
-
-      {!dailyCompleted && (
-        <button
-          onClick={onDailyChallenge}
-          className="card mb-4 w-full text-left transition-all sm:mb-5 daily-challenge-cta anim-fade-up"
-          style={{
-            padding: '16px 18px',
-            borderColor: 'var(--color-warning-soft-border)',
-            background: 'linear-gradient(135deg, var(--color-warning-soft-bg), var(--color-warning-soft-bg), var(--card-gradient-base-mid))',
-            animationDelay: '0.12s',
-          }}
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-amber-200">
-                本日の5問
-              </div>
-              <div className="mt-2 flex items-center gap-3 flex-wrap">
-                <div className="font-display text-[1.35rem] text-white sm:text-[1.8rem]">今日のチャレンジ</div>
-                <span className="text-[10px] font-semibold text-amber-200/80">
-                  5問 / XP×2
-                </span>
-              </div>
-              <div className="mt-1.5 text-xs leading-5 text-slate-300 sm:mt-2 sm:text-sm">
-                苦手 → まだ解いていない問題 → ランダム の順で出題
-              </div>
-            </div>
-            <div className="text-[1.8rem] text-amber-200 sm:text-4xl">
-              ☀️
-            </div>
-          </div>
-        </button>
-      )}
-
-      {dueCount > 0 && (
-        <button
-          onClick={onReview}
-          className="card mb-4 w-full text-left transition-all sm:mb-5 anim-fade-up"
-          style={{
-            padding: '14px 18px',
-            borderColor: 'rgba(139, 92, 246, 0.25)',
-            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.10), rgba(59, 130, 246, 0.06), var(--card-gradient-base-mid))',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = '' }}
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-violet-300">
-                復習
-              </div>
-              <div className="mt-1.5 flex items-center gap-3">
-                <div className="font-display text-[1.2rem] text-white sm:text-[1.5rem]">忘れる前にもう一度</div>
-                <span className="rounded-full px-2 py-0.5 text-xs font-bold text-violet-200" style={{ background: 'rgba(139, 92, 246, 0.2)' }}>
-                  {dueCount}問
-                </span>
-              </div>
-            </div>
-            <div className="text-[1.8rem] text-violet-300 sm:text-4xl">
-              🧠
-            </div>
-          </div>
-        </button>
-      )}
 
       <div className="mb-3 flex items-center justify-between sm:mb-4">
         <h2 className="text-lg font-semibold text-slate-100">分野を選ぶ</h2>

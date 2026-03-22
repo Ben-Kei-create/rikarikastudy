@@ -21,9 +21,16 @@ import {
   saveGuestTimeAttackBest,
 } from '@/lib/guestStudy'
 import { claimStudyPeriodicCardReward, PeriodicCardReward } from '@/lib/periodicCardCollection'
+import {
+  getCachedColumnSupport,
+  isMissingColumnError,
+  markColumnMissing,
+  markColumnSupported,
+} from '@/lib/schemaCompat'
 import { supabase } from '@/lib/supabase'
 
 const CURRENT_BADGE_KEYS = new Set(BADGE_DEFINITIONS.map(badge => badge.key))
+const TIME_ATTACK_SCORE_COLUMN_KEY = 'time_attack_records.score'
 
 interface AnswerLogInput {
   qId: string
@@ -469,20 +476,29 @@ export async function loadEarnedBadgeRecords(studentId: number | null) {
 export async function loadTimeAttackBest(studentId: number | null): Promise<TimeAttackBestSummary> {
   const guestBest = studentId !== null && isGuestStudentId(studentId) ? getGuestTimeAttackBest() : 0
   const students = await fetchStudents()
+  const supportsScoreColumn = getCachedColumnSupport(TIME_ATTACK_SCORE_COLUMN_KEY) !== false
 
-  const scoreResponse = await supabase
-    .from('time_attack_records')
-    .select('student_id, score, achieved_at')
-    .order('score', { ascending: false })
+  let scoreResponse = supportsScoreColumn
+    ? await supabase
+        .from('time_attack_records')
+        .select('student_id, score, achieved_at')
+        .order('score', { ascending: false })
+    : null
 
-  const legacyResponse = scoreResponse.error
+  if (scoreResponse?.error && isMissingColumnError(scoreResponse.error, 'score')) {
+    markColumnMissing(TIME_ATTACK_SCORE_COLUMN_KEY)
+  } else if (scoreResponse && !scoreResponse.error && supportsScoreColumn) {
+    markColumnSupported(TIME_ATTACK_SCORE_COLUMN_KEY)
+  }
+
+  const legacyResponse = !scoreResponse || scoreResponse.error
     ? await supabase
         .from('time_attack_records')
         .select('student_id, best_score, achieved_at')
         .order('best_score', { ascending: false })
     : null
 
-  const normalizedRecords = (scoreResponse.error ? (legacyResponse?.data || []) : (scoreResponse.data || []))
+  const normalizedRecords = ((scoreResponse && !scoreResponse.error) ? (scoreResponse.data || []) : (legacyResponse?.data || []))
     .map(record => {
       const scoreValue = 'score' in record && typeof record.score === 'number'
         ? record.score
@@ -565,15 +581,24 @@ export async function saveTimeAttackBest(studentId: number | null, score: number
     return current.personalBest
   }
 
-  const { error } = await supabase
-    .from('time_attack_records')
-    .insert({
-      student_id: studentId,
-      score: nextBest,
-      achieved_at: new Date().toISOString(),
-    })
+  const supportsScoreColumn = getCachedColumnSupport(TIME_ATTACK_SCORE_COLUMN_KEY) !== false
+  const primaryResponse = supportsScoreColumn
+    ? await supabase
+        .from('time_attack_records')
+        .insert({
+          student_id: studentId,
+          score: nextBest,
+          achieved_at: new Date().toISOString(),
+        })
+    : { error: { message: 'cached missing score column' } }
 
-  if (!error) return nextBest
+  if (primaryResponse.error && isMissingColumnError(primaryResponse.error, 'score')) {
+    markColumnMissing(TIME_ATTACK_SCORE_COLUMN_KEY)
+  } else if (!primaryResponse.error && supportsScoreColumn) {
+    markColumnSupported(TIME_ATTACK_SCORE_COLUMN_KEY)
+  }
+
+  if (!primaryResponse.error) return nextBest
 
   const fallback = await supabase
     .from('time_attack_records')

@@ -71,6 +71,7 @@ export default function UnitSelectPage({
   const [units, setUnits] = useState<UnitStat[]>([])
   const [loading, setLoading] = useState(true)
   const [showCustomPanel, setShowCustomPanel] = useState(false)
+  const [showSupportTools, setShowSupportTools] = useState(false)
   const [customOptions, setCustomOptions] = useState<CustomQuizOptions>(DEFAULT_CUSTOM_QUIZ_OPTIONS)
   const [availableGrades, setAvailableGrades] = useState<CustomQuizGradeFilter[]>(['中1', '中2', '中3'])
   const [questionCount, setQuestionCount] = useState<QuizQuestionCount>(10)
@@ -85,6 +86,7 @@ export default function UnitSelectPage({
 
   useEffect(() => {
     setShowCustomPanel(false)
+    setShowSupportTools(false)
     setCustomOptions(DEFAULT_CUSTOM_QUIZ_OPTIONS)
   }, [field])
 
@@ -240,73 +242,6 @@ export default function UnitSelectPage({
           </div>
         </div>
       </div>
-
-      {isGuest ? (
-        <div
-          className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
-          style={{
-            borderColor: 'var(--color-neutral-soft-border)',
-            background: `linear-gradient(135deg, var(--surface-soft), var(--card-gradient-base-mid))`,
-            animationDelay: '0.04s',
-            opacity: 0.88,
-          }}
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">
-                Ask Gemini
-              </div>
-              <div className="mt-2 font-display text-xl text-slate-100 sm:text-2xl">
-                {field}について質問する
-              </div>
-              <div className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">
-                ゲストは使えません
-              </div>
-            </div>
-            <div className="text-xs font-semibold text-slate-500 sm:text-sm">
-              利用不可
-            </div>
-          </div>
-        </div>
-      ) : (
-        <button
-          onClick={() => onOpenChat(field as ScienceChatField)}
-          className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
-          style={{
-            borderColor: `${color}40`,
-            background: `linear-gradient(135deg, ${color}18, var(--card-gradient-base-mid))`,
-            animationDelay: '0.04s',
-            transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-          }}
-          onMouseEnter={event => {
-            event.currentTarget.style.transform = 'translateY(-2px)'
-            event.currentTarget.style.boxShadow = `0 18px 34px ${color}20`
-          }}
-          onMouseLeave={event => {
-            event.currentTarget.style.transform = ''
-            event.currentTarget.style.boxShadow = ''
-          }}
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
-                Ask Gemini
-              </div>
-              <div className="mt-2 font-display text-xl text-white sm:text-2xl">
-                {field}について質問する
-              </div>
-              <div className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">
-                すぐ聞ける
-              </div>
-            </div>
-            <div
-              className="text-xs font-semibold text-slate-100 sm:text-sm"
-            >
-              Geminiに聞く →
-            </div>
-          </div>
-        </button>
-      )}
 
       <button
         onClick={() => onSelect('all', questionCount)}
@@ -479,63 +414,146 @@ export default function UnitSelectPage({
           : '単元をしぼりたいときは「条件」から選べます。'}
       </p>
 
-      {/* Lab mode sections — data-driven rendering */}
-      {(() => {
-        const labSections: Array<{
-          field: string
-          label: string
-          gridClass: string
-          modes: Array<{ key: string; meta: { accent: string; badge: string; icon: string; title: string; description?: string }; onClick: () => void }>
-        }> = []
-
-        if (field === '生物') {
-          labSections.push({
-            field: '生物', label: '生物ラボ', gridClass: 'grid gap-3',
-            modes: (['organ-pairs'] as const).map(m => ({ key: m, meta: BIOLOGY_MODE_META[m], onClick: () => onSelectBiologyMode(m) })),
-          })
-        }
-
-        if (field === '化学') {
-          labSections.push({
-            field: '化学', label: '化学ラボ', gridClass: 'grid gap-3 md:grid-cols-2',
-            modes: [
-              ...(['flash', 'equation'] as const).map(m => ({ key: m, meta: CHEMISTRY_MODE_META[m], onClick: () => onSelectSpecialMode(m) })),
-              ...CHEMISTRY_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
-            ],
-          })
-        }
-
-        if (field === '物理') {
-          labSections.push({
-            field: '物理', label: '物理ラボ', gridClass: 'grid gap-3',
-            modes: PHYSICS_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
-          })
-        }
-
-        if (field === '地学') {
-          labSections.push({
-            field: '地学', label: '地学ラボ', gridClass: 'grid gap-3 md:grid-cols-2',
-            modes: [
-              ...(['link-pairs'] as const).map(m => ({ key: m, meta: EARTH_SCIENCE_MODE_META[m], onClick: () => onSelectEarthMode(m) })),
-              ...EARTH_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
-            ],
-          })
-        }
-
-        return labSections.map(section => (
-          <div key={section.field} className="mt-6">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-slate-100">{section.label}</h2>
-              <span className="text-xs text-slate-500">{section.modes.length > 1 ? 'special modes' : 'special mode'}</span>
-            </div>
-            <div className={section.gridClass}>
-              {section.modes.map(({ key, meta, onClick }) => (
-                <LabModeCard key={key} meta={meta} onClick={onClick} />
-              ))}
-            </div>
+      <div className="card">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Support Tools</div>
+            <div className="mt-1 text-sm text-slate-300">Gemini とラボは、必要なときだけここから開けます。</div>
           </div>
-        ))
-      })()}
+          <button
+            type="button"
+            onClick={() => setShowSupportTools(current => !current)}
+            className="btn-secondary whitespace-nowrap"
+          >
+            {showSupportTools ? '閉じる' : 'サポートを開く'}
+          </button>
+        </div>
+
+        {showSupportTools && (
+          <div className="mt-4 space-y-6">
+            {isGuest ? (
+              <div
+                className="card mobile-action-card w-full text-left"
+                style={{
+                  borderColor: 'var(--color-neutral-soft-border)',
+                  background: `linear-gradient(135deg, var(--surface-soft), var(--card-gradient-base-mid))`,
+                  opacity: 0.88,
+                }}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">
+                      Ask Gemini
+                    </div>
+                    <div className="mt-2 font-display text-xl text-slate-100 sm:text-2xl">
+                      {field}について質問する
+                    </div>
+                    <div className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">
+                      ゲストは使えません
+                    </div>
+                  </div>
+                  <div className="text-xs font-semibold text-slate-500 sm:text-sm">
+                    利用不可
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => onOpenChat(field as ScienceChatField)}
+                className="card mobile-action-card w-full text-left"
+                style={{
+                  borderColor: `${color}40`,
+                  background: `linear-gradient(135deg, ${color}18, var(--card-gradient-base-mid))`,
+                  transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                }}
+                onMouseEnter={event => {
+                  event.currentTarget.style.transform = 'translateY(-2px)'
+                  event.currentTarget.style.boxShadow = `0 18px 34px ${color}20`
+                }}
+                onMouseLeave={event => {
+                  event.currentTarget.style.transform = ''
+                  event.currentTarget.style.boxShadow = ''
+                }}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+                      Ask Gemini
+                    </div>
+                    <div className="mt-2 font-display text-xl text-white sm:text-2xl">
+                      {field}について質問する
+                    </div>
+                    <div className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">
+                      分からない点を先に整理できます
+                    </div>
+                  </div>
+                  <div className="text-xs font-semibold text-slate-100 sm:text-sm">
+                    Geminiに聞く →
+                  </div>
+                </div>
+              </button>
+            )}
+
+            {/* Lab mode sections — data-driven rendering */}
+            {(() => {
+              const labSections: Array<{
+                field: string
+                label: string
+                gridClass: string
+                modes: Array<{ key: string; meta: { accent: string; badge: string; icon: string; title: string; description?: string }; onClick: () => void }>
+              }> = []
+
+              if (field === '生物') {
+                labSections.push({
+                  field: '生物', label: '生物ラボ', gridClass: 'grid gap-3',
+                  modes: (['organ-pairs'] as const).map(m => ({ key: m, meta: BIOLOGY_MODE_META[m], onClick: () => onSelectBiologyMode(m) })),
+                })
+              }
+
+              if (field === '化学') {
+                labSections.push({
+                  field: '化学', label: '化学ラボ', gridClass: 'grid gap-3 md:grid-cols-2',
+                  modes: [
+                    ...(['flash', 'equation'] as const).map(m => ({ key: m, meta: CHEMISTRY_MODE_META[m], onClick: () => onSelectSpecialMode(m) })),
+                    ...CHEMISTRY_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
+                  ],
+                })
+              }
+
+              if (field === '物理') {
+                labSections.push({
+                  field: '物理', label: '物理ラボ', gridClass: 'grid gap-3',
+                  modes: PHYSICS_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
+                })
+              }
+
+              if (field === '地学') {
+                labSections.push({
+                  field: '地学', label: '地学ラボ', gridClass: 'grid gap-3 md:grid-cols-2',
+                  modes: [
+                    ...(['link-pairs'] as const).map(m => ({ key: m, meta: EARTH_SCIENCE_MODE_META[m], onClick: () => onSelectEarthMode(m) })),
+                    ...EARTH_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
+                  ],
+                })
+              }
+
+              return labSections.map(section => (
+                <div key={section.field}>
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h2 className="text-base font-semibold text-slate-100">{section.label}</h2>
+                    <span className="text-xs text-slate-500">{section.modes.length > 1 ? 'special modes' : 'special mode'}</span>
+                  </div>
+                  <div className={section.gridClass}>
+                    {section.modes.map(({ key, meta, onClick }) => (
+                      <LabModeCard key={key} meta={meta} onClick={onClick} />
+                    ))}
+                  </div>
+                </div>
+              ))
+            })()}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

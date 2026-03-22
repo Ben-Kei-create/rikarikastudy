@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo, useRef, type ReactNode } from 'react'
 import { Database, supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { isThemeUnlockedAtLevel, THEME_OPTIONS, Theme, useTheme } from '@/lib/theme'
@@ -30,6 +30,7 @@ import {
   PeriodicCardCollectionEntry,
 } from '@/lib/periodicCardCollection'
 import {
+  SCIENCE_GLOSSARY,
   ScienceGlossaryEntry,
 } from '@/lib/scienceGlossary'
 import {
@@ -130,8 +131,59 @@ function getFieldEmoji(field: string) {
   return FIELD_EMOJI[field as keyof typeof FIELD_EMOJI] ?? '🔬'
 }
 
-type Tab = 'overview' | 'history' | 'weak' | 'badges' | 'cards' | 'glossary' | 'columns' | 'questions' | 'account'
+type Tab = 'overview' | 'history' | 'weak' | 'library' | 'account' | 'questions'
+type LibrarySection = 'badges' | 'cards' | 'glossary' | 'columns'
 const HISTORY_SESSION_LIMIT = 10
+
+function CollapsibleSection({
+  title,
+  description,
+  summary,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  description: string
+  summary: string
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <section
+      className="rounded-[26px] border px-4 py-4 sm:px-5 sm:py-5"
+      style={{
+        borderColor: 'var(--surface-elevated-border)',
+        background: 'linear-gradient(180deg, var(--surface-elevated), var(--card-gradient-base-mid))',
+      }}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-start justify-between gap-4 text-left"
+        aria-expanded={open}
+      >
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-white">{title}</div>
+          <div className="mt-1 text-xs leading-6 text-slate-400">{description}</div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="rounded-full bg-sky-300/10 px-3 py-1.5 text-[11px] font-semibold text-sky-200">
+            {summary}
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500">{open ? '閉じる' : '開く'}</div>
+        </div>
+      </button>
+
+      {open && (
+        <div className="mt-4">
+          {children}
+        </div>
+      )}
+    </section>
+  )
+}
 
 export default function MyPage({
   onBack,
@@ -152,6 +204,12 @@ export default function MyPage({
   const [myQuestions, setMyQuestions] = useState<QuestionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('overview')
+  const [libraryOpenSections, setLibraryOpenSections] = useState<Record<LibrarySection, boolean>>({
+    badges: true,
+    cards: false,
+    glossary: false,
+    columns: false,
+  })
   const [nicknameInput, setNicknameInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
@@ -389,9 +447,65 @@ export default function MyPage({
     () => sessions.slice(0, HISTORY_SESSION_LIMIT),
     [sessions]
   )
+  const weekQuestionTotal = weekData.reduce((sum, item) => sum + item.count, 0)
+  const todayQuestionCount = weekData[weekData.length - 1]?.count ?? 0
+  const uniqueBadgeCount = useMemo(
+    () => new Set(earnedBadges.map(badge => badge.badge_key)).size,
+    [earnedBadges],
+  )
+  const glossaryCount = SCIENCE_GLOSSARY.length + customGlossaryEntries.length
+  const nextStudyGuide = useMemo(() => {
+    if (weakUnits.length > 0) {
+      const focus = weakUnits[0]
+      return {
+        eyebrow: 'Next Study',
+        title: `${focus.field} / ${focus.unit} を復習`,
+        description: `正答率 ${focus.rate}% の単元です。短く反復すると定着が早くなります。`,
+      }
+    }
+
+    if (todayQuestionCount === 0) {
+      return {
+        eyebrow: 'Next Study',
+        title: '今日はまだ未着手です',
+        description: 'まずは5問だけ解いて、連続記録をつなげましょう。',
+      }
+    }
+
+    return {
+      eyebrow: 'Next Study',
+      title: '今日の流れは順調です',
+      description: '次は履歴か読みものより、苦手単元の復習を先に進めるのがおすすめです。',
+    }
+  }, [todayQuestionCount, weakUnits])
+  const librarySummaryItems = isGuest
+    ? ([
+        { label: 'バッジ', value: `${uniqueBadgeCount}` },
+        { label: 'カード', value: `${periodicCards.length}` },
+        { label: '辞典', value: `${glossaryCount}語` },
+      ] as const)
+    : ([
+        { label: 'バッジ', value: `${uniqueBadgeCount}` },
+        { label: 'カード', value: `${periodicCards.length}` },
+        { label: '辞典', value: `${glossaryCount}語` },
+        { label: '自作問題', value: `${myQuestions.length}` },
+      ] as const)
   const tabs = isGuest
-    ? ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['columns', '📖 コラム'], ['account', '⚙️ 設定']] as const)
-    : ([['overview', '📊 概要'], ['history', '📅 履歴'], ['weak', '🎯 弱点'], ['badges', '🏅 バッジ'], ['cards', '🧪 元素カード'], ['glossary', '📘 辞典'], ['columns', '📖 コラム'], ['questions', '✍️ 問題作成'], ['account', '⚙️ 設定']] as const)
+    ? ([
+        ['overview', '📊 学習'],
+        ['weak', '🎯 復習'],
+        ['history', '📅 履歴'],
+        ['library', '🗂 まとめ'],
+        ['account', '⚙️ 設定'],
+      ] as const)
+    : ([
+        ['overview', '📊 学習'],
+        ['weak', '🎯 復習'],
+        ['history', '📅 履歴'],
+        ['library', '🗂 まとめ'],
+        ['questions', '✍️ 問題作成'],
+        ['account', '⚙️ 設定'],
+      ] as const)
 
   const handleSaveNickname = async () => {
     setSaving('nickname')
@@ -423,6 +537,13 @@ export default function MyPage({
       tabScrollPositionsRef.current[tab] = window.scrollY
     }
     setTab(nextTab)
+  }
+
+  const toggleLibrarySection = (section: LibrarySection) => {
+    setLibraryOpenSections(current => ({
+      ...current,
+      [section]: !current[section],
+    }))
   }
 
   useEffect(() => {
@@ -802,32 +923,36 @@ export default function MyPage({
             </div>
 
             <div className="card mobile-action-card">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">XP / Level</div>
-                  <div className="mt-2 flex flex-wrap items-end gap-2.5 sm:gap-3">
-                    <div className="rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1.5 text-xs font-semibold text-sky-100 sm:px-4 sm:py-2 sm:text-sm">
-                      Lv.{levelInfo.level} {levelInfo.title}
-                    </div>
-                    <div className="font-display text-[1.55rem] text-white sm:text-3xl">{levelInfo.totalXp}<span className="ml-1.5 text-sm text-slate-500 sm:ml-2 sm:text-base">XP</span></div>
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="max-w-2xl">
+                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">{nextStudyGuide.eyebrow}</div>
+                  <div className="mt-2 font-display text-[1.45rem] text-white sm:text-[1.8rem]">{nextStudyGuide.title}</div>
+                  <div className="mt-2 text-sm leading-7 text-slate-300">
+                    {nextStudyGuide.description}
                   </div>
                 </div>
-                <div className="text-xs text-slate-400 sm:text-sm">
-                  次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP
+                <div className="grid grid-cols-2 gap-2 sm:min-w-[280px]">
+                  <div className="rounded-[18px] border border-sky-300/14 bg-sky-300/8 px-3 py-3">
+                    <div className="text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase">今週</div>
+                    <div className="mt-1 font-display text-xl text-white">{weekQuestionTotal}</div>
+                    <div className="text-[11px] text-slate-500">問解いた</div>
+                  </div>
+                  <div className="rounded-[18px] border border-emerald-300/14 bg-emerald-400/8 px-3 py-3">
+                    <div className="text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase">今日</div>
+                    <div className="mt-1 font-display text-xl text-white">{todayQuestionCount}</div>
+                    <div className="text-[11px] text-slate-500">問進行中</div>
+                  </div>
+                  <div className="rounded-[18px] border border-orange-300/14 bg-orange-400/8 px-3 py-3">
+                    <div className="text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase">連続</div>
+                    <div className="mt-1 font-display text-xl text-white">{streak}</div>
+                    <div className="text-[11px] text-slate-500">日</div>
+                  </div>
+                  <div className="rounded-[18px] border border-rose-300/14 bg-rose-400/8 px-3 py-3">
+                    <div className="text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase">弱点</div>
+                    <div className="mt-1 font-display text-xl text-white">{weakUnits.length}</div>
+                    <div className="text-[11px] text-slate-500">単元</div>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-4 soft-track" style={{ height: 8 }}>
-                <div
-                  style={{
-                    width: `${levelInfo.progressRate}%`,
-                    height: '100%',
-                    background: 'linear-gradient(90deg, var(--color-info-muted), var(--color-info))',
-                    borderRadius: 999,
-                  }}
-                />
-              </div>
-              <div className="mt-2 text-xs text-slate-500">
-                {levelInfo.progressXp} / {levelInfo.progressMax} XP
               </div>
             </div>
 
@@ -1220,25 +1345,74 @@ export default function MyPage({
           </div>
         )}
 
-        {tab === 'badges' && (
-          <MyPageBadgesTab earnedBadges={earnedBadges} />
-        )}
+        {tab === 'library' && (
+          <div className="anim-fade space-y-4">
+            <div className="card">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="max-w-2xl">
+                  <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Study Library</div>
+                  <div className="mt-2 font-display text-[1.45rem] text-white sm:text-[1.8rem]">集めたものと読みものをここに収納</div>
+                  <div className="mt-2 text-sm leading-7 text-slate-300">
+                    バッジ、元素カード、辞典、コラム、自分で作った問題を一か所にまとめました。学習の主導線から外して、必要なときだけ開ける構成にしています。
+                  </div>
+                </div>
+                <div className={`grid gap-2 ${isGuest ? 'grid-cols-3' : 'grid-cols-4'} sm:min-w-[320px]`}>
+                  {librarySummaryItems.map(item => (
+                    <div key={item.label} className="rounded-[18px] border border-white/8 bg-slate-950/28 px-3 py-3 text-center">
+                      <div className="font-display text-lg text-white sm:text-xl">{item.value}</div>
+                      <div className="mt-1 text-[11px] text-slate-500">{item.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-        {tab === 'cards' && (
-          <MyPageCardsTab
-            periodicCards={periodicCards}
-            periodicCardsLoading={periodicCardsLoading}
-            periodicCardsSchemaMessage={periodicCardsSchemaMessage}
-            level={levelInfo.level}
-          />
-        )}
+            <CollapsibleSection
+              title="バッジ"
+              description="達成報酬の一覧です。まずはここだけ開いた状態にしています。"
+              summary={`${uniqueBadgeCount} / ${BADGE_DEFINITIONS.length}`}
+              open={libraryOpenSections.badges}
+              onToggle={() => toggleLibrarySection('badges')}
+            >
+              <MyPageBadgesTab earnedBadges={earnedBadges} />
+            </CollapsibleSection>
 
-        {tab === 'glossary' && (
-          <MyPageGlossaryTab customGlossaryEntries={customGlossaryEntries} />
-        )}
+            <CollapsibleSection
+              title="元素カード"
+              description="ログインボーナスやパーフェクト報酬で集めたカードを見返せます。"
+              summary={`${periodicCards.length}枚`}
+              open={libraryOpenSections.cards}
+              onToggle={() => toggleLibrarySection('cards')}
+            >
+              <MyPageCardsTab
+                periodicCards={periodicCards}
+                periodicCardsLoading={periodicCardsLoading}
+                periodicCardsSchemaMessage={periodicCardsSchemaMessage}
+                level={levelInfo.level}
+              />
+            </CollapsibleSection>
 
-        {tab === 'columns' && (
-          <MyPageColumnsTab studentId={studentId} />
+            <CollapsibleSection
+              title="理科ミニ辞典"
+              description="検索や索引で用語を探せる読みものです。"
+              summary={`${glossaryCount}語`}
+              open={libraryOpenSections.glossary}
+              onToggle={() => toggleLibrarySection('glossary')}
+            >
+              <MyPageGlossaryTab customGlossaryEntries={customGlossaryEntries} />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="コラム"
+              description="問題を解いて解放した雑学・読みものをまとめています。"
+              summary="解放した分だけ追加"
+              open={libraryOpenSections.columns}
+              onToggle={() => toggleLibrarySection('columns')}
+            >
+              <MyPageColumnsTab studentId={studentId} />
+            </CollapsibleSection>
+
+          </div>
         )}
 
         {tab === 'questions' && (
