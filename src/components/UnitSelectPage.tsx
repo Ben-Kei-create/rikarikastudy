@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { BIOLOGY_MODE_META, BiologyPracticeMode } from '@/lib/biologyPractice'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
-import LabModeCard from '@/components/LabModeCard'
 import { CHEMISTRY_MODE_META, ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EARTH_SCIENCE_MODE_META, EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
 import {
@@ -219,58 +218,42 @@ export default function UnitSelectPage({
             </div>
           </div>
           <div className="flex flex-col gap-2 lg:min-w-[284px] lg:items-end">
-            <div className="grid w-full grid-cols-2 gap-2 lg:w-auto">
-              <div className="subcard mobile-mini-card px-4 py-3">
-                <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">登録単元</div>
-                <div className="mt-1 flex items-end gap-2">
-                  <div className="font-display text-[1.6rem] leading-none text-white sm:text-[1.9rem]">{units.length}</div>
-                  <div className="pb-0.5 text-[11px] text-slate-500">units</div>
-                </div>
-              </div>
-              <div className="subcard mobile-mini-card px-4 py-3">
-                <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">問題数</div>
-                <div className="mt-1 flex items-end gap-2">
-                  <div className="font-display text-[1.6rem] leading-none text-white sm:text-[1.9rem]">{totalQuestionCount}</div>
-                  <div className="pb-0.5 text-[11px] text-slate-500">questions</div>
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 lg:justify-end">
+              <span>登録単元 {units.length}</span>
+              <span>問題数 {totalQuestionCount}</span>
+              <span>現在 Lv.{levelInfo.level}</span>
             </div>
             <div className="grid w-full grid-cols-2 gap-2 md:w-[284px]">
-              <button onClick={onBack} className="btn-secondary w-full !py-2.5 sm:!py-3">もどる</button>
-              <button onClick={() => logout()} className="btn-ghost w-full !py-2.5 sm:!py-3">ログアウト</button>
+              <button onClick={onBack} className="text-left text-sm font-semibold text-slate-200 transition-colors hover:text-white">もどる</button>
+              <button onClick={() => logout()} className="text-right text-sm text-slate-400 transition-colors hover:text-slate-200">ログアウト</button>
             </div>
           </div>
         </div>
       </div>
 
-      <button
-        onClick={() => onSelect('all', questionCount)}
+      <div
         className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
         style={{
           borderColor: `${color}40`,
           background: `linear-gradient(180deg, ${color}18, var(--surface-elevated))`,
           animationDelay: '0.05s',
-          transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-        }}
-        onMouseEnter={event => {
-          event.currentTarget.style.transform = 'translateY(-2px)'
-          event.currentTarget.style.boxShadow = `0 18px 34px ${color}20`
-        }}
-        onMouseLeave={event => {
-          event.currentTarget.style.transform = ''
-          event.currentTarget.style.boxShadow = ''
         }}
       >
         <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="font-semibold text-base sm:text-lg" style={{ color }}>全単元ランダム</div>
-              <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">まとめて解く</div>
-            </div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] sm:text-xs" style={{ color }}>
-            quick start →
+          <div>
+            <div className="font-semibold text-base sm:text-lg" style={{ color }}>全単元ランダム</div>
+            <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">迷ったらここから。分野の中をまとめて解きます。</div>
           </div>
+          <button
+            type="button"
+            onClick={() => onSelect('all', questionCount)}
+            className="text-sm font-semibold transition-colors hover:text-white"
+            style={{ color }}
+          >
+            すぐ開始
+          </button>
         </div>
-      </button>
+      </div>
 
       <div className="card mb-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -278,21 +261,17 @@ export default function UnitSelectPage({
             <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題数</div>
             <div className="mt-1 text-sm text-slate-300">5 / 10 / 15 / 全問</div>
           </div>
-          <div className="segment-bar sm:w-auto">
-            {QUESTION_COUNT_OPTIONS.map(option => {
-              const active = questionCount === option
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setQuestionCount(option)}
-                  className={`segment-button ${active ? 'is-active' : ''}`}
-                >
-                  {option === 'all' ? '全問' : option}
-                </button>
-              )
-            })}
-          </div>
+          <select
+            value={String(questionCount)}
+            onChange={event => setQuestionCount(event.target.value === 'all' ? 'all' : Number(event.target.value) as QuizQuestionCount)}
+            className="input-surface sm:w-[168px]"
+          >
+            {QUESTION_COUNT_OPTIONS.map(option => (
+              <option key={option} value={option}>
+                {option === 'all' ? '全問' : `${option}問`}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -329,14 +308,14 @@ export default function UnitSelectPage({
           </div>
           <button
             onClick={() => setShowCustomPanel(current => !current)}
-            className="btn-secondary whitespace-nowrap"
+            className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
           >
-            {showCustomPanel ? '閉じる' : '条件'}
+            {showCustomPanel ? '閉じる' : '条件をひらく'}
           </button>
         </div>
 
         {showCustomPanel && (
-            <div className="mt-4 rounded-[22px] border border-white/8 bg-slate-950/24 p-3.5 sm:mt-5 sm:rounded-[24px] sm:p-5">
+          <div className="mt-4 rounded-[22px] border border-white/8 bg-slate-950/18 p-3.5 sm:mt-5 sm:rounded-[24px] sm:p-5">
             <div className="grid gap-4 md:grid-cols-[0.9fr_1.1fr]">
               <div>
                 <label className="text-slate-400 text-xs mb-2 block">対象単元</label>
@@ -358,42 +337,59 @@ export default function UnitSelectPage({
               </div>
 
               <div className="grid gap-4">
-                {([
-                  { label: '学年', gridClass: 'sm:grid-cols-4', options: customGradeOptions, selected: customOptions.grade, onSelect: updateGrade, getLabel: getCustomQuizGradeFilterLabel, hint: '中1・中2・中3でまとめてしぼれます。' as string | undefined },
-                  { label: '問題タイプ', gridClass: 'sm:grid-cols-3 lg:grid-cols-5', options: ['all', ...QUESTION_TYPES] as const, selected: customOptions.questionType, onSelect: updateQuestionType, getLabel: getCustomQuizQuestionTypeLabel, hint: undefined as string | undefined },
-                  { label: '出題条件', gridClass: 'sm:grid-cols-3', options: ['all', 'unanswered', 'weak'] as const, selected: customOptions.historyFilter, onSelect: updateHistoryFilter, getLabel: getCustomQuizHistoryFilterLabel, hint: '未回答 = まだ解いていない問題 / 苦手だけ = これまでに1回でもまちがえた問題' as string | undefined },
-                ] as const).map(group => (
-                  <div key={group.label}>
-                    <div className="text-slate-400 text-xs mb-2">{group.label}</div>
-                    <div className={`grid gap-2 ${group.gridClass}`}>
-                      {group.options.map(option => {
-                        const active = group.selected === option
-                        return (
-                          <button
-                            key={option}
-                            onClick={() => (group.onSelect as (v: typeof option) => void)(option)}
-                            className="rounded-2xl border px-4 py-3 text-sm font-semibold transition-all"
-                            style={{
-                              borderColor: active ? `${color}70` : 'var(--surface-elevated-border)',
-                              background: active ? `${color}18` : 'var(--surface-elevated)',
-                              color: active ? color : 'var(--text)',
-                            }}
-                          >
-                            {(group.getLabel as (v: typeof option) => string)(option)}
-                          </button>
-                        )
-                      })}
-                    </div>
-                    {group.hint && <p className="mt-2 text-xs leading-6 text-slate-500">{group.hint}</p>}
-                  </div>
-                ))}
+                <div>
+                  <label className="text-slate-400 text-xs mb-2 block">学年</label>
+                  <select
+                    value={customOptions.grade}
+                    onChange={event => updateGrade(event.target.value as CustomQuizGradeFilter)}
+                    className="input-surface"
+                  >
+                    {customGradeOptions.map(option => (
+                      <option key={option} value={option}>
+                        {getCustomQuizGradeFilterLabel(option)}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs leading-6 text-slate-500">中1・中2・中3でまとめてしぼれます。</p>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 text-xs mb-2 block">問題タイプ</label>
+                  <select
+                    value={customOptions.questionType}
+                    onChange={event => updateQuestionType(event.target.value as CustomQuizQuestionType)}
+                    className="input-surface"
+                  >
+                    {(['all', ...QUESTION_TYPES] as const).map(option => (
+                      <option key={option} value={option}>
+                        {getCustomQuizQuestionTypeLabel(option)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 text-xs mb-2 block">出題条件</label>
+                  <select
+                    value={customOptions.historyFilter}
+                    onChange={event => updateHistoryFilter(event.target.value as CustomQuizHistoryFilter)}
+                    className="input-surface"
+                  >
+                    {(['all', 'unanswered', 'weak'] as const).map(option => (
+                      <option key={option} value={option}>
+                        {getCustomQuizHistoryFilterLabel(option)}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs leading-6 text-slate-500">未回答 = まだ解いていない問題 / 苦手だけ = これまでに1回でもまちがえた問題</p>
+                </div>
               </div>
             </div>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
               <button
                 onClick={() => setCustomOptions(DEFAULT_CUSTOM_QUIZ_OPTIONS)}
-                className="btn-ghost"
+                className="text-sm text-slate-400 transition-colors hover:text-slate-200"
               >
                 リセット
               </button>
@@ -423,7 +419,7 @@ export default function UnitSelectPage({
           <button
             type="button"
             onClick={() => setShowSupportTools(current => !current)}
-            className="btn-secondary whitespace-nowrap"
+            className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
           >
             {showSupportTools ? '閉じる' : 'サポートを開く'}
           </button>
@@ -432,64 +428,26 @@ export default function UnitSelectPage({
         {showSupportTools && (
           <div className="mt-4 space-y-6">
             {isGuest ? (
-              <div
-                className="card mobile-action-card w-full text-left"
-                style={{
-                  borderColor: 'var(--color-neutral-soft-border)',
-                  background: `linear-gradient(135deg, var(--surface-soft), var(--card-gradient-base-mid))`,
-                  opacity: 0.88,
-                }}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">
-                      Ask Gemini
-                    </div>
-                    <div className="mt-2 font-display text-xl text-slate-100 sm:text-2xl">
-                      {field}について質問する
-                    </div>
-                    <div className="mt-2 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">
-                      ゲストは使えません
-                    </div>
-                  </div>
-                  <div className="text-xs font-semibold text-slate-500 sm:text-sm">
-                    利用不可
-                  </div>
+              <div className="flex items-center justify-between gap-4 border-t border-white/8 pt-4">
+                <div>
+                  <div className="text-sm font-semibold text-slate-100">{field}について質問する</div>
+                  <div className="mt-1 text-xs leading-6 text-slate-400">ゲストは使えません</div>
+                </div>
+                <div className="text-xs font-semibold text-slate-500 sm:text-sm">
+                  利用不可
                 </div>
               </div>
             ) : (
               <button
                 onClick={() => onOpenChat(field as ScienceChatField)}
-                className="card mobile-action-card w-full text-left"
-                style={{
-                  borderColor: `${color}40`,
-                  background: `linear-gradient(135deg, ${color}18, var(--card-gradient-base-mid))`,
-                  transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-                }}
-                onMouseEnter={event => {
-                  event.currentTarget.style.transform = 'translateY(-2px)'
-                  event.currentTarget.style.boxShadow = `0 18px 34px ${color}20`
-                }}
-                onMouseLeave={event => {
-                  event.currentTarget.style.transform = ''
-                  event.currentTarget.style.boxShadow = ''
-                }}
+                className="flex w-full items-center justify-between gap-4 border-t border-white/8 pt-4 text-left"
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
-                      Ask Gemini
-                    </div>
-                    <div className="mt-2 font-display text-xl text-white sm:text-2xl">
-                      {field}について質問する
-                    </div>
-                    <div className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">
-                      分からない点を先に整理できます
-                    </div>
-                  </div>
-                  <div className="text-xs font-semibold text-slate-100 sm:text-sm">
-                    Geminiに聞く →
-                  </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">{field}について質問する</div>
+                  <div className="mt-1 text-xs leading-6 text-slate-300">分からない点を先に整理できます</div>
+                </div>
+                <div className="text-sm font-semibold text-sky-200 transition-colors hover:text-white">
+                  Geminiに聞く
                 </div>
               </button>
             )}
@@ -499,20 +457,19 @@ export default function UnitSelectPage({
               const labSections: Array<{
                 field: string
                 label: string
-                gridClass: string
                 modes: Array<{ key: string; meta: { accent: string; badge: string; icon: string; title: string; description?: string }; onClick: () => void }>
               }> = []
 
               if (field === '生物') {
                 labSections.push({
-                  field: '生物', label: '生物ラボ', gridClass: 'grid gap-3',
+                  field: '生物', label: '生物ラボ',
                   modes: (['organ-pairs'] as const).map(m => ({ key: m, meta: BIOLOGY_MODE_META[m], onClick: () => onSelectBiologyMode(m) })),
                 })
               }
 
               if (field === '化学') {
                 labSections.push({
-                  field: '化学', label: '化学ラボ', gridClass: 'grid gap-3 md:grid-cols-2',
+                  field: '化学', label: '化学ラボ',
                   modes: [
                     ...(['flash', 'equation'] as const).map(m => ({ key: m, meta: CHEMISTRY_MODE_META[m], onClick: () => onSelectSpecialMode(m) })),
                     ...CHEMISTRY_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
@@ -522,14 +479,14 @@ export default function UnitSelectPage({
 
               if (field === '物理') {
                 labSections.push({
-                  field: '物理', label: '物理ラボ', gridClass: 'grid gap-3',
+                  field: '物理', label: '物理ラボ',
                   modes: PHYSICS_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
                 })
               }
 
               if (field === '地学') {
                 labSections.push({
-                  field: '地学', label: '地学ラボ', gridClass: 'grid gap-3 md:grid-cols-2',
+                  field: '地学', label: '地学ラボ',
                   modes: [
                     ...(['link-pairs'] as const).map(m => ({ key: m, meta: EARTH_SCIENCE_MODE_META[m], onClick: () => onSelectEarthMode(m) })),
                     ...EARTH_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
@@ -539,13 +496,34 @@ export default function UnitSelectPage({
 
               return labSections.map(section => (
                 <div key={section.field}>
-                  <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="mb-3 flex items-center justify-between gap-3 border-t border-white/8 pt-4">
                     <h2 className="text-base font-semibold text-slate-100">{section.label}</h2>
                     <span className="text-xs text-slate-500">{section.modes.length > 1 ? 'special modes' : 'special mode'}</span>
                   </div>
-                  <div className={section.gridClass}>
+                  <div className="space-y-2">
                     {section.modes.map(({ key, meta, onClick }) => (
-                      <LabModeCard key={key} meta={meta} onClick={onClick} />
+                      <button
+                        key={key}
+                        onClick={onClick}
+                        className="flex w-full items-start justify-between gap-4 rounded-[16px] border border-white/8 px-3.5 py-3 text-left transition-colors hover:border-white/16"
+                        style={{ background: `linear-gradient(180deg, ${meta.accent}10, rgba(2, 6, 23, 0.22))` }}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg" aria-hidden="true">{meta.icon}</span>
+                            <span className="font-semibold text-white">{meta.title}</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: meta.accent }}>
+                              {meta.badge}
+                            </span>
+                          </div>
+                          {meta.description && (
+                            <div className="mt-1 text-xs leading-6 text-slate-400">{meta.description}</div>
+                          )}
+                        </div>
+                        <span className="shrink-0 text-xs font-semibold" style={{ color: meta.accent }}>
+                          開く
+                        </span>
+                      </button>
                     ))}
                   </div>
                 </div>

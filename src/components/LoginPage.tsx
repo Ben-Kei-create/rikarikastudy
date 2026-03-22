@@ -72,7 +72,7 @@ function StudentPicker({
   const selectedMeta = selectedStudent ? getStudentModeMeta(selectedStudent.id) : null
 
   return (
-    <div className="rounded-[28px] border border-white/10 bg-slate-950/34 p-4 sm:p-5">
+    <div className="rounded-[26px] border border-white/8 bg-slate-950/28 p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-200">{title}</div>
@@ -84,38 +84,29 @@ function StudentPicker({
       </div>
 
       {selectedStudent && selectedAvatar && selectedMeta && (
-        <div
-          className="mt-4 rounded-[24px] border p-3.5 sm:p-4"
-          style={{
-            borderColor: 'rgba(125, 211, 252, 0.2)',
-            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1), var(--card-gradient-base-soft))',
-          }}
-        >
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">選択中</div>
-          <div className="mt-3 flex items-center gap-3">
-            <div
-              className="flex h-12 w-12 items-center justify-center rounded-full text-2xl"
-              style={{
-                background: selectedAvatar.background,
-                border: `1px solid ${selectedAvatar.borderColor}`,
-                boxShadow: selectedAvatar.glow,
-              }}
-              aria-hidden="true"
-            >
-              {selectedAvatar.emoji}
+        <div className="mt-4 flex items-center gap-2.5 rounded-[18px] bg-sky-300/5 px-3 py-2.5 sm:px-3.5">
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-full text-lg"
+            style={{
+              background: selectedAvatar.background,
+              border: `1px solid ${selectedAvatar.borderColor}`,
+              boxShadow: selectedAvatar.glow,
+            }}
+            aria-hidden="true"
+          >
+            {selectedAvatar.emoji}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="truncate text-sm font-semibold text-white sm:text-base">{selectedStudent.nickname}</div>
+              <span className="text-[10px] font-semibold text-sky-100/60">
+                ID {selectedStudent.id}
+              </span>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="truncate font-display text-2xl text-white">{selectedStudent.nickname}</div>
-                <span className="text-[10px] font-semibold text-sky-100/60">
-                  ID {selectedStudent.id}
-                </span>
-              </div>
-              <div className="mt-1 text-xs leading-5 text-slate-300">{selectedMeta.detail}</div>
-            </div>
-            <div className="hidden text-[11px] font-semibold text-emerald-200/70 sm:block">
-              {selectedMeta.badge}
-            </div>
+            <div className="mt-0.5 text-xs leading-5 text-slate-300">{selectedMeta.detail}</div>
+          </div>
+          <div className="hidden text-[11px] font-semibold text-sky-200 sm:block">
+            {selectedMeta.badge}
           </div>
         </div>
       )}
@@ -132,7 +123,7 @@ function StudentPicker({
 
       <div className={`mt-3 overflow-y-auto pr-1 ${compact ? 'max-h-56' : 'max-h-72'}`}>
         {filteredStudents.length > 0 ? (
-          <div className="grid gap-2.5">
+          <div className="grid gap-2">
             {filteredStudents.map(student => {
               const checked = selectedId === student.id
               const avatar = getStudentAvatarMeta(student.id)
@@ -141,13 +132,12 @@ function StudentPicker({
               return (
                 <label
                   key={student.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-[22px] border px-3 py-3 transition-all sm:px-4"
+                  className="flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3 py-2 transition-colors sm:px-3.5"
                   style={{
-                    borderColor: checked ? 'rgba(86, 168, 255, 0.5)' : 'var(--surface-elevated-border)',
+                    borderColor: checked ? 'rgba(86, 168, 255, 0.28)' : 'var(--surface-elevated-border)',
                     background: checked
-                      ? 'linear-gradient(180deg, rgba(10, 132, 255, 0.22), rgba(10, 132, 255, 0.12))'
+                      ? 'linear-gradient(180deg, rgba(10, 132, 255, 0.12), rgba(10, 132, 255, 0.06))'
                       : 'var(--surface-elevated)',
-                    boxShadow: checked ? '0 14px 28px rgba(10, 132, 255, 0.16)' : 'none',
                   }}
                 >
                   <input
@@ -159,18 +149,18 @@ function StudentPicker({
                     className="sr-only"
                   />
                   <div
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xl"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg"
                     style={{
                       background: avatar.background,
-                      border: `1px solid ${checked ? 'rgba(191, 219, 254, 0.48)' : avatar.borderColor}`,
-                      boxShadow: checked ? '0 12px 26px rgba(59, 130, 246, 0.18)' : avatar.glow,
+                      border: `1px solid ${checked ? 'rgba(191, 219, 254, 0.4)' : avatar.borderColor}`,
+                      boxShadow: checked ? '0 8px 18px rgba(59, 130, 246, 0.12)' : avatar.glow,
                     }}
                     aria-hidden="true"
                   >
                     {avatar.emoji}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <div className="truncate font-semibold text-white">{student.nickname}</div>
                       {student.id === GUEST_STUDENT_ID && (
                         <span className="text-[10px] font-semibold text-sky-200/60">
@@ -178,7 +168,7 @@ function StudentPicker({
                         </span>
                       )}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-0.5 text-[11px] text-slate-400">
                       ID {student.id} ・ {meta.detail}
                     </div>
                   </div>
@@ -186,7 +176,7 @@ function StudentPicker({
                     className="shrink-0 text-[10px] font-semibold"
                     style={{ color: checked ? '#7dd3fc' : '#64748b' }}
                   >
-                    {checked ? '✓' : ''}
+                    {checked ? '選択中' : ''}
                   </div>
                 </label>
               )
@@ -232,6 +222,7 @@ export default function LoginPage({
   const [showLoginUpdates, setShowLoginUpdates] = useState(true)
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<WeeklyLeaderboardEntry[]>([])
   const [weeklyLeaderboardLoading, setWeeklyLeaderboardLoading] = useState(true)
+  const [showSchoolFeed, setShowSchoolFeed] = useState(false)
   const currentWeekRange = useMemo(() => getJstWeekRange(), [])
   const weekRangeLabel = useMemo(() => {
     const endDate = new Date(currentWeekRange.endDate.getTime() - 1)
@@ -367,6 +358,7 @@ export default function LoginPage({
   }, [currentWeekRange.startDate])
 
   const isGuest = studentId === GUEST_STUDENT_ID
+  const hasSchoolFeed = showLoginUpdates || weeklyLeaderboardLoading || weeklyLeaderboard.length > 0
 
   const handleLogin = async () => {
     setSubmitting(true)
@@ -444,97 +436,120 @@ export default function LoginPage({
                 </p>
               </div>
 
-              <ul className="mt-5 space-y-2 text-sm leading-6 text-slate-400">
-                <li>検索つきの生徒一覧 — 人数が増えてもスクロールで選びやすい</li>
-                <li>ゲスト体験もすぐ開始 — PW 不要でその日の学習をさっと試せる</li>
-                <li>オンライン導線も同じ操作感 — 通常ログインと同じ並びで迷わない</li>
-              </ul>
+              <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-400">
+                <span>検索つきの生徒一覧</span>
+                <span>ゲスト体験もすぐ開始</span>
+                <span>オンライン導線も同じ操作感</span>
+              </div>
 
-              {showLoginUpdates && (
-                <div className="mt-5 rounded-[24px] border border-white/10 bg-slate-950/38 px-4 py-3 sm:px-5 sm:py-4">
+              {hasSchoolFeed && (
+                <div className="mt-5 rounded-[24px] border border-white/8 bg-slate-950/28 px-4 py-3 sm:px-5 sm:py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Update Board</div>
-                      <div className="mt-1 text-sm font-semibold text-white">直近3日のアップデート</div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">School Feed</div>
+                      <div className="mt-1 text-sm font-semibold text-white">学校の動き</div>
+                      <div className="mt-1 text-xs text-slate-400">アップデートや今週のランキングは必要なときだけ開けます。</div>
                     </div>
-                    <div className="text-[11px] text-slate-500">{loginUpdates.length}件</div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSchoolFeed(current => !current)}
+                      className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
+                    >
+                      {showSchoolFeed ? '閉じる' : '開く'}
+                    </button>
                   </div>
 
-                  <div className="mt-3 max-h-40 overflow-y-auto pr-1 md:max-h-56">
-                    {loginUpdatesLoading ? (
-                      <div className="px-1 py-3 text-xs text-slate-500">
-                        掲示板を読み込み中...
-                      </div>
-                    ) : loginUpdates.length > 0 ? (
-                      <div className="space-y-3">
-                        {loginUpdates.map(update => (
-                          <div key={update.id} className="border-b border-white/8 pb-3 last:border-b-0 last:pb-0">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="text-sm font-semibold text-white">{update.title}</div>
-                                <div className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-300">{update.body}</div>
-                              </div>
-                              <div className="shrink-0 text-[10px] text-slate-500">
-                                {format(new Date(update.created_at), 'M/d HH:mm', { locale: ja })}
-                              </div>
+                  {showSchoolFeed && (
+                    <div className={`mt-4 grid gap-4 ${showLoginUpdates ? 'lg:grid-cols-[0.95fr_1.05fr]' : ''}`}>
+                      {showLoginUpdates && (
+                        <div className="border-t border-white/8 pt-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Update Board</div>
+                              <div className="mt-1 text-sm font-semibold text-white">直近3日のアップデート</div>
                             </div>
+                            <div className="text-[11px] text-slate-500">{loginUpdates.length}件</div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="px-1 py-3 text-xs text-slate-500">
-                        直近のアップデートはまだありません。
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
-              <div className="mt-5 rounded-[24px] border border-white/10 bg-slate-950/38 px-4 py-3 sm:px-5 sm:py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Weekly Ranking</div>
-                    <div className="mt-1 text-sm font-semibold text-white">今週のランキング</div>
-                  </div>
-                  <div className="text-[11px] text-slate-500">{weekRangeLabel}</div>
-                </div>
-
-                <div className="mt-3 max-h-48 overflow-y-auto pr-1 md:max-h-60">
-                  {weeklyLeaderboardLoading ? (
-                    <div className="px-1 py-3 text-xs text-slate-500">
-                      ランキングを読み込み中...
-                    </div>
-                  ) : weeklyLeaderboard.length > 0 ? (
-                    <div className="space-y-2">
-                      {weeklyLeaderboard.map(entry => (
-                        <div key={`${entry.studentId}-${entry.rank}`} className="flex items-center justify-between gap-3 border-b border-white/8 pb-2 last:border-b-0 last:pb-0">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <div className="text-sm font-semibold text-sky-100">
-                                {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`}
+                          <div className="mt-3 max-h-40 overflow-y-auto pr-1 md:max-h-56">
+                            {loginUpdatesLoading ? (
+                              <div className="px-1 py-3 text-xs text-slate-500">
+                                掲示板を読み込み中...
                               </div>
-                              <div className="truncate text-sm font-semibold text-white">{entry.nickname}</div>
-                              <div className="text-[10px] text-slate-500">Lv.{entry.level}</div>
-                            </div>
-                            <div className="mt-0.5 text-[11px] text-slate-500">{entry.title}</div>
-                          </div>
-                          <div className="shrink-0 text-right">
-                            <div className="font-display text-xl text-sky-300">{entry.weeklyXp}</div>
-                            <div className="text-[10px] text-slate-500">XP</div>
+                            ) : loginUpdates.length > 0 ? (
+                              <div className="space-y-3">
+                                {loginUpdates.map(update => (
+                                  <div key={update.id} className="border-b border-white/8 pb-3 last:border-b-0 last:pb-0">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="min-w-0">
+                                        <div className="text-sm font-semibold text-white">{update.title}</div>
+                                        <div className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-300">{update.body}</div>
+                                      </div>
+                                      <div className="shrink-0 text-[10px] text-slate-500">
+                                        {format(new Date(update.created_at), 'M/d HH:mm', { locale: ja })}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="px-1 py-3 text-xs text-slate-500">
+                                直近のアップデートはまだありません。
+                              </div>
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="px-1 py-3 text-xs text-slate-500">
-                      まだ今週の記録はありません。
+                      )}
+
+                      <div className="border-t border-white/8 pt-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Weekly Ranking</div>
+                            <div className="mt-1 text-sm font-semibold text-white">今週のランキング</div>
+                          </div>
+                          <div className="text-[11px] text-slate-500">{weekRangeLabel}</div>
+                        </div>
+
+                        <div className="mt-3 max-h-48 overflow-y-auto pr-1 md:max-h-60">
+                          {weeklyLeaderboardLoading ? (
+                            <div className="px-1 py-3 text-xs text-slate-500">
+                              ランキングを読み込み中...
+                            </div>
+                          ) : weeklyLeaderboard.length > 0 ? (
+                            <div className="space-y-2">
+                              {weeklyLeaderboard.map(entry => (
+                                <div key={`${entry.studentId}-${entry.rank}`} className="flex items-center justify-between gap-3 border-b border-white/8 pb-2 last:border-b-0 last:pb-0">
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-sm font-semibold text-sky-100">
+                                        {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`}
+                                      </div>
+                                      <div className="truncate text-sm font-semibold text-white">{entry.nickname}</div>
+                                      <div className="text-[10px] text-slate-500">Lv.{entry.level}</div>
+                                    </div>
+                                    <div className="mt-0.5 text-[11px] text-slate-500">{entry.title}</div>
+                                  </div>
+                                  <div className="shrink-0 text-right">
+                                    <div className="font-display text-xl text-sky-300">{entry.weeklyXp}</div>
+                                    <div className="text-[10px] text-slate-500">XP</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="px-1 py-3 text-xs text-slate-500">
+                              まだ今週の記録はありません。
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
+              )}
             </div>
 
-            <div className="order-1 lg:order-2 rounded-[32px] border border-white/10 bg-slate-950/44 p-4 sm:p-5 lg:p-6">
+            <div className="order-1 lg:order-2 rounded-[32px] border border-white/8 bg-slate-950/40 p-4 sm:p-5 lg:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-200">Student Login</div>
@@ -612,28 +627,28 @@ export default function LoginPage({
                 {submitting ? 'ログイン中...' : isGuest ? 'ゲストで始める' : 'ログイン'}
               </button>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm">
                 <button
                   onClick={() => {
                     setRegisterOpen(prev => !prev)
                     setRegError('')
                     setRegSuccess('')
                   }}
-                  className="btn-ghost w-full"
+                  className="font-semibold text-slate-200 transition-colors hover:text-white"
                 >
-                  新規登録
+                  {registerOpen ? '新規登録を閉じる' : '新規登録'}
                 </button>
 
                 <button
                   onClick={onAdmin}
-                  className="btn-secondary w-full"
+                  className="text-slate-400 transition-colors hover:text-slate-200"
                 >
                   もぎ先生ログイン
                 </button>
               </div>
 
               {registerOpen && (
-                <div className="mt-5 rounded-[28px] border border-emerald-300/16 bg-slate-950/45 p-4 sm:p-5">
+                <div className="mt-5 rounded-[24px] border border-emerald-300/12 bg-slate-950/34 p-4 sm:p-5">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-semibold tracking-[0.18em] uppercase text-emerald-200">Registration</div>
@@ -641,7 +656,7 @@ export default function LoginPage({
                     </div>
                     <button
                       onClick={() => setRegisterOpen(false)}
-                      className="btn-ghost !px-4 !py-2"
+                      className="text-sm text-slate-400 transition-colors hover:text-slate-200"
                     >
                       閉じる
                     </button>
@@ -687,22 +702,20 @@ export default function LoginPage({
                     </div>
                   )}
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm">
                     <button
                       onClick={() => void handleRegister()}
-                      className="btn-primary w-full"
+                      className="font-semibold text-emerald-200 transition-colors hover:text-white disabled:text-slate-500"
                       disabled={regSubmitting || !regNickname.trim() || !regPassword.trim()}
-                      style={{ opacity: regSubmitting || !regNickname.trim() || !regPassword.trim() ? 0.7 : 1 }}
                     >
                       {regSubmitting ? '登録中...' : '登録する'}
                     </button>
-                    <button onClick={() => setRegisterOpen(false)} className="btn-secondary w-full">
+                    <button onClick={() => setRegisterOpen(false)} className="text-slate-400 transition-colors hover:text-slate-200">
                       キャンセル
                     </button>
                   </div>
                 </div>
               )}
-
             </div>
           </div>
         </div>

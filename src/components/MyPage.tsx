@@ -74,6 +74,8 @@ interface CustomQuestionForm {
   grade: string
 }
 
+type QuestionComposerMode = 'simple' | 'advanced'
+
 const INITIAL_CUSTOM_QUESTION_FORM: CustomQuestionForm = {
   field: '生物',
   unit: '',
@@ -89,6 +91,81 @@ const INITIAL_CUSTOM_QUESTION_FORM: CustomQuestionForm = {
   distractorTokensText: '',
   explanation: '',
   grade: '中3',
+}
+
+const SIMPLE_CREATOR_TYPES = [
+  {
+    type: 'choice' as const,
+    label: '2択',
+    description: 'A/B を入れて、正解を選ぶだけ。',
+  },
+  {
+    type: 'true_false' as const,
+    label: '○×',
+    description: '正しいかどうかを選ぶだけ。',
+  },
+  {
+    type: 'text' as const,
+    label: '一問一答',
+    description: '答えを1つ入れるだけ。',
+  },
+] as const
+
+function buildQuestionDraft(overrides: Partial<CustomQuestionForm> = {}): CustomQuestionForm {
+  return {
+    ...INITIAL_CUSTOM_QUESTION_FORM,
+    ...overrides,
+    choices: overrides.choices ? [...overrides.choices] : [...INITIAL_CUSTOM_QUESTION_FORM.choices],
+  }
+}
+
+function applyQuestionTypeToDraft(current: CustomQuestionForm, type: QuestionType): CustomQuestionForm {
+  return buildQuestionDraft({
+    field: current.field,
+    unit: current.unit,
+    question: current.question,
+    explanation: current.explanation,
+    grade: current.grade,
+    type,
+  })
+}
+
+function resetQuestionDraftKeepingContext(current: CustomQuestionForm): CustomQuestionForm {
+  return buildQuestionDraft({
+    field: current.field,
+    unit: current.unit,
+    grade: current.grade,
+    type: current.type,
+  })
+}
+
+function isSimpleQuestionType(type: QuestionType) {
+  return SIMPLE_CREATOR_TYPES.some(option => option.type === type)
+}
+
+function buildQuestionFormFromRow(question: QuestionRow): CustomQuestionForm {
+  const normalized = normalizeQuestionRecord(question)
+  const nextChoices = [...(normalized.choices ?? [])]
+  while (nextChoices.length < INITIAL_CUSTOM_QUESTION_FORM.choices.length) {
+    nextChoices.push('')
+  }
+
+  return buildQuestionDraft({
+    field: normalized.field,
+    unit: normalized.unit,
+    question: normalized.question,
+    type: normalized.type,
+    choices: nextChoices,
+    answer: normalized.answer,
+    keywords: normalized.keywords?.join(', ') ?? '',
+    matchPairsText: normalized.match_pairs?.map(pair => `${pair.left} | ${pair.right}`).join('\n') ?? '',
+    sortItemsText: normalized.sort_items?.join('\n') ?? '',
+    correctChoicesText: normalized.correct_choices?.join('\n') ?? '',
+    wordTokensText: normalized.word_tokens?.join('\n') ?? '',
+    distractorTokensText: normalized.distractor_tokens?.join('\n') ?? '',
+    explanation: normalized.explanation ?? '',
+    grade: normalized.grade ?? '中3',
+  })
 }
 
 import { parseKeywordInput, parseListInput, parseMatchPairsText, getFieldColor, formatStudyTime } from '@/lib/formUtils'
@@ -216,6 +293,9 @@ export default function MyPage({
   const [accountMsg, setAccountMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [saving, setSaving] = useState<'nickname' | 'password' | null>(null)
   const [questionForm, setQuestionForm] = useState<CustomQuestionForm>(INITIAL_CUSTOM_QUESTION_FORM)
+  const [questionComposerMode, setQuestionComposerMode] = useState<QuestionComposerMode>('simple')
+  const [showQuestionExtras, setShowQuestionExtras] = useState(false)
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
   const [questionMsg, setQuestionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [savingQuestion, setSavingQuestion] = useState(false)
   const [studentXp, setStudentXp] = useState(0)
@@ -227,6 +307,11 @@ export default function MyPage({
   const tabContentRef = useRef<HTMLDivElement | null>(null)
   const tabScrollPositionsRef = useRef<Partial<Record<Tab, number>>>({})
   const hasMountedTabRef = useRef(false)
+  const questionComposerRef = useRef<HTMLDivElement | null>(null)
+  const activeSimpleCreatorOption = useMemo(
+    () => SIMPLE_CREATOR_TYPES.find(option => option.type === questionForm.type) ?? SIMPLE_CREATOR_TYPES[0],
+    [questionForm.type],
+  )
 
   useEffect(() => {
     if (studentId === null) return
@@ -531,6 +616,62 @@ export default function MyPage({
     }
   }
 
+  const handleQuestionComposerModeChange = (nextMode: QuestionComposerMode) => {
+    setQuestionComposerMode(nextMode)
+    if (
+      nextMode === 'simple'
+      && !SIMPLE_CREATOR_TYPES.some(option => option.type === questionForm.type)
+    ) {
+      setQuestionForm(current => applyQuestionTypeToDraft(current, 'choice'))
+    }
+  }
+
+  const handleQuestionTypeChange = (nextType: QuestionType) => {
+    setQuestionForm(current => applyQuestionTypeToDraft(current, nextType))
+  }
+
+  const handleQuestionChoiceChange = (index: number, value: string) => {
+    setQuestionForm(current => {
+      const nextChoices = [...current.choices]
+      const previousChoice = nextChoices[index]
+      nextChoices[index] = value
+      return {
+        ...current,
+        choices: nextChoices,
+        answer: current.answer === previousChoice ? value : current.answer,
+      }
+    })
+  }
+
+  const selectQuestionChoiceAnswer = (index: number) => {
+    setQuestionForm(current => ({
+      ...current,
+      answer: current.choices[index] ?? '',
+    }))
+  }
+
+  const handleEditQuestion = (question: QuestionRow) => {
+    const nextForm = buildQuestionFormFromRow(question)
+    setEditingQuestionId(question.id)
+    setQuestionForm(nextForm)
+    setQuestionComposerMode(isSimpleQuestionType(nextForm.type) ? 'simple' : 'advanced')
+    setShowQuestionExtras(Boolean(nextForm.explanation) || nextForm.grade !== '中3')
+    setQuestionMsg(null)
+
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        questionComposerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
+  }
+
+  const cancelQuestionEditing = () => {
+    setEditingQuestionId(null)
+    setQuestionForm(current => resetQuestionDraftKeepingContext(current))
+    setShowQuestionExtras(false)
+    setQuestionMsg(null)
+  }
+
   const handleTabChange = (nextTab: Tab) => {
     if (nextTab === tab) return
     if (typeof window !== 'undefined') {
@@ -697,11 +838,19 @@ export default function MyPage({
         correct_choices: payload.correct_choices,
         word_tokens: payload.word_tokens,
         distractor_tokens: payload.distractor_tokens,
-      }])
+      }], editingQuestionId ? { excludeIds: [editingQuestionId] } : undefined)
 
-      const { data, error } = await supabase
-        .from('questions')
-        .insert(payload)
+      const query = editingQuestionId
+        ? supabase
+            .from('questions')
+            .update(payload)
+            .eq('id', editingQuestionId)
+            .eq('created_by_student_id', studentId)
+        : supabase
+            .from('questions')
+            .insert(payload)
+
+      const { data, error } = await query
         .select()
         .single()
 
@@ -734,10 +883,19 @@ export default function MyPage({
       if (error) throw new Error(error.message)
 
       if (data) {
-        setMyQuestions(current => [data as QuestionRow, ...current])
+        setMyQuestions(current => (
+          editingQuestionId
+            ? current.map(question => (question.id === editingQuestionId ? data as QuestionRow : question))
+            : [data as QuestionRow, ...current]
+        ))
       }
-      setQuestionForm(INITIAL_CUSTOM_QUESTION_FORM)
-      setQuestionMsg({ type: 'success', text: '自分用の問題を追加しました。' })
+      setQuestionForm(current => resetQuestionDraftKeepingContext(current))
+      setEditingQuestionId(null)
+      setShowQuestionExtras(false)
+      setQuestionMsg({
+        type: 'success',
+        text: editingQuestionId ? '自分用の問題を更新しました。' : '自分用の問題を追加しました。',
+      })
     } catch (error) {
       setQuestionMsg({
         type: 'error',
@@ -761,28 +919,19 @@ export default function MyPage({
       {/* ヘッダー */}
       <div className="px-1 pt-0.5 pb-1.5 sm:pt-1 sm:pb-3">
         <div className="mb-2 flex items-center justify-between gap-3 sm:mb-3">
-          <button onClick={onBack} className="btn-secondary text-sm !px-3 !py-1.5 sm:!px-4 sm:!py-2.5">
+          <button onClick={onBack} className="text-sm font-semibold text-slate-200 transition-colors hover:text-white">
             もどる
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <button
               onClick={onOnline}
-              className="text-sm !px-3 !py-1.5 sm:!px-4 sm:!py-2.5"
-              style={{
-                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.18))',
-                border: '1px solid rgba(56, 189, 248, 0.35)',
-                borderRadius: '16px',
-                color: '#7dd3fc',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
+              className="font-semibold text-sky-200 transition-colors hover:text-white"
             >
               オンライン
             </button>
             <button
               onClick={() => logout()}
-              className="btn-ghost text-sm !px-3 !py-1.5 sm:!px-4 sm:!py-2.5"
+              className="text-slate-400 transition-colors hover:text-slate-200"
             >
               ログアウト
             </button>
@@ -826,46 +975,30 @@ export default function MyPage({
                 </div>
               </div>
             </div>
-            <div className="hidden gap-2.5 sm:grid md:min-w-[280px] lg:min-w-[320px]">
-              <div className="rounded-[20px] border px-3.5 py-3.5 sm:rounded-[22px] sm:px-4 sm:py-4" style={{
-                borderColor: 'var(--color-info-soft-border)',
-                background: 'rgba(8, 13, 24, 0.48)',
-              }}>
-                <div className="flex items-end justify-between gap-3">
-                  <div>
-                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Level</div>
-                    <div className="mt-1.5 flex flex-wrap items-end gap-x-3 gap-y-1 sm:mt-2">
-                      <div className="font-display text-3xl leading-none text-white sm:text-4xl">Lv.{levelInfo.level}</div>
-                      <div className="pb-0.5 text-xs font-semibold text-sky-200 sm:pb-1 sm:text-sm">{levelInfo.title}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-slate-500">XP</div>
-                    <div className="mt-1.5 font-display text-xl leading-none text-sky-300 sm:mt-2 sm:text-2xl">{levelInfo.totalXp}</div>
-                  </div>
-                </div>
-                <div className="mt-3 soft-track sm:mt-4" style={{ height: 8 }}>
-                  <div
-                    style={{
-                      width: `${levelInfo.progressRate}%`,
-                      height: '100%',
-                      background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
-                      borderRadius: 999,
-                    }}
-                  />
-                </div>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-slate-500 sm:text-xs">
-                  <span>{levelInfo.progressXp} / {levelInfo.progressMax} XP</span>
-                  <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
+            <div className="hidden gap-3 text-right sm:flex sm:flex-col md:min-w-[280px] lg:min-w-[320px]">
+              <div>
+                <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Level</div>
+                <div className="mt-1.5 flex flex-wrap items-end justify-end gap-x-3 gap-y-1 sm:mt-2">
+                  <div className="font-display text-3xl leading-none text-white sm:text-4xl">Lv.{levelInfo.level}</div>
+                  <div className="pb-0.5 text-xs font-semibold text-sky-200 sm:pb-1 sm:text-sm">{levelInfo.title}</div>
                 </div>
               </div>
-              {streak > 0 && (
-                <div className="flex w-fit items-center gap-2 rounded-[18px] px-3.5 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3" style={{ background: 'rgba(249, 115, 22, 0.12)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
-                  <span className="text-xl sm:text-2xl">🔥</span>
-                  <span className="font-display text-xl leading-none text-orange-300 sm:text-2xl">{streak}</span>
-                  <span className="text-[11px] text-slate-400 sm:text-xs">日連続</span>
-                </div>
-              )}
+              <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-xs text-slate-400">
+                <span>XP <span className="font-display text-sky-300">{levelInfo.totalXp}</span></span>
+                <span>{levelInfo.progressXp} / {levelInfo.progressMax} XP</span>
+                <span>次まで {Math.max(0, levelInfo.nextLevelXp - levelInfo.totalXp)} XP</span>
+                {streak > 0 && <span className="text-orange-200">🔥 {streak}日連続</span>}
+              </div>
+              <div className="soft-track" style={{ height: 8 }}>
+                <div
+                  style={{
+                    width: `${levelInfo.progressRate}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, var(--color-accent), var(--color-info))',
+                    borderRadius: 999,
+                  }}
+                />
+              </div>
             </div>
           </div>
           {isGuest && (
@@ -880,7 +1013,11 @@ export default function MyPage({
       </div>
 
       <div className="sticky top-0 z-10 px-1 pb-3 pt-1 floating-header">
-        <div className="segment-bar" role="tablist" aria-label="マイページ">
+        <div
+          className="flex gap-4 overflow-x-auto border-b border-white/8 px-1 pb-2"
+          role="tablist"
+          aria-label="マイページ"
+        >
           {tabs.map(([t, label]) => (
             <button
               key={t}
@@ -890,7 +1027,11 @@ export default function MyPage({
                 handleTabChange(t)
                 ;(e.currentTarget as HTMLButtonElement).scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
               }}
-              className={`segment-button ${tab === t ? 'is-active' : ''}`}
+              className={`shrink-0 whitespace-nowrap border-b-2 pb-2 text-sm font-semibold transition-colors ${
+                tab === t
+                  ? 'border-sky-300 text-white'
+                  : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
             >
               {label}
             </button>
@@ -1417,184 +1558,373 @@ export default function MyPage({
 
         {tab === 'questions' && (
           <div className="anim-fade md:grid md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-start md:gap-4">
-            <div className="space-y-4">
-              <div className="card">
-                <h3 className="text-slate-300 font-bold mb-1">自分の問題を追加</h3>
-                <p className="text-slate-500 text-xs leading-6">
-                  ここで作った問題は、自分だけが解けます。先生は管理画面の問題一覧で確認できます。
-                </p>
-                <div className="grid grid-cols-1 gap-3 mt-4 sm:grid-cols-2">
-                  <select
-                    value={questionForm.field}
-                    onChange={e => setQuestionForm(current => ({ ...current, field: e.target.value as typeof FIELDS[number] }))}
-                    className="input-surface"
-                  >
-                    {FIELDS.map(field => <option key={field}>{field}</option>)}
-                  </select>
-                  <select
-                    value={questionForm.type}
-                    onChange={e => setQuestionForm(current => ({ ...current, type: e.target.value as QuestionType }))}
-                    className="input-surface"
-                  >
-                    {QUESTION_TYPES.map(type => (
-                      <option key={type} value={type}>{getQuestionTypeLabel(type)}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid grid-cols-1 gap-3 mt-3 sm:grid-cols-2">
-                  <input
-                    type="text"
-                    value={questionForm.unit}
-                    onChange={e => setQuestionForm(current => ({ ...current, unit: e.target.value }))}
-                    placeholder="単元"
-                    className="input-surface"
-                  />
-                  <select
-                    value={questionForm.grade}
-                    onChange={e => setQuestionForm(current => ({ ...current, grade: e.target.value }))}
-                    className="input-surface"
-                  >
-                    {['中1', '中2', '中3', '高校'].map(grade => <option key={grade}>{grade}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-3 mt-3">
-                  <textarea
-                    value={questionForm.question}
-                    onChange={e => setQuestionForm(current => ({ ...current, question: e.target.value }))}
-                    placeholder="問題文"
-                    rows={4}
-                    className="input-surface resize-y"
-                  />
-                  {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'multi_select') && (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {questionForm.choices
-                        .slice(0, questionForm.type === 'choice' ? 2 : questionForm.type === 'multi_select' ? 6 : 4)
-                        .map((choice, index) => (
-                          <input
-                            key={`${questionForm.type}-choice-${index}`}
-                            type="text"
-                            value={choice}
-                            onChange={e => setQuestionForm(current => {
-                              const nextChoices = [...current.choices]
-                              nextChoices[index] = e.target.value
-                              return { ...current, choices: nextChoices }
-                            })}
-                            placeholder={`${'ABCDEF'[index]}. 選択肢`}
-                            className="input-surface"
-                          />
-                        ))}
-                    </div>
-                  )}
-                  {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'text' || questionForm.type === 'word_bank') && (
-                    <input
-                      type="text"
-                      value={questionForm.answer}
-                      onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
-                      placeholder={
-                        questionForm.type === 'text'
-                          ? '模範解答文'
-                          : questionForm.type === 'word_bank'
-                            ? '完成形（空欄なら語群から自動生成）'
-                            : '正解（選択肢と同じ内容）'
-                      }
-                      className="input-surface"
-                    />
-                  )}
-                  {questionForm.type === 'true_false' && (
-                    <select
-                      value={questionForm.answer}
-                      onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
-                      className="input-surface"
-                    >
-                      <option value="">正解を選ぶ</option>
-                      <option value="○">○</option>
-                      <option value="×">×</option>
-                    </select>
-                  )}
-                  {questionForm.type === 'text' && (
-                    <div>
-                      <input
-                        type="text"
-                        value={questionForm.keywords}
-                        onChange={e => setQuestionForm(current => ({ ...current, keywords: e.target.value }))}
-                        placeholder="空欄にしたいキーワード（任意 / カンマ区切り）"
-                        className="input-surface"
-                      />
-                      <p className="text-slate-500 text-xs mt-2">
-                        `answer` の模範解答文に入る理科キーワードをここへ入れると、生徒はその空欄だけ入力する形になります。
-                      </p>
-                    </div>
-                  )}
-                  {questionForm.type === 'match' && (
-                    <div>
-                      <textarea
-                        value={questionForm.matchPairsText}
-                        onChange={e => setQuestionForm(current => ({ ...current, matchPairsText: e.target.value }))}
-                        placeholder={'左 | 右\nアミラーゼ | デンプン'}
-                        rows={4}
-                        className="input-surface resize-y"
-                      />
-                      <p className="text-slate-500 text-xs mt-2">1行に1組ずつ、`左 | 右` の形で書きます。</p>
-                    </div>
-                  )}
-                  {questionForm.type === 'sort' && (
-                    <div>
-                      <textarea
-                        value={questionForm.sortItemsText}
-                        onChange={e => setQuestionForm(current => ({ ...current, sortItemsText: e.target.value }))}
-                        placeholder={'口\n食道\n胃\n小腸\n大腸'}
-                        rows={4}
-                        className="input-surface resize-y"
-                      />
-                      <p className="text-slate-500 text-xs mt-2">正しい順番で、1行に1つずつ書きます。</p>
-                    </div>
-                  )}
-                  {questionForm.type === 'multi_select' && (
-                    <div>
-                      <textarea
-                        value={questionForm.correctChoicesText}
-                        onChange={e => setQuestionForm(current => ({ ...current, correctChoicesText: e.target.value }))}
-                        placeholder={'デンプン\nエタノール'}
-                        rows={3}
-                        className="input-surface resize-y"
-                      />
-                      <p className="text-slate-500 text-xs mt-2">正解にする選択肢だけを、1行に1つずつ書きます。</p>
-                    </div>
-                  )}
-                  {questionForm.type === 'word_bank' && (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <textarea
-                        value={questionForm.wordTokensText}
-                        onChange={e => setQuestionForm(current => ({ ...current, wordTokensText: e.target.value }))}
-                        placeholder={'2Cu\n+\nO₂\n→\n2CuO'}
-                        rows={4}
-                        className="input-surface resize-y"
-                      />
-                      <textarea
-                        value={questionForm.distractorTokensText}
-                        onChange={e => setQuestionForm(current => ({ ...current, distractorTokensText: e.target.value }))}
-                        placeholder={'Cu₂\n2O₂'}
-                        rows={4}
-                        className="input-surface resize-y"
-                      />
-                    </div>
-                  )}
-                  <textarea
-                    value={questionForm.explanation}
-                    onChange={e => setQuestionForm(current => ({ ...current, explanation: e.target.value }))}
-                    placeholder="解説（任意）"
-                    rows={3}
-                    className="input-surface resize-y"
-                  />
-                </div>
-                <button
-                  onClick={handleAddQuestion}
-                  className="btn-primary w-full mt-3"
-                  disabled={savingQuestion}
-                  style={{ opacity: savingQuestion ? 0.7 : 1 }}
-                >
-                  {savingQuestion ? '追加中...' : 'この問題を追加'}
-                </button>
+		            <div className="space-y-4">
+		              <div ref={questionComposerRef} className="card">
+		                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+		                  <div>
+		                    <h3 className="text-slate-300 font-bold mb-1">
+		                      {editingQuestionId ? '自分の問題を編集' : '自分の問題を追加'}
+		                    </h3>
+		                    <p className="text-slate-500 text-xs leading-6">
+		                      {editingQuestionId
+		                        ? '一覧から読み込んだ内容をここで直して、そのまま上書きできます。'
+		                        : '生徒はまず `かんたん作成` から。追加後も分野・単元・形式を維持するので、続けて作りやすくしています。'}
+		                    </p>
+		                  </div>
+		                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+	                    <button
+	                      type="button"
+	                      onClick={() => handleQuestionComposerModeChange('simple')}
+	                      className={`font-semibold transition-colors ${questionComposerMode === 'simple' ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
+	                    >
+	                      かんたん
+	                    </button>
+	                    <button
+	                      type="button"
+	                      onClick={() => handleQuestionComposerModeChange('advanced')}
+	                      className={`font-semibold transition-colors ${questionComposerMode === 'advanced' ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
+	                    >
+	                      くわしく
+		                    </button>
+		                  </div>
+		                </div>
+
+		                {editingQuestionId && (
+		                  <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-6">
+		                    <span className="font-semibold text-sky-100">編集中の問題があります。</span>
+		                    <span className="text-slate-300">更新すると一覧の同じ問題を上書きします。</span>
+		                    <button
+		                      type="button"
+		                      onClick={cancelQuestionEditing}
+		                      className="font-semibold text-sky-200 transition-colors hover:text-white"
+		                    >
+		                      編集をやめる
+		                    </button>
+		                  </div>
+		                )}
+
+	                {questionComposerMode === 'simple' ? (
+	                  <div className="mt-4 space-y-4">
+	                    <div>
+	                      <div className="text-[11px] font-semibold tracking-[0.18em] text-sky-200 uppercase">Quick Create</div>
+	                      <div className="mt-1 text-sm text-slate-300">よく使う3形式だけ先に出しています。分野・単元・問題文・答えだけで追加できます。</div>
+	                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+	                        {SIMPLE_CREATOR_TYPES.map(option => {
+	                          const active = questionForm.type === option.type
+	                          return (
+	                            <button
+	                              key={option.type}
+	                              type="button"
+	                              onClick={() => handleQuestionTypeChange(option.type)}
+	                              className={`font-semibold transition-colors ${active ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
+	                            >
+	                              {option.label}
+	                            </button>
+	                          )
+	                        })}
+	                      </div>
+	                      <div className="mt-2 text-xs leading-6 text-slate-400">{activeSimpleCreatorOption.description}</div>
+	                    </div>
+
+	                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+	                      <select
+	                        value={questionForm.field}
+	                        onChange={e => setQuestionForm(current => ({ ...current, field: e.target.value as typeof FIELDS[number] }))}
+	                        className="input-surface"
+	                      >
+	                        {FIELDS.map(field => <option key={field}>{field}</option>)}
+	                      </select>
+	                      <input
+	                        type="text"
+	                        value={questionForm.unit}
+	                        onChange={e => setQuestionForm(current => ({ ...current, unit: e.target.value }))}
+	                        placeholder="単元 例: 光合成 / 電流 / 火山"
+	                        className="input-surface"
+	                      />
+	                    </div>
+
+	                    <textarea
+	                      value={questionForm.question}
+	                      onChange={e => setQuestionForm(current => ({ ...current, question: e.target.value }))}
+	                      placeholder="問題文 例: 植物が光合成で取り入れる気体はどれ？"
+	                      rows={3}
+	                      className="input-surface resize-y"
+	                    />
+
+	                    {questionForm.type === 'choice' && (
+	                      <div className="space-y-3">
+	                        {[0, 1].map(index => {
+	                          const choiceValue = questionForm.choices[index] ?? ''
+	                          const isCorrect = choiceValue.trim().length > 0 && questionForm.answer.trim() === choiceValue.trim()
+	                          return (
+	                            <div key={`simple-choice-${index}`} className="flex items-center gap-3">
+	                              <div className="w-5 shrink-0 text-sm font-bold text-slate-300">
+	                                {'AB'[index]}
+	                              </div>
+	                              <input
+	                                type="text"
+	                                value={choiceValue}
+	                                onChange={e => handleQuestionChoiceChange(index, e.target.value)}
+	                                placeholder={`選択肢 ${'AB'[index]}`}
+	                                className="input-surface"
+	                              />
+	                              {isCorrect ? (
+	                                <span className="shrink-0 text-xs font-semibold text-emerald-300">正解</span>
+	                              ) : (
+	                                <button
+	                                  type="button"
+	                                  onClick={() => selectQuestionChoiceAnswer(index)}
+	                                  disabled={!choiceValue.trim()}
+	                                  className="shrink-0 text-xs font-semibold text-sky-200 transition-colors hover:text-white disabled:text-slate-500"
+	                                >
+	                                  正解にする
+	                                </button>
+	                              )}
+	                            </div>
+	                          )
+	                        })}
+	                      </div>
+	                    )}
+
+	                    {questionForm.type === 'true_false' && (
+	                      <select
+	                        value={questionForm.answer}
+	                        onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+	                        className="input-surface"
+	                      >
+	                        <option value="">正解を選ぶ</option>
+	                        <option value="○">○</option>
+	                        <option value="×">×</option>
+	                      </select>
+	                    )}
+
+	                    {questionForm.type === 'text' && (
+	                      <input
+	                        type="text"
+	                        value={questionForm.answer}
+	                        onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+	                        placeholder="答え 例: 二酸化炭素"
+	                        className="input-surface"
+	                      />
+	                    )}
+
+	                    <div>
+	                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-6">
+	                        <span className="text-slate-400">学年や解説は必要なときだけ追加できます。</span>
+	                        <button
+	                          type="button"
+	                          onClick={() => setShowQuestionExtras(current => !current)}
+	                          className="font-semibold text-sky-200 transition-colors hover:text-white"
+	                        >
+	                          {showQuestionExtras ? '補足を閉じる' : '学年・解説を追加'}
+	                        </button>
+	                      </div>
+	                      {showQuestionExtras && (
+	                        <div className="mt-3 grid gap-3">
+	                          <select
+	                            value={questionForm.grade}
+	                            onChange={e => setQuestionForm(current => ({ ...current, grade: e.target.value }))}
+	                            className="input-surface"
+	                          >
+	                            {['中1', '中2', '中3', '高校'].map(grade => <option key={grade}>{grade}</option>)}
+	                          </select>
+	                          <textarea
+	                            value={questionForm.explanation}
+	                            onChange={e => setQuestionForm(current => ({ ...current, explanation: e.target.value }))}
+	                            placeholder="解説（任意）"
+	                            rows={3}
+	                            className="input-surface resize-y"
+	                          />
+	                        </div>
+	                      )}
+	                    </div>
+	                  </div>
+	                ) : (
+	                  <div className="mt-4 space-y-3">
+	                    <div className="text-xs leading-6 text-slate-400">
+	                      4択、穴埋め、マッチ、並べ替えなど細かい形式を作りたいときだけこちらを使います。
+	                    </div>
+	                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+	                      <select
+	                        value={questionForm.field}
+	                        onChange={e => setQuestionForm(current => ({ ...current, field: e.target.value as typeof FIELDS[number] }))}
+	                        className="input-surface"
+	                      >
+	                        {FIELDS.map(field => <option key={field}>{field}</option>)}
+	                      </select>
+	                      <select
+	                        value={questionForm.type}
+	                        onChange={e => handleQuestionTypeChange(e.target.value as QuestionType)}
+	                        className="input-surface"
+	                      >
+	                        {QUESTION_TYPES.map(type => (
+	                          <option key={type} value={type}>{getQuestionTypeLabel(type)}</option>
+	                        ))}
+	                      </select>
+	                    </div>
+	                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+	                      <input
+	                        type="text"
+	                        value={questionForm.unit}
+	                        onChange={e => setQuestionForm(current => ({ ...current, unit: e.target.value }))}
+	                        placeholder="単元"
+	                        className="input-surface"
+	                      />
+	                      <select
+	                        value={questionForm.grade}
+	                        onChange={e => setQuestionForm(current => ({ ...current, grade: e.target.value }))}
+	                        className="input-surface"
+	                      >
+	                        {['中1', '中2', '中3', '高校'].map(grade => <option key={grade}>{grade}</option>)}
+	                      </select>
+	                    </div>
+	                    <div className="space-y-3">
+	                      <textarea
+	                        value={questionForm.question}
+	                        onChange={e => setQuestionForm(current => ({ ...current, question: e.target.value }))}
+	                        placeholder="問題文"
+	                        rows={4}
+	                        className="input-surface resize-y"
+	                      />
+	                      {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'multi_select') && (
+	                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+	                          {questionForm.choices
+	                            .slice(0, questionForm.type === 'choice' ? 2 : questionForm.type === 'multi_select' ? 6 : 4)
+	                            .map((choice, index) => (
+	                              <input
+	                                key={`${questionForm.type}-choice-${index}`}
+	                                type="text"
+	                                value={choice}
+	                                onChange={e => handleQuestionChoiceChange(index, e.target.value)}
+	                                placeholder={`${'ABCDEF'[index]}. 選択肢`}
+	                                className="input-surface"
+	                              />
+	                            ))}
+	                        </div>
+	                      )}
+	                      {(questionForm.type === 'choice' || questionForm.type === 'choice4' || questionForm.type === 'fill_choice' || questionForm.type === 'text' || questionForm.type === 'word_bank') && (
+	                        <input
+	                          type="text"
+	                          value={questionForm.answer}
+	                          onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+	                          placeholder={
+	                            questionForm.type === 'text'
+	                              ? '模範解答文'
+	                              : questionForm.type === 'word_bank'
+	                                ? '完成形（空欄なら語群から自動生成）'
+	                                : '正解（選択肢と同じ内容）'
+	                          }
+	                          className="input-surface"
+	                        />
+	                      )}
+	                      {questionForm.type === 'true_false' && (
+	                        <select
+	                          value={questionForm.answer}
+	                          onChange={e => setQuestionForm(current => ({ ...current, answer: e.target.value }))}
+	                          className="input-surface"
+	                        >
+	                          <option value="">正解を選ぶ</option>
+	                          <option value="○">○</option>
+	                          <option value="×">×</option>
+	                        </select>
+	                      )}
+	                      {questionForm.type === 'text' && (
+	                        <div>
+	                          <input
+	                            type="text"
+	                            value={questionForm.keywords}
+	                            onChange={e => setQuestionForm(current => ({ ...current, keywords: e.target.value }))}
+	                            placeholder="空欄にしたいキーワード（任意 / カンマ区切り）"
+	                            className="input-surface"
+	                          />
+	                          <p className="text-slate-500 text-xs mt-2">
+	                            `answer` の模範解答文に入る理科キーワードをここへ入れると、生徒はその空欄だけ入力する形になります。
+	                          </p>
+	                        </div>
+	                      )}
+	                      {questionForm.type === 'match' && (
+	                        <div>
+	                          <textarea
+	                            value={questionForm.matchPairsText}
+	                            onChange={e => setQuestionForm(current => ({ ...current, matchPairsText: e.target.value }))}
+	                            placeholder={'左 | 右\nアミラーゼ | デンプン'}
+	                            rows={4}
+	                            className="input-surface resize-y"
+	                          />
+	                          <p className="text-slate-500 text-xs mt-2">1行に1組ずつ、`左 | 右` の形で書きます。</p>
+	                        </div>
+	                      )}
+	                      {questionForm.type === 'sort' && (
+	                        <div>
+	                          <textarea
+	                            value={questionForm.sortItemsText}
+	                            onChange={e => setQuestionForm(current => ({ ...current, sortItemsText: e.target.value }))}
+	                            placeholder={'口\n食道\n胃\n小腸\n大腸'}
+	                            rows={4}
+	                            className="input-surface resize-y"
+	                          />
+	                          <p className="text-slate-500 text-xs mt-2">正しい順番で、1行に1つずつ書きます。</p>
+	                        </div>
+	                      )}
+	                      {questionForm.type === 'multi_select' && (
+	                        <div>
+	                          <textarea
+	                            value={questionForm.correctChoicesText}
+	                            onChange={e => setQuestionForm(current => ({ ...current, correctChoicesText: e.target.value }))}
+	                            placeholder={'デンプン\nエタノール'}
+	                            rows={3}
+	                            className="input-surface resize-y"
+	                          />
+	                          <p className="text-slate-500 text-xs mt-2">正解にする選択肢だけを、1行に1つずつ書きます。</p>
+	                        </div>
+	                      )}
+	                      {questionForm.type === 'word_bank' && (
+	                        <div className="grid gap-3 sm:grid-cols-2">
+	                          <textarea
+	                            value={questionForm.wordTokensText}
+	                            onChange={e => setQuestionForm(current => ({ ...current, wordTokensText: e.target.value }))}
+	                            placeholder={'2Cu\n+\nO₂\n→\n2CuO'}
+	                            rows={4}
+	                            className="input-surface resize-y"
+	                          />
+	                          <textarea
+	                            value={questionForm.distractorTokensText}
+	                            onChange={e => setQuestionForm(current => ({ ...current, distractorTokensText: e.target.value }))}
+	                            placeholder={'Cu₂\n2O₂'}
+	                            rows={4}
+	                            className="input-surface resize-y"
+	                          />
+	                        </div>
+	                      )}
+	                      <textarea
+	                        value={questionForm.explanation}
+	                        onChange={e => setQuestionForm(current => ({ ...current, explanation: e.target.value }))}
+	                        placeholder="解説（任意）"
+	                        rows={3}
+	                        className="input-surface resize-y"
+	                      />
+	                    </div>
+	                  </div>
+	                )}
+		                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+		                  <button
+		                    onClick={handleAddQuestion}
+		                    className="btn-primary w-full"
+	                    disabled={savingQuestion}
+	                    style={{ opacity: savingQuestion ? 0.7 : 1 }}
+	                  >
+	                    {savingQuestion ? (editingQuestionId ? '更新中...' : '追加中...') : (editingQuestionId ? 'この内容で更新' : 'この問題を追加')}
+	                  </button>
+		                  {editingQuestionId && (
+		                    <button
+		                      type="button"
+		                      onClick={cancelQuestionEditing}
+		                      className="text-sm text-slate-400 transition-colors hover:text-slate-200"
+		                    >
+		                      キャンセル
+		                    </button>
+		                  )}
+		                </div>
                 {questionMsg && (
                   <div
                     className="rounded-2xl px-4 py-3 text-sm mt-3"
@@ -1626,10 +1956,10 @@ export default function MyPage({
                     まだ自分で作った問題はありません。
                   </div>
                 ) : (
-                  myQuestions.map(question => (
-                    <div key={question.id} className="card">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
+	                  myQuestions.map(question => (
+	                    <div key={question.id} className="card">
+	                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+	                      <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
                             className="px-2 py-1 rounded-full text-xs font-bold"
@@ -1642,24 +1972,43 @@ export default function MyPage({
                             {getQuestionTypeLabel(normalizeQuestionRecord(question).type)}
                           </span>
                         </div>
-                        <div className="text-slate-500 text-xs mt-1">
-                          {format(new Date(question.created_at), 'M月d日(E) HH:mm', { locale: ja })}
-                        </div>
-                      </div>
-                      <span
-                        className="px-2 py-1 rounded-full text-xs font-bold"
-                        style={{ background: 'var(--color-warning-soft-bg)', color: 'var(--color-warning-muted)' }}
-                      >
-                        自分専用
-                      </span>
-                    </div>
-                    <p className="text-white text-sm leading-7 mt-3 whitespace-pre-wrap">{question.question}</p>
-                    <div className="text-slate-400 text-sm mt-3">答え: {getQuestionCorrectAnswerText(normalizeQuestionRecord(question))}</div>
-                    {question.explanation && (
-                      <p className="text-slate-300 text-sm leading-7 mt-2 whitespace-pre-wrap">{question.explanation}</p>
-                    )}
-                    </div>
-                  ))
+	                        <div className="text-slate-500 text-xs mt-1">
+	                          {format(new Date(question.created_at), 'M月d日(E) HH:mm', { locale: ja })}
+	                        </div>
+	                      </div>
+	                      <div className="flex items-center gap-2 self-start">
+	                        {editingQuestionId === question.id && (
+	                          <span
+	                            className="px-2 py-1 rounded-full text-xs font-bold"
+	                            style={{ background: 'rgba(56, 189, 248, 0.16)', color: '#bae6fd' }}
+	                          >
+	                            編集中
+	                          </span>
+	                        )}
+	                        <span
+	                          className="px-2 py-1 rounded-full text-xs font-bold"
+	                          style={{ background: 'var(--color-warning-soft-bg)', color: 'var(--color-warning-muted)' }}
+	                        >
+	                          自分専用
+	                        </span>
+	                      </div>
+	                    </div>
+	                    <p className="text-white text-sm leading-7 mt-3 whitespace-pre-wrap">{question.question}</p>
+	                    <div className="text-slate-400 text-sm mt-3">答え: {getQuestionCorrectAnswerText(normalizeQuestionRecord(question))}</div>
+	                    {question.explanation && (
+	                      <p className="text-slate-300 text-sm leading-7 mt-2 whitespace-pre-wrap">{question.explanation}</p>
+	                    )}
+	                    <div className="mt-4 flex justify-end">
+	                      <button
+	                        type="button"
+	                        onClick={() => handleEditQuestion(question)}
+	                        className="text-xs font-semibold text-sky-200 transition-colors hover:text-white"
+	                      >
+	                        編集する
+	                      </button>
+	                    </div>
+	                    </div>
+	                  ))
                 )}
               </div>
             </div>

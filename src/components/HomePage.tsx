@@ -113,6 +113,17 @@ export default function HomePage({
       onClick: onQuickStartAll,
     }
   }, [dailyCompleted, dueCount, onDailyChallenge, onQuickStartAll, onReview, totalAnswered])
+  const secondaryMissionActions = [
+    primaryMission.kind !== 'review' && dueCount > 0
+      ? { key: 'review', label: `復習 ${dueCount}問`, onClick: onReview }
+      : null,
+    primaryMission.kind !== 'daily' && !dailyCompleted
+      ? { key: 'daily', label: '今日の5問', onClick: onDailyChallenge }
+      : null,
+    primaryMission.kind !== 'quick'
+      ? { key: 'quick', label: '4分野10問', onClick: onQuickStartAll }
+      : null,
+  ].filter(Boolean) as Array<{ key: string; label: string; onClick: () => void }>
 
   // SRSリマインダー: dueCount が読み込まれたら表示、8秒後に自動消去
   useEffect(() => {
@@ -299,46 +310,27 @@ export default function HomePage({
               </p>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:gap-3 md:max-w-sm md:ml-auto">
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              <button onClick={onMyPage} className="btn-secondary w-full !py-2.5 text-sm sm:!py-3">
+          <div className="grid grid-cols-1 gap-4 md:max-w-sm md:ml-auto">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm md:justify-end">
+              <button onClick={onMyPage} className="font-semibold text-slate-200 transition-colors hover:text-white">
                 マイページ
               </button>
-              <button
-                onClick={onOnline}
-                className="w-full !py-2.5 text-sm sm:!py-3"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(99, 102, 241, 0.15))',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                  borderRadius: '16px',
-                  color: '#7dd3fc',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
+              <button onClick={onOnline} className="font-semibold text-sky-200 transition-colors hover:text-white">
                 オンライン
               </button>
-              <button onClick={() => logout()} className="btn-ghost whitespace-nowrap !py-2.5 text-sm sm:!py-3">
+              <button onClick={() => logout()} className="text-slate-400 transition-colors hover:text-slate-200">
                 ログアウト
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              <div className="rounded-[18px] border px-3 py-3" style={{ borderColor: 'var(--inset-border)', background: 'var(--inset-bg)' }}>
-                <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-slate-400">Progress</div>
-                <div className="mt-1 font-display text-[1.3rem] text-white">{totalAnswered}</div>
-                <div className="text-[11px] text-slate-500">{activeFieldCount} / 4 分野で学習済み</div>
-              </div>
-              <div className="rounded-[18px] border px-3 py-3" style={{ borderColor: 'var(--inset-border)', background: 'var(--inset-bg)' }}>
-                <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-slate-400">Challenge</div>
-                <div className="mt-1 font-display text-[1.3rem] text-white">
-                  {timeAttackUnlocked ? (timeAttackSummary.personalBest > 0 ? timeAttackSummary.personalBest : '未挑戦') : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}`}
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  {timeAttackUnlocked ? 'TimeAttack 自己ベスト' : `あと ${timeAttackUnlockXpLeft} XP`}
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 md:justify-end">
+              <span>学習 {totalAnswered}問</span>
+              <span>{activeFieldCount} / 4 分野</span>
+              <span>
+                {timeAttackUnlocked
+                  ? `TimeAttack ${timeAttackSummary.personalBest > 0 ? `${timeAttackSummary.personalBest}秒` : '未挑戦'}`
+                  : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}まであと ${timeAttackUnlockXpLeft} XP`}
+              </span>
             </div>
           </div>
         </div>
@@ -397,23 +389,20 @@ export default function HomePage({
             <div className="mt-1.5 text-xs leading-6 text-slate-300 sm:text-sm">
               {primaryMission.description}
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {primaryMission.kind !== 'review' && dueCount > 0 && (
-                <button onClick={onReview} className="btn-secondary !px-3 !py-2 text-xs">
-                  復習 {dueCount}問
-                </button>
-              )}
-              {primaryMission.kind !== 'daily' && !dailyCompleted && (
-                <button onClick={onDailyChallenge} className="btn-secondary !px-3 !py-2 text-xs">
-                  今日の5問
-                </button>
-              )}
-              {primaryMission.kind !== 'quick' && (
-                <button onClick={onQuickStartAll} className="btn-secondary !px-3 !py-2 text-xs">
-                  4分野10問
-                </button>
-              )}
-            </div>
+            {secondaryMissionActions.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                <span>ほかの開始方法:</span>
+                {secondaryMissionActions.map(action => (
+                  <button
+                    key={action.key}
+                    onClick={action.onClick}
+                    className="font-semibold text-slate-200 transition-colors hover:text-white"
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between gap-4 md:block md:text-right">
@@ -434,66 +423,63 @@ export default function HomePage({
           <button
             type="button"
             onClick={() => setShowExtraActions(current => !current)}
-            className="btn-secondary whitespace-nowrap"
+            className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
           >
             {showExtraActions ? '閉じる' : 'もっと見る'}
           </button>
         </div>
 
         {showExtraActions && (
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <button
-              onClick={onQuickStartAll}
-              className="card text-left transition-all"
-              style={{ padding: '16px 14px', borderColor: 'var(--color-info-soft-border)', background: 'linear-gradient(135deg, var(--color-info-soft-bg), var(--color-success-soft-bg) 50%, var(--card-gradient-base))' }}
-            >
-              <div className="text-[10px] font-semibold tracking-[0.18em] text-sky-200 uppercase">Quick</div>
-              <div className="mt-1.5 font-display text-[1.1rem] text-white">4分野10問</div>
-            </button>
+          <div className="mt-4 space-y-3 border-t border-white/8 pt-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold text-white">4分野10問</div>
+                <div className="text-xs text-slate-400">分野をまたいで短く回したいとき</div>
+              </div>
+              <button onClick={onQuickStartAll} className="text-sm font-semibold text-sky-200 transition-colors hover:text-white">
+                はじめる
+              </button>
+            </div>
 
-            <button
-              onClick={onTimeAttack}
-              disabled={!timeAttackUnlocked}
-              className="card text-left transition-all disabled:opacity-70"
-              style={{
-                padding: '16px 14px',
-                cursor: timeAttackUnlocked ? 'pointer' : 'not-allowed',
-                borderColor: timeAttackUnlocked ? 'var(--color-accent-soft-border)' : 'var(--border-strong)',
-                background: timeAttackUnlocked
-                  ? 'linear-gradient(135deg, var(--color-accent-soft-bg), var(--color-info-soft-bg), var(--card-gradient-base-mid))'
-                  : 'var(--card-gradient-base-soft)',
-              }}
-            >
-              <div className={`text-[10px] font-semibold tracking-[0.18em] uppercase ${timeAttackUnlocked ? 'text-sky-200' : 'text-slate-500'}`}>Challenge</div>
-              <div className={`mt-1.5 font-display text-[1.1rem] ${timeAttackUnlocked ? 'text-white' : 'text-slate-400'}`}>30秒</div>
-            </button>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className={`text-sm font-semibold ${timeAttackUnlocked ? 'text-white' : 'text-slate-400'}`}>タイムアタック 30秒</div>
+                <div className="text-xs text-slate-400">
+                  {timeAttackUnlocked ? 'スピード勝負で自己ベスト更新' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
+                </div>
+              </div>
+              {timeAttackUnlocked ? (
+                <button onClick={onTimeAttack} className="text-sm font-semibold text-sky-200 transition-colors hover:text-white">
+                  挑戦する
+                </button>
+              ) : (
+                <span className="text-xs text-slate-500">あと {timeAttackUnlockXpLeft} XP</span>
+              )}
+            </div>
 
-            <button
-              onClick={onTerritoryQuiz}
-              className="card text-left transition-all"
-              style={{ padding: '16px 14px', borderColor: 'rgba(251, 191, 36, 0.25)', background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(59, 130, 246, 0.12), var(--card-gradient-base-mid))' }}
-            >
-              <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase">Strategy</div>
-              <div className="mt-1.5 font-display text-[1.1rem] text-white">陣取り</div>
-            </button>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold text-white">陣取り</div>
+                <div className="text-xs text-slate-400">CPU戦でテンポよく遊びながら復習</div>
+              </div>
+              <button onClick={onTerritoryQuiz} className="text-sm font-semibold text-amber-200 transition-colors hover:text-white">
+                あそぶ
+              </button>
+            </div>
 
             <a
               href={scienceNews.item.link}
               target="_blank"
               rel="noreferrer"
-              className="block rounded-[22px] border px-4 py-4 transition-all"
-              style={{ borderColor: 'var(--inset-border)', background: 'var(--inset-bg)' }}
+              className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-200 uppercase">Science News</div>
-                  <div className="mt-1 text-sm font-semibold leading-5 text-white line-clamp-2">{scienceNews.item.title}</div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <div className="text-[10px] text-slate-500">{newsDateFormatter.format(new Date(scienceNews.item.publishedAt))}</div>
-                  <div className="mt-1 text-[10px] font-semibold text-amber-100">開く →</div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-white line-clamp-2">{scienceNews.item.title}</div>
+                <div className="text-xs text-slate-400">
+                  {newsDateFormatter.format(new Date(scienceNews.item.publishedAt))}
                 </div>
               </div>
+              <span className="text-sm font-semibold text-amber-100 transition-colors hover:text-white">ニュースを開く</span>
             </a>
           </div>
         )}
@@ -515,70 +501,61 @@ export default function HomePage({
             <button
               key={fieldName}
               onClick={() => onSelectField(fieldName)}
-              className="card mobile-mini-card anim-fade-up text-left"
+              className="anim-fade-up rounded-[22px] border text-left"
               style={{
                 animationDelay: `${index * 0.08}s`,
                 cursor: 'pointer',
-                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
-                position: 'relative',
-                overflow: 'hidden',
+                transition: 'border-color 0.2s ease, background-color 0.2s ease',
                 borderColor: `${color}30`,
-                padding: '14px 14px 13px',
+                background: `linear-gradient(180deg, ${color}10, rgba(2, 6, 23, 0.24))`,
+                padding: '12px 13px',
               }}
               onMouseEnter={event => {
                 const element = event.currentTarget
-                element.style.borderColor = `${color}70`
-                element.style.transform = 'translateY(-2px)'
-                element.style.boxShadow = `0 20px 34px ${color}20`
+                element.style.borderColor = `${color}55`
+                element.style.background = `linear-gradient(180deg, ${color}16, rgba(2, 6, 23, 0.3))`
               }}
               onMouseLeave={event => {
                 const element = event.currentTarget
                 element.style.borderColor = `${color}30`
-                element.style.transform = ''
-                element.style.boxShadow = ''
+                element.style.background = `linear-gradient(180deg, ${color}10, rgba(2, 6, 23, 0.24))`
               }}
             >
-              <div
-                style={{
-                  position: 'absolute',
-                  right: -30,
-                  top: -30,
-                  width: 120,
-                  height: 120,
-                  background: `radial-gradient(circle, ${color}18, transparent 66%)`,
-                  borderRadius: '50%',
-                }}
-              />
-              <div className="relative z-[1] flex items-start gap-2.5 sm:items-center sm:gap-3">
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-[13px] text-base sm:h-12 sm:w-12 sm:rounded-[16px] sm:text-xl"
-                  style={{ background: `${color}18`, border: `1px solid ${color}26` }}
-                >
-                  {emoji}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="font-display text-[1.05rem] sm:text-[1.35rem]" style={{ color }}>{fieldName}</div>
-                    <span
-                      className="text-[10px] font-semibold uppercase tracking-[0.16em]"
-                      style={{ color: rate === null ? color : 'var(--text-muted)' }}
-                    >
-                      {rate === null ? 'はじめる →' : `${stat?.total}問`}
-                    </span>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-2.5">
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] text-base sm:h-10 sm:w-10 sm:text-lg"
+                    style={{ background: `${color}18`, border: `1px solid ${color}20` }}
+                  >
+                    {emoji}
                   </div>
-                  <div className="mt-1 text-[12px] leading-5 text-slate-400 sm:text-sm sm:leading-6">{FIELD_DESCRIPTIONS[fieldName]}</div>
-                </div>
-                {rate !== null && (
-                  <div className="text-right">
-                    <div className="font-semibold text-base sm:text-lg" style={{ color: getRateColor(rate) }}>
-                      {rate}%
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="font-semibold text-[1rem] sm:text-[1.05rem]" style={{ color }}>{fieldName}</div>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                        {rate === null ? '未着手' : `${stat?.total}問`}
+                      </span>
                     </div>
-                    <div className="text-slate-500 text-xs mt-1">正答率</div>
+                    <div className="mt-1 text-[12px] leading-5 text-slate-400">{FIELD_DESCRIPTIONS[fieldName]}</div>
+                    <div className="mt-1 text-[11px] text-slate-500">
+                      {rate === null ? 'まだ未着手です。ここから始められます。' : `${stat?.correct} / ${stat?.total}問正解`}
+                    </div>
                   </div>
-                )}
+                </div>
+                <div className="shrink-0 text-right">
+                  <div
+                    className="text-sm font-semibold sm:text-base"
+                    style={{ color: rate === null ? color : getRateColor(rate) }}
+                  >
+                    {rate === null ? '開始' : `${rate}%`}
+                  </div>
+                  <div className="mt-1 text-[10px] text-slate-500">
+                    {rate === null ? 'はじめる' : '正答率'}
+                  </div>
+                </div>
               </div>
               {rate !== null && (
-                <div className="mt-3 relative z-[1] soft-track" style={{ height: 7 }}>
+                <div className="mt-3 soft-track" style={{ height: 6 }}>
                   <div
                     style={{
                       width: `${rate}%`,

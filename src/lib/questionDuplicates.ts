@@ -21,6 +21,10 @@ interface ExistingQuestionRow extends DuplicateQuestionCandidate {
   id: string
 }
 
+interface DuplicateCheckOptions {
+  excludeIds?: string[]
+}
+
 function normalizeText(value: string) {
   return value.replace(/\s+/g, ' ').trim()
 }
@@ -71,7 +75,10 @@ async function fetchExistingQuestions() {
   return (data || []) as ExistingQuestionRow[]
 }
 
-export async function ensureNoDuplicateQuestions(candidates: DuplicateQuestionCandidate[]) {
+export async function ensureNoDuplicateQuestions(
+  candidates: DuplicateQuestionCandidate[],
+  options: DuplicateCheckOptions = {},
+) {
   if (candidates.length === 0) return
 
   const internalMap = new Map<string, { count: number; label: string }>()
@@ -91,7 +98,8 @@ export async function ensureNoDuplicateQuestions(candidates: DuplicateQuestionCa
     throw new Error(`同じ内容の問題が入力データ内で重複しています。\n${labels}`)
   }
 
-  const existingQuestions = await fetchExistingQuestions()
+  const excludedIds = new Set(options.excludeIds ?? [])
+  const existingQuestions = (await fetchExistingQuestions()).filter(question => !excludedIds.has(question.id))
   const existingMap = new Map(existingQuestions.map(question => [buildQuestionDuplicateKey(question), question]))
   const matchedDuplicates = candidates
     .map(candidate => existingMap.get(buildQuestionDuplicateKey(candidate)))
