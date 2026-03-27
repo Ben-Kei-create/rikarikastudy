@@ -214,7 +214,6 @@ export default function UnitSelectPage({
                 Unit Select
               </div>
               <div className="font-display text-[1.65rem] leading-none sm:text-[2.35rem]" style={{ color }}>{field}</div>
-              <p className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">全単元ランダムか、カスタム条件でしぼって解けます。</p>
             </div>
           </div>
           <div className="flex flex-col gap-2 lg:min-w-[284px] lg:items-end">
@@ -242,7 +241,6 @@ export default function UnitSelectPage({
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="font-semibold text-base sm:text-lg" style={{ color }}>全単元ランダム</div>
-            <div className="mt-1 text-[13px] leading-5 text-slate-400 sm:text-sm sm:leading-6">迷ったらここから。分野の中をまとめて解きます。</div>
           </div>
           <button
             type="button"
@@ -259,7 +257,6 @@ export default function UnitSelectPage({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題数</div>
-            <div className="mt-1 text-sm text-slate-300">5 / 10 / 15 / 全問</div>
           </div>
           <select
             value={String(questionCount)}
@@ -291,9 +288,6 @@ export default function UnitSelectPage({
             <div className="mt-2 font-display text-xl text-white sm:text-2xl">
               カスタム
             </div>
-            <div className="mt-2 text-[13px] leading-5 text-slate-300 sm:text-sm sm:leading-6">
-              しぼって出す
-            </div>
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
               {getCustomQuizSummaryParts(customOptions).map(part => (
                 <span
@@ -310,7 +304,7 @@ export default function UnitSelectPage({
             onClick={() => setShowCustomPanel(current => !current)}
             className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
           >
-            {showCustomPanel ? '閉じる' : '条件をひらく'}
+            {showCustomPanel ? '閉じる' : '条件'}
           </button>
         </div>
 
@@ -331,9 +325,6 @@ export default function UnitSelectPage({
                     </option>
                   ))}
                 </select>
-                <p className="mt-2 text-xs leading-6 text-slate-500">
-                  単元を指定したいときは、ここから選べます。
-                </p>
               </div>
 
               <div className="grid gap-4">
@@ -350,7 +341,6 @@ export default function UnitSelectPage({
                       </option>
                     ))}
                   </select>
-                  <p className="mt-2 text-xs leading-6 text-slate-500">中1・中2・中3でまとめてしぼれます。</p>
                 </div>
 
                 <div>
@@ -381,7 +371,6 @@ export default function UnitSelectPage({
                       </option>
                     ))}
                   </select>
-                  <p className="mt-2 text-xs leading-6 text-slate-500">未回答 = まだ解いていない問題 / 苦手だけ = これまでに1回でもまちがえた問題</p>
                 </div>
               </div>
             </div>
@@ -405,23 +394,20 @@ export default function UnitSelectPage({
       </div>
 
       <p className="mb-4 px-1 text-xs text-slate-500">
-        {loading
-          ? '単元データを読み込み中...'
-          : '単元をしぼりたいときは「条件」から選べます。'}
+        {loading ? '単元データを読み込み中...' : `${units.length}単元`}
       </p>
 
       <div className="card">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Support Tools</div>
-            <div className="mt-1 text-sm text-slate-300">Gemini とラボは、必要なときだけここから開けます。</div>
           </div>
           <button
             type="button"
             onClick={() => setShowSupportTools(current => !current)}
             className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
           >
-            {showSupportTools ? '閉じる' : 'サポートを開く'}
+            {showSupportTools ? '閉じる' : 'サポート'}
           </button>
         </div>
 
@@ -444,7 +430,6 @@ export default function UnitSelectPage({
               >
                 <div>
                   <div className="text-sm font-semibold text-white">{field}について質問する</div>
-                  <div className="mt-1 text-xs leading-6 text-slate-300">分からない点を先に整理できます</div>
                 </div>
                 <div className="text-sm font-semibold text-sky-200 transition-colors hover:text-white">
                   Geminiに聞く
@@ -498,7 +483,6 @@ export default function UnitSelectPage({
                 <div key={section.field}>
                   <div className="mb-3 flex items-center justify-between gap-3 border-t border-white/8 pt-4">
                     <h2 className="text-base font-semibold text-slate-100">{section.label}</h2>
-                    <span className="text-xs text-slate-500">{section.modes.length > 1 ? 'special modes' : 'special mode'}</span>
                   </div>
                   <div className="space-y-2">
                     {section.modes.map(({ key, meta, onClick }) => (
@@ -516,9 +500,6 @@ export default function UnitSelectPage({
                               {meta.badge}
                             </span>
                           </div>
-                          {meta.description && (
-                            <div className="mt-1 text-xs leading-6 text-slate-400">{meta.description}</div>
-                          )}
                         </div>
                         <span className="shrink-0 text-xs font-semibold" style={{ color: meta.accent }}>
                           開く
