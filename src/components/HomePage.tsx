@@ -12,13 +12,6 @@ import { DailyChallengeStatus, loadDailyChallengeStatus, loadTimeAttackBest } fr
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { getDueCount } from '@/lib/srs'
 
-const FIELD_DESCRIPTIONS: Record<(typeof CORE_FIELDS)[number], string> = {
-  '生物': '細胞・遺伝・消化',
-  '化学': '原子・イオン・化学変化',
-  '物理': '力・電気・エネルギー',
-  '地学': '地震・天気・宇宙',
-}
-
 interface FieldStats {
   [field: string]: { total: number; correct: number }
 }
@@ -81,7 +74,7 @@ export default function HomePage({
         kind: 'review' as const,
         eyebrow: 'Today First',
         title: `${dueCount}問の復習を先に進めよう`,
-        description: '忘却リスクが高い問題から順に出題します。短く終わっても学習効率が高いパートです。',
+        description: '忘れる前に先に進める。',
         badge: `復習 ${dueCount}問`,
         actionLabel: '復習する',
         icon: '🧠',
@@ -94,7 +87,7 @@ export default function HomePage({
         kind: 'daily' as const,
         eyebrow: 'Today Mission',
         title: '今日の5問で学習を開始',
-        description: '苦手 → 未回答 → ランダムの順で出題します。毎日の入口を迷わず固定するためのミッションです。',
+        description: '今日の入口はこれだけ。',
         badge: '5問 / XP×2',
         actionLabel: '今日の5問へ',
         icon: '☀️',
@@ -106,7 +99,7 @@ export default function HomePage({
       kind: 'quick' as const,
       eyebrow: 'Recommended',
       title: totalAnswered > 0 ? '4分野10問で次の学習へ' : '4分野10問でスタート',
-      description: 'その日に何をやるか迷ったら、まずは全分野を短く回してから弱点に戻る流れがおすすめです。',
+      description: '迷ったらここから。',
       badge: '4分野 / 10問',
       actionLabel: 'はじめる',
       icon: '🚀',
@@ -386,12 +379,10 @@ export default function HomePage({
                 {primaryMission.badge}
               </span>
             </div>
-            <div className="mt-1.5 text-xs leading-6 text-slate-300 sm:text-sm">
-              {primaryMission.description}
-            </div>
+            <div className="mt-1.5 text-sm text-slate-300">{primaryMission.description}</div>
             {secondaryMissionActions.length > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-                <span>ほかの開始方法:</span>
+                <span>ほか:</span>
                 {secondaryMissionActions.map(action => (
                   <button
                     key={action.key}
@@ -418,14 +409,13 @@ export default function HomePage({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">More</div>
-            <div className="mt-1 text-sm text-slate-300">タイムアタック、陣取り、ニュースは必要なときだけ開けます。</div>
           </div>
           <button
             type="button"
             onClick={() => setShowExtraActions(current => !current)}
             className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
           >
-            {showExtraActions ? '閉じる' : 'もっと見る'}
+            {showExtraActions ? '閉じる' : 'その他'}
           </button>
         </div>
 
@@ -485,9 +475,8 @@ export default function HomePage({
         )}
       </div>
 
-      <div className="mb-3 flex items-center justify-between sm:mb-4">
+      <div className="mb-3 sm:mb-4">
         <h2 className="text-lg font-semibold text-slate-100">分野を選ぶ</h2>
-        <span className="text-xs text-slate-500">タップですぐ開始</span>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -536,9 +525,8 @@ export default function HomePage({
                         {rate === null ? '未着手' : `${stat?.total}問`}
                       </span>
                     </div>
-                    <div className="mt-1 text-[12px] leading-5 text-slate-400">{FIELD_DESCRIPTIONS[fieldName]}</div>
                     <div className="mt-1 text-[11px] text-slate-500">
-                      {rate === null ? 'まだ未着手です。ここから始められます。' : `${stat?.correct} / ${stat?.total}問正解`}
+                      {rate === null ? '未着手' : `${stat?.correct} / ${stat?.total}問正解`}
                     </div>
                   </div>
                 </div>
