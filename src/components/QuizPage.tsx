@@ -35,13 +35,15 @@ export default function QuizPage({
   const [loading, setLoading] = useState(true)
   const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string }[]>([])
   const startedAtRef = useRef<number | null>(null)
+  const questionStartRef = useRef<number | null>(null)
   const answerLockedRef = useRef(false)
+  const [timePenalty, setTimePenalty] = useState(0)
 
   useEffect(() => {
     ;(async () => {
       setLoading(true); setQuestions([]); setCurrent(0); setPhase('answering')
       setSelected(null); setTextInput(''); setIsCorrect(null); setScore(0)
-      setAnswerLogs([]); startedAtRef.current = null; answerLockedRef.current = false
+      setAnswerLogs([]); setTimePenalty(0); startedAtRef.current = null; answerLockedRef.current = false
 
       const baseQuery = () => {
         let query = supabase.from('questions').select('*').eq('field', field)
@@ -70,15 +72,22 @@ export default function QuizPage({
     })()
   }, [field, unit, studentId])
 
+  useEffect(() => {
+    questionStartRef.current = Date.now()
+  }, [current])
+
   const q = questions[current]
   const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
 
   const handleChoice = (choice: string) => {
     if (phase !== 'answering' || answerLockedRef.current) return
+    const elapsed = questionStartRef.current ? Date.now() - questionStartRef.current : 0
+    if (elapsed < 1000) return
     answerLockedRef.current = true
     const correct = choice === q.answer
     setSelected(choice); setIsCorrect(correct)
     if (correct) setScore(s => s + 1)
+    else setTimePenalty(p => p + 5)
     setAnswerLogs(logs => [...logs, { qId: q.id, correct, answer: choice }])
     setPhase('result')
   }
@@ -86,19 +95,23 @@ export default function QuizPage({
   const handleTextSubmit = () => {
     const answer = textInput.trim()
     if (!answer || answerLockedRef.current) return
+    const elapsed = questionStartRef.current ? Date.now() - questionStartRef.current : 0
+    if (elapsed < 1000) return
     answerLockedRef.current = true
     const correct = isAnswerMatch(answer, q.answer, q.accept_answers)
     setIsCorrect(correct)
     if (correct) setScore(s => s + 1)
+    else setTimePenalty(p => p + 5)
     setAnswerLogs(logs => [...logs, { qId: q.id, correct, answer }])
     setPhase('result')
   }
 
   const handleNext = async () => {
     if (current + 1 >= questions.length) {
-      const durationSeconds = startedAtRef.current
+      const actualDuration = startedAtRef.current
         ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
         : 0
+      const durationSeconds = actualDuration + timePenalty
       const { data: sessionData } = await supabase
         .from('quiz_sessions')
         .insert({
@@ -177,7 +190,7 @@ export default function QuizPage({
               onClick={() => {
                 answerLockedRef.current = false
                 startedAtRef.current = Date.now(); setCurrent(0); setPhase('answering')
-                setScore(0); setSelected(null); setTextInput(''); setIsCorrect(null); setAnswerLogs([])
+                setScore(0); setSelected(null); setTextInput(''); setIsCorrect(null); setAnswerLogs([]); setTimePenalty(0)
               }}
               className="btn-secondary !px-0 !py-3 text-sm"
             >もう一度</button>
