@@ -35,12 +35,13 @@ export default function QuizPage({
   const [loading, setLoading] = useState(true)
   const [answerLogs, setAnswerLogs] = useState<{ qId: string; correct: boolean; answer: string }[]>([])
   const startedAtRef = useRef<number | null>(null)
+  const answerLockedRef = useRef(false)
 
   useEffect(() => {
     ;(async () => {
       setLoading(true); setQuestions([]); setCurrent(0); setPhase('answering')
       setSelected(null); setTextInput(''); setIsCorrect(null); setScore(0)
-      setAnswerLogs([]); startedAtRef.current = null
+      setAnswerLogs([]); startedAtRef.current = null; answerLockedRef.current = false
 
       const baseQuery = () => {
         let query = supabase.from('questions').select('*').eq('field', field)
@@ -73,7 +74,8 @@ export default function QuizPage({
   const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
 
   const handleChoice = (choice: string) => {
-    if (phase !== 'answering') return
+    if (phase !== 'answering' || answerLockedRef.current) return
+    answerLockedRef.current = true
     const correct = choice === q.answer
     setSelected(choice); setIsCorrect(correct)
     if (correct) setScore(s => s + 1)
@@ -83,7 +85,8 @@ export default function QuizPage({
 
   const handleTextSubmit = () => {
     const answer = textInput.trim()
-    if (!answer) return
+    if (!answer || answerLockedRef.current) return
+    answerLockedRef.current = true
     const correct = isAnswerMatch(answer, q.answer, q.accept_answers)
     setIsCorrect(correct)
     if (correct) setScore(s => s + 1)
@@ -117,6 +120,7 @@ export default function QuizPage({
       }
       setPhase('finished')
     } else {
+      answerLockedRef.current = false
       setCurrent(c => c + 1); setPhase('answering')
       setSelected(null); setTextInput(''); setIsCorrect(null)
     }
@@ -171,6 +175,7 @@ export default function QuizPage({
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => {
+                answerLockedRef.current = false
                 startedAtRef.current = Date.now(); setCurrent(0); setPhase('answering')
                 setScore(0); setSelected(null); setTextInput(''); setIsCorrect(null); setAnswerLogs([])
               }}
