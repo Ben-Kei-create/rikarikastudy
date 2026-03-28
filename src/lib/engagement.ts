@@ -1,0 +1,241 @@
+'use client'
+
+import {
+  calculateQuizXp as calculateBaseQuizXp,
+  getLevel as getBaseLevel,
+  getLevelTitle as getBaseLevelTitle,
+  getXpForLevel,
+  getXpProgress,
+} from '@/lib/xp'
+
+export type SessionMode =
+  | 'standard'
+  | 'daily_challenge'
+  | 'quick_start'
+  | 'mixed_quick_start'
+  | 'drill'
+  | 'custom'
+  | 'chemistry_flash'
+  | 'chemistry_reaction'
+  | 'chemistry_density_lab'
+  | 'chemistry_concentration_lab'
+  | 'chemistry_battery_lab'
+  | 'chemistry_humidity_lab'
+  | 'biology_organ_pairs'
+  | 'earth_rock_pairs'
+  | 'earth_humidity_lab'
+  | 'earth_column_lab'
+  | 'physics_motion_graph_lab'
+  | 'test_mode'
+  | 'streak_mode'
+  | 'time_attack'
+
+export const JST_OFFSET_MS = 9 * 60 * 60 * 1000
+export const TIME_ATTACK_UNLOCK_LEVEL = 5
+export const TEST_MODE_QUESTION_COUNT = 25
+export const TEST_MODE_POINT_PER_QUESTION = 4
+
+export interface LevelUnlockReward {
+  key: 'challenge_mode' | 'light_theme' | 'cute_theme' | 'periodic_table_map'
+  level: number
+  title: string
+  description: string
+  emoji: string
+}
+
+export const LEVEL_UNLOCK_REWARDS: LevelUnlockReward[] = [
+  {
+    key: 'challenge_mode',
+    level: TIME_ATTACK_UNLOCK_LEVEL,
+    title: 'チャレンジモード',
+    description: 'タイムアタック・テストモード・連続正解モードが遊べます。',
+    emoji: '🏁',
+  },
+  {
+    key: 'light_theme',
+    level: 10,
+    title: 'ライトテーマ',
+    description: 'マイページでライトモードを選べるようになります。',
+    emoji: '☀️',
+  },
+  {
+    key: 'cute_theme',
+    level: 20,
+    title: 'かわいいテーマ',
+    description: 'マイページでかわいいモードを選べるようになります。',
+    emoji: '🎀',
+  },
+  {
+    key: 'periodic_table_map',
+    level: 20,
+    title: '元素カード',
+    description: 'マイページで元素カードを集めて、入手したカードを順番に見返せるようになります。',
+    emoji: '🧪',
+  },
+]
+
+export interface LevelInfo {
+  level: number
+  title: string
+  totalXp: number
+  currentLevelXp: number
+  nextLevelXp: number
+  progressXp: number
+  progressMax: number
+  progressRate: number
+}
+
+export function calculateQuizXp({
+  correctCount,
+  totalQuestions,
+  durationSeconds,
+  multiplier = 1,
+}: {
+  correctCount: number
+  totalQuestions: number
+  durationSeconds: number
+  multiplier?: number
+}) {
+  const breakdown = calculateBaseQuizXp(correctCount, totalQuestions, durationSeconds)
+  return Math.max(0, Math.floor(breakdown.total * Math.max(0, multiplier)))
+}
+
+export function calculateTimeAttackXp(score: number) {
+  return Math.max(0, score) * 5
+}
+
+export function calculateTestModeXp(correctCount: number) {
+  return Math.max(0, correctCount) * TEST_MODE_POINT_PER_QUESTION
+}
+
+export function calculateStreakModeXp(score: number) {
+  return Math.max(0, score) * 6
+}
+
+export function getLevelFromXp(totalXp: number) {
+  return getBaseLevel(totalXp)
+}
+
+export function getXpFloorForLevel(level: number) {
+  return getXpForLevel(level)
+}
+
+export function getLevelTitle(level: number) {
+  return getBaseLevelTitle(level)
+}
+
+export function getLevelInfo(totalXp: number): LevelInfo {
+  const safeXp = Math.max(0, totalXp)
+  const progress = getXpProgress(safeXp)
+  const progressXp = progress.currentXp - progress.xpForCurrent
+  const progressMax = Math.max(1, progress.xpForNext - progress.xpForCurrent)
+
+  return {
+    level: progress.currentLevel,
+    title: getLevelTitle(progress.currentLevel),
+    totalXp: safeXp,
+    currentLevelXp: progress.xpForCurrent,
+    nextLevelXp: progress.xpForNext,
+    progressXp: progress.currentLevel >= 99 ? progressMax : progressXp,
+    progressMax,
+    progressRate: progress.progressPercent,
+  }
+}
+
+export function getUnlockedLevelRewards(level: number) {
+  return LEVEL_UNLOCK_REWARDS.filter(reward => level >= reward.level)
+}
+
+export function getNextLevelUnlock(level: number) {
+  return LEVEL_UNLOCK_REWARDS.find(reward => level < reward.level) ?? null
+}
+
+export function getNewlyUnlockedLevelRewards(levelBefore: number, levelAfter: number) {
+  return LEVEL_UNLOCK_REWARDS.filter(reward => levelBefore < reward.level && levelAfter >= reward.level)
+}
+
+function toShiftedDate(dateLike?: string | Date) {
+  const raw = dateLike instanceof Date ? dateLike : new Date(dateLike ?? Date.now())
+  return new Date(raw.getTime() + JST_OFFSET_MS)
+}
+
+function fromShiftedDate(date: Date) {
+  return new Date(date.getTime() - JST_OFFSET_MS)
+}
+
+export function getJstDateKey(dateLike?: string | Date) {
+  const shifted = toShiftedDate(dateLike)
+  const year = shifted.getUTCFullYear()
+  const month = `${shifted.getUTCMonth() + 1}`.padStart(2, '0')
+  const day = `${shifted.getUTCDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export function getJstWeekRange(dateLike?: string | Date) {
+  const shifted = toShiftedDate(dateLike)
+  const dayOfWeek = shifted.getUTCDay()
+  const daysFromMonday = (dayOfWeek + 6) % 7
+
+  const start = new Date(shifted)
+  start.setUTCDate(start.getUTCDate() - daysFromMonday)
+  start.setUTCHours(0, 0, 0, 0)
+
+  const end = new Date(start)
+  end.setUTCDate(end.getUTCDate() + 7)
+
+  return {
+    start,
+    end,
+    startDate: fromShiftedDate(start),
+    endDate: fromShiftedDate(end),
+    startKey: getJstDateKey(fromShiftedDate(start)),
+    endKey: getJstDateKey(new Date(fromShiftedDate(end).getTime() - 1)),
+  }
+}
+
+export function isDateInCurrentJstWeek(dateLike: string | Date, baseDate?: string | Date) {
+  const shifted = toShiftedDate(dateLike).getTime()
+  const { start, end } = getJstWeekRange(baseDate)
+  return shifted >= start.getTime() && shifted < end.getTime()
+}
+
+export function getSessionXpFallback(session: {
+  correct_count: number
+  total_questions: number
+  duration_seconds: number
+  xp_earned?: number | null
+  session_mode?: SessionMode | string | null
+}) {
+  if (typeof session.xp_earned === 'number' && session.xp_earned > 0) {
+    return session.xp_earned
+  }
+
+  if (session.session_mode === 'time_attack') {
+    return calculateTimeAttackXp(session.correct_count)
+  }
+
+  if (session.session_mode === 'test_mode') {
+    return calculateTestModeXp(session.correct_count)
+  }
+
+  if (session.session_mode === 'streak_mode') {
+    return calculateStreakModeXp(session.correct_count)
+  }
+
+  return calculateQuizXp({
+    correctCount: session.correct_count,
+    totalQuestions: session.total_questions,
+    durationSeconds: session.duration_seconds,
+    multiplier: session.session_mode === 'daily_challenge' ? 2 : 1,
+  })
+}
+
+export function getTotalXpFromSessions(sessions: Array<{
+  correct_count: number
+  total_questions: number
+  duration_seconds: number
+  xp_earned?: number | null
+  session_mode?: SessionMode | string | null
+}>) {
+  return sessions.reduce((sum, session) => sum + getSessionXpFallback(session), 0)
+}

@@ -1,0 +1,238 @@
+[
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "星や太陽が1日のうちに東から西へ動いて見えるのは、主に何が原因ですか。",
+    "choices": ["地球の自転", "地球の公転", "月の公転", "雲の移動"],
+    "answer": "地球の自転",
+    "keywords": null,
+    "explanation": "地球が西から東へ自転しているため、天体が東から西へ動くように見えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "日本で太陽がのぼる方角として正しいものはどれですか。",
+    "choices": ["東", "西", "南", "北"],
+    "answer": "東",
+    "keywords": null,
+    "explanation": "太陽は日周運動によって東からのぼり、西にしずむように見えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "北の空でほとんど動かないように見える星はどれですか。",
+    "choices": ["北極星", "シリウス", "ベガ", "金星"],
+    "answer": "北極星",
+    "keywords": null,
+    "explanation": "北極星は北の空のほぼ動かない位置に見え、方角を知る手がかりになります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "季節によって見える星座が変わる主な原因は何ですか。",
+    "choices": ["地球の公転", "地球の自転", "月の自転", "雲の量"],
+    "answer": "地球の公転",
+    "keywords": null,
+    "explanation": "地球が太陽のまわりを公転するため、夜に見える宇宙の向きが季節で変わります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "地球が1回自転するのにかかる時間は約どれくらいですか。",
+    "choices": ["24時間", "12時間", "30日", "365日"],
+    "answer": "24時間",
+    "keywords": null,
+    "explanation": "地球は約24時間で1回自転し、これが昼夜のくり返しをつくります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "地球が太陽のまわりを1回公転するのにかかる時間は約どれくらいですか。",
+    "choices": ["365日", "24時間", "7日", "12時間"],
+    "answer": "365日",
+    "keywords": null,
+    "explanation": "地球は約1年かけて太陽のまわりを公転します。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "星の日周運動は、東から西へ動くように見える。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "地球の自転のため、太陽や星は東から西へ動くように見えます。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "日本では、夏のほうが冬より太陽の南中高度が高い。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "夏は太陽が高くのぼるため、昼の長さも長くなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "月は毎日まったく同じ時刻に同じ位置に見える。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "月は地球のまわりを公転しているので、見える時刻や位置は毎日少しずつ変わります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "地球が自分自身を回転する運動を【　　】という。",
+    "choices": ["自転", "公転", "日食", "満ち欠け"],
+    "answer": "自転",
+    "keywords": null,
+    "explanation": "自転は昼夜の変化や天体の日周運動に関係しています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "地球が太陽のまわりを回る運動を【　　】という。",
+    "choices": ["公転", "自転", "逆行", "黄道"],
+    "answer": "公転",
+    "keywords": null,
+    "explanation": "公転によって、季節によって見える星座が変わります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "北の空でほとんど動かないように見える星を【　　】という。",
+    "choices": ["北極星", "太陽", "火星", "月"],
+    "answer": "北極星",
+    "keywords": null,
+    "explanation": "北極星は方角を知る目印として使えます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "1日のうちに天体が動いて見える見かけの運動を【　　】という。",
+    "choices": ["日周運動", "公転", "年周運動", "満ち欠け"],
+    "answer": "日周運動",
+    "keywords": null,
+    "explanation": "日周運動は、地球の自転によって起こる見かけの運動です。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "次の天体の見え方と、その主な原因を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "日周運動", "right": "地球の自転" },
+      { "left": "季節で星座が変わる", "right": "地球の公転" },
+      { "left": "月の形が変わる", "right": "太陽・地球・月の位置関係" }
+    ],
+    "explanation": "見える理由を原因と結びつけて整理すると、天体分野が理解しやすくなります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "次の方角の空と、天体の見え方を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "東の空", "right": "天体がのぼり始める" },
+      { "left": "南の空", "right": "天体が高く見える" },
+      { "left": "西の空", "right": "天体がしずんでいく" }
+    ],
+    "explanation": "日周運動では、天体は東からのぼり南の空で高くなり、西へしずみます。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "太陽の1日の見え方として、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["東の空にのぼる", "南の空で高くなる", "西の空にしずむ"],
+    "explanation": "太陽も日周運動によって東から西へ動くように見えます。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "月の見え方の変化として、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["新月", "上弦の月", "満月"],
+    "explanation": "月は位置関係によって見える形が変わり、新月から満月へと見え方が変化していきます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "次のうち、地球の自転が関係している現象をすべて選びなさい。",
+    "choices": ["昼と夜の交代", "太陽の日周運動", "星の日周運動", "季節の変化", "月の満ち欠け"],
+    "correct_choices": ["昼と夜の交代", "太陽の日周運動", "星の日周運動"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "季節の変化は地球の公転、月の満ち欠けは位置関係によります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "日本の夏の太陽について正しいものをすべて選びなさい。",
+    "choices": ["南中高度が高い", "昼の長さが長い", "日の出の位置が北寄りになる", "南中高度が低い", "昼の長さが短い"],
+    "correct_choices": ["南中高度が高い", "昼の長さが長い", "日の出の位置が北寄りになる"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "夏は太陽が高くのぼり、昼が長くなります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "天体の動き",
+    "grade": "中3",
+    "question": "太陽の日周運動の方角の流れを完成させなさい。",
+    "choices": null,
+    "answer": "東 → 南 → 西",
+    "keywords": null,
+    "word_tokens": ["東", "→", "南", "→", "西"],
+    "distractor_tokens": ["北", "公転"],
+    "explanation": "太陽は東からのぼり、南の空を通って、西にしずむように見えます。"
+  }
+]

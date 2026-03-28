@@ -2,151 +2,517 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { isMissingColumnError, markColumnMissing } from '@/lib/schemaCompat'
+import { BIOLOGY_MODE_META, BiologyPracticeMode } from '@/lib/biologyPractice'
+import ScienceBackdrop from '@/components/ScienceBackdrop'
+import { CHEMISTRY_MODE_META, ChemistryPracticeMode } from '@/lib/chemistryPractice'
+import { EARTH_SCIENCE_MODE_META, EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
+import {
+  CHEMISTRY_WORKBENCH_MODES,
+  EARTH_WORKBENCH_MODES,
+  PHYSICS_WORKBENCH_MODES,
+  SCIENCE_WORKBENCH_MODE_META,
+  ScienceWorkbenchMode,
+} from '@/lib/scienceWorkbench'
+import { ScienceChatField } from '@/lib/scienceChat'
+import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
+import {
+  CUSTOM_QUIZ_GRADE_OPTIONS,
+  CustomQuizGradeFilter,
+  CustomQuizHistoryFilter,
+  CustomQuizOptions,
+  CustomQuizQuestionType,
+  DEFAULT_CUSTOM_QUIZ_OPTIONS,
+  getCustomQuizGradeFilterLabel,
+  getCustomQuizHistoryFilterLabel,
+  getCustomQuizQuestionTypeLabel,
+  getCustomQuizSummaryParts,
+} from '@/lib/customQuiz'
+import { QUESTION_TYPES } from '@/lib/questionTypes'
+import {
+  getCachedColumnSupport,
+  isMissingColumnError,
+  markColumnMissing,
+  markColumnSupported,
+} from '@/lib/schemaCompat'
+import { FIELD_COLORS, FIELD_EMOJI } from '@/lib/constants'
+import { getLevelInfo } from '@/lib/engagement'
+import { QuizQuestionCount } from '@/lib/questionPicker'
 
-const FIELD_COLORS: Record<string, string> = {
-  '生物': 'var(--bio)', '化学': 'var(--chem)', '物理': 'var(--phys)', '地学': 'var(--earth)',
-}
-const FIELD_EMOJI: Record<string, string> = {
-  '生物': '🌿', '化学': '⚗️', '物理': '⚡', '地学': '🌏',
+interface UnitStat {
+  unit: string
+  questionCount: number
 }
 
-interface UnitStat { unit: string; total: number; correct: number; questionCount: number }
+const QUESTION_COUNT_OPTIONS: QuizQuestionCount[] = [5, 10, 15, 'all']
 
 export default function UnitSelectPage({
-  field, onSelect, onBack,
+  field,
+  onSelect,
+  onStartCustomQuiz,
+  onSelectBiologyMode,
+  onSelectSpecialMode,
+  onSelectEarthMode,
+  onSelectWorkbenchMode,
+  onOpenChat,
+  onBack,
 }: {
-  field: string; onSelect: (unit: string) => void; onBack: () => void
+  field: string
+  onSelect: (unit: string, questionCount: QuizQuestionCount) => void
+  onStartCustomQuiz: (options: CustomQuizOptions, questionCount: QuizQuestionCount) => void
+  onSelectBiologyMode: (mode: BiologyPracticeMode) => void
+  onSelectSpecialMode: (mode: ChemistryPracticeMode) => void
+  onSelectEarthMode: (mode: EarthSciencePracticeMode) => void
+  onSelectWorkbenchMode: (mode: ScienceWorkbenchMode) => void
+  onOpenChat: (field: ScienceChatField) => void
+  onBack: () => void
 }) {
   const { studentId, logout } = useAuth()
   const [units, setUnits] = useState<UnitStat[]>([])
   const [loading, setLoading] = useState(true)
-  const color = FIELD_COLORS[field]
-  const totalQuestions = units.reduce((sum, unit) => sum + unit.questionCount, 0)
+  const [showCustomPanel, setShowCustomPanel] = useState(false)
+  const [showSupportTools, setShowSupportTools] = useState(false)
+  const [customOptions, setCustomOptions] = useState<CustomQuizOptions>(DEFAULT_CUSTOM_QUIZ_OPTIONS)
+  const [availableGrades, setAvailableGrades] = useState<CustomQuizGradeFilter[]>(['中1', '中2', '中3'])
+  const [questionCount, setQuestionCount] = useState<QuizQuestionCount>(10)
+  const [currentXp, setCurrentXp] = useState(0)
+  const color = FIELD_COLORS[field as keyof typeof FIELD_COLORS] ?? 'var(--color-info)'
+  const totalQuestionCount = units.reduce((sum, item) => sum + item.questionCount, 0)
+  const isGuest = isGuestStudentId(studentId)
+  const customGradeOptions = CUSTOM_QUIZ_GRADE_OPTIONS.filter(grade => (
+    grade === 'all' || availableGrades.includes(grade)
+  ))
+  const levelInfo = getLevelInfo(currentXp)
 
   useEffect(() => {
-    ;(async () => {
+    setShowCustomPanel(false)
+    setShowSupportTools(false)
+    setCustomOptions(DEFAULT_CUSTOM_QUIZ_OPTIONS)
+  }, [field])
+
+  useEffect(() => {
+    const load = async () => {
       setLoading(true)
-      const baseQuestionQuery = () => supabase.from('questions').select('unit').eq('field', field)
+      let query = supabase
+        .from('questions')
+        .select('unit, grade')
+        .eq('field', field)
+      const supportsStudentQuestionFilter = getCachedColumnSupport('created_by_student_id') !== false
 
-      let { data: qData, error: qError } = await baseQuestionQuery().or(
-        studentId
-          ? `created_by_student_id.is.null,created_by_student_id.eq.${studentId}`
-          : 'created_by_student_id.is.null'
-      )
-
-      if (isMissingColumnError(qError, 'created_by_student_id')) {
-        markColumnMissing('created_by_student_id')
-        const fallback = await baseQuestionQuery()
-        qData = fallback.data
+      if (supportsStudentQuestionFilter) {
+        query = query.or(
+          studentId
+            ? `created_by_student_id.is.null,created_by_student_id.eq.${studentId}`
+            : 'created_by_student_id.is.null'
+        )
       }
-      const unitCounts: Record<string, number> = {}
-      qData?.forEach(q => { unitCounts[q.unit] = (unitCounts[q.unit] || 0) + 1 })
 
-      const { data: sData } = await supabase
-        .from('quiz_sessions').select('unit, total_questions, correct_count')
-        .eq('field', field).eq('student_id', studentId!)
-      const sessionStats: Record<string, { total: number; correct: number }> = {}
-      sData?.forEach(s => {
-        if (!sessionStats[s.unit]) sessionStats[s.unit] = { total: 0, correct: 0 }
-        sessionStats[s.unit].total += s.total_questions
-        sessionStats[s.unit].correct += s.correct_count
+      let { data: qData, error: qError } = await query
+
+      if (qError && isMissingColumnError(qError, 'created_by_student_id')) {
+        markColumnMissing('created_by_student_id')
+        const fallback = await supabase
+          .from('questions')
+          .select('unit, grade')
+          .eq('field', field)
+        qData = fallback.data
+        qError = fallback.error
+      } else if (!qError && supportsStudentQuestionFilter) {
+        markColumnSupported('created_by_student_id')
+      }
+
+      if (qError) {
+        setUnits([])
+        setLoading(false)
+        return
+      }
+
+      const unitCounts: Record<string, number> = {}
+      const gradeSet = new Set<CustomQuizGradeFilter>()
+      qData?.forEach(question => {
+        unitCounts[question.unit] = (unitCounts[question.unit] || 0) + 1
+        if (question.grade === '中1' || question.grade === '中2' || question.grade === '中3') {
+          gradeSet.add(question.grade)
+        }
       })
 
-      setUnits(Object.keys(unitCounts).map(u => ({
-        unit: u, questionCount: unitCounts[u],
-        total: sessionStats[u]?.total || 0, correct: sessionStats[u]?.correct || 0,
-      })))
+      const unitList = Object.keys(unitCounts).map(unitName => ({
+        unit: unitName,
+        questionCount: unitCounts[unitName],
+      })).sort((left, right) => left.unit.localeCompare(right.unit, 'ja'))
+
+      setUnits(unitList)
+      setAvailableGrades(gradeSet.size > 0 ? Array.from(gradeSet) : ['中1', '中2', '中3'])
       setLoading(false)
-    })()
+    }
+    load()
   }, [field, studentId])
 
+  useEffect(() => {
+    let active = true
+
+    const loadXp = async () => {
+      if (studentId === null) {
+        if (active) setCurrentXp(0)
+        return
+      }
+
+      if (isGuest) {
+        const store = loadGuestStudyStore()
+        if (active) setCurrentXp(store.xp)
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('students')
+        .select('student_xp')
+        .eq('id', studentId)
+        .single()
+
+      if (!active) return
+
+      if (error) {
+        setCurrentXp(0)
+        return
+      }
+
+      setCurrentXp(data?.student_xp ?? 0)
+    }
+
+    void loadXp()
+
+    return () => {
+      active = false
+    }
+  }, [isGuest, studentId])
+
+  const updateGrade = (grade: CustomQuizGradeFilter) => {
+    setCustomOptions(current => ({ ...current, grade }))
+  }
+
+  const updateQuestionType = (questionType: CustomQuizQuestionType) => {
+    setCustomOptions(current => ({ ...current, questionType }))
+  }
+
+  const updateHistoryFilter = (historyFilter: CustomQuizHistoryFilter) => {
+    setCustomOptions(current => ({ ...current, historyFilter }))
+  }
+
   return (
-    <div className="page-shell">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5 anim-fade-up">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl text-xl" style={{ background: 'var(--input-bg)' }}>
-            {FIELD_EMOJI[field]}
+    <div className="page-shell page-shell-dashboard">
+      <div className="hero-card science-surface mb-4 anim-fade-up px-3.5 py-3.5 sm:px-5 sm:py-5">
+        <ScienceBackdrop />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+            <div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] text-[1.45rem] sm:h-14 sm:w-14 sm:rounded-[20px] sm:text-[1.7rem]"
+              style={{ background: `${color}18`, border: `1px solid ${color}26` }}
+            >
+              {FIELD_EMOJI[field as keyof typeof FIELD_EMOJI] ?? '🔬'}
+            </div>
+            <div className="min-w-0">
+              <div className="mb-1 text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                Unit Select
+              </div>
+              <div className="font-display text-[1.65rem] leading-none sm:text-[2.35rem]" style={{ color }}>{field}</div>
+            </div>
           </div>
-          <div>
-            <div className="font-bold text-xl" style={{ color }}>{field}</div>
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>単元を選んで始めよう</div>
+          <div className="flex flex-col gap-2 lg:min-w-[284px] lg:items-end">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 lg:justify-end">
+              <span>登録単元 {units.length}</span>
+              <span>問題数 {totalQuestionCount}</span>
+              <span>現在 Lv.{levelInfo.level}</span>
+            </div>
+            <div className="grid w-full grid-cols-2 gap-2 md:w-[284px]">
+              <button onClick={onBack} className="text-left text-sm font-semibold text-slate-200 transition-colors hover:text-white">もどる</button>
+              <button onClick={() => logout()} className="text-right text-sm text-slate-400 transition-colors hover:text-slate-200">ログアウト</button>
+            </div>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={onBack} className="btn-secondary text-sm !px-3 !py-2">もどる</button>
-          <button onClick={() => logout()} className="btn-ghost text-sm !px-3 !py-2">ログアウト</button>
         </div>
       </div>
 
-      {/* Quick start */}
-      <button
-        onClick={() => onSelect('all')}
-        disabled={totalQuestions === 0}
-        className="card w-full anim-fade-up mb-4 text-left transition-transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{ animationDelay: '0.04s' }}
+      <div
+        className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
+        style={{
+          borderColor: `${color}40`,
+          background: `linear-gradient(180deg, ${color}18, var(--surface-elevated))`,
+          animationDelay: '0.05s',
+        }}
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="font-semibold" style={{ color }}>全単元ランダム</div>
-            <div className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>この分野をまとめて解く</div>
+            <div className="font-semibold text-base sm:text-lg" style={{ color }}>全単元ランダム</div>
           </div>
-          <div className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: 'var(--tint-bg)', color: 'var(--tint)' }}>
-            {totalQuestions > 0 ? 'Quick Start' : '問題準備中'}
-          </div>
+          <button
+            type="button"
+            onClick={() => onSelect('all', questionCount)}
+            className="text-sm font-semibold transition-colors hover:text-white"
+            style={{ color }}
+          >
+            すぐ開始
+          </button>
         </div>
-      </button>
+      </div>
 
-      {/* Unit list */}
-      {loading ? (
-        <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>読み込み中...</div>
-      ) : units.length === 0 ? (
-        <div className="card text-center anim-fade-up">
-          <p className="font-semibold mb-2">この分野の問題がまだありません</p>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            もぎ先生ログイン → 「問題追加」または「サンプル問題を追加」から準備してください。
-          </p>
+      <div className="card mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">出題数</div>
+          </div>
+          <select
+            value={String(questionCount)}
+            onChange={event => setQuestionCount(event.target.value === 'all' ? 'all' : Number(event.target.value) as QuizQuestionCount)}
+            className="input-surface sm:w-[168px]"
+          >
+            {QUESTION_COUNT_OPTIONS.map(option => (
+              <option key={option} value={option}>
+                {option === 'all' ? '全問' : `${option}問`}
+              </option>
+            ))}
+          </select>
         </div>
-      ) : (
-        <div className="grid gap-2">
-          {units.map((u, i) => {
-            const rate = u.total > 0 ? Math.round((u.correct / u.total) * 100) : null
-            return (
-              <button
-                key={u.unit}
-                onClick={() => onSelect(u.unit)}
-                disabled={u.questionCount === 0}
-                className="card anim-fade-up text-left transition-transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ animationDelay: `${(i + 1) * 0.05}s` }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="font-semibold">{u.unit}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{u.questionCount}問</div>
-                  </div>
-                  {rate !== null && (
-                    <div className="text-right">
-                      <div className="font-bold" style={{ color: rate >= 70 ? 'var(--success)' : rate >= 50 ? 'var(--warning)' : 'var(--danger)' }}>
-                        {rate}%
-                      </div>
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{u.total}問解答</div>
-                    </div>
-                  )}
+      </div>
+
+      <div
+        className="card mobile-action-card w-full anim-fade-up mb-4 text-left"
+        style={{
+          borderColor: `${color}35`,
+          background: `linear-gradient(180deg, ${color}14, var(--card-gradient-base-mid))`,
+          animationDelay: '0.06s',
+        }}
+      >
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+              Custom
+            </div>
+            <div className="mt-2 font-display text-xl text-white sm:text-2xl">
+              カスタム
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+              {getCustomQuizSummaryParts(customOptions).map(part => (
+                <span
+                  key={part}
+                  className="text-[11px] font-semibold"
+                  style={{ color }}
+                >
+                  {part}
+                </span>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={() => setShowCustomPanel(current => !current)}
+            className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
+          >
+            {showCustomPanel ? '閉じる' : '条件'}
+          </button>
+        </div>
+
+        {showCustomPanel && (
+          <div className="mt-4 rounded-[22px] border border-white/8 bg-slate-950/18 p-3.5 sm:mt-5 sm:rounded-[24px] sm:p-5">
+            <div className="grid gap-4 md:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <label className="text-slate-400 text-xs mb-2 block">対象単元</label>
+                <select
+                  value={customOptions.unit}
+                  onChange={event => setCustomOptions(current => ({ ...current, unit: event.target.value }))}
+                  className="input-surface"
+                >
+                  <option value="all">全単元</option>
+                  {units.map(unitItem => (
+                    <option key={unitItem.unit} value={unitItem.unit}>
+                      {unitItem.unit} ({unitItem.questionCount}問)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-4">
+                <div>
+                  <label className="text-slate-400 text-xs mb-2 block">学年</label>
+                  <select
+                    value={customOptions.grade}
+                    onChange={event => updateGrade(event.target.value as CustomQuizGradeFilter)}
+                    className="input-surface"
+                  >
+                    {customGradeOptions.map(option => (
+                      <option key={option} value={option}>
+                        {getCustomQuizGradeFilterLabel(option)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                {rate !== null && (
-                  <div className="mt-2 soft-track" style={{ height: 4 }}>
-                    <div style={{
-                      width: `${rate}%`, height: '100%', borderRadius: 999,
-                      background: rate >= 70 ? 'var(--success)' : rate >= 50 ? 'var(--warning)' : 'var(--danger)',
-                    }} />
-                  </div>
-                )}
+
+                <div>
+                  <label className="text-slate-400 text-xs mb-2 block">問題タイプ</label>
+                  <select
+                    value={customOptions.questionType}
+                    onChange={event => updateQuestionType(event.target.value as CustomQuizQuestionType)}
+                    className="input-surface"
+                  >
+                    {(['all', ...QUESTION_TYPES] as const).map(option => (
+                      <option key={option} value={option}>
+                        {getCustomQuizQuestionTypeLabel(option)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 text-xs mb-2 block">出題条件</label>
+                  <select
+                    value={customOptions.historyFilter}
+                    onChange={event => updateHistoryFilter(event.target.value as CustomQuizHistoryFilter)}
+                    className="input-surface"
+                  >
+                    {(['all', 'unanswered', 'weak'] as const).map(option => (
+                      <option key={option} value={option}>
+                        {getCustomQuizHistoryFilterLabel(option)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={() => setCustomOptions(DEFAULT_CUSTOM_QUIZ_OPTIONS)}
+                className="text-sm text-slate-400 transition-colors hover:text-slate-200"
+              >
+                リセット
               </button>
-            )
-          })}
+              <button
+                onClick={() => onStartCustomQuiz(customOptions, questionCount)}
+                className="btn-primary"
+              >
+                この条件で開始
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <p className="mb-4 px-1 text-xs text-slate-500">
+        {loading ? '単元データを読み込み中...' : `${units.length}単元`}
+      </p>
+
+      <div className="card">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">Support Tools</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowSupportTools(current => !current)}
+            className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
+          >
+            {showSupportTools ? '閉じる' : 'サポート'}
+          </button>
         </div>
-      )}
+
+        {showSupportTools && (
+          <div className="mt-4 space-y-6">
+            {isGuest ? (
+              <div className="flex items-center justify-between gap-4 border-t border-white/8 pt-4">
+                <div>
+                  <div className="text-sm font-semibold text-slate-100">{field}について質問する</div>
+                  <div className="mt-1 text-xs leading-6 text-slate-400">ゲストは使えません</div>
+                </div>
+                <div className="text-xs font-semibold text-slate-500 sm:text-sm">
+                  利用不可
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => onOpenChat(field as ScienceChatField)}
+                className="flex w-full items-center justify-between gap-4 border-t border-white/8 pt-4 text-left"
+              >
+                <div>
+                  <div className="text-sm font-semibold text-white">{field}について質問する</div>
+                </div>
+                <div className="text-sm font-semibold text-sky-200 transition-colors hover:text-white">
+                  Geminiに聞く
+                </div>
+              </button>
+            )}
+
+            {/* Lab mode sections — data-driven rendering */}
+            {(() => {
+              const labSections: Array<{
+                field: string
+                label: string
+                modes: Array<{ key: string; meta: { accent: string; badge: string; icon: string; title: string; description?: string }; onClick: () => void }>
+              }> = []
+
+              if (field === '生物') {
+                labSections.push({
+                  field: '生物', label: '生物ラボ',
+                  modes: (['organ-pairs'] as const).map(m => ({ key: m, meta: BIOLOGY_MODE_META[m], onClick: () => onSelectBiologyMode(m) })),
+                })
+              }
+
+              if (field === '化学') {
+                labSections.push({
+                  field: '化学', label: '化学ラボ',
+                  modes: [
+                    ...(['flash', 'equation'] as const).map(m => ({ key: m, meta: CHEMISTRY_MODE_META[m], onClick: () => onSelectSpecialMode(m) })),
+                    ...CHEMISTRY_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
+                  ],
+                })
+              }
+
+              if (field === '物理') {
+                labSections.push({
+                  field: '物理', label: '物理ラボ',
+                  modes: PHYSICS_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
+                })
+              }
+
+              if (field === '地学') {
+                labSections.push({
+                  field: '地学', label: '地学ラボ',
+                  modes: [
+                    ...(['link-pairs'] as const).map(m => ({ key: m, meta: EARTH_SCIENCE_MODE_META[m], onClick: () => onSelectEarthMode(m) })),
+                    ...EARTH_WORKBENCH_MODES.map(m => ({ key: m, meta: SCIENCE_WORKBENCH_MODE_META[m], onClick: () => onSelectWorkbenchMode(m) })),
+                  ],
+                })
+              }
+
+              return labSections.map(section => (
+                <div key={section.field}>
+                  <div className="mb-3 flex items-center justify-between gap-3 border-t border-white/8 pt-4">
+                    <h2 className="text-base font-semibold text-slate-100">{section.label}</h2>
+                  </div>
+                  <div className="space-y-2">
+                    {section.modes.map(({ key, meta, onClick }) => (
+                      <button
+                        key={key}
+                        onClick={onClick}
+                        className="flex w-full items-start justify-between gap-4 rounded-[16px] border border-white/8 px-3.5 py-3 text-left transition-colors hover:border-white/16"
+                        style={{ background: `linear-gradient(180deg, ${meta.accent}10, rgba(2, 6, 23, 0.22))` }}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg" aria-hidden="true">{meta.icon}</span>
+                            <span className="font-semibold text-white">{meta.title}</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: meta.accent }}>
+                              {meta.badge}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-xs font-semibold" style={{ color: meta.accent }}>
+                          開く
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            })()}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

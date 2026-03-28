@@ -1,229 +1,157 @@
 'use client'
-import { ChangeEvent, useEffect, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import { Database, supabase } from '@/lib/supabase'
-import { fetchStudents, useAuth } from '@/lib/auth'
+import { fetchStudents } from '@/lib/auth'
 import { sampleQuestions } from '@/lib/sampleQuestions'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import ScienceBackdrop from '@/components/ScienceBackdrop'
+import AdminStudentDetailSheet from '@/components/AdminStudentDetailSheet'
+import { getChatModerationCategoryLabel } from '@/lib/chatModeration'
+import { ensureNoDuplicateQuestions } from '@/lib/questionDuplicates'
+import { isMissingColumnError, isMissingRelationError } from '@/lib/schemaCompat'
+import { fetchActiveSessions } from '@/lib/activeSessions'
+import { BADGE_DEFINITIONS } from '@/lib/badges'
+import {
+  clampQuestionImageDisplayValue,
+  compressQuestionImageFile,
+  getQuestionImageDisplaySize,
+  QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE,
+  QUESTION_IMAGE_MAX_DISPLAY_SIZE,
+  QUESTION_IMAGE_MIN_DISPLAY_SIZE,
+} from '@/lib/questionImages'
+import {
+  getQuestionInquiryCategoryLabel,
+  getQuestionInquirySchemaErrorMessage,
+  isQuestionInquiryTableMissing,
+  QUESTION_INQUIRY_STATUS_META,
+  QuestionInquiryRow,
+  QuestionInquiryStatus,
+} from '@/lib/questionInquiry'
+import {
+  getLoginUpdatesSchemaErrorMessage,
+  isLoginUpdatesTableMissing,
+  LoginUpdateRow,
+} from '@/lib/loginUpdates'
+import { FIELDS } from '@/lib/constants'
+import {
+  QuestionShape,
+  QuestionType,
+  QUESTION_TYPES,
+  getQuestionCorrectAnswerText,
+  getQuestionTypeLabel,
+  normalizeQuestionRecord,
+} from '@/lib/questionTypes'
+import { parseKeywordInput, parseListInput, parseMatchPairsText, getFieldColor, downloadJsonFile } from '@/lib/formUtils'
+import { getRateColor } from '@/lib/uiUtils'
+import {
+  ADMIN_PW,
+  BULK_INSERT_CHUNK_SIZE,
+  BULK_JSON_EXAMPLE,
+  GLOSSARY_BULK_JSON_EXAMPLE,
+  XP_RULES,
+  LEVEL_GUIDE,
+  BADGE_CONDITION_GUIDE,
+  BADGE_RARITY_STYLES,
+  QUESTION_LIST_PAGE_SIZE,
+  QUESTION_LIST_PAGE_WINDOW,
+  QuizSessionRow,
+  AnswerLogRow,
+  QuestionRow,
+  ChatGuardLogRow,
+  StudentBadgeRow,
+  GlossaryInsert,
+  QuestionAccuracyAnswerLogRow,
+  AdminStudentDetailAnswerLogRow,
+  StudentStats,
+  ActiveStudentStatus,
+  AdminStudentDetailData,
+  QuestionAccuracySummary,
+  AdminTab,
+  GlossaryRow,
+  DailyChallengeRow,
+  BadgeRow,
+  TimeAttackRecordRow,
+  buildStudentStats,
+  buildQuestionAccuracyMap,
+  parseBulkQuestions,
+  parseBulkGlossaryEntries,
+  parseAdminRestorePayload,
+  insertRowsInChunks,
+  getRestoreErrorMessage,
+} from '@/lib/adminUtils'
 
-const ADMIN_PW = 'rikaadmin2026'
-const FIELDS = ['生物', '化学', '物理', '地学'] as const
-const FIELD_COLORS: Record<string, string> = {
-  '生物': '#22c55e',
-  '化学': '#f97316',
-  '物理': '#3b82f6',
-  '地学': '#a855f7',
-}
-const BULK_INSERT_CHUNK_SIZE = 100
-const BULK_JSON_EXAMPLE = `[
-  {
-    "field": "生物",
-    "unit": "植物のつくり",
-    "question": "光合成を主に行う部分はどこ？",
-    "type": "choice",
-    "choices": ["葉", "根"],
-    "answer": "葉",
-    "explanation": "葉の葉緑体で光合成を行います。",
-    "grade": "中1"
-  },
-  {
-    "field": "物理",
-    "unit": "電流",
-    "question": "電流の単位は何ですか？",
-    "type": "text",
-    "answer": "A",
-    "explanation": "電流の単位はアンペアです。",
-    "grade": "中2"
-  }
-]`
-
-function buildBinaryChoices(choices: string[] | null, answer: string, seed: string) {
-  if (!choices || choices.length === 0) return null
-
-  const correct = choices.find(choice => choice === answer) ?? answer
-  const distractor = choices.find(choice => choice !== answer)
-  if (!distractor) return [correct]
-
-  return seed.length % 2 === 0 ? [correct, distractor] : [distractor, correct]
-}
-
-interface StudentStats {
-  id: number
-  nickname: string
-  password: string
-  totalQ: number
-  totalC: number
-  lastActivity: string | null
-  byField: Record<string, { total: number; correct: number }>
-}
-
-type QuizSessionRow = Database['public']['Tables']['quiz_sessions']['Row']
-type AnswerLogRow = Database['public']['Tables']['answer_logs']['Row']
-type QuestionRow = Database['public']['Tables']['questions']['Row']
-
-interface BulkQuestionPayload {
-  field: typeof FIELDS[number]
-  unit: string
-  question: string
-  type: 'choice' | 'text'
-  choices: string[] | null
-  answer: string
-  explanation: string | null
-  grade: string
-}
-
-type AdminTab = 'overview' | 'questions' | 'add' | 'bulk'
-
-function buildStudentStats(
-  students: Array<{ id: number; nickname: string; password: string }>,
-  sessions: QuizSessionRow[]
-) {
-  const statsMap: Record<number, StudentStats> = {}
-
-  students.forEach(student => {
-    statsMap[student.id] = {
-      id: student.id,
-      nickname: student.nickname,
-      password: student.password,
-      totalQ: 0,
-      totalC: 0,
-      lastActivity: null,
-      byField: {},
-    }
-  })
-
-  sessions.forEach(session => {
-    const current = statsMap[session.student_id]
-    if (!current) return
-    current.totalQ += session.total_questions
-    current.totalC += session.correct_count
-    if (!current.lastActivity || session.created_at > current.lastActivity) {
-      current.lastActivity = session.created_at
-    }
-    if (!current.byField[session.field]) current.byField[session.field] = { total: 0, correct: 0 }
-    current.byField[session.field].total += session.total_questions
-    current.byField[session.field].correct += session.correct_count
-  })
-
-  return Object.values(statsMap)
-}
-
-function downloadJsonFile(filename: string, payload: unknown) {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(url)
-}
-
-function parseBulkQuestions(jsonText: string): BulkQuestionPayload[] {
-  const parsed = JSON.parse(jsonText)
-  const items: unknown[] | null = Array.isArray(parsed)
-    ? parsed
-    : Array.isArray(parsed?.questions)
-      ? parsed.questions
-      : null
-
-  if (!items || items.length === 0) {
-    throw new Error('JSON は配列、または {"questions":[...]} の形で入力してください。')
-  }
-
-  return items.map((item, index) => {
-    const row = typeof item === 'object' && item !== null ? item as Record<string, unknown> : {}
-    const prefix = `${index + 1}問目`
-    const field = typeof row.field === 'string' ? row.field.trim() : ''
-    const unit = typeof row.unit === 'string' ? row.unit.trim() : ''
-    const question = typeof row.question === 'string' ? row.question.trim() : ''
-    const type = row.type
-    const answer = typeof row.answer === 'string' ? row.answer.trim() : ''
-    const explanation = typeof row.explanation === 'string' && row.explanation.trim()
-      ? row.explanation.trim()
-      : null
-    const grade = typeof row.grade === 'string' && row.grade.trim()
-      ? row.grade.trim()
-      : '中3'
-
-    if (!FIELDS.includes(field as typeof FIELDS[number])) {
-      throw new Error(`${prefix}: field は ${FIELDS.join(' / ')} のどれかにしてください。`)
-    }
-    if (!unit) throw new Error(`${prefix}: unit は必須です。`)
-    if (!question) throw new Error(`${prefix}: question は必須です。`)
-    if (!answer) throw new Error(`${prefix}: answer は必須です。`)
-    if (type !== 'choice' && type !== 'text') {
-      throw new Error(`${prefix}: type は "choice" か "text" にしてください。`)
-    }
-
-    if (type === 'choice') {
-      if (!Array.isArray(row.choices)) {
-        throw new Error(`${prefix}: choice 問題は choices 配列が必要です。`)
-      }
-      const choices = row.choices
-        .map((choice: unknown) => (typeof choice === 'string' ? choice.trim() : ''))
-        .filter(Boolean)
-
-      if (choices.length !== 2) {
-        throw new Error(`${prefix}: choice 問題の choices は2件にしてください。`)
-      }
-      if (!choices.includes(answer)) {
-        throw new Error(`${prefix}: answer は choices のどちらかと一致させてください。`)
-      }
-
-      return {
-        field: field as typeof FIELDS[number],
-        unit,
-        question,
-        type,
-        choices,
-        answer,
-        explanation,
-        grade,
-      }
-    }
-
-    return {
-      field: field as typeof FIELDS[number],
-      unit,
-      question,
-      type,
-      choices: null,
-      answer,
-      explanation,
-      grade,
-    }
-  })
-}
 
 export default function AdminPage({ onBack }: { onBack: () => void }) {
-  const { lockedStudentId, clearDeviceLock } = useAuth()
   const [authed, setAuthed] = useState(false)
   const [pw, setPw] = useState('')
   const [pwError, setPwError] = useState(false)
   const [tab, setTab] = useState<AdminTab>('overview')
-  const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string }>>([])
+  const [studentsList, setStudentsList] = useState<Array<{ id: number; nickname: string; password: string; student_xp: number; is_approved?: boolean; gemini_enabled?: boolean }>>([])
   const [stats, setStats] = useState<StudentStats[]>([])
   const [questions, setQuestions] = useState<QuestionRow[]>([])
+  const [questionAccuracyMap, setQuestionAccuracyMap] = useState<Record<string, QuestionAccuracySummary>>({})
+  const [questionSearch, setQuestionSearch] = useState('')
+  const [questionPage, setQuestionPage] = useState(1)
+  const [activeStudents, setActiveStudents] = useState<ActiveStudentStatus[]>([])
+  const [chatGuardLogs, setChatGuardLogs] = useState<ChatGuardLogRow[]>([])
+  const [questionInquiries, setQuestionInquiries] = useState<QuestionInquiryRow[]>([])
+  const [questionInquiryLoadError, setQuestionInquiryLoadError] = useState('')
+  const [loginUpdates, setLoginUpdates] = useState<LoginUpdateRow[]>([])
+  const [loginUpdatesLoadError, setLoginUpdatesLoadError] = useState('')
+  const [loginUpdateTitle, setLoginUpdateTitle] = useState('')
+  const [loginUpdateBody, setLoginUpdateBody] = useState('')
+  const [loginUpdateMsg, setLoginUpdateMsg] = useState('')
+  const [loginUpdateSaving, setLoginUpdateSaving] = useState(false)
+  const [loginUpdateDeletingId, setLoginUpdateDeletingId] = useState<string | null>(null)
+  const [questionInquiryActionId, setQuestionInquiryActionId] = useState<string | null>(null)
+  const [questionInquiryNoteDrafts, setQuestionInquiryNoteDrafts] = useState<Record<string, string>>({})
+  const [questionInquiryReplyDrafts, setQuestionInquiryReplyDrafts] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [bulkInput, setBulkInput] = useState(BULK_JSON_EXAMPLE)
   const [bulkMsg, setBulkMsg] = useState('')
   const [bulkLoading, setBulkLoading] = useState(false)
+  const [glossaryBulkInput, setGlossaryBulkInput] = useState(GLOSSARY_BULK_JSON_EXAMPLE)
+  const [glossaryBulkMsg, setGlossaryBulkMsg] = useState('')
+  const [glossaryBulkLoading, setGlossaryBulkLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
   const [exportMsg, setExportMsg] = useState('')
+  const [restoreInput, setRestoreInput] = useState('')
+  const [restoreMsg, setRestoreMsg] = useState('')
+  const [restoreLoading, setRestoreLoading] = useState(false)
+  const [userActionId, setUserActionId] = useState<number | null>(null)
 
   const [form, setForm] = useState({
     field: '生物' as typeof FIELDS[number],
     unit: '',
     question: '',
-    type: 'choice' as 'choice' | 'text',
-    choices: ['', ''],
+    type: 'choice' as QuestionType,
+    choices: ['', '', '', '', '', ''],
     answer: '',
+    keywords: '',
+    matchPairsText: '',
+    sortItemsText: '',
+    correctChoicesText: '',
+    wordTokensText: '',
+    distractorTokensText: '',
     explanation: '',
     grade: '中3',
   })
   const [addMsg, setAddMsg] = useState('')
+  const [questionImageBusy, setQuestionImageBusy] = useState<{
+    questionId: string
+    action: 'upload' | 'size' | 'remove'
+  } | null>(null)
+  const [questionImageStatus, setQuestionImageStatus] = useState<{
+    questionId: string
+    type: 'success' | 'error'
+    text: string
+  } | null>(null)
+  const [questionImageSizeDrafts, setQuestionImageSizeDrafts] = useState<Record<string, { width: string; height: string }>>({})
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null)
+  const [selectedStudentDetail, setSelectedStudentDetail] = useState<AdminStudentDetailData | null>(null)
+  const [selectedStudentDetailLoading, setSelectedStudentDetailLoading] = useState(false)
+  const [selectedStudentDetailError, setSelectedStudentDetailError] = useState<string | null>(null)
 
   const checkPw = () => {
     if (pw === ADMIN_PW) {
@@ -240,22 +168,461 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     loadData()
   }, [authed, tab])
 
+  useEffect(() => {
+    if (!authed || tab !== 'overview') return
+
+    const intervalId = window.setInterval(() => {
+      void loadData()
+    }, 60 * 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [authed, tab])
+
+  useEffect(() => {
+    if (tab === 'overview') return
+    setSelectedStudentId(null)
+    setSelectedStudentDetail(null)
+    setSelectedStudentDetailLoading(false)
+    setSelectedStudentDetailError(null)
+  }, [tab])
+
+  const normalizedQuestionSearch = questionSearch.trim().toLowerCase()
+
+  const studentCreatedQuestionCount = useMemo(
+    () => questions.filter(question => question.created_by_student_id !== null).length,
+    [questions],
+  )
+
+  const filteredQuestions = useMemo(() => {
+    if (!normalizedQuestionSearch) return questions
+
+    return questions.filter(question => {
+      const normalized = normalizeQuestionRecord(question)
+      const searchableText = [
+        question.field,
+        question.unit,
+        question.question,
+        question.grade,
+        question.type,
+        getQuestionTypeLabel(question.type),
+        getQuestionCorrectAnswerText(normalized),
+        question.created_by_student_id ? `id ${question.created_by_student_id}` : '',
+        question.created_by_student_id ? `作成者 ${question.created_by_student_id}` : '共有問題',
+        question.created_by_student_id ? '生徒作成' : '共有問題',
+        normalized.explanation ?? '',
+        normalized.keywords?.join(' ') ?? '',
+        normalized.choices?.join(' ') ?? '',
+        normalized.match_pairs?.flatMap(pair => [pair.left, pair.right]).join(' ') ?? '',
+        normalized.sort_items?.join(' ') ?? '',
+        normalized.correct_choices?.join(' ') ?? '',
+        normalized.word_tokens?.join(' ') ?? '',
+        normalized.distractor_tokens?.join(' ') ?? '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return searchableText.includes(normalizedQuestionSearch)
+    })
+  }, [questions, normalizedQuestionSearch])
+
+  const questionPageCount = Math.max(1, Math.ceil(filteredQuestions.length / QUESTION_LIST_PAGE_SIZE))
+
+  const paginatedQuestions = useMemo(() => {
+    const startIndex = (questionPage - 1) * QUESTION_LIST_PAGE_SIZE
+    return filteredQuestions.slice(startIndex, startIndex + QUESTION_LIST_PAGE_SIZE)
+  }, [filteredQuestions, questionPage])
+
+  const questionPageStart = filteredQuestions.length === 0
+    ? 0
+    : (questionPage - 1) * QUESTION_LIST_PAGE_SIZE + 1
+  const questionPageEnd = filteredQuestions.length === 0
+    ? 0
+    : questionPageStart + paginatedQuestions.length - 1
+
+  const questionPaginationItems = useMemo(() => {
+    const pages = new Set<number>([1, questionPageCount])
+    for (let offset = -QUESTION_LIST_PAGE_WINDOW; offset <= QUESTION_LIST_PAGE_WINDOW; offset += 1) {
+      const page = questionPage + offset
+      if (page >= 1 && page <= questionPageCount) pages.add(page)
+    }
+
+    const sortedPages = Array.from(pages).sort((a, b) => a - b)
+    const items: Array<number | 'ellipsis'> = []
+    let previousPage: number | null = null
+
+    sortedPages.forEach(page => {
+      if (previousPage !== null && page - previousPage > 1) items.push('ellipsis')
+      items.push(page)
+      previousPage = page
+    })
+
+    return items
+  }, [questionPage, questionPageCount])
+
+  useEffect(() => {
+    setQuestionPage(1)
+  }, [questionSearch])
+
+  useEffect(() => {
+    setQuestionPage(current => Math.min(current, questionPageCount))
+  }, [questionPageCount])
+
+  const trimLoginUpdates = async () => {
+    const { data, error } = await supabase
+      .from('login_updates')
+      .select('id')
+      .order('created_at', { ascending: false })
+
+    if (error || !data || data.length <= 10) return
+
+    const staleIds = data.slice(10).map(row => row.id)
+    if (staleIds.length === 0) return
+
+    await supabase
+      .from('login_updates')
+      .delete()
+      .in('id', staleIds)
+  }
+
   const loadData = async () => {
     setLoading(true)
 
     if (tab === 'overview') {
-      const [students, { data: sessions }] = await Promise.all([
+      const [students, { data: sessions }, activeSessionRows, chatGuardLogsResponse, questionInquiriesResponse, loginUpdatesResponse] = await Promise.all([
         fetchStudents(),
         supabase.from('quiz_sessions').select('*'),
+        fetchActiveSessions(),
+        supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }).limit(20),
+        supabase.from('question_inquiries').select('*').order('created_at', { ascending: false }).limit(20),
+        supabase.from('login_updates').select('*').order('created_at', { ascending: false }).limit(10),
       ])
       setStudentsList(students)
       setStats(buildStudentStats(students, (sessions || []) as QuizSessionRow[]))
+      const activeStudentMap = new Map<number, ActiveStudentStatus>()
+      activeSessionRows
+        .filter(session => session.student_id !== 5)
+        .forEach(session => {
+          const currentStudent = students.find(student => student.id === session.student_id)
+          if (!currentStudent) return
+          const current = activeStudentMap.get(session.student_id)
+          if (!current) {
+            activeStudentMap.set(session.student_id, {
+              id: session.student_id,
+              nickname: currentStudent.nickname,
+              lastSeenAt: session.last_seen_at,
+              sessionCount: 1,
+            })
+            return
+          }
+
+          current.sessionCount += 1
+          if (session.last_seen_at > current.lastSeenAt) {
+            current.lastSeenAt = session.last_seen_at
+          }
+        })
+      setActiveStudents(Array.from(activeStudentMap.values()).sort((a, b) => +new Date(b.lastSeenAt) - +new Date(a.lastSeenAt)))
+      if (chatGuardLogsResponse.error) {
+        setChatGuardLogs([])
+      } else {
+        setChatGuardLogs((chatGuardLogsResponse.data || []) as ChatGuardLogRow[])
+      }
+      if (questionInquiriesResponse.error) {
+        if (!isQuestionInquiryTableMissing(questionInquiriesResponse.error)) {
+          setQuestionInquiryLoadError(questionInquiriesResponse.error.message)
+        } else {
+          setQuestionInquiryLoadError('')
+        }
+        setQuestionInquiries([])
+      } else {
+        setQuestionInquiries((questionInquiriesResponse.data || []) as QuestionInquiryRow[])
+        setQuestionInquiryLoadError('')
+      }
+
+      if (loginUpdatesResponse.error) {
+        if (!isLoginUpdatesTableMissing(loginUpdatesResponse.error)) {
+          setLoginUpdatesLoadError(loginUpdatesResponse.error.message)
+        } else {
+          setLoginUpdatesLoadError(getLoginUpdatesSchemaErrorMessage(loginUpdatesResponse.error.message))
+        }
+        setLoginUpdates([])
+      } else {
+        setLoginUpdates((loginUpdatesResponse.data || []) as LoginUpdateRow[])
+        setLoginUpdatesLoadError('')
+      }
+    } else if (tab === 'users') {
+      const students = await fetchStudents()
+      setStudentsList(students)
+    } else if (tab === 'inquiries') {
+      const { data, error } = await supabase
+        .from('question_inquiries')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        setQuestionInquiries([])
+        setQuestionInquiryLoadError(getQuestionInquirySchemaErrorMessage(error.message))
+      } else {
+        setQuestionInquiries((data || []) as QuestionInquiryRow[])
+        setQuestionInquiryLoadError('')
+      }
     } else if (tab === 'questions') {
-      const { data } = await supabase.from('questions').select('*').order('created_at', { ascending: false })
-      setQuestions((data || []) as QuestionRow[])
+      const [questionsResponse, answerLogsResponse] = await Promise.all([
+        supabase.from('questions').select('*').order('created_at', { ascending: false }),
+        supabase.from('answer_logs').select('question_id, student_id, is_correct, created_at'),
+      ])
+
+      setQuestions((questionsResponse.data || []) as QuestionRow[])
+
+      if (answerLogsResponse.error) {
+        setQuestionAccuracyMap({})
+      } else {
+        setQuestionAccuracyMap(buildQuestionAccuracyMap((answerLogsResponse.data || []) as QuestionAccuracyAnswerLogRow[]))
+      }
     }
 
     setLoading(false)
+  }
+
+  const handleAddLoginUpdate = async () => {
+    const title = loginUpdateTitle.trim()
+    const body = loginUpdateBody.trim()
+
+    if (!title || !body) {
+      setLoginUpdateMsg('タイトルと本文を入力してください。')
+      return
+    }
+
+    setLoginUpdateSaving(true)
+    setLoginUpdateMsg('')
+
+    const { error } = await supabase
+      .from('login_updates')
+      .insert({
+        title,
+        body,
+        created_by_student_id: 5,
+      })
+
+    if (error) {
+      setLoginUpdateSaving(false)
+      setLoginUpdateMsg(getLoginUpdatesSchemaErrorMessage(error.message))
+      return
+    }
+
+    await trimLoginUpdates()
+    setLoginUpdateTitle('')
+    setLoginUpdateBody('')
+    setLoginUpdateMsg('✅ アップデート掲示板を更新しました。')
+    setLoginUpdateSaving(false)
+    await loadData()
+  }
+
+  const handleDeleteLoginUpdate = async (updateId: string) => {
+    setLoginUpdateDeletingId(updateId)
+    setLoginUpdateMsg('')
+
+    const { error } = await supabase
+      .from('login_updates')
+      .delete()
+      .eq('id', updateId)
+
+    if (error) {
+      setLoginUpdateDeletingId(null)
+      setLoginUpdateMsg(getLoginUpdatesSchemaErrorMessage(error.message))
+      return
+    }
+
+    setLoginUpdateDeletingId(null)
+    setLoginUpdateMsg('✅ 掲示板の項目を削除しました。')
+    await loadData()
+  }
+
+  useEffect(() => {
+    if (!authed || tab !== 'overview' || selectedStudentId === null) return
+
+    let active = true
+
+    const loadStudentDetail = async () => {
+      try {
+        setSelectedStudentDetail(null)
+        setSelectedStudentDetailLoading(true)
+        setSelectedStudentDetailError(null)
+
+        const [sessionsResponse, answerLogsResponse, studentBadgesResponse] = await Promise.all([
+          supabase
+            .from('quiz_sessions')
+            .select('*')
+            .eq('student_id', selectedStudentId)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('answer_logs')
+            .select('question_id, is_correct, created_at, questions(unit, field)')
+            .eq('student_id', selectedStudentId)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('student_badges')
+            .select('*')
+            .eq('student_id', selectedStudentId)
+            .order('earned_at', { ascending: false }),
+        ])
+
+        if (!active) return
+
+        if (sessionsResponse.error) throw new Error(sessionsResponse.error.message)
+        if (answerLogsResponse.error) throw new Error(answerLogsResponse.error.message)
+
+        let studentBadges: StudentBadgeRow[] = []
+        if (studentBadgesResponse.error) {
+          if (!isMissingRelationError(studentBadgesResponse.error, 'student_badges')) {
+            throw new Error(studentBadgesResponse.error.message)
+          }
+        } else {
+          studentBadges = (studentBadgesResponse.data || []) as StudentBadgeRow[]
+        }
+
+        const answerLogs = ((answerLogsResponse.data || []) as Array<
+          Pick<AnswerLogRow, 'question_id' | 'is_correct' | 'created_at'> & {
+            questions: Pick<QuestionRow, 'unit' | 'field'> | Array<Pick<QuestionRow, 'unit' | 'field'>> | null
+          }
+        >).map(log => ({
+          question_id: log.question_id,
+          is_correct: log.is_correct,
+          created_at: log.created_at,
+          questions: Array.isArray(log.questions) ? (log.questions[0] ?? null) : (log.questions ?? null),
+        }))
+
+        setSelectedStudentDetail({
+          sessions: (sessionsResponse.data || []) as QuizSessionRow[],
+          answerLogs,
+          studentBadges,
+        })
+      } catch (error) {
+        if (!active) return
+        setSelectedStudentDetail(null)
+        setSelectedStudentDetailError(
+          error instanceof Error ? error.message : '生徒の詳細データを読み込めませんでした。'
+        )
+      } finally {
+        if (active) setSelectedStudentDetailLoading(false)
+      }
+    }
+
+    void loadStudentDetail()
+
+    return () => {
+      active = false
+    }
+  }, [authed, selectedStudentId, tab])
+
+  useEffect(() => {
+    if (questionInquiries.length === 0) return
+
+    setQuestionInquiryNoteDrafts(current => {
+      const next = { ...current }
+      questionInquiries.forEach(inquiry => {
+        if (next[inquiry.id] === undefined) {
+          next[inquiry.id] = inquiry.admin_note ?? ''
+        }
+      })
+      return next
+    })
+
+    setQuestionInquiryReplyDrafts(current => {
+      const next = { ...current }
+      questionInquiries.forEach(inquiry => {
+        if (next[inquiry.id] === undefined) {
+          next[inquiry.id] = inquiry.admin_reply ?? ''
+        }
+      })
+      return next
+    })
+  }, [questionInquiries])
+
+  const handleQuestionInquiryStatusChange = async (inquiry: QuestionInquiryRow, status: QuestionInquiryStatus) => {
+    try {
+      setQuestionInquiryActionId(inquiry.id)
+
+      const payload: Database['public']['Tables']['question_inquiries']['Update'] = {
+        status,
+        updated_at: new Date().toISOString(),
+        resolved_at: status === 'resolved' ? new Date().toISOString() : null,
+      }
+
+      const { error } = await supabase
+        .from('question_inquiries')
+        .update(payload)
+        .eq('id', inquiry.id)
+
+      if (error) throw new Error(getQuestionInquirySchemaErrorMessage(error.message))
+
+      setQuestionInquiries(current => current.map(item => item.id === inquiry.id ? {
+        ...item,
+        ...payload,
+      } as QuestionInquiryRow : item))
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '問い合わせの更新に失敗しました。')
+    } finally {
+      setQuestionInquiryActionId(null)
+    }
+  }
+
+  const handleSaveQuestionInquiryNote = async (inquiryId: string) => {
+    try {
+      setQuestionInquiryActionId(inquiryId)
+
+      const payload: Database['public']['Tables']['question_inquiries']['Update'] = {
+        admin_note: questionInquiryNoteDrafts[inquiryId] ?? '',
+        updated_at: new Date().toISOString(),
+      }
+
+      const { error } = await supabase
+        .from('question_inquiries')
+        .update(payload)
+        .eq('id', inquiryId)
+
+      if (error) throw new Error(getQuestionInquirySchemaErrorMessage(error.message))
+
+      setQuestionInquiries(current => current.map(item => item.id === inquiryId ? {
+        ...item,
+        ...payload,
+      } as QuestionInquiryRow : item))
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '対応メモの保存に失敗しました。')
+    } finally {
+      setQuestionInquiryActionId(null)
+    }
+  }
+
+  const handleSaveQuestionInquiryReply = async (inquiryId: string) => {
+    try {
+      setQuestionInquiryActionId(inquiryId)
+
+      const replyText = questionInquiryReplyDrafts[inquiryId] ?? ''
+      const payload: Database['public']['Tables']['question_inquiries']['Update'] = {
+        admin_reply: replyText,
+        updated_at: new Date().toISOString(),
+        replied_at: replyText.trim() ? new Date().toISOString() : null,
+      }
+
+      const { error } = await supabase
+        .from('question_inquiries')
+        .update(payload)
+        .eq('id', inquiryId)
+
+      if (error) throw new Error(getQuestionInquirySchemaErrorMessage(error.message))
+
+      setQuestionInquiries(current => current.map(item => item.id === inquiryId ? {
+        ...item,
+        ...payload,
+      } as QuestionInquiryRow : item))
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '返信の保存に失敗しました。')
+    } finally {
+      setQuestionInquiryActionId(null)
+    }
   }
 
   const handleDownloadAllPerformance = async () => {
@@ -263,26 +630,83 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       setExportLoading(true)
       setExportMsg('')
 
-      const [students, sessionsResponse, answerLogsResponse, questionsResponse] = await Promise.all([
+      const [
+        students,
+        sessionsResponse,
+        answerLogsResponse,
+        questionsResponse,
+        loginUpdatesResponse,
+        glossaryResponse,
+        chatGuardLogsResponse,
+        questionInquiriesResponse,
+        dailyChallengesResponse,
+        badgesResponse,
+        studentBadgesResponse,
+        timeAttackResponse,
+      ] = await Promise.all([
         fetchStudents(),
         supabase.from('quiz_sessions').select('*').order('created_at', { ascending: false }),
         supabase.from('answer_logs').select('*').order('created_at', { ascending: false }),
         supabase.from('questions').select('*').order('created_at', { ascending: false }),
+        supabase.from('login_updates').select('*').order('created_at', { ascending: false }),
+        supabase.from('science_glossary_entries').select('*').order('reading', { ascending: true }).order('term', { ascending: true }),
+        supabase.from('chat_guard_logs').select('*').order('created_at', { ascending: false }),
+        supabase.from('question_inquiries').select('*').order('created_at', { ascending: false }),
+        supabase.from('daily_challenges').select('*').order('completed_at', { ascending: false }),
+        supabase.from('badges').select('*').order('created_at', { ascending: false }),
+        supabase.from('student_badges').select('*').order('earned_at', { ascending: false }),
+        supabase.from('time_attack_records').select('*').order('best_score', { ascending: false }),
       ])
 
       if (sessionsResponse.error) throw new Error(sessionsResponse.error.message)
       if (answerLogsResponse.error) throw new Error(answerLogsResponse.error.message)
       if (questionsResponse.error) throw new Error(questionsResponse.error.message)
+      if (loginUpdatesResponse.error && !isLoginUpdatesTableMissing(loginUpdatesResponse.error)) {
+        throw new Error(loginUpdatesResponse.error.message)
+      }
+      if (glossaryResponse.error && !isMissingRelationError(glossaryResponse.error, 'science_glossary_entries')) {
+        throw new Error(glossaryResponse.error.message)
+      }
+      if (chatGuardLogsResponse.error && !isMissingRelationError(chatGuardLogsResponse.error, 'chat_guard_logs')) {
+        throw new Error(chatGuardLogsResponse.error.message)
+      }
+      if (questionInquiriesResponse.error && !isQuestionInquiryTableMissing(questionInquiriesResponse.error)) {
+        throw new Error(questionInquiriesResponse.error.message)
+      }
+      if (dailyChallengesResponse.error) throw new Error(dailyChallengesResponse.error.message)
+      if (badgesResponse.error) throw new Error(badgesResponse.error.message)
+      if (studentBadgesResponse.error) throw new Error(studentBadgesResponse.error.message)
+      if (timeAttackResponse.error) throw new Error(timeAttackResponse.error.message)
 
       const sessions = (sessionsResponse.data || []) as QuizSessionRow[]
       const answerLogs = (answerLogsResponse.data || []) as AnswerLogRow[]
       const questions = (questionsResponse.data || []) as QuestionRow[]
+      const loginUpdates = (loginUpdatesResponse.data || []) as LoginUpdateRow[]
+      const hasLoginUpdatesTable = !loginUpdatesResponse.error
+      const glossaryEntries = (glossaryResponse.data || []) as GlossaryRow[]
+      const hasGlossaryTable = !glossaryResponse.error
+      const chatGuardLogs = (chatGuardLogsResponse.data || []) as ChatGuardLogRow[]
+      const questionInquiries = (questionInquiriesResponse.data || []) as QuestionInquiryRow[]
+      const hasQuestionInquiryTable = !questionInquiriesResponse.error
+      const dailyChallenges = (dailyChallengesResponse.data || []) as DailyChallengeRow[]
+      const badges = (badgesResponse.data || []) as BadgeRow[]
+      const studentBadges = (studentBadgesResponse.data || []) as StudentBadgeRow[]
+      const timeAttackRecords = (timeAttackResponse.data || []) as TimeAttackRecordRow[]
       const statsSnapshot = buildStudentStats(students, sessions)
 
       const payload = {
         exportedAt: new Date().toISOString(),
-        format: 'rikarikastudy-admin-export/v1',
+        format: 'rikarikastudy-admin-export/v7',
+        restoreHint: 'テーブルが消えている場合は、先に supabase_schema.sql を SQL Editor で実行してから復元してください。',
         questionCatalog: questions,
+        ...(hasLoginUpdatesTable ? { loginUpdates } : {}),
+        ...(hasGlossaryTable ? { scienceGlossaryEntries: glossaryEntries } : {}),
+        chatGuardLogs,
+        ...(hasQuestionInquiryTable ? { questionInquiries } : {}),
+        dailyChallenges,
+        badges,
+        studentBadges,
+        timeAttackRecords,
         students: students.map(student => {
           const summary = statsSnapshot.find(current => current.id === student.id)
           const studentSessions = sessions.filter(session => session.student_id === student.id)
@@ -294,6 +718,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           return {
             id: student.id,
             nickname: student.nickname,
+            password: student.password,
+            student_xp: student.student_xp,
             summary: {
               totalQuestions: summary?.totalQ ?? 0,
               totalCorrect: summary?.totalC ?? 0,
@@ -321,12 +747,29 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
   const handleSeedQuestions = async () => {
     if (!confirm(`サンプル問題（${sampleQuestions.length}問）を追加しますか？`)) return
-    const toInsert = sampleQuestions.map(question => ({
-      ...question,
-      choices: question.type === 'choice'
-        ? buildBinaryChoices(question.choices, question.answer, question.question)
-        : null,
-    }))
+    const toInsert = sampleQuestions.map(question => normalizeQuestionRecord(question as Partial<QuestionRow>)) as Array<
+      Database['public']['Tables']['questions']['Insert'] & QuestionShape
+    >
+    try {
+      await ensureNoDuplicateQuestions(
+        toInsert.map(question => ({
+          field: question.field,
+          unit: question.unit,
+          question: question.question,
+          type: question.type,
+          choices: question.choices,
+          answer: question.answer,
+          match_pairs: question.match_pairs,
+          sort_items: question.sort_items,
+          correct_choices: question.correct_choices,
+          word_tokens: question.word_tokens,
+          distractor_tokens: question.distractor_tokens,
+        })),
+      )
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '重複問題の確認に失敗しました。')
+      return
+    }
     const { error } = await supabase.from('questions').insert(toInsert)
     if (error) alert('エラー: ' + error.message)
     else {
@@ -336,35 +779,150 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   }
 
   const handleAddQuestion = async () => {
-    if (!form.unit || !form.question || !form.answer) {
-      setAddMsg('単元・問題・答えは必須です')
+    if (!form.unit || !form.question) {
+      setAddMsg('単元と問題文は必須です')
       return
     }
 
-    const payload: any = {
+    const payload: Database['public']['Tables']['questions']['Insert'] = {
       field: form.field,
       unit: form.unit,
       question: form.question,
       type: form.type,
-      answer: form.answer,
+      answer: form.answer.trim(),
       explanation: form.explanation || null,
       grade: form.grade,
+      choices: null,
+      keywords: null,
+      match_pairs: null,
+      sort_items: null,
+      correct_choices: null,
+      word_tokens: null,
+      distractor_tokens: null,
     }
 
     if (form.type === 'choice') {
-      const filled = form.choices.filter(choice => choice.trim())
+      const filled = form.choices.map(choice => choice.trim()).filter(Boolean)
       if (filled.length !== 2) {
-        setAddMsg('選択肢を2つ入力してください')
+        setAddMsg('2択は選択肢を2つ入力してください')
         return
       }
       if (!filled.includes(form.answer.trim())) {
-        setAddMsg('正解は選択肢AかBのどちらかと同じ内容にしてください')
+        setAddMsg('正解は選択肢のどちらかと同じ内容にしてください')
         return
       }
       payload.choices = filled
+    } else if (form.type === 'choice4' || form.type === 'fill_choice') {
+      const filled = form.choices.map(choice => choice.trim()).filter(Boolean)
+      if (filled.length < 3 || filled.length > 4) {
+        setAddMsg(`${getQuestionTypeLabel(form.type)} は選択肢を3〜4個入力してください`)
+        return
+      }
+      if (!filled.includes(form.answer.trim())) {
+        setAddMsg('正解は選択肢と同じ内容にしてください')
+        return
+      }
+      if (form.type === 'fill_choice' && !form.question.includes('【')) {
+        setAddMsg('穴埋め問題の問題文には【　　】を入れてください')
+        return
+      }
+      payload.choices = filled
+    } else if (form.type === 'true_false') {
+      if (form.answer !== '○' && form.answer !== '×') {
+        setAddMsg('○×問題の正解は ○ か × にしてください')
+        return
+      }
+      payload.choices = ['○', '×']
+    } else if (form.type === 'text') {
+      if (!form.answer.trim()) {
+        setAddMsg('記述問題は模範解答文が必要です')
+        return
+      }
+      payload.keywords = parseKeywordInput(form.keywords)
+    } else if (form.type === 'match') {
+      const pairs = parseMatchPairsText(form.matchPairsText)
+      if (!pairs || pairs.length < 2) {
+        setAddMsg('マッチ問題は「左 | 右」を2組以上入力してください')
+        return
+      }
+      payload.match_pairs = pairs
+      payload.answer = ''
+    } else if (form.type === 'sort') {
+      const items = parseListInput(form.sortItemsText)
+      if (items.length < 3) {
+        setAddMsg('並べ替え問題は3件以上入力してください')
+        return
+      }
+      payload.sort_items = items
+      payload.answer = ''
+    } else if (form.type === 'multi_select') {
+      const choices = parseListInput(form.choices.join('\n'))
+      const correctChoices = parseListInput(form.correctChoicesText)
+      if (choices.length < 4) {
+        setAddMsg('複数選択は選択肢を4件以上入力してください')
+        return
+      }
+      if (correctChoices.length < 2) {
+        setAddMsg('複数選択の正解は2件以上入れてください')
+        return
+      }
+      if (!correctChoices.every(choice => choices.includes(choice))) {
+        setAddMsg('複数選択の正解は選択肢の中から入力してください')
+        return
+      }
+      payload.choices = choices
+      payload.correct_choices = correctChoices
+      payload.answer = ''
+    } else if (form.type === 'word_bank') {
+      const wordTokens = parseListInput(form.wordTokensText)
+      const distractorTokens = parseListInput(form.distractorTokensText)
+      if (wordTokens.length < 2) {
+        setAddMsg('語群問題は正解トークンを2件以上入力してください')
+        return
+      }
+      if (distractorTokens.length < 1) {
+        setAddMsg('語群問題はダミートークンを1件以上入力してください')
+        return
+      }
+      payload.word_tokens = wordTokens
+      payload.distractor_tokens = distractorTokens
+      payload.answer = form.answer.trim() || wordTokens.join(' ')
+    }
+
+    try {
+      await ensureNoDuplicateQuestions([{
+        field: payload.field,
+        unit: payload.unit,
+        question: payload.question,
+        type: payload.type,
+        choices: payload.choices ?? null,
+        answer: payload.answer,
+        match_pairs: payload.match_pairs ?? null,
+        sort_items: payload.sort_items ?? null,
+        correct_choices: payload.correct_choices ?? null,
+        word_tokens: payload.word_tokens ?? null,
+        distractor_tokens: payload.distractor_tokens ?? null,
+      }])
+    } catch (error) {
+      setAddMsg(`エラー: ${error instanceof Error ? error.message : '重複問題の確認に失敗しました。'}`)
+      return
     }
 
     const { error } = await supabase.from('questions').insert([payload])
+    if (
+      error
+      && (
+        isMissingColumnError(error, 'keywords')
+        || isMissingColumnError(error, 'match_pairs')
+        || isMissingColumnError(error, 'sort_items')
+        || isMissingColumnError(error, 'correct_choices')
+        || isMissingColumnError(error, 'word_tokens')
+        || isMissingColumnError(error, 'distractor_tokens')
+      )
+    ) {
+      setAddMsg('エラー: Supabase の questions テーブルに新しい問題形式の列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      return
+    }
     if (error) {
       setAddMsg('エラー: ' + error.message)
       return
@@ -376,8 +934,14 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       unit: '',
       question: '',
       type: 'choice',
-      choices: ['', ''],
+      choices: ['', '', '', '', '', ''],
       answer: '',
+      keywords: '',
+      matchPairsText: '',
+      sortItemsText: '',
+      correctChoicesText: '',
+      wordTokensText: '',
+      distractorTokensText: '',
       explanation: '',
       grade: '中3',
     })
@@ -393,15 +957,53 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     event.target.value = ''
   }
 
+  const handleGlossaryBulkFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const text = await file.text()
+    setGlossaryBulkInput(text)
+    setGlossaryBulkMsg(`📄 ${file.name} を読み込みました。`)
+    event.target.value = ''
+  }
+
   const handleBulkImport = async () => {
     try {
       setBulkLoading(true)
       setBulkMsg('')
       const payload = parseBulkQuestions(bulkInput)
 
+      await ensureNoDuplicateQuestions(
+        payload.map(question => ({
+          field: question.field,
+          unit: question.unit,
+          question: question.question,
+          type: question.type,
+          choices: question.choices,
+          answer: question.answer,
+          match_pairs: question.match_pairs,
+          sort_items: question.sort_items,
+          correct_choices: question.correct_choices,
+          word_tokens: question.word_tokens,
+          distractor_tokens: question.distractor_tokens,
+        })),
+      )
+
       for (let index = 0; index < payload.length; index += BULK_INSERT_CHUNK_SIZE) {
         const chunk = payload.slice(index, index + BULK_INSERT_CHUNK_SIZE)
         const { error } = await supabase.from('questions').insert(chunk)
+        if (
+          error
+          && (
+            isMissingColumnError(error, 'keywords')
+            || isMissingColumnError(error, 'match_pairs')
+            || isMissingColumnError(error, 'sort_items')
+            || isMissingColumnError(error, 'correct_choices')
+            || isMissingColumnError(error, 'word_tokens')
+            || isMissingColumnError(error, 'distractor_tokens')
+          )
+        ) {
+          throw new Error('Supabase の questions テーブルに新しい問題形式の列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+        }
         if (error) throw new Error(error.message)
       }
 
@@ -414,10 +1016,414 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     }
   }
 
+  const handleGlossaryBulkImport = async () => {
+    try {
+      setGlossaryBulkLoading(true)
+      setGlossaryBulkMsg('')
+      const payload = parseBulkGlossaryEntries(glossaryBulkInput)
+
+      for (let index = 0; index < payload.length; index += BULK_INSERT_CHUNK_SIZE) {
+        const chunk = payload.slice(index, index + BULK_INSERT_CHUNK_SIZE)
+        const { error } = await supabase
+          .from('science_glossary_entries')
+          .upsert(chunk as GlossaryInsert[], { onConflict: 'field,term' })
+
+        if (error && isMissingRelationError(error, 'science_glossary_entries')) {
+          throw new Error('Supabase に science_glossary_entries テーブルがありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+        }
+        if (error) throw new Error(error.message)
+      }
+
+      setGlossaryBulkMsg(`✅ ${payload.length}語を一括登録しました。既存の同じ field + term は上書きされています。`)
+    } catch (error) {
+      setGlossaryBulkMsg(`エラー: ${error instanceof Error ? error.message : '辞書の一括登録に失敗しました。'}`)
+    } finally {
+      setGlossaryBulkLoading(false)
+    }
+  }
+
+  const handleRestoreFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const text = await file.text()
+    setRestoreInput(text)
+    setRestoreMsg(`📄 ${file.name} を読み込みました。`)
+    event.target.value = ''
+  }
+
+  const handleRestoreBackup = async () => {
+    if (!restoreInput.trim()) {
+      setRestoreMsg('バックアップJSONを読み込んでください。')
+      return
+    }
+
+    try {
+      const snapshot = parseAdminRestorePayload(restoreInput)
+      const confirmMessage = [
+        '現在のバックアップ対象データを、このJSONの内容で置き換えて復元します。',
+        `生徒: ${snapshot.students.length}件`,
+        `問題: ${snapshot.questions.length}件`,
+        ...(snapshot.hasLoginUpdates ? [`ログイン掲示板: ${snapshot.loginUpdates.length}件`] : []),
+        ...(snapshot.hasGlossaryEntries ? [`辞書: ${snapshot.glossaryEntries.length}件`] : []),
+        ...(snapshot.hasQuestionInquiries ? [`問い合わせ: ${snapshot.questionInquiries.length}件`] : []),
+        `クイズ履歴: ${snapshot.quizSessions.length}件`,
+        `解答ログ: ${snapshot.answerLogs.length}件`,
+        ...(snapshot.hasChatGuardLogs ? [`チャット警告: ${snapshot.chatGuardLogs.length}件`] : []),
+        ...(snapshot.hasEngagementTables ? [
+          `デイリーチャレンジ: ${snapshot.dailyChallenges.length}件`,
+          `学生バッジ: ${snapshot.studentBadges.length}件`,
+          `タイムアタック記録: ${snapshot.timeAttackRecords.length}件`,
+        ] : []),
+        '',
+        `questions${snapshot.hasLoginUpdates ? ' / login_updates' : ''}${snapshot.hasGlossaryEntries ? ' / science_glossary_entries' : ''}${snapshot.hasQuestionInquiries ? ' / question_inquiries' : ''} / quiz_sessions / answer_logs は入れ替えになります。続けますか？`,
+      ].join('\n')
+
+      if (!confirm(confirmMessage)) return
+
+      setRestoreLoading(true)
+      setRestoreMsg('')
+
+      const { error: studentError } = await supabase
+        .from('students')
+        .upsert(snapshot.students as any, { onConflict: 'id' })
+
+      if (studentError) throw new Error(studentError.message)
+
+      const { error: deleteAnswerLogsError } = await supabase
+        .from('answer_logs')
+        .delete()
+        .not('id', 'is', null)
+      if (deleteAnswerLogsError) throw new Error(deleteAnswerLogsError.message)
+
+      const { error: deleteSessionsError } = await supabase
+        .from('quiz_sessions')
+        .delete()
+        .not('id', 'is', null)
+      if (deleteSessionsError) throw new Error(deleteSessionsError.message)
+
+      const { error: deleteQuestionsError } = await supabase
+        .from('questions')
+        .delete()
+        .not('id', 'is', null)
+      if (deleteQuestionsError) throw new Error(deleteQuestionsError.message)
+
+      if (snapshot.hasGlossaryEntries) {
+        const { error: deleteGlossaryError } = await supabase
+          .from('science_glossary_entries')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteGlossaryError) throw new Error(deleteGlossaryError.message)
+      }
+
+      if (snapshot.hasLoginUpdates) {
+        const { error: deleteLoginUpdatesError } = await supabase
+          .from('login_updates')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteLoginUpdatesError) throw new Error(deleteLoginUpdatesError.message)
+      }
+
+      if (snapshot.hasQuestionInquiries) {
+        const { error: deleteQuestionInquiriesError } = await supabase
+          .from('question_inquiries')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteQuestionInquiriesError) throw new Error(deleteQuestionInquiriesError.message)
+      }
+
+      if (snapshot.hasChatGuardLogs) {
+        const { error: deleteChatGuardLogsError } = await supabase
+          .from('chat_guard_logs')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteChatGuardLogsError) throw new Error(deleteChatGuardLogsError.message)
+      }
+
+      if (snapshot.hasEngagementTables) {
+        const { error: deleteDailyChallengesError } = await supabase
+          .from('daily_challenges')
+          .delete()
+          .not('student_id', 'is', null)
+        if (deleteDailyChallengesError) throw new Error(deleteDailyChallengesError.message)
+
+        const { error: deleteStudentBadgesError } = await supabase
+          .from('student_badges')
+          .delete()
+          .not('student_id', 'is', null)
+        if (deleteStudentBadgesError) throw new Error(deleteStudentBadgesError.message)
+
+        const { error: deleteTimeAttackError } = await supabase
+          .from('time_attack_records')
+          .delete()
+          .not('student_id', 'is', null)
+        if (deleteTimeAttackError) throw new Error(deleteTimeAttackError.message)
+
+        const { error: deleteBadgesError } = await supabase
+          .from('badges')
+          .delete()
+          .not('id', 'is', null)
+        if (deleteBadgesError) throw new Error(deleteBadgesError.message)
+      }
+
+      await insertRowsInChunks('questions', snapshot.questions as unknown as Record<string, unknown>[])
+      if (snapshot.hasLoginUpdates) {
+        await insertRowsInChunks('login_updates', snapshot.loginUpdates as unknown as Record<string, unknown>[])
+      }
+      if (snapshot.hasGlossaryEntries) {
+        await insertRowsInChunks('science_glossary_entries', snapshot.glossaryEntries as unknown as Record<string, unknown>[])
+      }
+      if (snapshot.hasQuestionInquiries) {
+        await insertRowsInChunks('question_inquiries', snapshot.questionInquiries as unknown as Record<string, unknown>[])
+      }
+      await insertRowsInChunks('quiz_sessions', snapshot.quizSessions as unknown as Record<string, unknown>[])
+      await insertRowsInChunks('answer_logs', snapshot.answerLogs as unknown as Record<string, unknown>[])
+      if (snapshot.hasChatGuardLogs) {
+        await insertRowsInChunks('chat_guard_logs', snapshot.chatGuardLogs as unknown as Record<string, unknown>[])
+      }
+      if (snapshot.hasEngagementTables) {
+        await insertRowsInChunks('badges', snapshot.badges as unknown as Record<string, unknown>[])
+        await insertRowsInChunks('student_badges', snapshot.studentBadges as unknown as Record<string, unknown>[])
+        await insertRowsInChunks('time_attack_records', snapshot.timeAttackRecords as unknown as Record<string, unknown>[])
+        await insertRowsInChunks('daily_challenges', snapshot.dailyChallenges as unknown as Record<string, unknown>[])
+      }
+
+      setRestoreMsg(
+        `✅ 復元しました。問題${snapshot.questions.length}件 / 履歴${snapshot.quizSessions.length}件 / 解答ログ${snapshot.answerLogs.length}件`
+        + (snapshot.hasLoginUpdates ? ` / ログイン掲示板${snapshot.loginUpdates.length}件` : '')
+        + (snapshot.hasGlossaryEntries ? ` / 辞書${snapshot.glossaryEntries.length}件` : '')
+        + (snapshot.hasQuestionInquiries ? ` / 問い合わせ${snapshot.questionInquiries.length}件` : '')
+        + (snapshot.hasChatGuardLogs ? ` / チャット警告${snapshot.chatGuardLogs.length}件` : '')
+        + (snapshot.hasEngagementTables ? ` / デイリー${snapshot.dailyChallenges.length}件 / バッジ${snapshot.studentBadges.length}件 / タイムアタック${snapshot.timeAttackRecords.length}件` : '')
+        + ' を反映しました。'
+        + (snapshot.defaultPasswordCount > 0
+          ? ` 旧形式JSONだったため、生徒${snapshot.defaultPasswordCount}件のパスワードは既定値で補完しました。`
+          : '')
+      )
+      await loadData()
+    } catch (error) {
+      const message = error instanceof Error ? getRestoreErrorMessage(error.message) : 'バックアップの復元に失敗しました。'
+      setRestoreMsg(`エラー: ${message}`)
+    } finally {
+      setRestoreLoading(false)
+    }
+  }
+
   const handleDeleteQuestion = async (id: string) => {
     if (!confirm('この問題を削除しますか？')) return
     await supabase.from('questions').delete().eq('id', id)
     setQuestions(current => current.filter(question => question.id !== id))
+  }
+
+  const setQuestionImageSizeDraft = (questionId: string, next: { width?: string; height?: string }) => {
+    setQuestionImageSizeDrafts(current => {
+      const existing = current[questionId] ?? {
+        width: String(QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE),
+        height: String(QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE),
+      }
+
+      return {
+        ...current,
+        [questionId]: {
+          width: next.width ?? existing.width,
+          height: next.height ?? existing.height,
+        },
+      }
+    })
+  }
+
+  const clearQuestionImageSizeDraft = (questionId: string) => {
+    setQuestionImageSizeDrafts(current => {
+      const next = { ...current }
+      delete next[questionId]
+      return next
+    })
+  }
+
+  const getQuestionImageDraftSize = (question: QuestionRow) => {
+    const stored = getQuestionImageDisplaySize(question)
+    const draft = questionImageSizeDrafts[question.id]
+
+    return {
+      width: draft?.width ?? String(stored.width),
+      height: draft?.height ?? String(stored.height),
+      storedWidth: stored.width,
+      storedHeight: stored.height,
+    }
+  }
+
+  const parseQuestionImageDraftValue = (value: string, fallback: number) => {
+    if (!value.trim()) return clampQuestionImageDisplayValue(fallback)
+    const parsed = Number(value)
+    if (!Number.isFinite(parsed)) return clampQuestionImageDisplayValue(fallback)
+    return clampQuestionImageDisplayValue(parsed)
+  }
+
+  const handleQuestionImageChange = async (questionId: string, event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    const currentQuestion = questions.find(question => question.id === questionId)
+    const currentDisplay = currentQuestion
+      ? getQuestionImageDisplaySize(currentQuestion)
+      : {
+          width: QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE,
+          height: QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE,
+        }
+
+    try {
+      setQuestionImageBusy({ questionId, action: 'upload' })
+      setQuestionImageStatus(null)
+      const compressed = await compressQuestionImageFile(file)
+      const { data, error } = await supabase
+        .from('questions')
+        .update({
+          image_url: compressed.dataUrl,
+          image_display_width: currentDisplay.width,
+          image_display_height: currentDisplay.height,
+        })
+        .eq('id', questionId)
+        .select('*')
+        .single()
+
+      if (
+        error
+        && (
+          isMissingColumnError(error, 'image_url')
+          || isMissingColumnError(error, 'image_display_width')
+          || isMissingColumnError(error, 'image_display_height')
+        )
+      ) {
+        throw new Error('Supabase の questions テーブルの画像列が古いです。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      }
+      if (error) throw new Error(error.message)
+
+      setQuestions(current => current.map(question => (
+        question.id === questionId
+          ? data as QuestionRow
+          : question
+      )))
+      setQuestionImageSizeDraft(questionId, {
+        width: String(data.image_display_width ?? currentDisplay.width),
+        height: String(data.image_display_height ?? currentDisplay.height),
+      })
+      setQuestionImageStatus({
+        questionId,
+        type: 'success',
+        text: `画像を標準画質で保存しました。元画像 ${compressed.width} × ${compressed.height} / ${compressed.sizeLabel} / 表示 ${currentDisplay.width} × ${currentDisplay.height}`,
+      })
+    } catch (error) {
+      setQuestionImageStatus({
+        questionId,
+        type: 'error',
+        text: error instanceof Error ? error.message : '画像の保存に失敗しました。',
+      })
+    } finally {
+      setQuestionImageBusy(null)
+    }
+  }
+
+  const handleSaveQuestionImageSize = async (question: QuestionRow) => {
+    const draft = getQuestionImageDraftSize(question)
+    const width = parseQuestionImageDraftValue(draft.width, draft.storedWidth)
+    const height = parseQuestionImageDraftValue(draft.height, draft.storedHeight)
+
+    try {
+      setQuestionImageBusy({ questionId: question.id, action: 'size' })
+      setQuestionImageStatus(null)
+      const { data, error } = await supabase
+        .from('questions')
+        .update({
+          image_display_width: width,
+          image_display_height: height,
+        })
+        .eq('id', question.id)
+        .select('*')
+        .single()
+
+      if (
+        error
+        && (
+          isMissingColumnError(error, 'image_display_width')
+          || isMissingColumnError(error, 'image_display_height')
+        )
+      ) {
+        throw new Error('Supabase の questions テーブルに画像サイズ列がありません。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      }
+      if (error) throw new Error(error.message)
+
+      setQuestions(current => current.map(currentQuestion => (
+        currentQuestion.id === question.id
+          ? data as QuestionRow
+          : currentQuestion
+      )))
+      setQuestionImageSizeDraft(question.id, {
+        width: String(width),
+        height: String(height),
+      })
+      setQuestionImageStatus({
+        questionId: question.id,
+        type: 'success',
+        text: `表示サイズを保存しました。${width} × ${height}`,
+      })
+    } catch (error) {
+      setQuestionImageStatus({
+        questionId: question.id,
+        type: 'error',
+        text: error instanceof Error ? error.message : '画像サイズの保存に失敗しました。',
+      })
+    } finally {
+      setQuestionImageBusy(null)
+    }
+  }
+
+  const handleRemoveQuestionImage = async (questionId: string) => {
+    try {
+      setQuestionImageBusy({ questionId, action: 'remove' })
+      setQuestionImageStatus(null)
+      const { data, error } = await supabase
+        .from('questions')
+        .update({
+          image_url: null,
+          image_display_width: null,
+          image_display_height: null,
+        })
+        .eq('id', questionId)
+        .select('*')
+        .single()
+
+      if (
+        error
+        && (
+          isMissingColumnError(error, 'image_url')
+          || isMissingColumnError(error, 'image_display_width')
+          || isMissingColumnError(error, 'image_display_height')
+        )
+      ) {
+        throw new Error('Supabase の questions テーブルの画像列が古いです。最新の supabase_schema.sql を SQL Editor で実行してください。')
+      }
+      if (error) throw new Error(error.message)
+
+      setQuestions(current => current.map(question => (
+        question.id === questionId
+          ? data as QuestionRow
+          : question
+      )))
+      clearQuestionImageSizeDraft(questionId)
+      setQuestionImageStatus({
+        questionId,
+        type: 'success',
+        text: '画像を外しました。',
+      })
+    } catch (error) {
+      setQuestionImageStatus({
+        questionId,
+        type: 'error',
+        text: error instanceof Error ? error.message : '画像の削除に失敗しました。',
+      })
+    } finally {
+      setQuestionImageBusy(null)
+    }
   }
 
   if (!authed) {
@@ -434,7 +1440,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             onKeyDown={e => e.key === 'Enter' && checkPw()}
             placeholder="管理者パスワード"
             className="input-surface text-center mb-3"
-            style={{ borderColor: pwError ? '#ef4444' : undefined }}
+            style={{ borderColor: pwError ? 'var(--color-danger)' : undefined }}
             autoFocus
           />
           {pwError && <p className="text-red-400 text-sm text-center mb-3">パスワードが違います</p>}
@@ -444,9 +1450,81 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     )
   }
 
+  const studentNameMap = new Map(studentsList.map(student => [student.id, student.nickname]))
+  const selectedStudent = selectedStudentId === null
+    ? null
+    : studentsList.find(student => student.id === selectedStudentId) ?? null
+  const renderQuestionPagination = (position: 'top' | 'bottom') => {
+    if (questionPageCount <= 1) return null
+
+    return (
+      <div
+        key={`question-pagination-${position}`}
+        className="flex flex-col gap-3 rounded-2xl border border-slate-800/80 bg-slate-950/35 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div className="text-xs text-slate-400">
+          {questionPageStart} - {questionPageEnd} 件を表示 / {filteredQuestions.length} 件
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setQuestionPage(1)}
+            className="btn-ghost text-sm"
+            disabled={questionPage === 1}
+          >
+            最初
+          </button>
+          <button
+            onClick={() => setQuestionPage(current => Math.max(1, current - 1))}
+            className="btn-ghost text-sm"
+            disabled={questionPage === 1}
+          >
+            前へ
+          </button>
+          <div className="flex flex-wrap items-center gap-1">
+            {questionPaginationItems.map((item, index) => (
+              item === 'ellipsis' ? (
+                <span key={`ellipsis-${position}-${index}`} className="px-2 text-sm text-slate-500">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={`${position}-${item}`}
+                  onClick={() => setQuestionPage(item)}
+                  className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
+                  style={{
+                    background: item === questionPage ? 'rgba(56, 189, 248, 0.16)' : 'var(--card-gradient-base)',
+                    border: `1px solid ${item === questionPage ? 'rgba(56, 189, 248, 0.34)' : 'rgba(51, 65, 85, 0.72)'}`,
+                    color: item === questionPage ? '#bae6fd' : '#cbd5e1',
+                  }}
+                >
+                  {item}
+                </button>
+              )
+            ))}
+          </div>
+          <button
+            onClick={() => setQuestionPage(current => Math.min(questionPageCount, current + 1))}
+            className="btn-ghost text-sm"
+            disabled={questionPage === questionPageCount}
+          >
+            次へ
+          </button>
+          <button
+            onClick={() => setQuestionPage(questionPageCount)}
+            className="btn-ghost text-sm"
+            disabled={questionPage === questionPageCount}
+          >
+            最後
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="page-shell-wide">
-      <div className="hero-card p-5 sm:p-6 mb-6">
+      <div className="hero-card science-surface p-5 sm:p-6 mb-6">
+        <ScienceBackdrop />
         <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
           <div className="flex items-center gap-4">
             <button onClick={onBack} className="btn-secondary">もどる</button>
@@ -455,10 +1533,12 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <h1 className="font-display text-3xl text-white">管理画面</h1>
             </div>
           </div>
-          <div className="segment-bar">
-            {([['overview', '📊 生徒データ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括追加']] as const).map(([currentTab, label]) => (
+          <div className="segment-bar" role="tablist" aria-label="管理画面">
+            {([['overview', '📊 生徒データ'], ['users', '👤 ユーザー管理'], ['inquiries', '📨 問い合わせ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録']] as const).map(([currentTab, label]) => (
               <button
                 key={currentTab}
+                role="tab"
+                aria-selected={tab === currentTab}
                 onClick={() => setTab(currentTab)}
                 className={`segment-button ${tab === currentTab ? 'is-active' : ''}`}
               >
@@ -469,28 +1549,6 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         </div>
       </div>
 
-      <div className="card mb-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-white font-bold">この端末のログイン固定</div>
-            <div className="text-slate-400 text-sm mt-1">
-              {lockedStudentId
-                ? `現在は ID ${lockedStudentId} に固定されています。`
-                : '現在は固定されていません。'}
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              clearDeviceLock()
-              alert('この端末の固定を解除しました。次回ログイン時にIDを選び直せます。')
-            }}
-            className="btn-secondary"
-          >
-            固定を解除
-          </button>
-        </div>
-      </div>
-
       {tab === 'overview' && (
         <div>
           {loading ? (
@@ -498,16 +1556,56 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           ) : (
             <div className="space-y-4">
               <div className="card">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <div className="text-white font-bold">全成績データをダウンロード</div>
+                    <div className="text-white font-bold">現在ログイン中</div>
                     <div className="text-slate-400 text-sm mt-1">
-                      生徒ごとの集計、履歴、解答ログを JSON でまとめて保存します。
+                      生徒には人数だけを出し、管理画面では誰がログイン中か確認できます。
                     </div>
+                  </div>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'var(--color-accent-soft-bg)', border: '1px solid var(--color-accent-soft-border)' }}>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ONLINE</div>
+                    <div className="mt-2 font-display text-3xl text-white">{activeStudents.length}人</div>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+                  {activeStudents.length > 0 ? activeStudents.map(student => (
+                    <div key={student.id} className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="font-bold text-white">{student.nickname}</div>
+                          <div className="text-slate-400 text-xs mt-1">ID {student.id}</div>
+                        </div>
+                        <span className="rounded-full bg-emerald-500/12 px-3 py-1 text-xs font-semibold text-emerald-300">
+                          ログイン中
+                        </span>
+                      </div>
+                      <div className="text-slate-400 text-xs mt-3">
+                        最終更新: {format(new Date(student.lastSeenAt), 'M/d HH:mm:ss', { locale: ja })}
+                      </div>
+                      <div className="text-slate-500 text-xs mt-1">
+                        端末数: {student.sessionCount}
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-5 text-sm text-slate-400">
+                      いまログイン中の生徒はいません。
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-white font-bold">全成績データをダウンロード</div>
+                      <div className="text-slate-400 text-sm mt-1">
+                      生徒情報、問題、辞書、問い合わせ、履歴、解答ログ、チャット警告ログを復元用JSONとしてまとめて保存します。
+                      </div>
                     {exportMsg && (
                       <div
                         className="text-sm mt-2"
-                        style={{ color: exportMsg.startsWith('✅') ? '#4ade80' : '#f87171' }}
+                        style={{ color: exportMsg.startsWith('✅') ? 'var(--color-success)' : 'var(--color-danger)' }}
                       >
                         {exportMsg}
                       </div>
@@ -518,20 +1616,404 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                     disabled={exportLoading}
                     className="btn-primary whitespace-nowrap disabled:opacity-60"
                   >
-                    {exportLoading ? '作成中...' : '⬇️ 成績JSONを保存'}
+                    {exportLoading ? '作成中...' : '⬇️ 復元用JSONを保存'}
                   </button>
                 </div>
               </div>
 
-              {stats.map(student => {
+              <div className="card">
+                <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[0.78fr_1.22fr]">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-white font-bold">ログイン画面アップデート掲示板</div>
+                      <div className="text-slate-400 text-sm mt-1">
+                        ログイン画面には直近3日分だけ表示されます。保存件数は最大10件で、古いものから自動で整理されます。
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <input
+                        value={loginUpdateTitle}
+                        onChange={event => setLoginUpdateTitle(event.target.value)}
+                        placeholder="タイトル"
+                        className="input-surface"
+                        maxLength={60}
+                      />
+                      <textarea
+                        value={loginUpdateBody}
+                        onChange={event => setLoginUpdateBody(event.target.value)}
+                        placeholder="本文"
+                        rows={4}
+                        className="input-surface resize-y"
+                        maxLength={240}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={() => {
+                          void handleAddLoginUpdate()
+                        }}
+                        disabled={loginUpdateSaving}
+                        className="btn-primary"
+                      >
+                        {loginUpdateSaving ? '掲示中...' : '掲示する'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setLoginUpdateTitle('')
+                          setLoginUpdateBody('')
+                          setLoginUpdateMsg('')
+                        }}
+                        className="btn-ghost"
+                        disabled={loginUpdateSaving}
+                      >
+                        クリア
+                      </button>
+                      <div className="text-xs text-slate-500">
+                        {loginUpdates.length} / 10件保存中
+                      </div>
+                    </div>
+
+                    {loginUpdateMsg && (
+                      <div
+                        className="rounded-2xl px-4 py-3 text-sm"
+                        style={{ color: loginUpdateMsg.startsWith('✅') ? 'var(--color-success-muted)' : 'var(--color-danger-muted)', background: loginUpdateMsg.startsWith('✅') ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)', border: `1px solid ${loginUpdateMsg.startsWith('✅') ? 'var(--color-success-soft-border)' : 'var(--color-danger-soft-border)'}` }}
+                      >
+                        {loginUpdateMsg}
+                      </div>
+                    )}
+
+                    {loginUpdatesLoadError && (
+                      <div className="rounded-2xl border border-rose-500/18 bg-rose-500/6 px-4 py-3 text-sm text-rose-200">
+                        {loginUpdatesLoadError}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-white font-semibold">保存中の掲示</div>
+                      <div className="text-xs text-slate-500">新しい順</div>
+                    </div>
+                    <div className="mt-3 max-h-[24rem] space-y-3 overflow-y-auto pr-1">
+                      {loginUpdates.length > 0 ? loginUpdates.map(update => (
+                        <div key={update.id} className="rounded-2xl border border-sky-500/16 bg-sky-500/6 px-4 py-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-white">{update.title}</div>
+                              <div className="mt-1 text-xs text-slate-500">
+                                {format(new Date(update.created_at), 'M/d HH:mm', { locale: ja })}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                void handleDeleteLoginUpdate(update.id)
+                              }}
+                              className="text-xs text-rose-300 transition-colors hover:text-rose-200"
+                              disabled={loginUpdateDeletingId === update.id}
+                            >
+                              {loginUpdateDeletingId === update.id ? '削除中...' : '削除'}
+                            </button>
+                          </div>
+                          <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
+                            {update.body}
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-5 text-sm text-slate-400">
+                          まだ掲示はありません。
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[0.72fr_1.28fr]">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-white font-bold">リワード条件一覧</div>
+                      <div className="text-slate-400 text-sm mt-1">
+                        XP の入り方、称号レベル、バッジの条件をここで確認できます。
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-sky-500/16 bg-sky-500/6 p-4">
+                      <div className="text-white font-semibold">XP の入り方</div>
+                      <div className="mt-3 space-y-2">
+                        {XP_RULES.map(rule => (
+                          <div key={rule} className="rounded-xl bg-slate-950/35 px-3 py-2 text-sm text-slate-200">
+                            {rule}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-violet-500/16 bg-violet-500/6 p-4">
+                      <div className="text-white font-semibold">称号レベル</div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {LEVEL_GUIDE.map(item => (
+                          <div
+                            key={item.level}
+                            className="rounded-full border border-violet-400/20 bg-slate-950/35 px-3 py-2 text-xs font-semibold text-violet-100"
+                          >
+                            Lv.{item.level} {item.title}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-white font-semibold">バッジ条件</div>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                      {BADGE_DEFINITIONS.map(badge => {
+                        const rarityStyle = BADGE_RARITY_STYLES[badge.rarity]
+                        return (
+                          <div
+                            key={badge.key}
+                            className="rounded-2xl border p-4"
+                            style={{
+                              borderColor: rarityStyle.borderColor,
+                              background: rarityStyle.background,
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start gap-3">
+                                <div className="text-2xl">{badge.iconEmoji}</div>
+                                <div>
+                                  <div className="font-semibold text-white">{badge.name}</div>
+                                  <div className="text-xs text-slate-400 mt-1">{badge.description}</div>
+                                </div>
+                              </div>
+                              <span
+                                className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em]"
+                                style={{
+                                  color: rarityStyle.textColor,
+                                  background: 'var(--card-gradient-base-soft)',
+                                }}
+                              >
+                                {rarityStyle.label}
+                              </span>
+                            </div>
+                            <div className="mt-3 rounded-xl bg-slate-950/35 px-3 py-2 text-sm text-slate-200">
+                              条件: {BADGE_CONDITION_GUIDE[badge.key] ?? badge.description}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="text-white font-bold">問題問い合わせ</div>
+                    <div className="text-slate-400 text-sm mt-1">
+                      生徒が問題文や解答について送ってきた連絡をここで確認できます。
+                    </div>
+                  </div>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'var(--color-info-soft-bg)', border: '1px solid var(--color-info-soft-border)' }}>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">OPEN</div>
+                    <div className="mt-2 font-display text-3xl text-white">
+                      {questionInquiries.filter(inquiry => inquiry.status !== 'resolved').length}件
+                    </div>
+                  </div>
+                </div>
+
+                {questionInquiryLoadError ? (
+                  <div className="mt-4 rounded-2xl border border-rose-500/18 bg-rose-500/6 px-4 py-5 text-sm text-rose-200">
+                    {questionInquiryLoadError}
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    {questionInquiries.length > 0 ? questionInquiries.slice(0, 6).map(inquiry => {
+                      const statusMeta = QUESTION_INQUIRY_STATUS_META[inquiry.status]
+                      return (
+                        <div key={inquiry.id} className="rounded-2xl border border-sky-500/18 bg-sky-500/6 px-4 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-white">{inquiry.student_nickname}</span>
+                              <span className="text-slate-500 text-xs">ID {inquiry.student_id}</span>
+                              <span
+                                className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                style={{ background: `${getFieldColor(inquiry.field)}20`, color: getFieldColor(inquiry.field) }}
+                              >
+                                {inquiry.field}
+                              </span>
+                              <span
+                                className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                style={{ background: statusMeta.background, color: statusMeta.color }}
+                              >
+                                {statusMeta.label}
+                              </span>
+                              <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                                {getQuestionInquiryCategoryLabel(inquiry.category)}
+                              </span>
+                            </div>
+                            <div className="text-slate-500 text-xs">
+                              {format(new Date(inquiry.created_at), 'M/d HH:mm', { locale: ja })}
+                            </div>
+                          </div>
+                          <div className="mt-3 text-sm leading-6 text-slate-200">
+                            {inquiry.message || '追加メッセージなし'}
+                          </div>
+                          <div className="mt-3 rounded-xl bg-slate-950/40 px-3 py-3 text-xs leading-6 text-slate-300">
+                            <div className="font-semibold text-white">{inquiry.unit}</div>
+                            <div className="mt-1">{inquiry.question_text}</div>
+                          </div>
+                        </div>
+                      )
+                    }) : (
+                      <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-5 text-sm text-slate-400">
+                        まだ問題問い合わせはありません。
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="card">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="text-white font-bold">チャット警告</div>
+                    <div className="text-slate-400 text-sm mt-1">
+                      悪口や下ネタを含む入力を検知すると、ここに記録します。
+                    </div>
+                  </div>
+                  <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'var(--color-danger-soft-bg)', border: '1px solid var(--color-danger-soft-border)' }}>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ALERT</div>
+                    <div className="mt-2 font-display text-3xl text-white">{chatGuardLogs.length}件</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {chatGuardLogs.length > 0 ? chatGuardLogs.map(log => (
+                    <div key={log.id} className="rounded-2xl border border-rose-500/18 bg-rose-500/6 px-4 py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-white">
+                            {studentNameMap.get(log.student_id) ?? `ID ${log.student_id}`}
+                          </span>
+                          <span className="text-slate-500 text-xs">ID {log.student_id}</span>
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                            style={{ background: `${getFieldColor(log.field)}20`, color: getFieldColor(log.field) }}
+                          >
+                            {log.field}
+                          </span>
+                          <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                            {log.source === 'send' ? '送信時' : '入力中'}
+                          </span>
+                        </div>
+                        <div className="text-slate-500 text-xs">
+                          {format(new Date(log.created_at), 'M/d HH:mm:ss', { locale: ja })}
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {log.categories.map(category => (
+                          <span
+                            key={`${log.id}-${category}`}
+                            className="rounded-full bg-rose-500/12 px-2.5 py-1 text-[11px] font-semibold text-rose-200"
+                          >
+                            {getChatModerationCategoryLabel(category as 'abuse' | 'sexual')}
+                          </span>
+                        ))}
+                        {log.matched_terms.map(term => (
+                          <span
+                            key={`${log.id}-${term}`}
+                            className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300"
+                          >
+                            {term}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="mt-3 text-sm leading-6 text-slate-200">
+                        {log.message_excerpt}
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-5 text-sm text-slate-400">
+                      まだチャット警告はありません。
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="text-white font-bold">バックアップJSONから復元</div>
+                <div className="text-slate-400 text-sm mt-1 leading-6">
+                  管理画面から保存したバックアップJSONを読み込んで、問題・辞書・問い合わせ・履歴・解答ログ・チャット警告ログを復元します。
+                  テーブル自体が消えている場合は、先に `supabase_schema.sql` を SQL Editor で実行してください。
+                </div>
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <label className="btn-secondary text-sm cursor-pointer">
+                    バックアップJSONを読み込む
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleRestoreFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    onClick={() => {
+                      setRestoreInput('')
+                      setRestoreMsg('')
+                    }}
+                    className="btn-ghost text-sm"
+                  >
+                    入力をクリア
+                  </button>
+                </div>
+                <label className="text-slate-400 text-xs mt-4 mb-2 block">バックアップJSON</label>
+                <textarea
+                  value={restoreInput}
+                  onChange={event => setRestoreInput(event.target.value)}
+                  rows={10}
+                  className="input-surface resize-y font-mono text-sm"
+                  placeholder="ここにバックアップJSONを貼り付けるか、上のボタンから読み込んでください。"
+                  spellCheck={false}
+                />
+                {restoreMsg && (
+                  <p className={`mt-3 text-sm ${restoreMsg.startsWith('✅') || restoreMsg.startsWith('📄') ? 'text-green-400' : 'text-red-400'}`}>
+                    {restoreMsg}
+                  </p>
+                )}
+                <button
+                  onClick={handleRestoreBackup}
+                  className="btn-primary w-full mt-4"
+                  disabled={restoreLoading}
+                  style={{ opacity: restoreLoading ? 0.7 : 1 }}
+                >
+                  {restoreLoading ? '復元中...' : 'JSONから復元する'}
+                </button>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                {stats.map(student => {
                 const rate = student.totalQ > 0 ? Math.round((student.totalC / student.totalQ) * 100) : 0
+                const isOnline = activeStudents.some(current => current.id === student.id)
                 return (
                   <div key={student.id} className="card">
-                    <div className="flex items-start justify-between mb-4 gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-4">
                       <div className="flex items-start gap-3">
                         <div className="font-display text-3xl text-blue-400">{student.id}</div>
                         <div>
-                          <div className="font-bold text-white text-lg">{student.nickname}</div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="font-bold text-white text-lg">{student.nickname}</div>
+                            {isOnline && (
+                              <span className="rounded-full bg-emerald-500/12 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
+                                ログイン中
+                              </span>
+                            )}
+                          </div>
                           <div className="text-slate-500 text-xs mt-1">PW: <span className="text-slate-200 font-mono">{student.password}</span></div>
                           <div className="text-slate-500 text-xs mt-1">
                             {student.lastActivity
@@ -542,13 +2024,13 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       </div>
                       <div className="text-right">
                         <div className="font-bold text-2xl" style={{
-                          color: rate >= 70 ? '#22c55e' : rate >= 50 ? '#f59e0b' : '#ef4444',
+                          color: getRateColor(rate),
                         }}>{rate}%</div>
                         <div className="text-slate-400 text-sm">{student.totalQ}問</div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {FIELDS.map(field => {
                         const current = student.byField[field]
                         const fieldRate = current && current.total > 0 ? Math.round((current.correct / current.total) * 100) : null
@@ -557,7 +2039,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                             <div className="text-xs text-slate-500 mb-1">{field}</div>
                             {fieldRate !== null ? (
                               <>
-                                <div className="text-sm font-bold" style={{ color: FIELD_COLORS[field] }}>{fieldRate}%</div>
+                                <div className="text-sm font-bold" style={{ color: getFieldColor(field) }}>{fieldRate}%</div>
                                 <div className="text-xs text-slate-600">{current!.total}問</div>
                               </>
                             ) : (
@@ -566,6 +2048,364 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                           </div>
                         )
                       })}
+                    </div>
+                    <button
+                      onClick={() => setSelectedStudentId(student.id)}
+                      className="btn-secondary mt-4 w-full text-sm"
+                      style={{
+                        background: selectedStudentId === student.id ? 'rgba(56, 189, 248, 0.16)' : undefined,
+                        borderColor: selectedStudentId === student.id ? 'rgba(56, 189, 248, 0.24)' : undefined,
+                        color: selectedStudentId === student.id ? '#bae6fd' : undefined,
+                      }}
+                    >
+                      {selectedStudentId === student.id ? '詳細を表示中' : '詳細を見る'}
+                    </button>
+                  </div>
+                )
+              })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'users' && (
+        <div>
+          <div className="mb-4">
+            <p className="text-slate-400">
+              登録ユーザー {studentsList.length}人
+              {studentsList.filter(s => s.is_approved === false).length > 0 && (
+                <span className="ml-2 text-amber-400 text-sm">
+                  未承認 {studentsList.filter(s => s.is_approved === false).length}人
+                </span>
+              )}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              新規登録ユーザーを承認すると、チャットなどの機能が使えるようになります。
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                className="rounded-xl bg-sky-500/20 px-3 py-1.5 text-xs font-semibold text-sky-300 transition-colors hover:bg-sky-500/30"
+                disabled={userActionId !== null}
+                onClick={async () => {
+                  setUserActionId(-1)
+                  await supabase.from('students').update({ gemini_enabled: true }).neq('id', 0)
+                  const updated = await fetchStudents()
+                  setStudentsList(updated)
+                  setUserActionId(null)
+                }}
+              >
+                全員 Gemini ON
+              </button>
+              <button
+                className="rounded-xl bg-slate-500/20 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-500/30"
+                disabled={userActionId !== null}
+                onClick={async () => {
+                  setUserActionId(-1)
+                  await supabase.from('students').update({ gemini_enabled: false }).neq('id', 0)
+                  const updated = await fetchStudents()
+                  setStudentsList(updated)
+                  setUserActionId(null)
+                }}
+              >
+                全員 Gemini OFF
+              </button>
+            </div>
+          </div>
+
+          {studentsList.length === 0 ? (
+            <p className="text-slate-500">データを読み込み中...</p>
+          ) : (
+            <div className="space-y-2">
+              {studentsList.map(student => {
+                const isApproved = student.is_approved !== false
+                const isPending = student.is_approved === false
+                const isProcessing = userActionId === student.id
+
+                return (
+                  <div
+                    key={student.id}
+                    className="flex items-center justify-between gap-3 rounded-2xl border px-4 py-3"
+                    style={{
+                      borderColor: isPending ? 'rgba(251, 191, 36, 0.25)' : 'var(--surface-elevated-border)',
+                      background: isPending ? 'rgba(251, 191, 36, 0.05)' : 'var(--surface-elevated)',
+                    }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-white">{student.nickname}</span>
+                        <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-slate-400">ID {student.id}</span>
+                        {isApproved && (
+                          <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] text-emerald-300">承認済み</span>
+                        )}
+                        {isPending && (
+                          <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] text-amber-300">未承認</span>
+                        )}
+                        {student.gemini_enabled && (
+                          <span className="rounded-full bg-sky-400/10 px-2 py-0.5 text-[10px] text-sky-300">Gemini</span>
+                        )}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        XP: {student.student_xp}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 gap-2">
+                      {isPending && (
+                        <button
+                          className="rounded-xl bg-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/30"
+                          disabled={isProcessing}
+                          onClick={async () => {
+                            setUserActionId(student.id)
+                            await supabase.from('students').update({ is_approved: true }).eq('id', student.id)
+                            const updated = await fetchStudents()
+                            setStudentsList(updated)
+                            setUserActionId(null)
+                          }}
+                        >
+                          {isProcessing ? '処理中...' : '承認'}
+                        </button>
+                      )}
+                      {isApproved && student.id > 5 && (
+                        <button
+                          className="rounded-xl bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-500/30"
+                          disabled={isProcessing}
+                          onClick={async () => {
+                            setUserActionId(student.id)
+                            await supabase.from('students').update({ is_approved: false }).eq('id', student.id)
+                            const updated = await fetchStudents()
+                            setStudentsList(updated)
+                            setUserActionId(null)
+                          }}
+                        >
+                          {isProcessing ? '処理中...' : '取消'}
+                        </button>
+                      )}
+                      <button
+                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          student.gemini_enabled
+                            ? 'bg-sky-500/20 text-sky-300 hover:bg-sky-500/30'
+                            : 'bg-slate-500/20 text-slate-400 hover:bg-slate-500/30'
+                        }`}
+                        disabled={isProcessing}
+                        onClick={async () => {
+                          setUserActionId(student.id)
+                          await supabase.from('students').update({ gemini_enabled: !student.gemini_enabled }).eq('id', student.id)
+                          const updated = await fetchStudents()
+                          setStudentsList(updated)
+                          setUserActionId(null)
+                        }}
+                      >
+                        {isProcessing ? '...' : student.gemini_enabled ? 'Gemini OFF' : 'Gemini ON'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'inquiries' && (
+        <div>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-slate-400">
+                {questionInquiries.length}件の問い合わせ
+                {questionInquiries.length > 0 && (
+                  <span className="ml-2 text-slate-500 text-sm">
+                    未対応 {questionInquiries.filter(inquiry => inquiry.status !== 'resolved').length}件
+                  </span>
+                )}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                問題文・選択肢・正解・解説は、生徒が送信した時点の内容を自動添付しています。
+              </p>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-slate-400 text-center py-12">読み込み中...</div>
+          ) : questionInquiryLoadError ? (
+            <div className="card text-red-300">{questionInquiryLoadError}</div>
+          ) : questionInquiries.length === 0 ? (
+            <div className="card text-slate-400 text-center py-12">
+              まだ問い合わせはありません。
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {questionInquiries.map(inquiry => {
+                const statusMeta = QUESTION_INQUIRY_STATUS_META[inquiry.status]
+                const isBusy = questionInquiryActionId === inquiry.id
+                const noteDirty = (questionInquiryNoteDrafts[inquiry.id] ?? '') !== (inquiry.admin_note ?? '')
+                const replyDirty = (questionInquiryReplyDrafts[inquiry.id] ?? '') !== (inquiry.admin_reply ?? '')
+
+                return (
+                  <div key={inquiry.id} className="card">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-white">{inquiry.student_nickname}</span>
+                            <span className="text-slate-500 text-xs">ID {inquiry.student_id}</span>
+                            <span
+                              className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                              style={{ background: `${getFieldColor(inquiry.field)}20`, color: getFieldColor(inquiry.field) }}
+                            >
+                              {inquiry.field}
+                            </span>
+                            <span
+                              className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                              style={{ background: statusMeta.background, color: statusMeta.color }}
+                            >
+                              {statusMeta.label}
+                            </span>
+                            <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                              {getQuestionInquiryCategoryLabel(inquiry.category)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            受信: {format(new Date(inquiry.created_at), 'yyyy/M/d HH:mm', { locale: ja })}
+                            {inquiry.resolved_at ? ` / 対応完了: ${format(new Date(inquiry.resolved_at), 'M/d HH:mm', { locale: ja })}` : ''}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {(['open', 'reviewing', 'resolved'] as const).map(status => (
+                            <button
+                              key={status}
+                              onClick={() => {
+                                void handleQuestionInquiryStatusChange(inquiry, status)
+                              }}
+                              className="btn-secondary text-sm"
+                              disabled={isBusy || inquiry.status === status}
+                              style={{
+                                opacity: isBusy || inquiry.status === status ? 0.7 : 1,
+                                borderColor: inquiry.status === status ? statusMeta.color : undefined,
+                              }}
+                            >
+                              {QUESTION_INQUIRY_STATUS_META[status].label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-sky-500/14 bg-slate-950/35 px-4 py-3">
+                        <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">生徒メッセージ</div>
+                        <div className="mt-2 text-sm leading-6 text-slate-100">
+                          {inquiry.message || '追加メッセージなし'}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                          <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">自動添付された問題内容</div>
+                          <div className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
+                            <div>
+                              <div className="text-xs text-slate-500">単元</div>
+                              <div className="mt-1 text-white">{inquiry.unit}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-slate-500">問題文</div>
+                              <div className="mt-1 text-white">{inquiry.question_text}</div>
+                            </div>
+                            {inquiry.choices && inquiry.choices.length > 0 && (
+                              <div>
+                                <div className="text-xs text-slate-500">選択肢</div>
+                                <div className="mt-1 flex flex-wrap gap-2">
+                                  {inquiry.choices.map(choice => (
+                                    <span key={`${inquiry.id}-${choice}`} className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-200">
+                                      {choice}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-xs text-slate-500">正解</div>
+                              <div className="mt-1 text-emerald-300">{inquiry.answer_text}</div>
+                            </div>
+                            {inquiry.explanation_text && (
+                              <div>
+                                <div className="text-xs text-slate-500">解説</div>
+                                <div className="mt-1">{inquiry.explanation_text}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          {inquiry.image_url && (
+                            <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                              <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">問題画像</div>
+                              <div className="mt-3 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/50">
+                                <img
+                                  src={inquiry.image_url}
+                                  alt={`${inquiry.question_text} の画像`}
+                                  className="block max-h-72 w-full object-contain"
+                                  loading="lazy"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">生徒への返信</div>
+                              {inquiry.replied_at && (
+                                <div className="text-[11px] text-slate-500">
+                                  {format(new Date(inquiry.replied_at), 'M/d HH:mm', { locale: ja })}
+                                </div>
+                              )}
+                            </div>
+                            <textarea
+                              value={questionInquiryReplyDrafts[inquiry.id] ?? ''}
+                              onChange={event => {
+                                const value = event.target.value
+                                setQuestionInquiryReplyDrafts(current => ({ ...current, [inquiry.id]: value }))
+                              }}
+                              rows={5}
+                              className="input-surface mt-3 resize-y text-sm"
+                              placeholder="生徒に見せる返信を書けます。空にすると返信なしになります。"
+                            />
+                            <button
+                              onClick={() => {
+                                void handleSaveQuestionInquiryReply(inquiry.id)
+                              }}
+                              className="btn-primary mt-3 w-full text-sm"
+                              disabled={isBusy || !replyDirty}
+                              style={{ opacity: isBusy || !replyDirty ? 0.7 : 1 }}
+                            >
+                              {isBusy ? '保存中...' : '返信を保存'}
+                            </button>
+                          </div>
+
+                          <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-slate-400">対応メモ</div>
+                            <textarea
+                              value={questionInquiryNoteDrafts[inquiry.id] ?? ''}
+                              onChange={event => {
+                                const value = event.target.value
+                                setQuestionInquiryNoteDrafts(current => ({ ...current, [inquiry.id]: value }))
+                              }}
+                              rows={5}
+                              className="input-surface mt-3 resize-y text-sm"
+                              placeholder="管理側メモを残せます。"
+                            />
+                            <button
+                              onClick={() => {
+                                void handleSaveQuestionInquiryNote(inquiry.id)
+                              }}
+                              className="btn-secondary mt-3 w-full text-sm"
+                              disabled={isBusy || !noteDirty}
+                              style={{ opacity: isBusy || !noteDirty ? 0.7 : 1 }}
+                            >
+                              {isBusy ? '保存中...' : 'メモを保存'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )
@@ -577,15 +2417,25 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       {tab === 'questions' && (
         <div>
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-slate-400">
-              {questions.length}問登録済み
-              {questions.length > 0 && (
-                <span className="ml-2 text-slate-500 text-sm">
-                  生徒作成 {questions.filter(question => question.created_by_student_id !== null).length}問
-                </span>
-              )}
-            </p>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-slate-400">
+                {questions.length}問登録済み
+                {questions.length > 0 && (
+                  <span className="ml-2 text-slate-500 text-sm">
+                    生徒作成 {studentCreatedQuestionCount}問
+                  </span>
+                )}
+                {questionSearch.trim() && (
+                  <span className="ml-2 text-sky-300 text-sm">
+                    検索結果 {filteredQuestions.length}問
+                  </span>
+                )}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                ここから画像を追加すると、ブラウザ側で圧縮して保存し、出題画面にもそのまま表示されます。
+              </p>
+            </div>
             <button
               onClick={handleSeedQuestions}
               className="btn-secondary text-sm"
@@ -593,43 +2443,270 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               📦 サンプル問題を追加
             </button>
           </div>
+          <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <label className="block">
+              <span className="mb-1 block text-xs text-slate-400">問題を検索</span>
+              <input
+                value={questionSearch}
+                onChange={event => setQuestionSearch(event.target.value)}
+                placeholder="問題文、単元、答え、タイプ、作成者IDで検索"
+                className="input-surface"
+              />
+            </label>
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 px-3 py-2 text-xs text-slate-400">
+                1ページ {QUESTION_LIST_PAGE_SIZE}件
+              </div>
+              {questionSearch.trim() && (
+                <button
+                  onClick={() => setQuestionSearch('')}
+                  className="btn-ghost text-sm"
+                >
+                  検索をクリア
+                </button>
+              )}
+            </div>
+          </div>
           {loading ? (
             <div className="text-slate-400 text-center py-12">読み込み中...</div>
           ) : (
             <div className="space-y-2">
-              {questions.map(question => (
+              {renderQuestionPagination('top')}
+              {paginatedQuestions.map(question => {
+                const previewImageSize = getQuestionImageDisplaySize(question)
+                const draftImageSize = getQuestionImageDraftSize(question)
+                const busyAction = questionImageBusy?.questionId === question.id ? questionImageBusy.action : null
+                const isImageBusy = questionImageBusy?.questionId === question.id
+                const nextWidth = parseQuestionImageDraftValue(draftImageSize.width, draftImageSize.storedWidth)
+                const nextHeight = parseQuestionImageDraftValue(draftImageSize.height, draftImageSize.storedHeight)
+                const sizeDirty = nextWidth !== draftImageSize.storedWidth || nextHeight !== draftImageSize.storedHeight
+                const accuracySummary = questionAccuracyMap[question.id]
+                const shouldShowAccuracy = (accuracySummary?.participantCount ?? 0) >= 2
+                const accuracyColor = !shouldShowAccuracy
+                  ? 'var(--text-muted)'
+                  : accuracySummary.accuracyRate >= 80
+                    ? '#86efac'
+                    : accuracySummary.accuracyRate >= 50
+                      ? '#fde68a'
+                      : '#fca5a5'
+
+                return (
                 <div key={question.id} className="subcard p-4">
-                  <div className="flex items-start gap-2">
-                    <span
-                      className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
-                      style={{ background: `${FIELD_COLORS[question.field]}20`, color: FIELD_COLORS[question.field] }}
-                    >
-                      {question.field}
-                    </span>
-                    <span className="text-slate-400 text-xs flex-shrink-0">{question.unit}</span>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
-                      style={{
-                        background: question.created_by_student_id ? '#f59e0b20' : 'var(--surface-elevated-border)',
-                        color: question.created_by_student_id ? '#fbbf24' : 'var(--text-muted)',
-                      }}
-                    >
-                      {question.created_by_student_id ? `ID ${question.created_by_student_id} 作成` : '共有問題'}
-                    </span>
-                    <p className="text-white text-sm flex-1 line-clamp-2">{question.question}</p>
-                    <button
-                      onClick={() => handleDeleteQuestion(question.id)}
-                      className="text-red-500 hover:text-red-300 text-xs flex-shrink-0 transition-colors"
-                    >
-                      削除
-                    </button>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                          style={{ background: `${getFieldColor(question.field)}20`, color: getFieldColor(question.field) }}
+                        >
+                          {question.field}
+                        </span>
+                        <span className="text-slate-400 text-xs flex-shrink-0">{question.unit}</span>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                          style={{
+                            background: question.created_by_student_id ? '#f59e0b20' : 'var(--surface-elevated-border)',
+                            color: question.created_by_student_id ? '#fbbf24' : 'var(--text-muted)',
+                          }}
+                        >
+                          {question.created_by_student_id ? `ID ${question.created_by_student_id} 作成` : '共有問題'}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0 bg-slate-800/80 text-slate-200">
+                          {getQuestionTypeLabel(question.type)}
+                        </span>
+                        {question.image_url && (
+                          <span
+                            className="px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0"
+                            style={{ background: 'var(--color-info-soft-bg)', color: 'var(--color-info-muted)' }}
+                          >
+                            画像あり
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-white text-sm flex-1 line-clamp-2">{question.question}</p>
+                      <button
+                        onClick={() => handleDeleteQuestion(question.id)}
+                        className="text-red-500 hover:text-red-300 text-xs flex-shrink-0 transition-colors"
+                      >
+                        削除
+                      </button>
+                    </div>
+                    {question.image_url && (
+                      <div className="space-y-3">
+                        <div className="flex justify-center">
+                          <div
+                            className="overflow-hidden rounded-2xl border bg-slate-950/50"
+                            style={{
+                              borderColor: 'var(--color-neutral-soft-border)',
+                              width: `min(100%, ${previewImageSize.width}px)`,
+                              aspectRatio: previewImageSize.aspectRatio,
+                            }}
+                          >
+                            <img
+                              src={question.image_url}
+                              alt={`${question.question} の画像`}
+                              className="block h-full w-full object-fill"
+                              loading="lazy"
+                            />
+                          </div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/35 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <div className="text-sm font-semibold text-white">表示サイズ</div>
+                              <div className="mt-1 text-xs text-slate-500">
+                                基本は正方形ですが、幅と高さを別々に変えて自由に変形できます。
+                              </div>
+                            </div>
+                            <div className="text-xs text-slate-400">
+                              現在 {draftImageSize.storedWidth} × {draftImageSize.storedHeight}
+                            </div>
+                          </div>
+                          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                            <label className="block">
+                              <span className="text-xs text-slate-400">幅</span>
+                              <div className="mt-2 flex items-center gap-3">
+                                <input
+                                  type="range"
+                                  min={QUESTION_IMAGE_MIN_DISPLAY_SIZE}
+                                  max={QUESTION_IMAGE_MAX_DISPLAY_SIZE}
+                                  step={10}
+                                  value={nextWidth}
+                                  onChange={event => {
+                                    setQuestionImageSizeDraft(question.id, { width: event.target.value })
+                                  }}
+                                  className="flex-1 accent-sky-400"
+                                />
+                                <input
+                                  type="number"
+                                  min={QUESTION_IMAGE_MIN_DISPLAY_SIZE}
+                                  max={QUESTION_IMAGE_MAX_DISPLAY_SIZE}
+                                  step={10}
+                                  value={draftImageSize.width}
+                                  onChange={event => {
+                                    setQuestionImageSizeDraft(question.id, { width: event.target.value })
+                                  }}
+                                  className="input-surface w-24 text-sm"
+                                />
+                              </div>
+                            </label>
+                            <label className="block">
+                              <span className="text-xs text-slate-400">高さ</span>
+                              <div className="mt-2 flex items-center gap-3">
+                                <input
+                                  type="range"
+                                  min={QUESTION_IMAGE_MIN_DISPLAY_SIZE}
+                                  max={QUESTION_IMAGE_MAX_DISPLAY_SIZE}
+                                  step={10}
+                                  value={nextHeight}
+                                  onChange={event => {
+                                    setQuestionImageSizeDraft(question.id, { height: event.target.value })
+                                  }}
+                                  className="flex-1 accent-emerald-400"
+                                />
+                                <input
+                                  type="number"
+                                  min={QUESTION_IMAGE_MIN_DISPLAY_SIZE}
+                                  max={QUESTION_IMAGE_MAX_DISPLAY_SIZE}
+                                  step={10}
+                                  value={draftImageSize.height}
+                                  onChange={event => {
+                                    setQuestionImageSizeDraft(question.id, { height: event.target.value })
+                                  }}
+                                  className="input-surface w-24 text-sm"
+                                />
+                              </div>
+                            </label>
+                          </div>
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <button
+                              onClick={() => {
+                                void handleSaveQuestionImageSize(question)
+                              }}
+                              className="btn-secondary text-sm"
+                              disabled={isImageBusy || !sizeDirty}
+                            >
+                              {busyAction === 'size' ? 'サイズを保存中...' : 'サイズを保存'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setQuestionImageSizeDraft(question.id, {
+                                  width: String(QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE),
+                                  height: String(QUESTION_IMAGE_DEFAULT_DISPLAY_SIZE),
+                                })
+                              }}
+                              className="btn-ghost text-sm"
+                              disabled={isImageBusy}
+                            >
+                              正方形に戻す
+                            </button>
+                            <span className="text-xs text-slate-500">
+                              保存後は出題画面でも {nextWidth} × {nextHeight} の比率で表示されます。
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="btn-secondary cursor-pointer text-sm">
+                        {busyAction === 'upload' ? '画像を保存中...' : question.image_url ? '画像を差し替える' : '画像を挿入する'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={isImageBusy}
+                          onChange={event => {
+                            void handleQuestionImageChange(question.id, event)
+                          }}
+                        />
+                      </label>
+                      {question.image_url && (
+                        <button
+                          onClick={() => {
+                            void handleRemoveQuestionImage(question.id)
+                          }}
+                          className="btn-ghost text-sm"
+                          disabled={isImageBusy}
+                        >
+                          {busyAction === 'remove' ? '画像を外し中...' : '画像を外す'}
+                        </button>
+                      )}
+                    </div>
+                    {questionImageStatus?.questionId === question.id && (
+                      <div
+                        className="rounded-2xl px-4 py-3 text-sm"
+                        style={{
+                          background: questionImageStatus.type === 'success' ? '#052e16' : '#450a0a',
+                          border: `1px solid ${questionImageStatus.type === 'success' ? '#166534' : '#991b1b'}`,
+                          color: questionImageStatus.type === 'success' ? '#86efac' : '#fca5a5',
+                        }}
+                      >
+                        {questionImageStatus.text}
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-1 text-slate-500 text-xs">答え: {question.answer}</div>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                    <div className="text-slate-500">答え: {getQuestionCorrectAnswerText(normalizeQuestionRecord(question))}</div>
+                    {shouldShowAccuracy && accuracySummary && (
+                      <div style={{ color: accuracyColor }}>
+                        初回正答率 {accuracySummary.accuracyRate}% ({accuracySummary.correctCount}/{accuracySummary.participantCount}人)
+                      </div>
+                    )}
+                  </div>
+                  {question.type === 'text' && question.keywords && question.keywords.length > 0 && (
+                    <div className="mt-1 text-amber-300 text-xs">キーワード: {question.keywords.join(' / ')}</div>
+                  )}
                 </div>
-              ))}
+              )})}
+              {renderQuestionPagination('bottom')}
               {questions.length === 0 && (
                 <div className="text-slate-500 text-center py-12 card">
                   問題がありません。サンプルを追加するか、「問題追加」タブから入力してください。
+                </div>
+              )}
+              {questions.length > 0 && filteredQuestions.length === 0 && (
+                <div className="text-slate-500 text-center py-12 card">
+                  検索条件に一致する問題がありません。キーワードを変えてみてください。
                 </div>
               )}
             </div>
@@ -639,7 +2716,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       {tab === 'add' && (
         <div className="card space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="text-slate-400 text-xs mb-1 block">分野 *</label>
               <select
@@ -654,16 +2731,19 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
               <label className="text-slate-400 text-xs mb-1 block">種別 *</label>
               <select
                 value={form.type}
-                onChange={e => setForm(current => ({ ...current, type: e.target.value as 'choice' | 'text' }))}
+                onChange={e => setForm(current => ({ ...current, type: e.target.value as QuestionType }))}
                 className="input-surface"
               >
-                <option value="choice">2択</option>
-                <option value="text">記述</option>
+                {QUESTION_TYPES.map(questionType => (
+                  <option key={questionType} value={questionType}>
+                    {getQuestionTypeLabel(questionType)}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="text-slate-400 text-xs mb-1 block">単元 *</label>
               <input
@@ -696,11 +2776,15 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             />
           </div>
 
-          {form.type === 'choice' && (
+          {(form.type === 'choice' || form.type === 'choice4' || form.type === 'fill_choice' || form.type === 'multi_select') && (
             <div>
-              <label className="text-slate-400 text-xs mb-1 block">選択肢（A・B）</label>
+              <label className="text-slate-400 text-xs mb-1 block">
+                {form.type === 'multi_select' ? '選択肢' : '選択肢'}
+              </label>
               <div className="grid grid-cols-1 gap-2">
-                {form.choices.map((choice, index) => (
+                {form.choices
+                  .slice(0, form.type === 'choice' ? 2 : form.type === 'multi_select' ? 6 : 4)
+                  .map((choice, index) => (
                   <input
                     key={index}
                     value={choice}
@@ -708,23 +2792,134 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                       ...current,
                       choices: current.choices.map((currentChoice, currentIndex) => currentIndex === index ? e.target.value : currentChoice),
                     }))}
-                    placeholder={`${'AB'[index]}. 選択肢`}
+                    placeholder={`${'ABCDEF'[index]}. 選択肢`}
                     className="input-surface"
                   />
+                ))}
+              </div>
+              {form.type === 'multi_select' && (
+                <p className="mt-2 text-xs text-slate-500">4〜6個まで。正解になるものは下の「複数選択の正解」に書きます。</p>
+              )}
+            </div>
+          )}
+
+          {(form.type === 'choice' || form.type === 'choice4' || form.type === 'fill_choice' || form.type === 'text' || form.type === 'word_bank') && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">正解 {form.type !== 'word_bank' && '*'}</label>
+              <input
+                value={form.answer}
+                onChange={e => setForm(current => ({ ...current, answer: e.target.value }))}
+                placeholder={
+                  form.type === 'text'
+                    ? '模範解答文を入力'
+                    : form.type === 'word_bank'
+                      ? '未入力なら正解トークンから自動生成'
+                      : '正解をそのまま入力'
+                }
+                className="input-surface"
+              />
+            </div>
+          )}
+
+          {form.type === 'true_false' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-2 block">正解 *</label>
+              <div className="grid grid-cols-2 gap-3">
+                {(['○', '×'] as const).map(mark => (
+                  <button
+                    key={mark}
+                    onClick={() => setForm(current => ({ ...current, answer: mark }))}
+                    className="rounded-[20px] border px-4 py-4 text-xl font-bold transition-all"
+                    style={{
+                      borderColor: form.answer === mark ? 'var(--color-info-soft-border)' : 'var(--color-neutral-soft-border)',
+                      background: form.answer === mark ? 'rgba(56, 189, 248, 0.12)' : 'var(--card-gradient-base-soft)',
+                    }}
+                  >
+                    {mark}
+                  </button>
                 ))}
               </div>
             </div>
           )}
 
-          <div>
-            <label className="text-slate-400 text-xs mb-1 block">正解 *</label>
-            <input
-              value={form.answer}
-              onChange={e => setForm(current => ({ ...current, answer: e.target.value }))}
-              placeholder="正解をそのまま入力（AかBと同じ文）"
-              className="input-surface"
-            />
-          </div>
+          {form.type === 'text' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">キーワード（任意）</label>
+              <input
+                value={form.keywords}
+                onChange={e => setForm(current => ({ ...current, keywords: e.target.value }))}
+                placeholder="例: アンペア, 電流"
+                className="input-surface"
+              />
+              <p className="text-slate-500 text-xs mt-2">
+                記述問題は、`answer` の模範解答文に対する穴埋めとして出題されます。ここに空欄にしたい理科キーワードを入れておくと、生徒はその語句だけ入力すれば正解になります。
+              </p>
+            </div>
+          )}
+
+          {form.type === 'match' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">マッチの組（1行1組 / 左 | 右）</label>
+              <textarea
+                value={form.matchPairsText}
+                onChange={e => setForm(current => ({ ...current, matchPairsText: e.target.value }))}
+                placeholder={'アミラーゼ | デンプン\nペプシン | タンパク質\nリパーゼ | 脂肪'}
+                rows={4}
+                className="input-surface resize-none"
+              />
+            </div>
+          )}
+
+          {form.type === 'sort' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">正しい順番（1行1項目）</label>
+              <textarea
+                value={form.sortItemsText}
+                onChange={e => setForm(current => ({ ...current, sortItemsText: e.target.value }))}
+                placeholder={'口\n食道\n胃\n小腸\n大腸'}
+                rows={5}
+                className="input-surface resize-none"
+              />
+            </div>
+          )}
+
+          {form.type === 'multi_select' && (
+            <div>
+              <label className="text-slate-400 text-xs mb-1 block">複数選択の正解（1行1個）</label>
+              <textarea
+                value={form.correctChoicesText}
+                onChange={e => setForm(current => ({ ...current, correctChoicesText: e.target.value }))}
+                placeholder={'デンプン\nエタノール'}
+                rows={3}
+                className="input-surface resize-none"
+              />
+            </div>
+          )}
+
+          {form.type === 'word_bank' && (
+            <>
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">正解トークン（1行1個）</label>
+                <textarea
+                  value={form.wordTokensText}
+                  onChange={e => setForm(current => ({ ...current, wordTokensText: e.target.value }))}
+                  placeholder={'2Cu\n+\nO₂\n→\n2CuO'}
+                  rows={5}
+                  className="input-surface resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">ダミートークン（1行1個）</label>
+                <textarea
+                  value={form.distractorTokensText}
+                  onChange={e => setForm(current => ({ ...current, distractorTokensText: e.target.value }))}
+                  placeholder={'Cu₂\n2O₂\nCuO₂'}
+                  rows={3}
+                  className="input-surface resize-none"
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <label className="text-slate-400 text-xs mb-1 block">解説（任意）</label>
@@ -744,52 +2939,117 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
       {tab === 'bulk' && (
         <div className="space-y-4">
-          <div className="card">
-            <h3 className="text-white font-bold mb-2">JSON 一括追加</h3>
-            <p className="text-slate-400 text-sm leading-6">
-              JSON をそのまま貼り付けるか、`.json` ファイルを読み込んで一括追加できます。
-              choice 問題は `choices` を2件、text 問題は `choices` なしで入力してください。
-            </p>
-            <div className="flex flex-wrap gap-3 mt-4">
-              <label
-                className="btn-secondary text-sm cursor-pointer"
-              >
-                JSONファイルを読み込む
-                <input type="file" accept=".json,application/json" onChange={handleBulkFileChange} className="hidden" />
-              </label>
-              <button
-                onClick={() => setBulkInput(BULK_JSON_EXAMPLE)}
-                className="btn-ghost text-sm"
-              >
-                サンプルJSONを入れる
-              </button>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-4">
+              <div className="card">
+                <h3 className="text-white font-bold mb-2">問題 JSON 一括追加</h3>
+                <p className="text-slate-400 text-sm leading-6">
+                  JSON をそのまま貼り付けるか、`.json` ファイルを読み込んで一括追加できます。
+                  `choice / choice4 / true_false / fill_choice / match / sort / multi_select / word_bank / text`
+                  に対応しています。記述問題では `answer` に模範解答文、`keywords` に空欄にしたい理科キーワードを入れると、穴埋め形式で出題できます。
+                </p>
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <label className="btn-secondary text-sm cursor-pointer">
+                    JSONファイルを読み込む
+                    <input type="file" accept=".json,application/json" onChange={handleBulkFileChange} className="hidden" />
+                  </label>
+                  <button
+                    onClick={() => setBulkInput(BULK_JSON_EXAMPLE)}
+                    className="btn-ghost text-sm"
+                  >
+                    サンプルJSONを入れる
+                  </button>
+                </div>
+              </div>
+
+              <div className="card">
+                <label className="text-slate-400 text-xs mb-2 block">問題 JSON データ</label>
+                <textarea
+                  value={bulkInput}
+                  onChange={event => setBulkInput(event.target.value)}
+                  rows={18}
+                  className="input-surface resize-y font-mono text-sm"
+                  spellCheck={false}
+                />
+                {bulkMsg && (
+                  <p className={`mt-3 text-sm ${bulkMsg.startsWith('✅') || bulkMsg.startsWith('📄') ? 'text-green-400' : 'text-red-400'}`}>
+                    {bulkMsg}
+                  </p>
+                )}
+                <button
+                  onClick={handleBulkImport}
+                  className="btn-primary w-full mt-4"
+                  disabled={bulkLoading}
+                  style={{ opacity: bulkLoading ? 0.7 : 1 }}
+                >
+                  {bulkLoading ? '一括追加中...' : '問題JSONを一括追加する'}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="card">
+                <h3 className="text-white font-bold mb-2">辞書 JSON 一括登録</h3>
+                <p className="text-slate-400 text-sm leading-6">
+                  辞書語句も管理画面からまとめて登録できます。
+                  `shortDescription` は一覧用の短い説明、`description` は詳細説明です。
+                  `related` と `tags` は文字列配列で、同じ `field + term` は上書き更新されます。
+                </p>
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <label className="btn-secondary text-sm cursor-pointer">
+                    JSONファイルを読み込む
+                    <input type="file" accept=".json,application/json" onChange={handleGlossaryBulkFileChange} className="hidden" />
+                  </label>
+                  <button
+                    onClick={() => setGlossaryBulkInput(GLOSSARY_BULK_JSON_EXAMPLE)}
+                    className="btn-ghost text-sm"
+                  >
+                    サンプルJSONを入れる
+                  </button>
+                </div>
+              </div>
+
+              <div className="card">
+                <label className="text-slate-400 text-xs mb-2 block">辞書 JSON データ</label>
+                <textarea
+                  value={glossaryBulkInput}
+                  onChange={event => setGlossaryBulkInput(event.target.value)}
+                  rows={18}
+                  className="input-surface resize-y font-mono text-sm"
+                  spellCheck={false}
+                />
+                {glossaryBulkMsg && (
+                  <p className={`mt-3 text-sm ${glossaryBulkMsg.startsWith('✅') || glossaryBulkMsg.startsWith('📄') ? 'text-green-400' : 'text-red-400'}`}>
+                    {glossaryBulkMsg}
+                  </p>
+                )}
+                <button
+                  onClick={handleGlossaryBulkImport}
+                  className="btn-primary w-full mt-4"
+                  disabled={glossaryBulkLoading}
+                  style={{ opacity: glossaryBulkLoading ? 0.7 : 1 }}
+                >
+                  {glossaryBulkLoading ? '登録中...' : '辞書JSONを一括登録する'}
+                </button>
+              </div>
             </div>
           </div>
-
-          <div className="card">
-            <label className="text-slate-400 text-xs mb-2 block">JSON データ</label>
-            <textarea
-              value={bulkInput}
-              onChange={event => setBulkInput(event.target.value)}
-              rows={18}
-              className="input-surface resize-y font-mono text-sm"
-              spellCheck={false}
-            />
-            {bulkMsg && (
-              <p className={`mt-3 text-sm ${bulkMsg.startsWith('✅') || bulkMsg.startsWith('📄') ? 'text-green-400' : 'text-red-400'}`}>
-                {bulkMsg}
-              </p>
-            )}
-            <button
-              onClick={handleBulkImport}
-              className="btn-primary w-full mt-4"
-              disabled={bulkLoading}
-              style={{ opacity: bulkLoading ? 0.7 : 1 }}
-            >
-              {bulkLoading ? '一括追加中...' : 'JSON を一括追加する'}
-            </button>
-          </div>
         </div>
+      )}
+
+      {selectedStudentId !== null && (
+        <AdminStudentDetailSheet
+          student={selectedStudent}
+          detail={selectedStudentDetail}
+          loading={selectedStudentDetailLoading}
+          error={selectedStudentDetailError}
+          onClose={() => {
+            setSelectedStudentId(null)
+            setSelectedStudentDetail(null)
+            setSelectedStudentDetailLoading(false)
+            setSelectedStudentDetailError(null)
+          }}
+        />
       )}
     </div>
   )

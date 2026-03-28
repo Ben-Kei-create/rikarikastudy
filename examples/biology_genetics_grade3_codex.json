@@ -1,0 +1,276 @@
+[
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "形質を決めるもとになるものは何ですか。",
+    "choices": ["遺伝子", "道管", "葉脈", "胆汁"],
+    "answer": "遺伝子",
+    "keywords": null,
+    "explanation": "遺伝子は形質を決めるもとで、染色体の中にあります。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "エンドウの実験で遺伝の法則を見いだした科学者は誰ですか。",
+    "choices": ["フック", "メンデル", "ダーウィン", "ニュートン"],
+    "answer": "メンデル",
+    "keywords": null,
+    "explanation": "メンデルはエンドウを使った実験で遺伝の規則性を見いだしました。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "純系の丸い種子 AA と純系のしわのある種子 aa をかけ合わせると、第一代の形質はどうなりますか。",
+    "choices": ["すべて丸", "すべてしわ", "丸としわが1:1", "丸としわが3:1"],
+    "answer": "すべて丸",
+    "keywords": null,
+    "explanation": "AA と aa をかけ合わせると、第一代はすべて Aa になり、丸い形質が現れます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "第一代どうしをかけ合わせた第二代で、丸い種子としわのある種子の現れ方の比はどうなりますか。",
+    "choices": ["1:1", "2:1", "3:1", "4:1"],
+    "answer": "3:1",
+    "keywords": null,
+    "explanation": "Aa どうしをかけ合わせると、丸い形質としわのある形質は 3:1 の比で現れます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "親から子へ受けつがれる形や性質を何といいますか。",
+    "choices": ["形質", "消化液", "反射", "組織"],
+    "answer": "形質",
+    "keywords": null,
+    "explanation": "親から子へ受けつがれる形や性質を形質といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "遺伝子がふくまれているつくりはどれですか。",
+    "choices": ["染色体", "気孔", "柔毛", "だ液"],
+    "answer": "染色体",
+    "keywords": null,
+    "explanation": "染色体は核の中にあり、その中に遺伝子がふくまれています。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "遺伝子は染色体の中にふくまれている。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "遺伝子は染色体の中にあり、形質を決めています。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "純系どうしをかけ合わせてできた第一代では、形質が 3:1 に分かれる。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "3:1 に分かれるのは第一代どうしをかけ合わせてできる第二代です。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "丸い形質が優性なら、遺伝子の組み合わせが Aa でも丸い形質が現れる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "A が優性なら、Aa では丸い形質が現れます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "親から子へ形質が伝わることを【　　】という。",
+    "choices": ["遺伝", "消化", "呼吸", "蒸散"],
+    "answer": "遺伝",
+    "keywords": null,
+    "explanation": "親の形質が子に受けつがれることを遺伝といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "染色体の中にあり、形質を決めるもとになるものを【　　】という。",
+    "choices": ["遺伝子", "根毛", "気孔", "柔毛"],
+    "answer": "遺伝子",
+    "keywords": null,
+    "explanation": "遺伝子は染色体の中にあり、形質を決めています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "純系どうしをかけ合わせてできる子を【　　】という。",
+    "choices": ["第一代", "第二代", "受精卵", "組織"],
+    "answer": "第一代",
+    "keywords": null,
+    "explanation": "純系どうしの交配でできる子を第一代といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "第一代どうしをかけ合わせてできる子を【　　】という。",
+    "choices": ["第二代", "第一代", "純系", "個体"],
+    "answer": "第二代",
+    "keywords": null,
+    "explanation": "第一代どうしを交配してできる子が第二代です。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "次の用語と、その意味を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "形質", "right": "親から子へ伝わる性質" },
+      { "left": "遺伝子", "right": "形質を決めるもと" },
+      { "left": "染色体", "right": "遺伝子をふくむつくり" },
+      { "left": "純系", "right": "代々同じ形質が現れる系統" }
+    ],
+    "explanation": "遺伝の学習では、用語の意味を正しく覚えることが大切です。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "次の遺伝子の組み合わせと、その説明を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "AA", "right": "丸い形質の純系" },
+      { "left": "Aa", "right": "丸い形質が現れる雑種" },
+      { "left": "aa", "right": "しわの形質の純系" }
+    ],
+    "explanation": "遺伝子の組み合わせによって、現れる形質が決まります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "メンデルの実験の基本的な流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "純系どうしをかけ合わせる",
+      "第一代を得る",
+      "第一代どうしをかけ合わせる",
+      "第二代の形質の比を調べる"
+    ],
+    "explanation": "メンデルは交配をくり返し、第二代の形質の比を調べました。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "親の形質が子に伝わるまでの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "親の生殖細胞に遺伝子が入る",
+      "受精が起こる",
+      "受精卵ができる",
+      "子に形質が現れる"
+    ],
+    "explanation": "親の遺伝子は生殖細胞を通じて子へ伝わります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "次のうち、丸い形質が現れる遺伝子の組み合わせをすべて選びなさい。",
+    "choices": [
+      "AA",
+      "Aa",
+      "aa",
+      "bb"
+    ],
+    "correct_choices": [
+      "AA",
+      "Aa"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "丸い形質が優性なら、AA と Aa で丸い形質が現れます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "次のうち、メンデルがエンドウの実験で調べた形質として正しいものをすべて選びなさい。",
+    "choices": [
+      "種子の形",
+      "花の色",
+      "茎の長さ",
+      "気孔の数",
+      "葉緑体の数"
+    ],
+    "correct_choices": [
+      "種子の形",
+      "花の色",
+      "茎の長さ"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "メンデルはエンドウで、種子の形や花の色、茎の長さなどの形質を調べました。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "遺伝",
+    "grade": "中3",
+    "question": "純系の丸い種子と純系のしわのある種子をかけ合わせたときの結果を完成させなさい。",
+    "choices": null,
+    "answer": "AA × aa → すべてAa",
+    "keywords": null,
+    "word_tokens": [
+      "AA",
+      "×",
+      "aa",
+      "→",
+      "すべてAa"
+    ],
+    "distractor_tokens": [
+      "すべてaa",
+      "AAa"
+    ],
+    "explanation": "純系の丸 AA と純系のしわ aa をかけ合わせると、第一代はすべて Aa になります。"
+  }
+]

@@ -1,0 +1,279 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "物質が酸素と結びつく化学変化を何といいますか。",
+    "choices": ["酸化", "還元", "中和", "電離"],
+    "answer": "酸化",
+    "keywords": null,
+    "explanation": "物質が酸素と結びつく変化を酸化といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "酸化物が酸素を失う化学変化を何といいますか。",
+    "choices": ["還元", "酸化", "燃焼", "凝縮"],
+    "answer": "還元",
+    "keywords": null,
+    "explanation": "酸化物が酸素をうばわれる変化を還元といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "マグネシウムを燃やしたあとにできる物質は何ですか。",
+    "choices": ["酸化マグネシウム", "酸化銅", "硫化鉄", "炭酸ナトリウム"],
+    "answer": "酸化マグネシウム",
+    "keywords": null,
+    "explanation": "マグネシウムは酸素と結びついて酸化マグネシウムになります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "鉄がさびる現象は、どのような酸化の例ですか。",
+    "choices": ["ゆっくり進む酸化", "激しい燃焼", "分解", "中和"],
+    "answer": "ゆっくり進む酸化",
+    "keywords": null,
+    "explanation": "鉄さびは熱や光をほとんど出さず、ゆっくり進む酸化です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "酸化銅を炭素といっしょに加熱したときにできる金属は何ですか。",
+    "choices": ["銅", "銀", "鉄", "マグネシウム"],
+    "answer": "銅",
+    "keywords": null,
+    "explanation": "炭素が酸化銅から酸素をうばうと、銅ができます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "物質が熱や光を出しながら激しく酸化することを何といいますか。",
+    "choices": ["燃焼", "蒸発", "凝固", "発酵"],
+    "answer": "燃焼",
+    "keywords": null,
+    "explanation": "燃焼は、熱や光を出しながら激しく進む酸化です。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "銅を加熱して黒くなるのは、酸素と結びつくからである。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "銅は加熱すると酸化して黒色の酸化銅になります。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "還元だけが単独で起こり、酸化はまったく起こらないことがある。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "還元が起こるときは、同時に別の物質で酸化も起こっています。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "マグネシウムが燃えると、白い物質ができる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "マグネシウムが燃えると、白い酸化マグネシウムができます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "酸化銅が還元されると、【　　】になる。",
+    "choices": ["銅", "酸素", "硫黄", "銀"],
+    "answer": "銅",
+    "keywords": null,
+    "explanation": "酸化銅は酸素をうばわれると銅になります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "鉄が空気中でゆっくり酸化してできるものを【　　】という。",
+    "choices": ["さび", "水蒸気", "食塩", "灰"],
+    "answer": "さび",
+    "keywords": null,
+    "explanation": "鉄はゆっくり酸化して、さびができます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "物質が酸素をうばわれる変化を【　　】という。",
+    "choices": ["還元", "酸化", "蒸発", "凝固"],
+    "answer": "還元",
+    "keywords": null,
+    "explanation": "酸素を失う変化を還元といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "酸化銅を水素で還元すると、水と【　　】ができる。",
+    "choices": ["銅", "酸素", "二酸化炭素", "マグネシウム"],
+    "answer": "銅",
+    "keywords": null,
+    "explanation": "水素が酸化銅から酸素をうばうと、銅と水ができます。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "次の変化と、その分類を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "銅が黒くなる", "right": "酸化" },
+      { "left": "酸化銅から銅ができる", "right": "還元" },
+      { "left": "マグネシウムが強い光を出して燃える", "right": "燃焼" }
+    ],
+    "explanation": "酸化、還元、燃焼は、酸素の出入りに注目すると区別できます。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "次の物質と、加熱や反応後のようすを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "銅", "right": "加熱すると黒くなる" },
+      { "left": "マグネシウム", "right": "白い物質になる" },
+      { "left": "鉄", "right": "ゆっくりさびる" },
+      { "left": "酸化銅", "right": "還元で赤色の金属になる" }
+    ],
+    "explanation": "酸化や還元の前後では、色や性質が変わることがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "酸化銅を炭素で還元する実験の流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "酸化銅と炭素を混ぜる",
+      "加熱する",
+      "発生した気体を調べる",
+      "残った物質を調べる"
+    ],
+    "explanation": "加熱すると二酸化炭素が発生し、残った物質として銅が得られます。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "銅を加熱したときの変化として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "銅を加熱する",
+      "空気中の酸素と結びつく",
+      "黒色の酸化銅ができる"
+    ],
+    "explanation": "銅は加熱されると酸素と結びつき、酸化銅になります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "次の変化の中から、酸化にあてはまるものをすべて選びなさい。",
+    "choices": [
+      "銅を加熱する",
+      "鉄がさびる",
+      "マグネシウムが燃える",
+      "氷がとける",
+      "水が蒸発する"
+    ],
+    "correct_choices": [
+      "銅を加熱する",
+      "鉄がさびる",
+      "マグネシウムが燃える"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "酸化は物質が酸素と結びつく変化です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "次のうち、還元にあてはまるものをすべて選びなさい。",
+    "choices": [
+      "酸化銅から銅ができる",
+      "酸化銀から銀ができる",
+      "銅が黒くなる",
+      "水素が酸化銅から酸素をうばう",
+      "鉄がさびる"
+    ],
+    "correct_choices": [
+      "酸化銅から銅ができる",
+      "酸化銀から銀ができる",
+      "水素が酸化銅から酸素をうばう"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "還元は、酸化物が酸素をうばわれる変化です。"
+  },
+  {
+    "type": "word_bank",
+    "field": "化学",
+    "unit": "酸化と還元",
+    "grade": "中2",
+    "question": "酸化銅を水素で還元する化学反応式を完成させなさい。",
+    "choices": null,
+    "answer": "CuO + H2 → Cu + H2O",
+    "keywords": null,
+    "word_tokens": [
+      "CuO",
+      "+",
+      "H2",
+      "→",
+      "Cu",
+      "+",
+      "H2O"
+    ],
+    "distractor_tokens": [
+      "O2",
+      "CuO2"
+    ],
+    "explanation": "水素が酸化銅から酸素をうばい、銅と水ができます。"
+  }
+]

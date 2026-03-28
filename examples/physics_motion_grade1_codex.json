@@ -1,0 +1,276 @@
+[
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "物体の形を変えたり、動きを変えたりするはたらきを何といいますか。",
+    "choices": ["力", "熱", "電流", "音"],
+    "answer": "力",
+    "keywords": null,
+    "explanation": "力には、物体を動かしたり、止めたり、形を変えたりするはたらきがあります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "物体にはたらく重力の向きはどれですか。",
+    "choices": ["真上", "真下", "進行方向", "右向き"],
+    "answer": "真下",
+    "keywords": null,
+    "explanation": "重力は地球の中心に向かって、いつも真下向きにはたらきます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "ばねを引く力を大きくすると、ばねののびはどうなりますか。",
+    "choices": ["大きくなる", "小さくなる", "変わらない", "0になる"],
+    "answer": "大きくなる",
+    "keywords": null,
+    "explanation": "一定の範囲では、ばねを引く力が大きいほどばねののびも大きくなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "質量 100 g の物体にはたらく重力の大きさは、およそ何 N ですか。",
+    "choices": ["0.1 N", "1 N", "10 N", "100 N"],
+    "answer": "1 N",
+    "keywords": null,
+    "explanation": "100 g の物体にはたらく重力は、およそ 1 N と考えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "1つの物体に2つの力が同じ直線上で反対向きにはたらき、つり合うときどうなりますか。",
+    "choices": ["動きは変わらない", "必ず速くなる", "必ず止まる", "形が必ず変わる"],
+    "answer": "動きは変わらない",
+    "keywords": null,
+    "explanation": "力がつり合うと、物体の動きは変わりません。止まっていれば止まり続け、動いていれば等速直線運動を続けます。"
+  },
+  {
+    "type": "choice4",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "物体の運動の向きを変えるときに必要なのは何ですか。",
+    "choices": ["力", "温度", "音", "光"],
+    "answer": "力",
+    "keywords": null,
+    "explanation": "物体の速さや向きを変えるには、力がはたらく必要があります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "ばねののびは、一定の範囲では引く力の大きさに比例する。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "ばねののびと力の大きさには、一定の範囲で比例関係があります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "重力の大きさは、同じ場所なら物体の質量が大きいほど大きい。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "質量が大きい物体ほど、はたらく重力も大きくなります。"
+  },
+  {
+    "type": "true_false",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "1 N は、約 100 g の物体にはたらく重力の大きさとして使われる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "中学理科では、100 g の物体にはたらく重力をおよそ 1 N とします。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "力の大きさを表す単位を【　　】という。",
+    "choices": ["N", "V", "A", "W"],
+    "answer": "N",
+    "keywords": null,
+    "explanation": "力の大きさはニュートンという単位で表し、記号は N です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "ばねののびを調べるときに使う器具を【　　】という。",
+    "choices": ["ばねばかり", "電流計", "温度計", "メスシリンダー"],
+    "answer": "ばねばかり",
+    "keywords": null,
+    "explanation": "ばねばかりは、ばねののびを利用して力の大きさをはかる器具です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "2つの力が同じ大きさで反対向きに一直線上ではたらくとき、力は【　　】。",
+    "choices": ["つり合う", "増える", "消える", "回転する"],
+    "answer": "つり合う",
+    "keywords": null,
+    "explanation": "同じ一直線上で反対向き、同じ大きさの2力はつり合います。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "地球が物体を引く力を【　　】という。",
+    "choices": ["重力", "摩擦力", "弾性力", "磁力"],
+    "answer": "重力",
+    "keywords": null,
+    "explanation": "地球が物体を引く力を重力といいます。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "次の力の種類と、その説明を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "重力", "right": "地球が物体を引く力" },
+      { "left": "弾性力", "right": "元に戻ろうとする力" },
+      { "left": "摩擦力", "right": "ふれ合う面で運動をさまたげる力" }
+    ],
+    "explanation": "力にはいろいろな種類があり、それぞれはたらきが異なります。"
+  },
+  {
+    "type": "match",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "次の場面と、はたらいている力を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "ばねが元にもどる", "right": "弾性力" },
+      { "left": "机の上の本が下向きに引かれる", "right": "重力" },
+      { "left": "床の上で物体が進みにくい", "right": "摩擦力" }
+    ],
+    "explanation": "場面ごとに、はたらいている力の種類を見分けることが大切です。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "ばねののびを調べる実験の流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "おもりをつるす",
+      "ばねののびを読む",
+      "力の大きさとの関係を比べる"
+    ],
+    "explanation": "おもりをつるして、のびを読み取り、力との関係を調べます。"
+  },
+  {
+    "type": "sort",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "力がつり合っているかを考える手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "向きを調べる",
+      "大きさを比べる",
+      "一直線上かどうかを確かめる"
+    ],
+    "explanation": "つり合いは、向き、大きさ、一直線上かどうかに注目して判断します。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "次のうち、力のはたらきとして正しいものをすべて選びなさい。",
+    "choices": [
+      "物体を動かす",
+      "物体の形を変える",
+      "物体の向きを変える",
+      "物体の色を必ず変える",
+      "物体を止める"
+    ],
+    "correct_choices": [
+      "物体を動かす",
+      "物体の形を変える",
+      "物体の向きを変える",
+      "物体を止める"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "力には、動きや形を変えるはたらきがあります。色を必ず変えるわけではありません。"
+  },
+  {
+    "type": "multi_select",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "次のうち、力がつり合う条件として正しいものをすべて選びなさい。",
+    "choices": [
+      "同じ大きさ",
+      "反対向き",
+      "一直線上",
+      "同じ色",
+      "同じ体積"
+    ],
+    "correct_choices": [
+      "同じ大きさ",
+      "反対向き",
+      "一直線上"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "2力がつり合うには、同じ大きさで反対向き、一直線上ではたらく必要があります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "物理",
+    "unit": "力と運動",
+    "grade": "中1",
+    "question": "力がつり合う条件を完成させなさい。",
+    "choices": null,
+    "answer": "同じ大きさ → 反対向き → 一直線上",
+    "keywords": null,
+    "word_tokens": [
+      "同じ大きさ",
+      "→",
+      "反対向き",
+      "→",
+      "一直線上"
+    ],
+    "distractor_tokens": [
+      "同じ色",
+      "曲線上"
+    ],
+    "explanation": "2力のつり合いは、大きさ、向き、一直線上かどうかで決まります。"
+  }
+]

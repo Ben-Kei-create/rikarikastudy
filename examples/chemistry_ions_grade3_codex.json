@@ -1,0 +1,276 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "電気を帯びた原子や原子の集まりを何といいますか。",
+    "choices": ["イオン", "分子", "原子", "結晶"],
+    "answer": "イオン",
+    "keywords": null,
+    "explanation": "イオンは、電気を帯びた原子や原子の集まりです。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "プラスの電気を帯びたイオンを何といいますか。",
+    "choices": ["陽イオン", "陰イオン", "分子", "単体"],
+    "answer": "陽イオン",
+    "keywords": null,
+    "explanation": "プラスの電気を帯びたイオンは陽イオンです。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "水溶液が電流を流す理由として正しいものはどれですか。",
+    "choices": ["イオンが動けるから", "分子が大きいから", "色がついているから", "温度が高いから"],
+    "answer": "イオンが動けるから",
+    "keywords": null,
+    "explanation": "電解質の水溶液では、イオンが動いて電流を運びます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "塩酸にふくまれる陽イオンはどれですか。",
+    "choices": ["H+", "Na+", "OH-", "Cl-"],
+    "answer": "H+",
+    "keywords": null,
+    "explanation": "塩酸は水にとけると H+ と Cl- に分かれます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "アルカリ性の水溶液に共通してふくまれるイオンはどれですか。",
+    "choices": ["OH-", "H+", "Cl-", "Na+"],
+    "answer": "OH-",
+    "keywords": null,
+    "explanation": "アルカリ性の水溶液には水酸化物イオン OH- がふくまれます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "酸とアルカリが反応して水と塩ができる反応を何といいますか。",
+    "choices": ["中和", "酸化", "還元", "蒸留"],
+    "answer": "中和",
+    "keywords": null,
+    "explanation": "中和では、酸とアルカリが反応して水と塩ができます。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "砂糖水は電流を流しにくいので、ふつう電解質とはいわない。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "砂糖は水にとけてもイオンにならないため、電流をほとんど流しません。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "中性の水溶液の pH は 7 である。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "pH 7 は中性、7 より小さいと酸性、7 より大きいとアルカリ性です。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "塩酸と水酸化ナトリウム水溶液をちょうど中和すると、水と塩ができる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "塩酸と水酸化ナトリウムの中和では、塩化ナトリウムと水ができます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "マイナスの電気を帯びたイオンを【　　】という。",
+    "choices": ["陰イオン", "陽イオン", "分子", "原子"],
+    "answer": "陰イオン",
+    "keywords": null,
+    "explanation": "マイナスの電気を帯びたイオンは陰イオンです。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "塩酸に BTB 溶液を加えると、色は【　　】になる。",
+    "choices": ["黄色", "青色", "緑色", "黒色"],
+    "answer": "黄色",
+    "keywords": null,
+    "explanation": "BTB 溶液は酸性で黄色、中性で緑色、アルカリ性で青色を示します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "アルカリ性の水溶液に共通してふくまれるイオンを【　　】という。",
+    "choices": ["水酸化物イオン", "水素イオン", "塩化物イオン", "ナトリウムイオン"],
+    "answer": "水酸化物イオン",
+    "keywords": null,
+    "explanation": "アルカリ性の水溶液には OH- がふくまれています。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "pH が 7 より小さい水溶液は【　　】である。",
+    "choices": ["酸性", "中性", "アルカリ性", "固体"],
+    "answer": "酸性",
+    "keywords": null,
+    "explanation": "酸性の水溶液は pH が 7 より小さいです。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "次のイオン式と、イオン名を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "H+", "right": "水素イオン" },
+      { "left": "OH-", "right": "水酸化物イオン" },
+      { "left": "Na+", "right": "ナトリウムイオン" },
+      { "left": "Cl-", "right": "塩化物イオン" }
+    ],
+    "explanation": "イオン式とイオン名は、中和や電気分解の学習で大切です。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "次の水溶液と、BTB 溶液の色を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "塩酸", "right": "黄色" },
+      { "left": "水", "right": "緑色" },
+      { "left": "水酸化ナトリウム水溶液", "right": "青色" }
+    ],
+    "explanation": "BTB 溶液は、酸性・中性・アルカリ性で色が変わります。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "水溶液が電流を流すかどうかを調べる手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "水溶液に電極を入れる",
+      "電流を流す",
+      "豆電球がつくか確かめる"
+    ],
+    "explanation": "電流が流れると豆電球がつき、その水溶液が電解質かどうかを調べられます。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "塩酸と水酸化ナトリウム水溶液の中和を確かめる流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "塩酸に指示薬を入れる",
+      "水酸化ナトリウム水溶液を少しずつ加える",
+      "色の変化を見て中和したか確かめる"
+    ],
+    "explanation": "指示薬の色の変化を利用すると、中和したかを確かめられます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "次のうち、電解質の水溶液をすべて選びなさい。",
+    "choices": [
+      "塩酸",
+      "食塩水",
+      "砂糖水",
+      "水酸化ナトリウム水溶液",
+      "エタノール"
+    ],
+    "correct_choices": [
+      "塩酸",
+      "食塩水",
+      "水酸化ナトリウム水溶液"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "電解質の水溶液では、イオンができて電流を流します。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "次のうち、酸性の水溶液にあてはまるものをすべて選びなさい。",
+    "choices": [
+      "塩酸",
+      "炭酸水",
+      "レモン汁",
+      "水酸化ナトリウム水溶液",
+      "石灰水"
+    ],
+    "correct_choices": [
+      "塩酸",
+      "炭酸水",
+      "レモン汁"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "酸性の水溶液には、水素イオン H+ がふくまれています。"
+  },
+  {
+    "type": "word_bank",
+    "field": "化学",
+    "unit": "イオン",
+    "grade": "中3",
+    "question": "中和のときに水ができるイオンの組み合わせを完成させなさい。",
+    "choices": null,
+    "answer": "H+ + OH- → H2O",
+    "keywords": null,
+    "word_tokens": [
+      "H+",
+      "+",
+      "OH-",
+      "→",
+      "H2O"
+    ],
+    "distractor_tokens": [
+      "Cl-",
+      "Na+"
+    ],
+    "explanation": "中和では、水素イオン H+ と水酸化物イオン OH- から水ができます。"
+  }
+]

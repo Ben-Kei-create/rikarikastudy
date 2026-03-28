@@ -4,6 +4,22 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "RikaQuiz | 理科一問一答",
   description: "中学理科4分野の一問一答学習サイト",
+  applicationName: "RikaQuiz",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon-64.png", sizes: "64x64", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/favicon-64.png"],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "RikaQuiz",
+  },
 };
 
 export default function RootLayout({
@@ -14,12 +30,12 @@ export default function RootLayout({
   const themeInitScript = `
     try {
       var t = window.localStorage.getItem('rikaquiz-theme');
-      var theme = t === 'light' || t === 'dark' ? t : 'light';
+      var theme = t === 'light' || t === 'dark' || t === 'cute' ? t : 'dark';
       document.documentElement.dataset.theme = theme;
-      document.documentElement.style.colorScheme = theme;
+      document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
     } catch (e) {
-      document.documentElement.dataset.theme = 'light';
-      document.documentElement.style.colorScheme = 'light';
+      document.documentElement.dataset.theme = 'dark';
+      document.documentElement.style.colorScheme = 'dark';
     }
   `;
 

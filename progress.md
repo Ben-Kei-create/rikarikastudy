@@ -1,0 +1,80 @@
+Original prompt: 地学特有のミニゲームを追加。これは地学の岩石・鉱物のペアのカードを順番に押して行って◯か×でペアを消していく感じのミニゲームお作成する。
+
+- 2026-03-12: 既存の導線を確認。化学だけ special mode があり、分野ページから専用ページへ遷移している。
+- 2026-03-12: 地学ミニゲームも同じ導線に揃え、`recordStudySession` に保存する方針。
+- 2026-03-12: `EarthSciencePracticePage` と `earthSciencePractice.ts` を追加。地学ページに「岩石・鉱物ペア」の special mode を表示する実装を進めた。
+- 2026-03-12: キャンバスのクリック対象を安定させるため、`#earth-pair-canvas` を追加。次は実ブラウザでカード操作を確認する。
+- 2026-03-12: 実ブラウザ確認でクリア自体は成功。`render_game_to_text` の完了直後の stale 状態を ref ベースに修正し、直前の ○ / × も右パネルに残すようにした。
+- 2026-03-12: Playwright MCP でゲストログイン → 地学 → Earth Memory → ミスマッチ 1 回 → 全クリアまで確認。`render_game_to_text` は finished を返し、`npm run build` も成功。
+- 2026-03-12: 生物ラボとして「器官・はたらきペア」を追加する方針。地学ラボと同じ canvas ベースのペアゲームを流用し、`生物` 分野から入れるようにする。
+- 2026-03-12: `biologyPractice.ts` と `BiologyPracticePage.tsx` を追加。`葉緑体 × 光合成を行う` など5組の器官・はたらきペアで、生物ラボを実装した。
+- 2026-03-12: `UnitSelectPage` と `app/page.tsx` を更新し、`生物 → 生物ラボ → 器官・はたらきペア` の導線を追加。学習記録は `session_mode: biology_organ_pairs` で保存するようにした。
+- 2026-03-12: `npm run build` 成功。Playwright MCP で `ゲストログイン → 生物 → 生物ラボ` を確認し、`× ちがう組み合わせ` と `◯ ペア成功` の両方、`render_game_to_text` の `matchedCount` 更新、画面スクリーンショットを確認した。
+- 2026-03-12: 地学ラボを「岩石・鉱物ペア」から「地学リンクペア」に変更。`溶岩ドーム × 昭和新山` や `キラウエア × たて状火山` のような関連語ペアに差し替え、カードは最初から見える形にした。
+- 2026-03-12: `EarthSciencePracticePage` の canvas 描画を更新し、常時表示カード向けのレイアウトと複数行テキスト描画を追加。文言も「めくる」前提から「つながりを選ぶ」前提へ変更した。
+- 2026-03-12: `npm run build` 成功。`develop-web-game` の `web_game_playwright_client.js` はローカル `playwright` 依存不足で起動できなかったため、Playwright MCP で `ゲストログイン → 地学 → 地学リンクペア` を確認。全カードが見えている状態、`× ちがう組み合わせ`、`◯ ペア成功`、`render_game_to_text` の `matchedCount: 1` 更新を確認した。
+- 2026-03-12: `scienceWorkbench.ts` と `ScienceWorkbenchPage.tsx` を追加。化学の `密度ラボ / 濃度ラボ`、地学の `飽和水蒸気量ラボ`、物理の `運動グラフラボ` を共通の canvas ベースで描ける構成にした。
+- 2026-03-12: `UnitSelectPage` と `app/page.tsx` を更新し、`ScienceWorkbenchPage` への導線を追加。化学・地学・物理の分野ページから各ラボへ入れるようにし、学習記録用の session mode も `engagement.ts` / `supabase.ts` に追加した。
+- 2026-03-12: `npm run build` 成功。Playwright MCP で `ゲストログイン → 化学 → 密度ラボ` の正解判定、`化学 → 濃度ラボ` の正解判定、`物理 → 運動グラフラボ` の加速度 0 と `render_game_to_text` の time 更新、`地学 → 飽和水蒸気量ラボ` の 10℃ 正解判定を確認。エラーログは 0 件だった。
+- 2026-03-13: `TimeAttackPage.tsx` の連続正解モードを調整し、10秒を全体制限ではなく各問題のシンキングタイムとして扱うように変更。正解後は次の問題に進むタイミングで 10 秒へリセットし、判定表示中はカウントを止めるようにした。
+- 2026-03-13: 連続正解モードの案内文も `各問題ごとに10秒` が伝わる表現へ更新。`npm run build` 成功。
+- 2026-03-13: `online_lab_rooms` を使うオンライン実験ラボ基盤を追加。ログイン画面の `オンライン` から毎回 ID/PW 入室できるようにし、先生は配信ラボ選択、一般ユーザは閲覧モードで入る構成にした。
+- 2026-03-13: `OnlineLabPage.tsx` を追加。先生はラボ操作、判定、進行、ホワイトボード書き込み、メモ共有を行え、生徒側は同じラボを閲覧専用で見る想定。同期は Supabase row 更新 + 購読 + ポーリングで行う。
+- 2026-03-13: `npm run build` 成功。Playwright で `ログイン画面 → オンライン入室 → 先生アカウント` の導線と、未反映 schema 環境で `online_lab_rooms` 不足メッセージが表示されることを確認した。
+- 2026-03-13: `ScienceWorkbenchPage.tsx` をアップデート。密度・濃度・化学電池・飽和水蒸気量・柱状図・運動グラフの各ラボに動的アニメーションを追加し、`表示パラメータ` としてアニメ速度 / 見やすさ強調を調整できるようにした。
+- 2026-03-13: 数値系ラボの操作をスライダー中心に変更。密度は質量/体積、濃度は溶質/水、飽和水蒸気量は温度、運動グラフは加速度/時刻を直接調整できるようにし、見た目と数値の対応を追いやすくした。
+- 2026-03-13: `OnlineLabPage.tsx` も同じ描画ループを使うようにし、配信中のオンライン実験ラボでもアニメーションが動くようにした。
+- 2026-03-13: `npm run build` 成功。`develop-web-game` の専用 Playwright client はローカル `playwright` 依存が無く起動不可だったため、Playwright MCP で `密度ラボ` と `運動グラフラボ` の画面・スクリーンショット・コンソールエラー 0 件を確認した。
+- 2026-03-13: 問題画面の `お気に入り` 横に `問い合わせ` ボタンを追加。生徒が `問題文がおかしい / 解答がおかしい / その他` を選んで管理者へ送信できるようにし、問題文・選択肢・正解・解説・画像URLを自動添付する問い合わせフローを `QuizPage.tsx` に実装した。
+- 2026-03-13: `question_inquiries` テーブル定義と型を追加。ゲストを含む送信者 ID / ニックネーム、問題スナップショット、対応ステータス、管理メモを保存できるようにし、schema 不足時は `supabase_schema.sql` 更新案内が出るようにした。
+- 2026-03-13: 管理画面に `問い合わせ` タブと概要カードを追加。問い合わせ一覧、未対応 / 確認中 / 対応済みの切り替え、管理メモ保存、バックアップJSONへの書き出し / 復元まで対応し、`npm run build` も成功した。
+- 2026-03-13: ローカル確認で `ゲストログイン → 今日のチャレンジ → 問い合わせ` を開き、カテゴリ選択・送信UIを確認。現在の接続先 Supabase には `question_inquiries` が未作成のため、送信時に `最新の supabase_schema.sql を SQL Editor で実行してください。` の案内が出ることまで確認した。
+- 2026-03-13: 問い合わせ機能を `DM` として補完。`question_inquiries` に `admin_reply / replied_at` を追加し、管理画面で返信を書いて保存できるようにした。
+- 2026-03-13: `QuizPage.tsx` の問い合わせパネルに、同じ問題についての過去問い合わせと管理者返信の履歴表示を追加。生徒が再度その問題を開いたとき、送信済みメッセージと返信をその場で確認できるようにした。
+- 2026-03-13: `npm run build` を再実行して成功。問い合わせ返信を含む型・schema・管理画面・問題画面の整合が取れていることを確認した。
+- 2026-03-13: `questionChoices.ts` を追加。choice 問題の答えが旧データ形式の `A / B / C / D / 1 / 2 ...` で保存されていても実際の選択肢テキストへ変換できるようにし、あわせて choice の並びを読み込み時にシャッフルする互換処理を追加した。
+- 2026-03-13: `QuizPage.tsx` と `TimeAttackPage.tsx` の問題読込時に choice 正規化を適用。答えが choices に含まれない壊れた選択問題は除外し、タイムアタック系で `全部Aが正解` になりやすい状況を防止した。
+- 2026-03-13: `npm run build` 成功。選択肢互換処理の追加後も本番ビルドが通ることを確認した。
+- 2026-03-13: 記述問題を全文入力ではなく「模範解答の穴埋め」へ変更。`answerUtils.ts` に空欄ターゲット抽出と穴埋めプロンプト生成を追加し、通常クイズとテストモードの入力 UI を更新した。
+- 2026-03-13: 正解時の気持ちよさを強めるため、`SuccessBurst` コンポーネントと `successCelebration.ts` を追加。`Great! / Nice! / Perfect!` の賞賛演出、コンボ表示、結果画面の最高コンボ表示を `QuizPage` と `TimeAttackPage` に実装した。
+- 2026-03-13: 記述の数値問題で、数字が合っていれば単位違いでも正解になるよう `answerUtils.ts` を調整。`20cm` と `20`、`1/2` と `0.5` のような数値一致を `exact` 扱いにし、入力欄の案内も「単位は省略しても正解」と出すようにした。
+- 2026-03-13: 飽和水蒸気量ラボを `化学ラボ` 側へ移動。`SCIENCE_WORKBENCH_MODE_META` の field を `化学` に変更し、化学ラボの一覧へ追加、地学ラボからは外した。
+- 2026-03-13: 飽和水蒸気量ラボの状態を `温度 + 水蒸気量` に拡張。グラフ描画・判定・オンライン共有を更新し、飽和曲線と実際の水蒸気量の交点、湿度、くもり始める状態が見えるようにした。
+- 2026-03-13: 飽和水蒸気量ラボでは `表示パラメータ` を非表示にし、学習者が触る値を `温度` と `水蒸気量` だけに整理。ローカル版とオンライン実験ラボ版の両方で同じ操作に揃えた。
+- 2026-03-13: `periodicCards.ts` と `periodicCardCollection.ts` を追加。Lv.20 で解放される周期表カードの定義、ログイン報酬、パーフェクト報酬、レベルアップ報酬のコレクション保存ロジックを実装した。
+- 2026-03-13: `AuthProvider` にログイン時の周期表カード報酬を接続。Home に入った直後だけ `PeriodicCardRewardModal` でカード獲得演出が出るようにし、`studyRewards.ts` からは各種結果画面にカード報酬を返すようにした。
+- 2026-03-13: `MyPage.tsx` に `🧪 周期表` タブを追加。Lv.20 未満はロック表示、解放後は周期表マップの収集状況と、選んだカードを指で動かせる `PeriodicCardViewer` を表示するようにした。
+- 2026-03-13: `supabase_schema.sql` と `supabase.ts` に `student_element_cards` / `element_card_rewards` を追加。実データ保存と 1 日 1 回ログイン報酬の判定ができる形にした。
+- 2026-03-13: 記述問題の穴埋め表示を調整。`answerUtils.ts` で、文章内に差し込めるキーワードは必ず文中の `＿＿＿＿` に置き換え、差し込めない短答でも bare 空欄にはせず `答えは「＿＿＿＿」です。` のような文型で出すようにした。
+- 2026-03-13: 記述入力の案内文も `模範解答の文の下線に入る語句` 基準へ更新。`npm run build` 成功。
+- 2026-03-13: 生徒向け UI の説明文を圧縮。`QuizPage` / `TimeAttackPage` では記述のラベルや長い補助文を消して `文 + 入力` だけに寄せ、結果の `おしい` 表示も短くした。
+- 2026-03-13: `HomePage` / `LoginPage` / `UnitSelectPage` / `TimeAttackPage` の長めの説明文を削減。ゲスト案内、チャレンジ説明、カスタム説明、解放メッセージ、結果メッセージを短いラベル中心に整理し、`npm run build` 成功。
+- 2026-03-13: `ScienceWorkbenchPage.tsx` から `表示パラメータ` カードを削除。`動きON/OFF`、`アニメ速度`、`見やすさ強調` の UI を外し、ラボは学習用パラメータだけ触る形に整理した。
+- 2026-03-13: ラボのアニメーションは内部固定値で継続するように整理し、`render_game_to_text` の余計な visual 設定出力も削除。`npm run build` 成功。
+- 2026-03-13: `MyPage.tsx` の `Level Unlocks` セクションを削除。`Level Progress` はマイページのヘッダー右側へ統合し、Lv / XP / 進捗バーだけが先に見える構成に整理した。
+- 2026-03-13: `MyPage.tsx` の履歴タブを 7 日表示へ変更。履歴リストは `created_at` が直近 1 週間以内のセッションだけ出し、古い履歴はマイページ上では消えたように見える形にした。`npm run build` 成功。
+- 2026-03-13: `badges.ts` の定義を 30 個へ拡張し、分野別50問・300問・Lv20/Lv75・タイムアタック・連続正解・テスト・ラボ系の新バッジを追加。シークレット対象も増やした。
+- 2026-03-13: `MyPage.tsx` のバッジ表示を大きい四角カードから小さい丸バッジグリッドへ変更。未取得シークレットは `❔ / ???` で伏せ、下段に選択中バッジの詳細だけを出す形に整理した。
+- 2026-03-13: `studyRewards.ts` で新バッジ挿入前に `badges` テーブルへ定義を自動 upsert するようにし、`AdminPage.tsx` のバッジ条件一覧と `supabase_schema.sql` の seed も 30 個構成に更新した。`npm run build` 成功。
+- 2026-03-13: `MyPage.tsx` の辞典で、関連語が辞書内に存在する場合はその場で押してジャンプできるように更新。ジャンプ時は検索語をクリアし、対象分野へ切り替えて該当語を確実に表示するようにした。`npm run build` 成功。
+- 2026-03-13: Phase 1 として `src/lib/xp.ts` を追加。クイズ XP の内訳、レベル計算、称号、レベル進捗を共通化し、`engagement.ts` からも同じ式を使うように整理した。
+- 2026-03-13: `QuizPage.tsx` と `ChemistryPracticePage.tsx` の結果画面に XP 内訳カードを追加し、レベルアップ時はレベルバッジが光る `level-up` アニメーションを `globals.css` に追加した。
+- 2026-03-13: `HomePage.tsx` と `MyPage.tsx` に XP / レベル表示を追加。ゲスト XP は `guestStudy` の保存値ではなく、ローカルのセッション合計から再計算するように更新した。`npm run build` 成功。
+- 2026-03-13: Phase 2 として `HomePage.tsx` に「今週のランキング」を追加。今週の `quiz_sessions` を月曜 00:00 JST 以降で集計し、週XP・ニックネーム・レベル付きで表示するようにした。自分の行は色を変えて強調し、圏外でも見えるように末尾へ差し込む。`npm run build` 成功。
+- 2026-03-13: Phase 3 として `HomePage.tsx` の daily challenge 導線を専用カード化。ランキング直下へ移動し、完了時刻表示・完了時の無効化・金色グロー演出を追加した。
+- 2026-03-13: `app/page.tsx` と `QuizPage.tsx` に `quickStartDaily` フラグを追加。daily challenge はホーム直帰の特別モードとして扱い、`studyRewards.ts` では `challenge_date` を含む保存と旧 schema 向け fallback upsert を実装した。`npm run build` 成功。
+- 2026-03-13: Phase 4 として `badges.ts` を20個の指定バッジ構成へ再編。`初クイズ / 出題者 / コレクター` までの common・rare・legendary を定義し、現在のセッション履歴から streak・分野・速度・正答率・daily challenge 回数・化学モード達成を判定する共通ロジックに整理した。
+- 2026-03-13: `BadgeEarnedToastStack` を追加し、結果画面で新バッジが上からスライドして4秒で消える通知に変更。`globals.css` のレアリティ色も common=青 / rare=金 / legendary=紫へ更新した。
+- 2026-03-13: `MyPage.tsx` のバッジタブを一覧カード型へ変更。取得済みは日付つき、未取得はグレー表示、legendary の未取得説明だけ `???` にした。`student_badges.id` を含む schema/type も更新し、`npm run build` 成功。
+- 2026-03-13: Phase 5 として `HomePage.tsx` に「タイムアタック」専用カードを追加。daily challenge の下に移し、自己ベスト・全体ベスト・解放条件を表示するようにした。
+- 2026-03-13: `studyRewards.ts` と `supabase_schema.sql` / `supabase.ts` で `time_attack_records` を新しい `score` 形式へ寄せつつ、旧 `best_score` 形式も fallback で読めるように更新。新記録時だけ保存し、旧 schema では従来 upsert に戻る互換を入れた。
+- 2026-03-13: `TimeAttackPage.tsx` と `globals.css` を更新し、`timer-pulse / correct-flash / wrong-shake / new-record` の演出を追加。タイムアタックの結果画面では自己ベスト更新時に `NEW RECORD` と比較表示が出るようにした。`npm run build` 成功。
+- 2026-03-13: Phase 6 として `UnitSelectPage.tsx` に出題数セレクタを追加。`5 / 10 / 15 / 全問` を選べるようにし、`page.tsx` と `QuizPage.tsx` を通して選択値を渡す構成へ変更した。
+- 2026-03-13: `questionPicker.ts` を更新し、通常クイズとカスタムクイズが `QuizQuestionCount` を受け取れるようにした。`全問` のときは slice せず、そのまま出題する。
+- 2026-03-13: `QuizPage.tsx` の結果画面に「間違えた問題を確認」を追加。誤答一覧から問題を開いて、自分の答え・正解・解説を見られるようにし、そのまま `間違えた問題だけ再チャレンジ` で再出題できるようにした。daily challenge からの再挑戦は通常の再挑戦扱いに切り替え、`npm run build` 成功。
+- 2026-03-13: Phase 7 として `src/lib/constants.ts` を追加し、`FIELD_COLORS / FIELD_EMOJI / FIELDS` を共通化。`HomePage.tsx`、`QuizPage.tsx`、`MyPage.tsx`、`UnitSelectPage.tsx` に加えて管理画面側の色定義も shared constants を使うように整理し、物理の色を `#4da2ff` に統一した。
+- 2026-03-13: `HomePage.tsx`、`auth.tsx`、`guestStudy.ts` の空 catch を `console.warn` 付きに変更。`MyPage.tsx` では `answer_logs` のレスポンス型を `AnswerLogQueryRow` と `normalizeAnswerLogs` で正しく扱うようにし、不要な `any` cast を削除した。`npm run build` 成功。
+- 2026-03-21: `Home -> 陣取り` は既存の CPU 戦 `TerritoryQuizPage`、`オンライン -> 入室` は新規の `OnlineTerritoryPage` へ分岐する構成を追加。`app/page.tsx`、`OnlineLabPage.tsx`、`onlineTerritory.ts`、`territoryQuiz.ts`、`supabase_schema.sql`、`sql_editor_missing_tables.sql` を更新し、`online_territory_rooms` を使う共有ルームを追加した。
+- 2026-03-21: `online_territory_rooms` 作成後の実ブラウザ確認で、管理者 ID 5 は `オンライン` から直接オンライン陣取りに入り、通常ユーザー ID 1 は `オンラインの広場 -> 合言葉 ABCDE -> オンライン陣取り` で 2 人目として参加できることを確認。ルーム行も `player_student_id=5 / cpu_student_id=1 / status=playing` まで更新された。
+- 2026-03-21: オンライン陣取りの `ログアウト` / `ホームへ` で席を解放するよう修正。実ブラウザ + Supabase REST 確認で、退出後に `cpu_student_id` が `null` に戻ることを確認した。
+- 2026-03-21: ゲスト ID 100 は `students` 外部キーへ入れずオンライン対戦に参加できなかったため、`OnlineGatePage.tsx` と `OnlineTerritoryPage.tsx` にゲスト向けガードを追加。ゲストには「通常ユーザーでログインして利用」と案内し、外部キーエラーで止まらないようにした。`npm run build` 成功。

@@ -5,6 +5,7 @@ import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 
 const FIELDS = new Set(['生物', '化学', '物理', '地学'])
+const QUESTION_TYPES = new Set(['choice', 'choice4', 'true_false', 'fill_choice', 'match', 'sort', 'multi_select', 'word_bank', 'text'])
 const FETCH_PAGE_SIZE = 1000
 const INSERT_CHUNK_SIZE = 100
 const KEY_SEPARATOR = '::'
@@ -67,12 +68,33 @@ function buildQuestionKey(question) {
   return [question.field, question.unit, question.question].join(KEY_SEPARATOR)
 }
 
+function parseStringArray(value) {
+  if (!Array.isArray(value)) return null
+  const items = value
+    .map(item => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
+  return items.length > 0 ? items : null
+}
+
+function parseMatchPairs(value) {
+  if (!Array.isArray(value)) return null
+  const pairs = value
+    .map(item => {
+      const row = typeof item === 'object' && item !== null ? item : {}
+      const left = typeof row.left === 'string' ? row.left.trim() : ''
+      const right = typeof row.right === 'string' ? row.right.trim() : ''
+      return left && right ? { left, right } : null
+    })
+    .filter(Boolean)
+  return pairs.length > 0 ? pairs : null
+}
+
 function normalizeQuestion(item, index) {
   const prefix = `${index + 1}問目`
   const field = typeof item?.field === 'string' ? item.field.trim() : ''
   const unit = typeof item?.unit === 'string' ? item.unit.trim() : ''
   const question = typeof item?.question === 'string' ? item.question.trim() : ''
-  const type = item?.type
+  const type = typeof item?.type === 'string' ? item.type.trim() : ''
   const answer = typeof item?.answer === 'string' ? item.answer.trim() : ''
   const explanation = typeof item?.explanation === 'string' && item.explanation.trim()
     ? item.explanation.trim()
@@ -81,60 +103,63 @@ function normalizeQuestion(item, index) {
     ? item.grade.trim()
     : '中3'
 
-  let acceptAnswers = null
-  if (Array.isArray(item?.accept_answers)) {
-    acceptAnswers = item.accept_answers
-      .map(answerItem => (typeof answerItem === 'string' ? answerItem.trim() : ''))
-      .filter(Boolean)
-    if (acceptAnswers.length === 0) acceptAnswers = null
-  }
+  const acceptAnswers = parseStringArray(item?.accept_answers)
+  const keywords = parseStringArray(item?.keywords)
+  const choices = parseStringArray(item?.choices)
+  const matchPairs = parseMatchPairs(item?.match_pairs)
+  const sortItems = parseStringArray(item?.sort_items)
+  const correctChoices = parseStringArray(item?.correct_choices)
+  const wordTokens = parseStringArray(item?.word_tokens)
+  const distractorTokens = parseStringArray(item?.distractor_tokens)
 
   if (!FIELDS.has(field)) fail(`${prefix}: field は 生物 / 化学 / 物理 / 地学 のどれかにしてください。`)
   if (!unit) fail(`${prefix}: unit は必須です。`)
   if (!question) fail(`${prefix}: question は必須です。`)
-  if (!answer) fail(`${prefix}: answer は必須です。`)
-  if (type !== 'choice' && type !== 'text') fail(`${prefix}: type は "choice" か "text" にしてください。`)
+  if (!QUESTION_TYPES.has(type)) fail(`${prefix}: type が不正です。`)
 
   if (type === 'choice') {
-    if (!Array.isArray(item?.choices)) fail(`${prefix}: choice 問題は choices 配列が必要です。`)
-
-    const choices = item.choices
-      .map(choice => (typeof choice === 'string' ? choice.trim() : ''))
-      .filter(Boolean)
-
-    if (choices.length !== 2) fail(`${prefix}: choice 問題の choices は2件にしてください。`)
-    if (!choices.includes(answer)) fail(`${prefix}: answer は choices のどちらかと一致させてください。`)
-
-    const normalized = {
-      field,
-      unit,
-      question,
-      type,
-      choices,
-      answer,
-      explanation,
-      grade,
-    }
-
-    if (acceptAnswers) normalized.accept_answers = acceptAnswers
-
-    return normalized
+    if (!choices || choices.length !== 2) fail(`${prefix}: choice は choices を2件にしてください。`)
+    if (!choices.includes(answer)) fail(`${prefix}: choice の answer は choices と一致させてください。`)
+    return { field, unit, question, type, choices, answer, explanation, grade, accept_answers: acceptAnswers, keywords: null, match_pairs: null, sort_items: null, correct_choices: null, word_tokens: null, distractor_tokens: null }
   }
 
-  const normalized = {
-    field,
-    unit,
-    question,
-    type,
-    choices: null,
-    answer,
-    explanation,
-    grade,
+  if (type === 'choice4' || type === 'fill_choice') {
+    if (!choices || choices.length < 3 || choices.length > 4) fail(`${prefix}: ${type} は choices を3〜4件にしてください。`)
+    if (!choices.includes(answer)) fail(`${prefix}: ${type} の answer は choices と一致させてください。`)
+    if (type === 'fill_choice' && !question.includes('【')) fail(`${prefix}: fill_choice の question には【　　】を入れてください。`)
+    return { field, unit, question, type, choices, answer, explanation, grade, accept_answers: acceptAnswers, keywords: null, match_pairs: null, sort_items: null, correct_choices: null, word_tokens: null, distractor_tokens: null }
   }
 
-  if (acceptAnswers) normalized.accept_answers = acceptAnswers
+  if (type === 'true_false') {
+    if (answer !== '○' && answer !== '×') fail(`${prefix}: true_false の answer は ○ か × にしてください。`)
+    return { field, unit, question, type, choices: ['○', '×'], answer, explanation, grade, accept_answers: acceptAnswers, keywords: null, match_pairs: null, sort_items: null, correct_choices: null, word_tokens: null, distractor_tokens: null }
+  }
 
-  return normalized
+  if (type === 'match') {
+    if (!matchPairs || matchPairs.length < 2) fail(`${prefix}: match は match_pairs を2組以上入れてください。`)
+    return { field, unit, question, type, choices: null, answer: '', explanation, grade, accept_answers: acceptAnswers, keywords: null, match_pairs: matchPairs, sort_items: null, correct_choices: null, word_tokens: null, distractor_tokens: null }
+  }
+
+  if (type === 'sort') {
+    if (!sortItems || sortItems.length < 3) fail(`${prefix}: sort は sort_items を3件以上入れてください。`)
+    return { field, unit, question, type, choices: null, answer: '', explanation, grade, accept_answers: acceptAnswers, keywords: null, match_pairs: null, sort_items: sortItems, correct_choices: null, word_tokens: null, distractor_tokens: null }
+  }
+
+  if (type === 'multi_select') {
+    if (!choices || choices.length < 4) fail(`${prefix}: multi_select は choices を4件以上入れてください。`)
+    if (!correctChoices || correctChoices.length < 2) fail(`${prefix}: multi_select は correct_choices を2件以上入れてください。`)
+    if (!correctChoices.every(choice => choices.includes(choice))) fail(`${prefix}: multi_select の correct_choices は choices の中から選んでください。`)
+    return { field, unit, question, type, choices, answer: '', explanation, grade, accept_answers: acceptAnswers, keywords: null, match_pairs: null, sort_items: null, correct_choices: correctChoices, word_tokens: null, distractor_tokens: null }
+  }
+
+  if (type === 'word_bank') {
+    if (!wordTokens || wordTokens.length < 2) fail(`${prefix}: word_bank は word_tokens を2件以上入れてください。`)
+    if (!distractorTokens || distractorTokens.length < 1) fail(`${prefix}: word_bank は distractor_tokens を1件以上入れてください。`)
+    return { field, unit, question, type, choices: null, answer: answer || wordTokens.join(' '), explanation, grade, accept_answers: acceptAnswers, keywords: null, match_pairs: null, sort_items: null, correct_choices: null, word_tokens: wordTokens, distractor_tokens: distractorTokens }
+  }
+
+  if (!answer) fail(`${prefix}: text の answer は必須です。`)
+  return { field, unit, question, type, choices: null, answer, explanation, grade, accept_answers: acceptAnswers, keywords, match_pairs: null, sort_items: null, correct_choices: null, word_tokens: null, distractor_tokens: null }
 }
 
 async function fetchExistingQuestionKeys(supabase) {

@@ -1,0 +1,282 @@
+[
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "熱い物にさわったときにすばやく手を引っこめる反応を何といいますか。",
+    "choices": ["反射", "消化", "受粉", "発芽"],
+    "answer": "反射",
+    "keywords": null,
+    "explanation": "反射は意識とは関係なく、すばやく起こる反応です。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "刺激を受け取った感覚器官から中枢へ情報を伝える神経はどれですか。",
+    "choices": ["感覚神経", "運動神経", "筋肉", "骨"],
+    "answer": "感覚神経",
+    "keywords": null,
+    "explanation": "感覚神経は、感覚器官で受け取った情報を中枢へ伝えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "中枢から筋肉などへ命令を伝える神経はどれですか。",
+    "choices": ["感覚神経", "運動神経", "脊髄", "大脳"],
+    "answer": "運動神経",
+    "keywords": null,
+    "explanation": "運動神経は、中枢からの命令を筋肉などへ伝えます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "反射の中枢として重要な部分はどれですか。",
+    "choices": ["小腸", "脊髄", "肺", "肝臓"],
+    "answer": "脊髄",
+    "keywords": null,
+    "explanation": "反射では、脊髄が中枢となってすばやく命令を出します。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "目が受け取る刺激は何ですか。",
+    "choices": ["光", "音", "におい", "味"],
+    "answer": "光",
+    "keywords": null,
+    "explanation": "目は光の刺激を受け取る感覚器官です。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "考えたり、判断したりするはたらきにもっとも関係が深い部分はどれですか。",
+    "choices": ["脊髄", "大脳", "胃", "小腸"],
+    "answer": "大脳",
+    "keywords": null,
+    "explanation": "大脳は、考える、判断する、覚えるなどのはたらきをしています。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "反射では、ふつう大脳で考えてから命令が出される。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "反射では大脳を通らず、主に脊髄で処理されるので反応が速いです。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "耳は音の刺激を受け取る感覚器官である。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "耳は音を感じ取る感覚器官です。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "神経は、体の各部分と中枢を結んでいる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "神経は感覚器官や筋肉と、中枢神経をつないでいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "目や耳のように刺激を受け取る器官を【　　】という。",
+    "choices": ["感覚器官", "消化管", "血管", "呼吸器官"],
+    "answer": "感覚器官",
+    "keywords": null,
+    "explanation": "感覚器官は、外からの刺激を受け取る器官です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "反射で命令を出す中枢として重要なのは【　　】である。",
+    "choices": ["脊髄", "胃", "肝臓", "小腸"],
+    "answer": "脊髄",
+    "keywords": null,
+    "explanation": "反射では脊髄が中心となってすばやく命令を出します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "熱い物にさわると手をすぐ引っこめるような反応を【　　】という。",
+    "choices": ["反射", "吸収", "消化", "受精"],
+    "answer": "反射",
+    "keywords": null,
+    "explanation": "反射は意識に関係なくすばやく起こる反応です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "脳と脊髄をまとめて【　　】という。",
+    "choices": ["中枢神経", "感覚器官", "消化管", "運動器官"],
+    "answer": "中枢神経",
+    "keywords": null,
+    "explanation": "脳と脊髄は中枢神経とよばれ、神経の中心になります。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "次の感覚器官と、受け取る刺激を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "目", "right": "光" },
+      { "left": "耳", "right": "音" },
+      { "left": "鼻", "right": "におい" },
+      { "left": "舌", "right": "味" }
+    ],
+    "explanation": "感覚器官ごとに、受け取る刺激の種類が異なります。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "次の部分と、その主なはたらきを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "感覚神経", "right": "刺激を中枢へ伝える" },
+      { "left": "運動神経", "right": "命令を筋肉へ伝える" },
+      { "left": "大脳", "right": "考えたり判断したりする" },
+      { "left": "脊髄", "right": "反射の中枢になる" }
+    ],
+    "explanation": "神経や中枢には、それぞれ異なるはたらきがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "反射が起こるときの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "刺激を受ける",
+      "感覚神経が中枢へ伝える",
+      "脊髄で命令が出る",
+      "運動神経が筋肉へ伝える",
+      "筋肉が動く"
+    ],
+    "explanation": "反射では、刺激がすばやく脊髄へ伝わり、筋肉に命令が出されます。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "意識して体を動かすときの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "感覚器官が刺激を受け取る",
+      "大脳で判断する",
+      "運動神経が命令を伝える",
+      "筋肉が動く"
+    ],
+    "explanation": "意識的な運動では、大脳で判断してから命令が出されます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "次のうち、感覚器官をすべて選びなさい。",
+    "choices": [
+      "目",
+      "耳",
+      "鼻",
+      "胃",
+      "小腸"
+    ],
+    "correct_choices": [
+      "目",
+      "耳",
+      "鼻"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "目、耳、鼻は刺激を受け取る感覚器官です。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "次のうち、反射の特ちょうとして正しいものをすべて選びなさい。",
+    "choices": [
+      "意識しなくても起こる",
+      "すばやく起こる",
+      "脊髄が関わる",
+      "必ず大腸で処理される",
+      "消化液が必要である"
+    ],
+    "correct_choices": [
+      "意識しなくても起こる",
+      "すばやく起こる",
+      "脊髄が関わる"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "反射は意識に関係なく、脊髄が関わってすばやく起こります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "神経",
+    "grade": "中2",
+    "question": "刺激が中枢へ伝わるまでの基本的な流れを完成させなさい。",
+    "choices": null,
+    "answer": "刺激 → 感覚器官 → 感覚神経 → 中枢",
+    "keywords": null,
+    "word_tokens": [
+      "刺激",
+      "→",
+      "感覚器官",
+      "→",
+      "感覚神経",
+      "→",
+      "中枢"
+    ],
+    "distractor_tokens": [
+      "消化管",
+      "道管"
+    ],
+    "explanation": "刺激は感覚器官で受け取られ、感覚神経を通って中枢へ伝わります。"
+  }
+]

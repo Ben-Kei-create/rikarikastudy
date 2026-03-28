@@ -1,0 +1,298 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "元素記号 Fe が表す元素は何ですか。",
+    "choices": ["鉄", "銅", "銀", "アルミニウム"],
+    "answer": "鉄",
+    "keywords": null,
+    "explanation": "Fe は鉄を表す元素記号です。銅は Cu、銀は Ag です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "二酸化炭素の分子をつくっている原子の種類は何種類ですか。",
+    "choices": ["1種類", "2種類", "3種類", "4種類"],
+    "answer": "2種類",
+    "keywords": null,
+    "explanation": "二酸化炭素は炭素原子と酸素原子からできているので、原子の種類は2種類です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "鉄と硫黄を混ぜたものを加熱してできた物質の性質として正しいものはどれですか。",
+    "choices": ["磁石につきにくい", "黄色い粉末である", "水にとてもよく溶ける", "もとの鉄と硫黄に自然にもどる"],
+    "answer": "磁石につきにくい",
+    "keywords": null,
+    "explanation": "鉄と硫黄が化合してできた硫化鉄は、もとの鉄とは性質が変わり、磁石につきにくくなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "発生した気体を石灰水に通したとき、石灰水が白くにごるのはどの気体ですか。",
+    "choices": ["水素", "酸素", "二酸化炭素", "窒素"],
+    "answer": "二酸化炭素",
+    "keywords": null,
+    "explanation": "二酸化炭素を石灰水に通すと、石灰水は白くにごります。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学式や化学反応式を書くときに使う、原子の種類を表す記号を何といいますか。",
+    "choices": ["元素記号", "係数", "質量数", "イオン式"],
+    "answer": "元素記号",
+    "keywords": null,
+    "explanation": "原子の種類をアルファベットで表した記号を元素記号といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、分子をつくらない物質はどれですか。",
+    "choices": ["銅", "水", "酸素", "二酸化炭素"],
+    "answer": "銅",
+    "keywords": null,
+    "explanation": "金属の銅は分子をつくらず、原子が規則正しく集まってできています。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化合とは、1種類の物質が2種類以上の別の物質に分かれる化学変化のことである。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "化合は、2種類以上の物質が結びついて1種類の物質になる化学変化です。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "酸化と還元は、同じ化学変化の中で同時に起こることがある。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "ある物質が酸化されるとき、別の物質は還元されることがあります。"
+  },
+  {
+    "type": "true_false",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "鉄と硫黄の混合物は、加熱する前なら磁石を使って鉄を取り出すことができる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "加熱前はただの混合物なので、鉄だけが磁石につきます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "物質が酸素をうばわれる化学変化を【　　】という。",
+    "choices": ["還元", "酸化", "分解", "化合"],
+    "answer": "還元",
+    "keywords": null,
+    "explanation": "酸化物が酸素を失う化学変化を還元といいます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "発生した気体が二酸化炭素かどうかを調べるには、気体を【　　】に通す。",
+    "choices": ["石灰水", "食塩水", "蒸留水", "アルコール"],
+    "answer": "石灰水",
+    "keywords": null,
+    "explanation": "二酸化炭素を石灰水に通すと、石灰水が白くにごります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学変化を化学式で表したものを【　　】という。",
+    "choices": ["化学反応式", "元素記号", "分子式", "実験式"],
+    "answer": "化学反応式",
+    "keywords": null,
+    "explanation": "化学変化の前後の物質を化学式で表し、関係を示したものが化学反応式です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学変化でまわりから熱をうばって進む反応を【　　】反応という。",
+    "choices": ["吸熱", "発熱", "中和", "燃焼"],
+    "answer": "吸熱",
+    "keywords": null,
+    "explanation": "化学変化の中には、まわりから熱を受け取って進む吸熱反応があります。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次の気体と、その確かめ方を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "水素",
+        "right": "火を近づけると音を立てて燃える"
+      },
+      {
+        "left": "酸素",
+        "right": "火のついた線香を入れると激しく燃える"
+      },
+      {
+        "left": "二酸化炭素",
+        "right": "石灰水を白くにごらせる"
+      }
+    ],
+    "explanation": "気体はそれぞれ性質が異なるので、決まった方法で区別できます。"
+  },
+  {
+    "type": "match",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次の物質と、そのつくられ方の特徴を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      {
+        "left": "水",
+        "right": "2種類の原子からなる分子"
+      },
+      {
+        "left": "酸素",
+        "right": "1種類の原子からなる分子"
+      },
+      {
+        "left": "銅",
+        "right": "分子をつくらない物質"
+      },
+      {
+        "left": "空気",
+        "right": "いくつかの物質が混ざったもの"
+      }
+    ],
+    "explanation": "物質には、分子をつくるもの、分子をつくらないもの、混合物などがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "化学反応式を正しくつくるときの手順として、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "反応する物質とできる物質を確かめる",
+      "それぞれを化学式で書く",
+      "反応の前後で原子の数が等しくなるように係数をそろえる"
+    ],
+    "explanation": "化学反応式では、反応前後で原子の種類と数が変わらないように表します。"
+  },
+  {
+    "type": "sort",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "鉄と硫黄の化合を調べる実験の流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "鉄粉と硫黄の粉末をよく混ぜる",
+      "混合物を加熱する",
+      "できた物質の性質を調べる"
+    ],
+    "explanation": "加熱によって鉄と硫黄が化合し、もとの物質とは異なる性質の硫化鉄ができます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、酸化にあてはまるものをすべて選びなさい。",
+    "choices": [
+      "マグネシウムが燃える",
+      "銅を加熱すると黒くなる",
+      "氷がとけて水になる",
+      "鉄がさびる",
+      "砂糖が水にとける"
+    ],
+    "correct_choices": [
+      "マグネシウムが燃える",
+      "銅を加熱すると黒くなる",
+      "鉄がさびる"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "酸化は物質が酸素と結びつく変化です。状態変化や溶解は酸化ではありません。"
+  },
+  {
+    "type": "multi_select",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "次のうち、分子をつくる物質をすべて選びなさい。",
+    "choices": [
+      "水",
+      "酸素",
+      "銅",
+      "二酸化炭素",
+      "塩化ナトリウム"
+    ],
+    "correct_choices": [
+      "水",
+      "酸素",
+      "二酸化炭素"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "水、酸素、二酸化炭素は分子をつくります。銅や塩化ナトリウムは分子をつくりません。"
+  },
+  {
+    "type": "word_bank",
+    "field": "化学",
+    "unit": "化学変化と原子・分子",
+    "grade": "中2",
+    "question": "鉄と硫黄が結びつく反応を化学反応式で完成させなさい。",
+    "choices": null,
+    "answer": "Fe + S → FeS",
+    "keywords": null,
+    "word_tokens": [
+      "Fe",
+      "+",
+      "S",
+      "→",
+      "FeS"
+    ],
+    "distractor_tokens": [
+      "Fe2",
+      "S2",
+      "Fe2S"
+    ],
+    "explanation": "鉄原子1個と硫黄原子1個が結びついて、硫化鉄 FeS ができます。"
+  }
+]

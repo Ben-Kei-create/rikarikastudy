@@ -1,0 +1,222 @@
+[
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "水の化学式として正しいものはどれですか。",
+    "choices": ["H₂O", "HO₂", "H₂O₂", "OH"],
+    "answer": "H₂O",
+    "keywords": null,
+    "explanation": "水の化学式はH₂Oです。水素原子2個と酸素原子1個からできています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "二酸化炭素の化学式として正しいものはどれですか。",
+    "choices": ["CO₂", "CO", "C₂O", "C₂O₂"],
+    "answer": "CO₂",
+    "keywords": null,
+    "explanation": "二酸化炭素の化学式はCO₂です。炭素原子1個と酸素原子2個からできています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "酸素の化学式として正しいものはどれですか。",
+    "choices": ["O₂", "O", "O₃", "2O"],
+    "answer": "O₂",
+    "keywords": null,
+    "explanation": "酸素は2個の酸素原子が結びついた分子で、化学式はO₂です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "塩化ナトリウムの化学式として正しいものはどれですか。",
+    "choices": ["NaCl", "NaCl₂", "Na₂Cl", "NaC"],
+    "answer": "NaCl",
+    "keywords": null,
+    "explanation": "塩化ナトリウムの化学式はNaClです。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "アンモニアの化学式として正しいものはどれですか。",
+    "choices": ["NH₃", "NO₃", "N₂H", "NH₂"],
+    "answer": "NH₃",
+    "keywords": null,
+    "explanation": "アンモニアの化学式はNH₃です。窒素原子1個と水素原子3個からできています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "化学式の前につける数字は何を表していますか。",
+    "choices": ["分子（粒子）の数", "原子の種類", "原子の質量", "電子の数"],
+    "answer": "分子（粒子）の数",
+    "keywords": null,
+    "explanation": "化学式の前の数字（係数）は分子（粒子）の数を表します。例：2H₂Oは水分子が2個。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "化学式の右下の小さい数字は何を表していますか。",
+    "choices": ["原子の数", "分子の数", "電子の数", "イオンの数"],
+    "answer": "原子の数",
+    "keywords": null,
+    "explanation": "化学式の右下の小さい数字は、その元素の原子の数を表します。例：H₂Oの2は水素原子が2個。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "水の電気分解を化学反応式で表すとどれが正しいですか。",
+    "choices": ["2H₂O → 2H₂ + O₂", "H₂O → H₂ + O", "2H₂O → H₂ + 2O₂", "H₂O → H + OH"],
+    "answer": "2H₂O → 2H₂ + O₂",
+    "keywords": null,
+    "explanation": "水の電気分解は 2H₂O → 2H₂ + O₂ です。両辺の原子の数が等しくなっています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "マグネシウムの燃焼を化学反応式で表すとどれが正しいですか。",
+    "choices": ["2Mg + O₂ → 2MgO", "Mg + O → MgO", "Mg + O₂ → MgO₂", "2Mg + O → 2MgO"],
+    "answer": "2Mg + O₂ → 2MgO",
+    "keywords": null,
+    "explanation": "マグネシウムの燃焼は 2Mg + O₂ → 2MgO です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "炭素の燃焼を化学反応式で表すとどれが正しいですか。",
+    "choices": ["C + O₂ → CO₂", "C + O → CO", "2C + O₂ → 2CO₂", "C₂ + O₂ → 2CO"],
+    "answer": "C + O₂ → CO₂",
+    "keywords": null,
+    "explanation": "炭素の燃焼は C + O₂ → CO₂ です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "鉄と硫黄の化合を化学反応式で表すとどれが正しいですか。",
+    "choices": ["Fe + S → FeS", "Fe + S₂ → FeS₂", "2Fe + S → Fe₂S", "Fe₂ + S → Fe₂S"],
+    "answer": "Fe + S → FeS",
+    "keywords": null,
+    "explanation": "鉄と硫黄の化合は Fe + S → FeS で硫化鉄ができます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "化学反応式で矢印（→）の左辺と右辺で等しくなければならないものは何ですか。",
+    "choices": ["各原子の数", "分子の数", "物質の種類", "体積"],
+    "answer": "各原子の数",
+    "keywords": null,
+    "explanation": "化学反応式では左辺と右辺で各原子の数が等しくなければなりません。これを式を合わせるといいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "水素の化学式はどれですか。",
+    "choices": ["H₂", "H", "He", "H₃"],
+    "answer": "H₂",
+    "keywords": null,
+    "explanation": "水素は2個の水素原子が結びついた分子で、化学式はH₂です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "窒素の化学式はどれですか。",
+    "choices": ["N₂", "N", "NO", "N₃"],
+    "answer": "N₂",
+    "keywords": null,
+    "explanation": "窒素は2個の窒素原子が結びついた分子で、化学式はN₂です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "酸化銅の化学式はどれですか。",
+    "choices": ["CuO", "Cu₂O", "CuO₂", "Cu"],
+    "answer": "CuO",
+    "keywords": null,
+    "explanation": "酸化銅（II）の化学式はCuOです。銅原子1個と酸素原子1個からできています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "酸化マグネシウムの化学式はどれですか。",
+    "choices": ["MgO", "Mg₂O", "MgO₂", "Mg₂O₂"],
+    "answer": "MgO",
+    "keywords": null,
+    "explanation": "酸化マグネシウムの化学式はMgOです。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "硫化鉄の化学式はどれですか。",
+    "choices": ["FeS", "Fe₂S", "FeS₂", "Fe₂S₃"],
+    "answer": "FeS",
+    "keywords": null,
+    "explanation": "硫化鉄の化学式はFeSです。鉄と硫黄が1：1で化合しています。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "水素の燃焼を化学反応式で表すとどれが正しいですか。",
+    "choices": ["2H₂ + O₂ → 2H₂O", "H₂ + O → H₂O", "H₂ + O₂ → H₂O₂", "2H + O → H₂O"],
+    "answer": "2H₂ + O₂ → 2H₂O",
+    "keywords": null,
+    "explanation": "水素の燃焼は 2H₂ + O₂ → 2H₂O です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "炭酸水素ナトリウムの化学式はどれですか。",
+    "choices": ["NaHCO₃", "Na₂CO₃", "NaCO₃", "NaHO₃"],
+    "answer": "NaHCO₃",
+    "keywords": null,
+    "explanation": "炭酸水素ナトリウム（重そう）の化学式はNaHCO₃です。"
+  },
+  {
+    "type": "choice4",
+    "field": "化学",
+    "unit": "化学式と化学反応式",
+    "grade": "中2",
+    "question": "銅の酸化を化学反応式で表すとどれが正しいですか。",
+    "choices": ["2Cu + O₂ → 2CuO", "Cu + O → CuO", "Cu + O₂ → CuO₂", "Cu₂ + O₂ → 2CuO"],
+    "answer": "2Cu + O₂ → 2CuO",
+    "keywords": null,
+    "explanation": "銅の酸化は 2Cu + O₂ → 2CuO です。"
+  }
+]

@@ -1,0 +1,238 @@
+[
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "火山の地下にある、高温でどろどろにとけた岩石を何といいますか。",
+    "choices": ["マグマ", "溶岩", "火山灰", "火山弾"],
+    "answer": "マグマ",
+    "keywords": null,
+    "explanation": "地下ではマグマ、地表に出たあとは溶岩とよばれます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地表にふき出したマグマを何といいますか。",
+    "choices": ["溶岩", "火山灰", "火山ガス", "軽石"],
+    "answer": "溶岩",
+    "keywords": null,
+    "explanation": "地下ではマグマでも、地表に出ると溶岩とよばれます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震が起こり始めた地下の地点を何といいますか。",
+    "choices": ["震源", "震央", "断層", "火口"],
+    "answer": "震源",
+    "keywords": null,
+    "explanation": "地震は地下の震源で発生し、その真上の地表の地点を震央といいます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "震源の真上にあたる地表の地点を何といいますか。",
+    "choices": ["震央", "震源", "初期微動", "主要動"],
+    "answer": "震央",
+    "keywords": null,
+    "explanation": "震央は、地下の震源を地表に真上へのばした位置です。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震のはじめに感じる小さなゆれを何といいますか。",
+    "choices": ["初期微動", "主要動", "余震", "本震"],
+    "answer": "初期微動",
+    "keywords": null,
+    "explanation": "初期微動はP波による小さなゆれで、その後に主要動が続きます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "各地での地震のゆれの強さを表すものはどれですか。",
+    "choices": ["震度", "マグニチュード", "震源距離", "等高線"],
+    "answer": "震度",
+    "keywords": null,
+    "explanation": "震度は場所ごとのゆれの強さ、マグニチュードは地震そのものの規模を表します。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "P波はS波よりも速く伝わる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "P波が先に届くため、最初に小さなゆれである初期微動が観測されます。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "マグニチュードは、ある地点で感じたゆれの強さを表している。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "マグニチュードは地震の規模、各地点でのゆれの強さは震度で表します。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "火山灰は、直径が2mmより小さい火山噴出物である。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "火山噴出物は大きさによって火山灰、火山れき、火山弾に分けられます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震計の記録で、最初の小さなゆれが続く時間を【　　】という。",
+    "choices": ["初期微動継続時間", "主要動継続時間", "震源距離", "震度階級"],
+    "answer": "初期微動継続時間",
+    "keywords": null,
+    "explanation": "初期微動継続時間を使うと、震源までのおおよその距離を求められます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震が起こり始めた地下の場所を【　　】という。",
+    "choices": ["震源", "震央", "断面", "火口"],
+    "answer": "震源",
+    "keywords": null,
+    "explanation": "地震の出発点は地下の震源です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "各地でのゆれの強さを表す値を【　　】という。",
+    "choices": ["震度", "速度", "圧力", "密度"],
+    "answer": "震度",
+    "keywords": null,
+    "explanation": "震度は観測地点ごとのゆれの強さを表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地下のマグマが地表に出たものを【　　】という。",
+    "choices": ["溶岩", "火山灰", "軽石", "火山ガス"],
+    "answer": "溶岩",
+    "keywords": null,
+    "explanation": "マグマは地表に出ると溶岩とよばれます。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "次の火山噴出物と、その大きさの特徴を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "火山灰", "right": "2mmより小さい" },
+      { "left": "火山れき", "right": "2mm以上64mm未満" },
+      { "left": "火山弾", "right": "64mm以上" }
+    ],
+    "explanation": "火山噴出物は粒の大きさで分類されます。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "次の地震の用語と、その意味を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "P波", "right": "初期微動を起こす" },
+      { "left": "S波", "right": "主要動を起こす" },
+      { "left": "震央", "right": "震源の真上の地表" }
+    ],
+    "explanation": "P波とS波のちがい、震源と震央の関係を整理して覚えることが大切です。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震が起こってから観測点で感じるゆれの順として、正しく並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["地震が発生する", "初期微動が始まる", "主要動が始まる"],
+    "explanation": "P波が先に届いて初期微動が起こり、その後にS波で主要動が始まります。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "火山活動で地表に噴き出した物質の流れとして、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["地下でマグマができる", "マグマが地表へ出る", "溶岩が冷えて固まる"],
+    "explanation": "地下のマグマが地表に出て溶岩となり、その後冷えて固まります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "次のうち、火山から出るものをすべて選びなさい。",
+    "choices": ["溶岩", "火山灰", "火山ガス", "海水", "雲母"],
+    "correct_choices": ["溶岩", "火山灰", "火山ガス"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "火山からは溶岩や火山灰、火山ガスなどが出ます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震について正しいものをすべて選びなさい。",
+    "choices": ["P波はS波より速い", "震度は場所ごとに異なる", "震央は地下にある", "初期微動は小さなゆれである", "マグニチュードは各地点のゆれの強さを表す"],
+    "correct_choices": ["P波はS波より速い", "震度は場所ごとに異なる", "初期微動は小さなゆれである"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "震央は地表、地下は震源です。マグニチュードは地震の規模を表します。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "火山と地震",
+    "grade": "中1",
+    "question": "地震のゆれの順を完成させなさい。",
+    "choices": null,
+    "answer": "初期微動 → 主要動",
+    "keywords": null,
+    "word_tokens": ["初期微動", "→", "主要動"],
+    "distractor_tokens": ["余震", "火山灰"],
+    "explanation": "地震では、はじめに初期微動、その後に主要動が起こります。"
+  }
+]

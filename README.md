@@ -1,6 +1,8 @@
+このサイトに個人情報は一切含まれません。
+
 # RikaQuiz 📚 - 理科一問一答学習サイト
 
-中学理科4分野（生物・化学・物理・地学）の一問一答学習サイトです。
+中学理科4分野（生物・化学・物理・地学）の一問一答学習サイトです。Duolingo 風の複数出題パターンに対応し、タップ中心で気持ちよく解ける構成になっています。
 
 ---
 
@@ -12,7 +14,7 @@
 2. 「SQL Editor」を開き、`supabase_schema.sql` の内容を全てコピー＆実行
    - 既存プロジェクトでも再実行OK
    - `students.password` 列と初期データ（ID 1〜5 / S, M, T, K, 先生 / `rikalove1〜4`, `rikaadmin2026`）を揃えます
-   - `questions.created_by_student_id` や `quiz_sessions.duration_seconds` などの追加列もここで揃います
+   - `questions.created_by_student_id` / `questions.keywords` / `questions.image_url` や `quiz_sessions.duration_seconds` などの追加列もここで揃います
 3. 「Project Settings → API」から以下をコピー：
    - `Project URL`
    - `Publishable Key`（推奨）または `Anon Key (Legacy)`
@@ -35,6 +37,9 @@ git push -u origin main
    NEXT_PUBLIC_SUPABASE_URL = https://xxxxx.supabase.co
    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = sb_publishable_xxxxx...
    # または NEXT_PUBLIC_SUPABASE_ANON_KEY = eyJxxxxx...
+   GEMINI_API_KEY = xxxxx
+   # または GOOGLE_API_KEY = xxxxx
+   # SCIENCE_CHAT_MODE は未設定でも、API キーがあれば自動で live になります
    ```
 3. 「Deploy」を押す → 完了！
 
@@ -58,25 +63,34 @@ git push -u origin main
 
 ### 5. 問題の追加方法
 
-1. ログイン画面で「もぎ先生ログイン」
+1. ログイン画面で「先生ログイン」
 2. 管理者PW `rikaadmin2026` を入力
 3. 「問題追加」タブを開く
-4. `分野 / 単元 / 問題文 / 正解` を入力
-5. 選択問題なら `A・B` の2択だけ入力
-6. 「正解」には A か B と同じ文をそのまま入れる
-7. 「問題を追加する」を押す
+4. `分野 / 単元 / 問題文 / 問題タイプ` を選ぶ
+5. 問題タイプに応じて、選択肢 / 組み合わせ / 並べ順 / 語群などの入力欄を埋める
+6. 記述問題なら、必要に応じて `キーワード` をカンマ区切りで入力
+7. 「正解」には choice / choice4 / fill_choice なら選択肢と同じ文、word_bank なら完成形、text なら模範解答を入れる
+8. 「問題を追加する」を押す
 
-### 6. 問題の一括追加方法
+### 5.1 問題に画像を付ける方法
+
+1. 管理画面の「問題一覧」タブを開く
+2. 対象の問題カードで「画像を挿入する」を押す
+3. 画像を選ぶと、ブラウザ側で圧縮して保存されます
+4. 保存した画像はクイズ画面とタイムアタック画面の問題文の下に表示されます
+
+### 6. 問題・辞書の一括追加方法
 
 #### 管理画面から JSON で一括追加
 
-1. 「もぎ先生ログイン」
-2. 「一括追加」タブを開く
-3. JSON を貼り付けるか、`.json` ファイルを読み込む
-4. 「JSON を一括追加する」を押す
+1. 「先生ログイン」
+2. 「一括登録」タブを開く
+3. 問題JSONまたは辞書JSONを貼り付けるか、`.json` ファイルを読み込む
+4. それぞれの「一括追加 / 一括登録」ボタンを押す
 
 サンプル形式:
 - [questions_bulk_example.json](/Users/fumiaki/Desktop/rikarikalove/examples/questions_bulk_example.json)
+- [glossary_bulk_example.json](/Users/fumiaki/Desktop/rikarikalove/examples/glossary_bulk_example.json)
 
 #### JSON から SQL を作って Supabase に入れる
 
@@ -103,6 +117,8 @@ npm run questions:import -- - < path/to/questions.json
 ```
 
 同じ `field / unit / question` の問題が既にある場合は自動でスキップします。
+記述問題では `keywords` 配列を付けると、回答文にキーワードが1つでも含まれたときに `▲` 判定になります。
+旧 `choice` / `text` 形式からの変換には `npm run questions:migrate-types -- path/to/questions.json` が使えます。
 
 ---
 
@@ -135,7 +151,7 @@ npm run questions:import -- - < path/to/questions.json
 - ✅ 5人のID選択（ニックネーム表示）
 - ✅ 生物・化学・物理・地学の4分野
 - ✅ 単元別 / 全単元ランダム出題
-- ✅ 2択問題・記述問題対応
+- ✅ 9種類の問題タイプ対応
 - ✅ 解説表示
 - ✅ セッション・回答ログをSupabaseに保存
 - ✅ マイページ（正答率・学習履歴）
@@ -158,27 +174,56 @@ npm run questions:import -- - < path/to/questions.json
 
 管理画面 → 「問題追加」タブから入力できます。
 
-**2択問題の場合：**
-- 選択肢A・Bを入力
-- 「正解」に選択肢AかBと**完全一致**する文字列を入力
+**対応している問題タイプ:**
+- `choice` 2択
+- `choice4` 4択
+- `true_false` ○×
+- `fill_choice` 穴埋め選択
+- `match` マッチング
+- `sort` 並べ替え
+- `multi_select` 複数選択
+- `word_bank` 語群組み立て
+- `text` 記述
 
-**記述問題の場合：**
-- 「正解」に模範解答を入力（完全一致で判定）
+**記述問題の場合:**
+- 「正解」に模範解答を入力（完全一致なら `◯`）
+- `keywords` を設定した場合、回答文にそのどれか1つが含まれていれば `▲`
+- 完全一致でもキーワード一致でもなければ `❌`
 
 ## 📦 一括投入のJSON形式
 
-`choice` 問題:
+`choice4` 問題:
 
 ```json
 {
   "field": "生物",
   "unit": "植物のつくり",
   "question": "光合成を主に行う部分はどこ？",
-  "type": "choice",
-  "choices": ["葉", "根"],
+  "type": "choice4",
+  "choices": ["葉", "根", "茎", "花"],
   "answer": "葉",
   "explanation": "葉の葉緑体で光合成を行います。",
   "grade": "中1"
+}
+```
+
+`match` 問題:
+
+```json
+{
+  "field": "生物",
+  "unit": "消化と吸収",
+  "question": "次の消化酵素と、それが分解する栄養素を正しく組み合わせなさい。",
+  "type": "match",
+  "answer": null,
+  "choices": null,
+  "match_pairs": [
+    { "left": "アミラーゼ", "right": "デンプン" },
+    { "left": "ペプシン", "right": "タンパク質" },
+    { "left": "リパーゼ", "right": "脂肪" }
+  ],
+  "explanation": "アミラーゼはデンプン、ペプシンはタンパク質、リパーゼは脂肪を分解します。",
+  "grade": "中2"
 }
 ```
 
@@ -191,16 +236,41 @@ npm run questions:import -- - < path/to/questions.json
   "question": "電流の単位は何ですか？",
   "type": "text",
   "answer": "A",
+  "keywords": ["アンペア"],
   "explanation": "電流の単位はアンペアです。",
-  "grade": "中2"
+ "grade": "中2"
 }
 ```
 
 ルール:
 - `field` は `生物 / 化学 / 物理 / 地学`
-- `choice` 問題の `choices` は2件
-- `answer` は `choices` のどちらかと完全一致
+- `type` は `choice / choice4 / true_false / fill_choice / match / sort / multi_select / word_bank / text`
+- `choice` は2件、`choice4` と `fill_choice` は3〜4件、`multi_select` は4〜6件の `choices`
+- `match` は `match_pairs`、`sort` は `sort_items`、`multi_select` は `correct_choices`、`word_bank` は `word_tokens` と `distractor_tokens` を使います
+- `text` 問題では `keywords` を任意で設定可能
+- 詳しい生成ルールは [QUESTION_TYPES_UPGRADE.md](/Users/fumiaki/Desktop/rikarikalove/docs/QUESTION_TYPES_UPGRADE.md) と [QUESTION_GENERATION_PROMPT.md](/Users/fumiaki/Desktop/rikarikalove/docs/QUESTION_GENERATION_PROMPT.md) を参照
 - 配列そのままでも、`{"questions":[...]}` でも投入可能
+
+`glossary` 辞書:
+
+```json
+{
+  "field": "生物",
+  "term": "蒸散",
+  "reading": "じょうさん",
+  "shortDescription": "植物の葉から水分が水蒸気として出ていくこと。",
+  "description": "蒸散は、植物の葉の気孔などから水分が水蒸気として外へ出ていく現象です。根から水を吸い上げるはたらきにも関係します。",
+  "related": ["気孔", "道管", "葉"],
+  "tags": ["植物", "水の移動", "葉"]
+}
+```
+
+辞書ルール:
+- `field` は `生物 / 化学 / 物理 / 地学`
+- `term / reading / shortDescription / description` は必須
+- `related / tags` は文字列配列で任意
+- 配列そのままでも、`{"entries":[...]}` や `{"glossary":[...]}` でも投入可能
+- 同じ `field + term` を再登録すると上書き更新されます
 
 ---
 
@@ -255,3 +325,14 @@ Vercel にデプロイしてURLを配るのがいちばん簡単です。
 - 📅 **履歴タブ**: セッション別の正誤バー付き一覧
 - 🎯 **弱点タブ**: 正答率が低い単元ランキング（3問以上解いた単元のみ）
 - ✍️ **問題作成タブ**: 生徒が自分専用の問題を追加可能
+
+---
+
+## 著作権
+
+Copyright (c) 2026 Fumiaki. All rights reserved.
+
+- このリポジトリ内のソースコード、画面デザイン、文章、オリジナル問題データ、画像、ドキュメントの著作権は、別途記載があるものを除き権利者に帰属します。
+- 無断での転載、再配布、改変配布、商用利用、学習データ化は許可されません。
+- 外部ライブラリや依存パッケージには、それぞれのライセンスが適用されます。
+- 詳細は [COPYRIGHT.md](/Users/fumiaki/Desktop/rikarikalove/COPYRIGHT.md) を参照してください。

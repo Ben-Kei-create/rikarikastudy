@@ -1,0 +1,278 @@
+[
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "だ液にふくまれ、デンプンを分解する消化酵素はどれですか。",
+    "choices": ["アミラーゼ", "リパーゼ", "ペプシン", "トリプシン"],
+    "answer": "アミラーゼ",
+    "keywords": null,
+    "explanation": "アミラーゼはだ液にふくまれ、デンプンを分解します。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "消化された養分の多くが吸収される器官はどれですか。",
+    "choices": ["胃", "小腸", "大腸", "食道"],
+    "answer": "小腸",
+    "keywords": null,
+    "explanation": "小腸の内側には柔毛があり、養分を吸収しやすくなっています。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "胆汁をつくる器官はどれですか。",
+    "choices": ["肝臓", "すい臓", "胃", "大腸"],
+    "answer": "肝臓",
+    "keywords": null,
+    "explanation": "胆汁は肝臓でつくられ、脂肪の消化を助けます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "胃液の中で主にタンパク質の消化に関わる場所はどこですか。",
+    "choices": ["口", "胃", "小腸", "大腸"],
+    "answer": "胃",
+    "keywords": null,
+    "explanation": "胃では胃液にふくまれるペプシンがタンパク質の消化を進めます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "小腸の内側にある柔毛のはたらきとして正しいものはどれですか。",
+    "choices": ["表面積を広げて吸収しやすくする", "消化液をためる", "血液を固める", "空気を取りこむ"],
+    "answer": "表面積を広げて吸収しやすくする",
+    "keywords": null,
+    "explanation": "柔毛があることで小腸の表面積が広くなり、養分を効率よく吸収できます。"
+  },
+  {
+    "type": "choice4",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "デンプンが消化されて最終的に吸収される物質は何ですか。",
+    "choices": ["ブドウ糖", "アミノ酸", "脂肪酸", "グリセリン"],
+    "answer": "ブドウ糖",
+    "keywords": null,
+    "explanation": "デンプンは消化されてブドウ糖になり、小腸で吸収されます。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "消化とは、大きな分子を小さな分子に分解して吸収しやすくするはたらきである。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "消化によって、吸収できる大きさの物質に変えられます。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "胃液は、デンプンの消化を主に進める消化液である。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "胃液は主にタンパク質の消化に関わります。デンプンの消化は主にだ液やすい液で進みます。"
+  },
+  {
+    "type": "true_false",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "大腸では、主に水分が吸収される。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "大腸では水分が吸収され、残ったものが便になります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "脂肪を分解する消化酵素を【　　】という。",
+    "choices": ["リパーゼ", "アミラーゼ", "ペプシン", "アドレナリン"],
+    "answer": "リパーゼ",
+    "keywords": null,
+    "explanation": "リパーゼは脂肪の消化に関わる酵素です。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "だ液は、口の中で【　　】の消化を助ける。",
+    "choices": ["デンプン", "タンパク質", "脂肪", "水"],
+    "answer": "デンプン",
+    "keywords": null,
+    "explanation": "だ液にふくまれるアミラーゼがデンプンの消化を始めます。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "小腸の内側にあって養分を吸収しやすくするつくりを【　　】という。",
+    "choices": ["柔毛", "気孔", "葉脈", "核"],
+    "answer": "柔毛",
+    "keywords": null,
+    "explanation": "柔毛によって小腸の表面積が広くなり、養分を吸収しやすくなります。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "口から大腸まで食べ物が通る管をまとめて【　　】という。",
+    "choices": ["消化管", "血管", "神経", "気管"],
+    "answer": "消化管",
+    "keywords": null,
+    "explanation": "口、食道、胃、小腸、大腸などをまとめて消化管といいます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "次の養分と、最終的に吸収される形を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "デンプン", "right": "ブドウ糖" },
+      { "left": "タンパク質", "right": "アミノ酸" },
+      { "left": "脂肪", "right": "脂肪酸とモノグリセリド" }
+    ],
+    "explanation": "養分は消化によって小さな分子に分解され、吸収されます。"
+  },
+  {
+    "type": "match",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "次の器官と、その主なはたらきを正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "口", "right": "かみくだき、だ液をまぜる" },
+      { "left": "胃", "right": "タンパク質の消化を進める" },
+      { "left": "小腸", "right": "養分を吸収する" },
+      { "left": "大腸", "right": "水分を吸収する" }
+    ],
+    "explanation": "消化管の各器官には、それぞれ主なはたらきがあります。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "食べ物が通る道すじとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "口",
+      "食道",
+      "胃",
+      "小腸",
+      "大腸"
+    ],
+    "explanation": "食べ物は口から入り、消化管を通って消化・吸収されます。"
+  },
+  {
+    "type": "sort",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "デンプンが吸収されるまでの流れとして、正しい順に並べなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": [
+      "口でだ液がはたらく",
+      "小腸でさらに消化される",
+      "ブドウ糖として吸収される"
+    ],
+    "explanation": "デンプンはだ液やすい液などで消化され、最終的にブドウ糖として吸収されます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "次のうち、消化液や消化を助ける液として正しいものをすべて選びなさい。",
+    "choices": [
+      "だ液",
+      "胃液",
+      "胆汁",
+      "血液",
+      "汗"
+    ],
+    "correct_choices": [
+      "だ液",
+      "胃液",
+      "胆汁"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "だ液や胃液は消化酵素をふくみ、胆汁は脂肪の消化を助けます。"
+  },
+  {
+    "type": "multi_select",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "次のうち、消化されてから小腸で吸収される物質をすべて選びなさい。",
+    "choices": [
+      "ブドウ糖",
+      "アミノ酸",
+      "脂肪酸",
+      "デンプン",
+      "タンパク質"
+    ],
+    "correct_choices": [
+      "ブドウ糖",
+      "アミノ酸",
+      "脂肪酸"
+    ],
+    "answer": null,
+    "keywords": null,
+    "explanation": "デンプンやタンパク質などは消化されて、小さな分子になってから吸収されます。"
+  },
+  {
+    "type": "word_bank",
+    "field": "生物",
+    "unit": "消化と吸収",
+    "grade": "中2",
+    "question": "デンプンが吸収されるまでの変化を完成させなさい。",
+    "choices": null,
+    "answer": "デンプン → 麦芽糖 → ブドウ糖",
+    "keywords": null,
+    "word_tokens": [
+      "デンプン",
+      "→",
+      "麦芽糖",
+      "→",
+      "ブドウ糖"
+    ],
+    "distractor_tokens": [
+      "脂肪酸",
+      "アミノ酸"
+    ],
+    "explanation": "デンプンはまず麦芽糖になり、さらにブドウ糖まで分解されて吸収されます。"
+  }
+]

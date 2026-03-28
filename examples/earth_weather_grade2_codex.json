@@ -1,0 +1,238 @@
+[
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "空気中にふくむことのできる水蒸気の限度量を何といいますか。",
+    "choices": ["飽和水蒸気量", "湿度", "気圧", "露点"],
+    "answer": "飽和水蒸気量",
+    "keywords": null,
+    "explanation": "空気の温度が高いほど、ふくむことのできる水蒸気の量は多くなります。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "性質がほぼ同じ空気の大きなかたまりを何といいますか。",
+    "choices": ["気団", "前線", "低気圧", "等圧線"],
+    "answer": "気団",
+    "keywords": null,
+    "explanation": "気団は、広い範囲で気温や湿度がほぼ同じ空気の集まりです。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "性質のちがう気団どうしの境目を何といいますか。",
+    "choices": ["前線", "等高線", "震源", "磁界"],
+    "answer": "前線",
+    "keywords": null,
+    "explanation": "暖かい気団と冷たい気団の境目には前線ができます。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "天気図で、気圧の等しい場所を結んだ線を何といいますか。",
+    "choices": ["等圧線", "等温線", "前線面", "風向線"],
+    "answer": "等圧線",
+    "keywords": null,
+    "explanation": "等圧線の間隔がせまいほど、風が強くなりやすいです。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "広い範囲に長い時間雨を降らせやすい雲はどれですか。",
+    "choices": ["乱層雲", "積雲", "巻雲", "うろこ雲"],
+    "answer": "乱層雲",
+    "keywords": null,
+    "explanation": "乱層雲は空全体をおおいやすく、しとしとした雨を降らせることが多いです。"
+  },
+  {
+    "type": "choice4",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "日本付近で低気圧のまわりの風は、ふつうどの向きにふきこみますか。",
+    "choices": ["反時計回りに中心へ", "時計回りに中心へ", "反時計回りに外へ", "時計回りに外へ"],
+    "answer": "反時計回りに中心へ",
+    "keywords": null,
+    "explanation": "北半球では、低気圧のまわりの風は反時計回りに中心へふきこみます。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "北半球では、高気圧のまわりの風は時計回りに中心からふき出す。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "高気圧では空気が上から下へおり、地表付近で外側へ広がります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "湿った空気が冷やされると、ふくむことのできる水蒸気量は小さくなる。",
+    "choices": ["○", "×"],
+    "answer": "○",
+    "keywords": null,
+    "explanation": "気温が下がると飽和水蒸気量も小さくなり、余分な水蒸気が水滴になります。"
+  },
+  {
+    "type": "true_false",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "積乱雲は、弱い雨を長時間降らせるだけで、雷をともなうことはない。",
+    "choices": ["○", "×"],
+    "answer": "×",
+    "keywords": null,
+    "explanation": "積乱雲は強い雨や雷をともなうことがあり、急な天気の変化を起こします。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "空気中の水蒸気の割合を百分率で表したものを【　　】という。",
+    "choices": ["湿度", "気圧", "気温", "露点"],
+    "answer": "湿度",
+    "keywords": null,
+    "explanation": "湿度は、実際の水蒸気量が飽和水蒸気量の何％かを表します。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "空気が冷えて、水蒸気が水滴に変わることを【　　】という。",
+    "choices": ["凝結", "蒸発", "融解", "昇華"],
+    "answer": "凝結",
+    "keywords": null,
+    "explanation": "雲ができるのは、水蒸気が凝結して細かい水滴になるためです。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "暖気と寒気の境目を【　　】という。",
+    "choices": ["前線", "気団", "湿度", "天頂"],
+    "answer": "前線",
+    "keywords": null,
+    "explanation": "前線付近では上昇気流が起こりやすく、雲や雨が生じやすいです。"
+  },
+  {
+    "type": "fill_choice",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "天気図で、気圧の等しい場所を結んだ線を【　　】という。",
+    "choices": ["等圧線", "等深線", "子午線", "輪中線"],
+    "answer": "等圧線",
+    "keywords": null,
+    "explanation": "等圧線のようすを見ると、風の強さや気圧配置を読み取りやすくなります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "次の雲の名前と、起こりやすい天気を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "積乱雲", "right": "短時間の強い雨や雷" },
+      { "left": "乱層雲", "right": "広い範囲の長い雨" },
+      { "left": "巻雲", "right": "晴れた高い空に見られやすい" }
+    ],
+    "explanation": "雲の種類ごとの特徴を知ると、天気の変化を予想しやすくなります。"
+  },
+  {
+    "type": "match",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "次の前線の種類と、起こりやすい天気の特徴を正しく組み合わせなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "match_pairs": [
+      { "left": "温暖前線", "right": "広い範囲で弱い雨が続く" },
+      { "left": "寒冷前線", "right": "せまい範囲で強い雨が降る" },
+      { "left": "閉塞前線", "right": "温暖前線と寒冷前線が重なった状態" }
+    ],
+    "explanation": "前線の種類によって、降り方や雨雲の広がり方が変わります。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "雲ができるまでの流れとして、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["空気が上昇する", "空気が冷える", "水蒸気が凝結する"],
+    "explanation": "空気が上昇すると気圧が下がって温度が下がり、やがて水蒸気が凝結して雲になります。"
+  },
+  {
+    "type": "sort",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "寒冷前線が通過するときの天気の変化として、正しい順に並べ替えなさい。",
+    "choices": null,
+    "answer": null,
+    "keywords": null,
+    "sort_items": ["雲が急に発達する", "短時間の強い雨が降る", "通過後に天気が回復しやすい"],
+    "explanation": "寒冷前線では急な上昇気流ができやすく、激しい雨のあと天気が回復しやすいです。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "次のうち、低気圧のまわりで起こりやすいことをすべて選びなさい。",
+    "choices": ["上昇気流が起こる", "雲ができやすい", "北半球で反時計回りに風がふく", "中心から外向きに時計回りで風がふく", "晴天が続きやすい"],
+    "correct_choices": ["上昇気流が起こる", "雲ができやすい", "北半球で反時計回りに風がふく"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "低気圧では空気が中心へ集まりながら上昇し、雲や雨が生じやすくなります。"
+  },
+  {
+    "type": "multi_select",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "天気の変化を予想する手がかりとして役立つものをすべて選びなさい。",
+    "choices": ["気圧の変化", "風向", "雲の種類", "地層の厚さ", "火山灰の色"],
+    "correct_choices": ["気圧の変化", "風向", "雲の種類"],
+    "answer": null,
+    "keywords": null,
+    "explanation": "気圧、風向、雲のようすなどを組み合わせて見ると、天気の変化を予想しやすくなります。"
+  },
+  {
+    "type": "word_bank",
+    "field": "地学",
+    "unit": "天気の変化",
+    "grade": "中2",
+    "question": "雲ができる流れを完成させなさい。",
+    "choices": null,
+    "answer": "上昇 → 冷却 → 凝結",
+    "keywords": null,
+    "word_tokens": ["上昇", "→", "冷却", "→", "凝結"],
+    "distractor_tokens": ["蒸発", "融解"],
+    "explanation": "空気が上昇して冷やされると、水蒸気が凝結して雲になります。"
+  }
+]
