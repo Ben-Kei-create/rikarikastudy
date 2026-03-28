@@ -752,7 +752,7 @@ export default function OnlineTerritoryPage({
             <div className="mt-4">
               <h1 className="font-display text-3xl text-white sm:text-4xl">オンライン陣取り</h1>
               <p className="mt-2 text-sm leading-7 text-slate-300">
-                オンラインの相手と交互にクイズへ答えて、4×4 の盤面を取り合います。正解すると好きな空きマスに置けます。
+                オンラインの相手と交互にクイズへ答えて、5×5 の盤面を取り合います。正解すると好きな空きマスに置けます。
               </p>
             </div>
           </div>

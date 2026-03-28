@@ -195,6 +195,9 @@ export default function QuizPage({
   const [headerHidden, setHeaderHidden] = useState(false)
   const lastScrollY = useRef(0)
   const startedAtRef = useRef<number | null>(null)
+  const questionStartRef = useRef<number | null>(null)
+  const answerLockedRef = useRef(false)
+  const [timePenalty, setTimePenalty] = useState(0)
   const finishingRef = useRef(false)
   const activeDailyChallenge = dailyChallenge && !retryWrongOnly
 
@@ -244,7 +247,9 @@ export default function QuizPage({
       setSelectedReviewQuestionId(null)
       setRewardSummary(null)
       setDailyLocked(false)
+      setTimePenalty(0)
       startedAtRef.current = null
+      answerLockedRef.current = false
 
       if (dailyChallenge) {
         const completed = await hasCompletedDailyChallenge(studentId)
@@ -359,6 +364,8 @@ export default function QuizPage({
   const q = questions[current]
 
   useEffect(() => {
+    questionStartRef.current = Date.now()
+    answerLockedRef.current = false
     setInquiryOpen(false)
     setInquiryCategory('question_content')
     setInquiryMessage('')
@@ -445,7 +452,10 @@ export default function QuizPage({
   }, [reviewExpanded, selectedReviewQuestionId, wrongReviewItems])
 
   const applyEvaluatedAnswer = (result: { result: TextAnswerResult; studentAnswerText: string; answerLogValue: string }) => {
-    if (!q) return
+    if (!q || answerLockedRef.current) return
+    const elapsed = questionStartRef.current ? Date.now() - questionStartRef.current : 0
+    if (elapsed < 1000) return
+    answerLockedRef.current = true
 
     const isCorrect = isCorrectTextAnswerResult(result.result)
 
@@ -464,6 +474,7 @@ export default function QuizPage({
     } else {
       setComboStreak(0)
       setCelebration(null)
+      setTimePenalty(p => p + 5)
       playWrong()
     }
     setAnswerResult(result.result)
@@ -556,9 +567,11 @@ export default function QuizPage({
   }
 
   const handleDontKnow = () => {
-    if (phase !== 'answering' || !q || q.type !== 'text') return
+    if (phase !== 'answering' || !q || q.type !== 'text' || answerLockedRef.current) return
+    answerLockedRef.current = true
     setComboStreak(0)
     setCelebration(null)
+    setTimePenalty(p => p + 5)
     setTextJudgeLoading(false)
     setTextJudgeSource(null)
     setTextJudgeReason('')
@@ -660,9 +673,10 @@ export default function QuizPage({
     if (quitting) return
     setQuitting(true)
 
-    const durationSeconds = startedAtRef.current
+    const actualDuration = startedAtRef.current
       ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
       : 0
+    const durationSeconds = actualDuration + timePenalty
     const answeredCount = answerLogs.length
     const xpBreakdown = calculateQuizXpBreakdown(score, answeredCount, durationSeconds)
 
@@ -697,9 +711,10 @@ export default function QuizPage({
     if (current + 1 >= questions.length) {
       if (finishingRef.current) return
       finishingRef.current = true
-      const durationSeconds = startedAtRef.current
+      const actualDuration = startedAtRef.current
         ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
         : 0
+      const durationSeconds = actualDuration + timePenalty
       const xpBreakdown = calculateQuizXpBreakdown(score, questions.length, durationSeconds)
 
       const reward = await recordStudySession({
@@ -747,7 +762,9 @@ export default function QuizPage({
 
   const restart = () => {
     finishingRef.current = false
+    answerLockedRef.current = false
     startedAtRef.current = Date.now()
+    setTimePenalty(0)
     setCurrent(0)
     setPhase('answering')
     setScore(0)
@@ -771,7 +788,9 @@ export default function QuizPage({
   const retryWrongQuestions = () => {
     if (wrongReviewItems.length === 0) return
     finishingRef.current = false
+    answerLockedRef.current = false
     startedAtRef.current = Date.now()
+    setTimePenalty(0)
     setQuestions(wrongReviewItems.map(item => item.question))
     setCurrent(0)
     setPhase('answering')

@@ -1,12 +1,12 @@
 'use client'
 
 // 陣取りクイズ — オセロ風の挟み撃ちルール
-// 4x4ボード、正解で好きなマスに置ける、挟んだ敵マスをひっくり返す
+// 5x5ボード、正解で好きなマスに置ける、挟んだ敵マスをひっくり返す
 
 export type CellOwner = null | 'player' | 'cpu'
 export type TerritoryBoard = CellOwner[][]
 
-export const BOARD_SIZE = 4
+export const BOARD_SIZE = 5
 
 export function createEmptyBoard(): TerritoryBoard {
   return Array.from({ length: BOARD_SIZE }, () =>
