@@ -42,8 +42,8 @@ type Question = QuestionShape
 
 const PLAYER_COLOR = '#3b82f6' // blue
 const CPU_COLOR = '#ef4444'    // red
-const PLAYER_COLOR_SOFT = 'rgba(59, 130, 246, 0.25)'
-const CPU_COLOR_SOFT = 'rgba(239, 68, 68, 0.25)'
+const PLAYER_GRADIENT = 'linear-gradient(135deg, #3b82f6, #6366f1)'
+const CPU_GRADIENT = 'linear-gradient(135deg, #ef4444, #f97316)'
 const FLIP_COLOR = '#fbbf24' // amber flash
 
 export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
@@ -320,29 +320,32 @@ export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
     const isFlipped = lastFlipped.has(key)
     const isJustPlaced = lastPlaced === key
     const canPlace = phase === 'placing' && owner === null
+    const isCorner = (row === 0 || row === BOARD_SIZE - 1) && (col === 0 || col === BOARD_SIZE - 1)
 
     // Preview flip count
     const previewFlips = canPlace
       ? getFlippableCells(board, row, col, 'player').length
       : 0
 
-    let bgColor = 'rgba(148, 163, 184, 0.08)'
-    let borderColor = 'rgba(148, 163, 184, 0.18)'
+    let bgColor = 'rgba(148, 163, 184, 0.06)'
+    let borderColor = 'rgba(148, 163, 184, 0.12)'
     let shadow = 'none'
+    let gradient = ''
 
     if (owner === 'player') {
-      bgColor = isFlipped ? FLIP_COLOR : PLAYER_COLOR
-      borderColor = PLAYER_COLOR
-    } else if (owner === 'cpu') {
-      bgColor = isFlipped ? FLIP_COLOR : CPU_COLOR
-      borderColor = CPU_COLOR
-    } else if (isHighlighted) {
+      gradient = isFlipped ? `linear-gradient(135deg, ${FLIP_COLOR}, #f59e0b)` : PLAYER_GRADIENT
       borderColor = 'rgba(59, 130, 246, 0.6)'
-      shadow = '0 0 12px rgba(59, 130, 246, 0.3)'
-    }
-
-    if (isJustPlaced) {
-      shadow = `0 0 16px ${owner === 'player' ? PLAYER_COLOR : CPU_COLOR}`
+      shadow = isJustPlaced ? '0 0 20px rgba(59, 130, 246, 0.5), inset 0 1px 2px rgba(255,255,255,0.2)' : '0 2px 8px rgba(59, 130, 246, 0.2)'
+    } else if (owner === 'cpu') {
+      gradient = isFlipped ? `linear-gradient(135deg, ${FLIP_COLOR}, #f59e0b)` : CPU_GRADIENT
+      borderColor = 'rgba(239, 68, 68, 0.6)'
+      shadow = isJustPlaced ? '0 0 20px rgba(239, 68, 68, 0.5), inset 0 1px 2px rgba(255,255,255,0.2)' : '0 2px 8px rgba(239, 68, 68, 0.2)'
+    } else if (isHighlighted) {
+      bgColor = previewFlips > 0 ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.06)'
+      borderColor = previewFlips > 0 ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.3)'
+      shadow = previewFlips > 0 ? '0 0 14px rgba(59, 130, 246, 0.25)' : '0 0 8px rgba(59, 130, 246, 0.15)'
+    } else if (isCorner && owner === null) {
+      borderColor = 'rgba(251, 191, 36, 0.15)'
     }
 
     return (
@@ -350,34 +353,35 @@ export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
         key={key}
         onClick={() => canPlace && handlePlaceCell(row, col)}
         disabled={!canPlace}
-        className="relative rounded-xl transition-all duration-300"
+        className={`relative rounded-xl transition-all duration-300 ${isFlipped ? 'animate-[flip_0.4s_ease-in-out]' : ''} ${isJustPlaced ? 'animate-[pop_0.3s_ease-out]' : ''}`}
         style={{
           aspectRatio: '1',
-          background: bgColor,
+          background: gradient || bgColor,
           border: `2px solid ${borderColor}`,
           boxShadow: shadow,
           cursor: canPlace ? 'pointer' : 'default',
-          transform: isJustPlaced ? 'scale(1.08)' : isFlipped ? 'scale(1.05)' : 'scale(1)',
+          transform: isJustPlaced ? 'scale(1.1)' : isFlipped ? 'scale(1.06)' : 'scale(1)',
         }}
         title={canPlace && previewFlips > 0 ? `${previewFlips} マス ひっくり返せる！` : undefined}
       >
         {owner === 'player' && (
-          <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
+          <div className="absolute inset-0 flex items-center justify-center text-white/90 font-bold text-base drop-shadow-sm">
             ●
           </div>
         )}
         {owner === 'cpu' && (
-          <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
+          <div className="absolute inset-0 flex items-center justify-center text-white/90 font-bold text-base drop-shadow-sm">
             ●
           </div>
         )}
         {canPlace && previewFlips > 0 && (
-          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-400 text-[10px] font-bold text-black flex items-center justify-center">
+          <div className="absolute -top-1.5 -right-1.5 z-10 w-5 h-5 rounded-full text-[10px] font-bold text-black flex items-center justify-center shadow-md"
+            style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}>
             {previewFlips}
           </div>
         )}
         {canPlace && previewFlips === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-xs">
+          <div className="absolute inset-0 flex items-center justify-center text-slate-500/60 text-xs">
             +
           </div>
         )}
@@ -393,19 +397,42 @@ export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
     </div>
   )
 
-  const renderScoreBar = () => (
-    <div className="flex items-center justify-between gap-3 mb-4">
-      <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded-full" style={{ background: PLAYER_COLOR }} />
-        <span className="text-sm font-semibold text-white">あなた: {counts.player}</span>
+  const renderScoreBar = () => {
+    const total = BOARD_SIZE * BOARD_SIZE
+    const playerPercent = Math.round((counts.player / total) * 100)
+    const cpuPercent = Math.round((counts.cpu / total) * 100)
+    const playerLeading = counts.player > counts.cpu
+    const cpuLeading = counts.cpu > counts.player
+
+    return (
+      <div className="mb-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-5 h-5 rounded-full shadow-md" style={{ background: PLAYER_GRADIENT }} />
+            <div>
+              <span className="text-sm font-bold" style={{ color: playerLeading ? '#93c5fd' : '#cbd5e1' }}>
+                あなた
+              </span>
+              <span className="ml-2 font-display text-lg" style={{ color: PLAYER_COLOR }}>{counts.player}</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="text-[10px] font-semibold tracking-[0.15em] text-slate-500">TURN</div>
+            <div className="font-display text-base text-slate-300">{turnCount + 1}</div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div>
+              <span className="font-display text-lg" style={{ color: CPU_COLOR }}>{counts.cpu}</span>
+              <span className="ml-2 text-sm font-bold" style={{ color: cpuLeading ? '#fca5a5' : '#cbd5e1' }}>
+                CPU
+              </span>
+            </div>
+            <div className="w-5 h-5 rounded-full shadow-md" style={{ background: CPU_GRADIENT }} />
+          </div>
+        </div>
       </div>
-      <div className="text-xs text-slate-400">ターン {turnCount + 1}</div>
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold text-white">CPU: {counts.cpu}</span>
-        <div className="w-4 h-4 rounded-full" style={{ background: CPU_COLOR }} />
-      </div>
-    </div>
-  )
+    )
+  }
 
   const renderQuestion = () => {
     if (!currentQuestion) return null
@@ -601,7 +628,7 @@ export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
         <div className="hero-card science-surface p-6 sm:p-7">
           <div className="text-xs font-semibold tracking-[0.2em] text-blue-200 uppercase">Territory Quiz</div>
           <h1 className="font-display mt-3 text-4xl text-white">陣取りクイズ</h1>
-          <p className="mt-3 text-slate-300">4×4のマス目をクイズで奪い合え！</p>
+          <p className="mt-3 text-slate-300">5×5のマス目をクイズで奪い合え！</p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="subcard p-5">
@@ -622,10 +649,10 @@ export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
                 <div>正解数だけじゃなく、<span className="font-bold text-blue-300">どこに置くか</span>が勝負の分かれ目！</div>
               </div>
 
-              <div className="mt-5 grid gap-2 grid-cols-4">
-                {Array.from({ length: 4 }, (_, r) =>
-                  Array.from({ length: 4 }, (_, c) => {
-                    const isCorner = (r === 0 || r === 3) && (c === 0 || c === 3)
+              <div className="mt-5 grid gap-1.5 grid-cols-5">
+                {Array.from({ length: BOARD_SIZE }, (_, r) =>
+                  Array.from({ length: BOARD_SIZE }, (_, c) => {
+                    const isCorner = (r === 0 || r === BOARD_SIZE - 1) && (c === 0 || c === BOARD_SIZE - 1)
                     return (
                       <div
                         key={`preview-${r}-${c}`}
@@ -678,33 +705,62 @@ export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
         ? 'CPUの勝ち…'
         : '引き分け！'
     const winEmoji = winner === 'player' ? '🎉' : winner === 'cpu' ? '😢' : '🤝'
+    const total = BOARD_SIZE * BOARD_SIZE
+    const playerPercent = Math.round((counts.player / total) * 100)
+    const cpuPercent = Math.round((counts.cpu / total) * 100)
 
     return (
-      <div className="page-shell flex flex-col items-center justify-center">
-        <div className="hero-card reward-card w-full max-w-xl p-6 text-center sm:p-7">
-          <div className="text-5xl mb-4">{winEmoji}</div>
+      <div className="page-shell flex flex-col items-center justify-center anim-fade">
+        <div className={`hero-card reward-card w-full max-w-xl p-6 text-center sm:p-7 ${winner === 'player' ? 'perfect-shimmer' : ''}`}>
+          {winner === 'player' && (
+            <div className="reward-confetti" aria-hidden="true">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <span
+                  key={`confetti-${i}`}
+                  className="reward-confetti__piece"
+                  style={{
+                    left: `${4 + ((i * 7) % 92)}%`,
+                    animationDelay: `${(i % 8) * 0.06}s`,
+                    background: ['#3b82f6', '#6366f1', '#22c55e', '#fbbf24'][i % 4],
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="text-5xl mb-3 anim-pop">{winEmoji}</div>
           <div className="font-display text-4xl text-white">{winMessage}</div>
 
-          <div className="mt-6 grid gap-4 grid-cols-3">
+          {/* Territory visual bar */}
+          <div className="mt-5 flex items-center gap-3">
+            <span className="text-xs font-bold" style={{ color: PLAYER_COLOR }}>{playerPercent}%</span>
+            <div className="flex-1 flex gap-0.5 rounded-full overflow-hidden" style={{ height: 14 }}>
+              <div style={{ flex: counts.player || 0.01, background: PLAYER_GRADIENT, transition: 'flex 0.8s ease' }} />
+              <div style={{ flex: counts.cpu || 0.01, background: CPU_GRADIENT, transition: 'flex 0.8s ease' }} />
+            </div>
+            <span className="text-xs font-bold" style={{ color: CPU_COLOR }}>{cpuPercent}%</span>
+          </div>
+
+          <div className="mt-5 grid gap-3 grid-cols-3">
             <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">あなた</div>
+              <div className="text-[10px] font-semibold tracking-[0.18em] text-slate-500">あなた</div>
               <div className="mt-2 font-display text-3xl" style={{ color: PLAYER_COLOR }}>{counts.player}</div>
-              <div className="mt-1 text-xs text-slate-500">マス</div>
+              <div className="mt-1 text-xs text-slate-500">/ {total} マス</div>
             </div>
             <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">CPU</div>
+              <div className="text-[10px] font-semibold tracking-[0.18em] text-slate-500">CPU</div>
               <div className="mt-2 font-display text-3xl" style={{ color: CPU_COLOR }}>{counts.cpu}</div>
-              <div className="mt-1 text-xs text-slate-500">マス</div>
+              <div className="mt-1 text-xs text-slate-500">/ {total} マス</div>
             </div>
             <div className="subcard p-4">
-              <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ターン数</div>
+              <div className="text-[10px] font-semibold tracking-[0.18em] text-slate-500">ターン数</div>
               <div className="mt-2 font-display text-3xl text-slate-200">{turnCount}</div>
               <div className="mt-1 text-xs text-slate-500">合計</div>
             </div>
           </div>
 
           {/* Final board */}
-          <div className="mt-6 mx-auto max-w-[220px]">
+          <div className="mt-5 mx-auto max-w-[260px]">
             {renderBoard()}
           </div>
 
@@ -730,10 +786,16 @@ export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
           <button onClick={onBack} className="btn-secondary text-sm !px-4 !py-2.5">
             やめる
           </button>
-          <div className="text-sm font-semibold" style={{
-            color: phase === 'cpu_turn' ? CPU_COLOR : PLAYER_COLOR,
-          }}>
-            {phase === 'cpu_turn' ? 'CPUのターン...' : phase === 'placing' ? 'マスを選ぼう！' : 'あなたのターン'}
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full" style={{
+              background: phase === 'cpu_turn' ? CPU_COLOR : PLAYER_COLOR,
+              boxShadow: `0 0 8px ${phase === 'cpu_turn' ? CPU_COLOR : PLAYER_COLOR}`,
+            }} />
+            <span className="text-sm font-semibold" style={{
+              color: phase === 'cpu_turn' ? CPU_COLOR : PLAYER_COLOR,
+            }}>
+              {phase === 'cpu_turn' ? 'CPUのターン...' : phase === 'placing' ? 'マスを選ぼう！' : 'あなたのターン'}
+            </span>
           </div>
           <button onClick={() => logout()} className="btn-ghost text-sm !px-4 !py-2.5">
             ログアウト
@@ -770,7 +832,7 @@ export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
           />
         </div>
 
-        <div className="mx-auto max-w-[280px]">
+        <div className="mx-auto max-w-[320px]">
           {renderBoard()}
         </div>
 
@@ -783,9 +845,17 @@ export default function TerritoryQuizPage({ onBack }: { onBack: () => void }) {
 
       {/* CPU thinking */}
       {phase === 'cpu_turn' && (
-        <div className="card mb-4 anim-fade-up text-center">
-          <div className="text-lg text-slate-300 animate-pulse">
-            CPUが考え中...
+        <div className="card mb-4 anim-fade-up text-center" style={{
+          borderColor: 'rgba(239, 68, 68, 0.2)',
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.06), rgba(249, 115, 22, 0.04))',
+        }}>
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex gap-1">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="w-2 h-2 rounded-full bg-red-400 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+              ))}
+            </div>
+            <span className="text-base font-semibold" style={{ color: CPU_COLOR }}>CPUが考え中...</span>
           </div>
         </div>
       )}

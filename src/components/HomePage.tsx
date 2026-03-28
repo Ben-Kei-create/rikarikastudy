@@ -433,9 +433,9 @@ export default function HomePage({
 
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className={`text-sm font-semibold ${timeAttackUnlocked ? 'text-white' : 'text-slate-400'}`}>タイムアタック 30秒</div>
+                <div className={`text-sm font-semibold ${timeAttackUnlocked ? 'text-white' : 'text-slate-400'}`}>チャレンジモード</div>
                 <div className="text-xs text-slate-400">
-                  {timeAttackUnlocked ? 'スピード勝負で自己ベスト更新' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
+                  {timeAttackUnlocked ? 'タイムアタック・テスト・連続正解' : `Lv.${TIME_ATTACK_UNLOCK_LEVEL}で解放`}
                 </div>
               </div>
               {timeAttackUnlocked ? (
