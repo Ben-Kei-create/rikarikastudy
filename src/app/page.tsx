@@ -69,7 +69,7 @@ function App() {
   const ADMIN_STUDENT_ID = 5
   const screenType = typeof screen === 'object' ? screen.type : screen
   const goHome = () => setScreen('home')
-  const goOnline = () => setScreen(studentId === ADMIN_STUDENT_ID ? 'online-territory' : 'online-gate')
+  const goOnline = () => setScreen('online-gate')
 
   const renderScreen = (): JSX.Element => {
     if (!studentId) {
