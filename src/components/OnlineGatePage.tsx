@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { fetchOnlineLabEntryPassword } from '@/lib/onlineLab'
+import { generateHourlyPassword } from '@/lib/onlineLab'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { useAuth } from '@/lib/auth'
 import { isGuestStudentId } from '@/lib/guestStudy'
@@ -57,13 +57,8 @@ export default function OnlineGatePage({
 
     setChecking(true)
     try {
-      const correctPassword = await fetchOnlineLabEntryPassword()
-      if (!correctPassword) {
-        setError('オンラインの広場がまだ開設されていません')
-        setChecking(false)
-        return
-      }
-      if (entered === correctPassword.toUpperCase()) {
+      const correctPassword = generateHourlyPassword()
+      if (entered === correctPassword) {
         onEnter()
       } else {
         setError('パスワードが違います')

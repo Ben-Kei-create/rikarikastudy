@@ -111,6 +111,39 @@ export async function updateOnlineLabEntryPassword(password: string): Promise<bo
   return upsertOnlineLabRoom({ entry_password: password })
 }
 
+// Characters chosen to avoid visual ambiguity (no 0/O, 1/I/L)
+const HOURLY_PW_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+/**
+ * Returns a deterministic 5-character password for the given hour.
+ * The password is the same for everyone within the same calendar hour
+ * and automatically changes each new hour.
+ */
+export function generateHourlyPassword(date?: Date): string {
+  const d = date ?? new Date()
+  const seed =
+    d.getFullYear() * 1000000 +
+    (d.getMonth() + 1) * 10000 +
+    d.getDate() * 100 +
+    d.getHours()
+
+  // Linear congruential generator for deterministic output
+  let state = seed >>> 0
+  const result: string[] = []
+  for (let i = 0; i < 5; i++) {
+    state = Math.imul(state, 1664525) + 1013904223
+    state = state >>> 0
+    result.push(HOURLY_PW_CHARS[state % HOURLY_PW_CHARS.length])
+  }
+  return result.join('')
+}
+
+/** Minutes remaining until the hourly password changes */
+export function minutesUntilHourlyPasswordChange(date?: Date): number {
+  const d = date ?? new Date()
+  return 59 - d.getMinutes()
+}
+
 export function subscribeOnlineLabRoom(onChange: (room: OnlineLabRoomRow | null) => void) {
   const channel = supabase
     .channel(`online-lab-room-${ONLINE_LAB_ROOM_KEY}`)

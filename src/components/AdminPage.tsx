@@ -43,6 +43,7 @@ import {
   normalizeQuestionRecord,
 } from '@/lib/questionTypes'
 import { parseKeywordInput, parseListInput, parseMatchPairsText, getFieldColor, downloadJsonFile } from '@/lib/formUtils'
+import { generateHourlyPassword, minutesUntilHourlyPasswordChange } from '@/lib/onlineLab'
 import { getRateColor } from '@/lib/uiUtils'
 import {
   ADMIN_PW,
@@ -120,6 +121,8 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [restoreMsg, setRestoreMsg] = useState('')
   const [restoreLoading, setRestoreLoading] = useState(false)
   const [userActionId, setUserActionId] = useState<number | null>(null)
+  const [hourlyPw, setHourlyPw] = useState(() => generateHourlyPassword())
+  const [hourlyPwMinutesLeft, setHourlyPwMinutesLeft] = useState(() => minutesUntilHourlyPasswordChange())
 
   const [form, setForm] = useState({
     field: '生物' as typeof FIELDS[number],
@@ -187,6 +190,15 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
     setSelectedStudentDetailLoading(false)
     setSelectedStudentDetailError(null)
   }, [tab])
+
+  // Refresh the displayed hourly password every minute
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setHourlyPw(generateHourlyPassword())
+      setHourlyPwMinutesLeft(minutesUntilHourlyPasswordChange())
+    }, 60 * 1000)
+    return () => window.clearInterval(id)
+  }, [])
 
   const normalizedQuestionSearch = questionSearch.trim().toLowerCase()
 
@@ -1555,6 +1567,22 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <div className="text-slate-400 text-center py-12">読み込み中...</div>
           ) : (
             <div className="space-y-4">
+              <div className="card">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-white font-bold">オンラインの広場 — 現在の合言葉</div>
+                    <div className="text-slate-400 text-sm mt-1">
+                      この合言葉は毎時0分に自動で更新されます。生徒に口頭で伝えてください。
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 rounded-2xl px-6 py-4 shrink-0" style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)' }}>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-sky-400">PASSPHRASE</div>
+                    <div className="font-display text-4xl font-bold tracking-[0.22em] text-white mt-1">{hourlyPw}</div>
+                    <div className="text-xs text-slate-400 mt-1">あと {hourlyPwMinutesLeft} 分で更新</div>
+                  </div>
+                </div>
+              </div>
+
               <div className="card">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
