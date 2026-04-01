@@ -29,6 +29,7 @@ export default function HomePage({
   onReview,
   onTimeAttack,
   onTerritoryQuiz,
+  onScienceTower,
   onMyPage,
   onOnline,
 }: {
@@ -38,6 +39,7 @@ export default function HomePage({
   onReview: () => void
   onTimeAttack: () => void
   onTerritoryQuiz: () => void
+  onScienceTower: () => void
   onMyPage: () => void
   onOnline: () => void
 }) {
@@ -453,6 +455,16 @@ export default function HomePage({
                 <div className="text-xs text-slate-400">CPU戦でテンポよく遊びながら復習</div>
               </div>
               <button onClick={onTerritoryQuiz} className="text-sm font-semibold text-amber-200 transition-colors hover:text-white">
+                あそぶ
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold text-white">サイエンスタワー</div>
+                <div className="text-xs text-slate-400">2〜5人で協力！タワーを建てて敵を防げ</div>
+              </div>
+              <button onClick={onScienceTower} className="text-sm font-semibold text-emerald-200 transition-colors hover:text-white">
                 あそぶ
               </button>
             </div>
