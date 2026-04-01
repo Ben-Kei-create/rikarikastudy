@@ -715,34 +715,199 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
     )
   }
 
-  // ── Placeholder for attack / round_result / finished ──
-  return (
-    <div className="page-shell flex items-center justify-center">
-      <div className="card w-full max-w-md text-center p-6">
-        <div className="text-4xl mb-3">{phase === 'attack' ? currentEnemy?.emoji ?? '💥' : '🏗️'}</div>
-        <div className="font-display text-2xl text-white mb-2">
-          {phase === 'attack' && `${currentEnemy?.name ?? '敵'} が襲来！`}
-          {phase === 'round_result' && `ラウンド ${round + 1} 終了`}
-          {phase === 'finished' && (gameResult === 'win' ? 'タワー完成！' : 'タワー崩壊…')}
-        </div>
-        {phase === 'attack' && attackResult && (
-          <div className="text-sm text-slate-300 mb-2">
-            シールド: {attackResult.shielded} / 被ダメージ: {attackResult.blocksDestroyed}ブロック
+  // ── Attack screen ──
+  if (phase === 'attack' && currentEnemy) {
+    const shielded = attackResult?.shielded ?? 0
+    const destroyed = attackResult?.blocksDestroyed ?? 0
+    const blocked = shielded > 0
+    const tookDamage = destroyed > 0
+
+    return (
+      <div className="page-shell flex flex-col items-center justify-center anim-fade">
+        <div className="hero-card w-full max-w-lg p-6 sm:p-7 text-center" style={{
+          borderColor: 'rgba(239,68,68,0.3)',
+          background: 'linear-gradient(180deg, rgba(239,68,68,0.08), rgba(15,23,42,0.95))',
+        }}>
+          <div className="text-xs font-semibold tracking-[0.2em] text-red-300 uppercase">Enemy Attack</div>
+
+          {/* Enemy entrance */}
+          <div className="mt-4 text-7xl anim-pop" style={{ animationDuration: '0.6s' }}>
+            {currentEnemy.emoji}
           </div>
-        )}
-        {phase === 'round_result' && (
-          <button onClick={nextRound} className="btn-primary mt-4">次のラウンドへ</button>
-        )}
-        {phase === 'finished' && (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <button onClick={() => { setPhase('setup') }} className="btn-primary">もう一度</button>
+          <div className="font-display mt-3 text-3xl text-white">{currentEnemy.name}</div>
+          <p className="mt-1 text-sm text-slate-400">{currentEnemy.description}</p>
+
+          {/* Attack stats */}
+          <div className="mt-5 grid gap-3 grid-cols-3">
+            <div className="subcard p-3">
+              <div className="text-[10px] font-semibold tracking-[0.15em] text-slate-500">攻撃力</div>
+              <div className="mt-1 font-display text-2xl text-red-400">{currentEnemy.power}</div>
+            </div>
+            <div className="subcard p-3">
+              <div className="text-[10px] font-semibold tracking-[0.15em] text-slate-500">シールド</div>
+              <div className="mt-1 font-display text-2xl text-sky-400">{shielded}</div>
+            </div>
+            <div className="subcard p-3">
+              <div className="text-[10px] font-semibold tracking-[0.15em] text-slate-500">被害</div>
+              <div className="mt-1 font-display text-2xl" style={{ color: tookDamage ? '#ef4444' : '#22c55e' }}>
+                {tookDamage ? `-${destroyed}` : '0'}
+              </div>
+            </div>
+          </div>
+
+          {/* Result message */}
+          <div className="mt-4 rounded-2xl px-4 py-3 text-sm font-semibold" style={{
+            background: tookDamage ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)',
+            borderColor: tookDamage ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)',
+            color: tookDamage ? '#fca5a5' : '#86efac',
+          }}>
+            {!tookDamage && blocked && '完全防御！ダメージなし！'}
+            {!tookDamage && !blocked && '攻撃をかわした！'}
+            {tookDamage && `タワーが ${destroyed} ブロック破壊された！`}
+          </div>
+
+          {/* Tower status */}
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <div className="text-center">
+              <div className="text-xs text-slate-500">タワー</div>
+              <div className="font-display text-xl" style={{ color: towerBlocks.length >= LEVEL_1_TARGET_HEIGHT ? '#22c55e' : '#f59e0b' }}>
+                {towerBlocks.length} / {LEVEL_1_TARGET_HEIGHT}
+              </div>
+            </div>
+            {renderTower(10, false)}
+          </div>
+
+          <p className="mt-3 text-xs text-slate-500 animate-pulse">結果を計算中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Round result screen ──
+  if (phase === 'round_result') {
+    const enemy = getEnemyWave(round)
+    const nextEnemy = round + 1 < LEVEL_1_ROUNDS ? getEnemyWave(round + 1) : null
+    const blocksNeeded = Math.max(0, LEVEL_1_TARGET_HEIGHT - towerBlocks.length)
+
+    return (
+      <div className="page-shell flex flex-col items-center justify-center anim-fade">
+        <div className="hero-card science-surface w-full max-w-lg p-6 sm:p-7 text-center">
+          <div className="text-xs font-semibold tracking-[0.2em] text-emerald-200 uppercase">Round {round + 1} Complete</div>
+          <h2 className="font-display mt-2 text-3xl text-white">ラウンド {round + 1} 終了</h2>
+
+          {/* Tower visual */}
+          <div className="mt-5 flex justify-center">
+            {renderTower(20, false)}
+          </div>
+          <div className="mt-2 font-display text-xl" style={{ color: towerBlocks.length >= LEVEL_1_TARGET_HEIGHT ? '#22c55e' : '#f59e0b' }}>
+            {towerBlocks.length} / {LEVEL_1_TARGET_HEIGHT} ブロック
+          </div>
+          {blocksNeeded > 0 && (
+            <div className="text-xs text-slate-400 mt-1">あと {blocksNeeded} ブロックで完成</div>
+          )}
+
+          {/* Player stats */}
+          <div className="mt-4 space-y-2">
+            {players.map(p => (
+              <div key={p.id} className="flex items-center gap-3 rounded-xl px-3 py-2" style={{ background: `${p.color}10` }}>
+                <div className="w-5 h-5 rounded-full" style={{ background: PLAYER_GRADIENTS[p.id % PLAYER_GRADIENTS.length] }} />
+                <span className="flex-1 text-sm font-semibold text-left text-white">{p.name}</span>
+                <span className="text-xs" style={{ color: '#86efac' }}>{p.correctCount}正解</span>
+                {p.wrongCount > 0 && <span className="text-xs text-red-400">{p.wrongCount}不正解</span>}
+              </div>
+            ))}
+          </div>
+
+          {/* Next enemy preview */}
+          {nextEnemy && (
+            <div className="mt-4 subcard p-3">
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-xl">{nextEnemy.emoji}</span>
+                <div className="text-sm text-slate-300">
+                  次の敵: <span className="font-bold text-red-300">{nextEnemy.name}</span>
+                  <span className="text-slate-500 ml-2">攻撃力 {nextEnemy.power}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button onClick={nextRound} className="btn-primary w-full mt-5">
+            ラウンド {round + 2} へ
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Finished screen ──
+  if (phase === 'finished') {
+    const isWin = gameResult === 'win'
+    return (
+      <div className="page-shell flex flex-col items-center justify-center anim-fade">
+        <div className={`hero-card reward-card w-full max-w-lg p-6 sm:p-7 text-center ${isWin ? 'perfect-shimmer' : ''}`}>
+          {isWin && (
+            <div className="reward-confetti" aria-hidden="true">
+              {Array.from({ length: 20 }).map((_, i) => (
+                <span key={`c-${i}`} className="reward-confetti__piece" style={{
+                  left: `${4 + ((i * 7) % 92)}%`,
+                  animationDelay: `${(i % 8) * 0.06}s`,
+                  background: PLAYER_COLORS[i % PLAYER_COLORS.length],
+                }} />
+              ))}
+            </div>
+          )}
+          <div className="text-5xl mb-3 anim-pop">{isWin ? '🏆' : '💔'}</div>
+          <div className="font-display text-4xl text-white">{isWin ? 'タワー完成！' : 'タワー崩壊…'}</div>
+          <p className="mt-2 text-slate-300">{isWin ? 'みんなの力でタワーを守りきった！' : 'タワーが敵に破壊されてしまった…'}</p>
+
+          {/* Final tower */}
+          <div className="mt-5 flex justify-center">
+            {renderTower(25, false)}
+          </div>
+          <div className="mt-2 font-display text-xl" style={{ color: isWin ? '#22c55e' : '#ef4444' }}>
+            {towerBlocks.length} / {LEVEL_1_TARGET_HEIGHT} ブロック
+          </div>
+
+          {/* MVP */}
+          {(() => {
+            const mvp = [...players].sort((a, b) => b.correctCount - a.correctCount)[0]
+            return mvp && mvp.correctCount > 0 ? (
+              <div className="mt-4 subcard p-4">
+                <div className="text-[10px] font-semibold tracking-[0.18em] text-amber-300">MVP</div>
+                <div className="mt-2 flex items-center justify-center gap-3">
+                  <div className="w-8 h-8 rounded-full shadow-md" style={{ background: PLAYER_GRADIENTS[mvp.id % PLAYER_GRADIENTS.length] }} />
+                  <span className="font-display text-xl text-white">{mvp.name}</span>
+                  <span className="text-sm text-emerald-300">{mvp.correctCount}正解</span>
+                </div>
+              </div>
+            ) : null
+          })()}
+
+          {/* All player stats */}
+          <div className="mt-4 space-y-2">
+            {players.map(p => (
+              <div key={p.id} className="flex items-center gap-3 rounded-xl px-3 py-2" style={{ background: `${p.color}10` }}>
+                <div className="w-5 h-5 rounded-full" style={{ background: PLAYER_GRADIENTS[p.id % PLAYER_GRADIENTS.length] }} />
+                <span className="flex-1 text-sm font-semibold text-left text-white">{p.name}</span>
+                <span className="text-xs" style={{ color: '#86efac' }}>{p.correctCount}正解</span>
+                {p.wrongCount > 0 && <span className="text-xs text-red-400">{p.wrongCount}不正解</span>}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button onClick={() => setPhase('setup')} className="btn-primary">もう一度</button>
             <button onClick={onBack} className="btn-secondary">ホームへ</button>
           </div>
-        )}
-        {phase !== 'round_result' && phase !== 'finished' && (
-          <p className="text-slate-500 text-sm mt-2">処理中...</p>
-        )}
+        </div>
       </div>
+    )
+  }
+
+  // Fallback
+  return (
+    <div className="page-shell flex items-center justify-center">
+      <div className="card text-slate-400">読み込み中...</div>
     </div>
   )
 }
