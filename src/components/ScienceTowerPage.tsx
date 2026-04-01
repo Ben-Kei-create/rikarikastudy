@@ -154,23 +154,47 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
 
   // ─── Roulette ───
 
+  const [rouletteDecided, setRouletteDecided] = useState<number[]>([])
+
   const beginRoulette = (gamePlayers: TowerPlayer[], roundNum: number) => {
-    // TODO: Step 3 で演出を実装
     const order = rollAnswerOrder(gamePlayers)
     setAnswerOrder(order)
     setPhase('roulette')
     setRouletteSpinning(true)
     setRouletteHighlight(-1)
+    setRouletteDecided([])
     setRoundCorrectCount(0)
+    setRound(roundNum)
 
-    // Placeholder: 即座に answering へ遷移（Step 3 でアニメーション追加）
-    setTimeout(() => {
-      setRouletteSpinning(false)
-      setCurrentPlayerIdx(0)
-      setTimeLeft(ROUND_TIME_SECONDS)
-      setAnswerFeedback(null)
-      setPhase('answering')
-    }, 500)
+    // Spinning animation: rapidly cycle through player highlights
+    let tick = 0
+    const totalTicks = 20 + gamePlayers.length * 6 // spin longer
+    const interval = setInterval(() => {
+      tick++
+      // Slow down as we approach each decided slot
+      const decidedSoFar = Math.floor((tick / totalTicks) * order.length)
+      setRouletteHighlight(order[tick % gamePlayers.length])
+
+      if (tick >= totalTicks) {
+        clearInterval(interval)
+        setRouletteSpinning(false)
+        setRouletteDecided(order)
+        setRouletteHighlight(order[0])
+
+        // After showing final order, go to answering
+        setTimeout(() => {
+          setCurrentPlayerIdx(0)
+          setTimeLeft(ROUND_TIME_SECONDS)
+          setAnswerFeedback(null)
+          setPhase('answering')
+        }, 1500)
+      } else {
+        // Reveal decided slots progressively
+        if (decidedSoFar > 0) {
+          setRouletteDecided(order.slice(0, decidedSoFar))
+        }
+      }
+    }, tick < totalTicks * 0.6 ? 80 : 150) // fast then slow
   }
 
   // ─── Answering (placeholder) ───
@@ -279,13 +303,92 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
     )
   }
 
-  // ── Placeholder for other phases ──
+  // ── Roulette screen ──
+  if (phase === 'roulette') {
+    const enemy = getEnemyWave(round)
+    return (
+      <div className="page-shell flex flex-col items-center justify-center anim-fade">
+        <div className="hero-card science-surface w-full max-w-lg p-6 sm:p-7 text-center">
+          <div className="text-xs font-semibold tracking-[0.2em] text-amber-200 uppercase">Round {round + 1} / {LEVEL_1_ROUNDS}</div>
+          <h2 className="font-display mt-2 text-3xl text-white">回答順ルーレット</h2>
+
+          {/* Enemy preview */}
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <span className="text-2xl">{enemy.emoji}</span>
+            <div className="text-sm text-slate-300">
+              次の敵: <span className="font-bold text-red-300">{enemy.name}</span>
+              <span className="text-slate-500 ml-2">攻撃力 {enemy.power}</span>
+            </div>
+          </div>
+
+          {/* Roulette slots */}
+          <div className="mt-6 space-y-3">
+            {players.map((_, slotIdx) => {
+              const decided = rouletteDecided[slotIdx]
+              const isDecided = decided !== undefined
+              const decidedPlayer = isDecided ? players[decided] : null
+              const isHighlighted = !isDecided && rouletteSpinning && rouletteHighlight === slotIdx
+
+              return (
+                <div
+                  key={slotIdx}
+                  className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-200 ${isDecided ? 'anim-pop' : ''}`}
+                  style={{
+                    borderColor: isDecided
+                      ? `${decidedPlayer!.color}60`
+                      : isHighlighted ? 'rgba(251, 191, 36, 0.5)' : 'rgba(148, 163, 184, 0.12)',
+                    background: isDecided
+                      ? `${decidedPlayer!.color}15`
+                      : isHighlighted ? 'rgba(251, 191, 36, 0.08)' : 'rgba(148, 163, 184, 0.04)',
+                    transform: isHighlighted ? 'scale(1.03)' : 'scale(1)',
+                    boxShadow: isDecided ? `0 0 16px ${decidedPlayer!.color}30` : 'none',
+                  }}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white"
+                    style={{
+                      background: isDecided
+                        ? PLAYER_GRADIENTS[decided % PLAYER_GRADIENTS.length]
+                        : 'rgba(148, 163, 184, 0.2)',
+                    }}>
+                    {slotIdx + 1}
+                  </div>
+                  <div className="flex-1 text-left">
+                    {isDecided ? (
+                      <span className="font-bold text-white">{decidedPlayer!.name}</span>
+                    ) : (
+                      <span className={`text-slate-500 ${rouletteSpinning ? 'animate-pulse' : ''}`}>
+                        {rouletteSpinning
+                          ? players[rouletteHighlight % players.length]?.name ?? '...'
+                          : '???'}
+                      </span>
+                    )}
+                  </div>
+                  {isDecided && (
+                    <div className="text-xs font-semibold" style={{ color: decidedPlayer!.color }}>
+                      {slotIdx === 0 ? '先攻' : `${slotIdx + 1}番目`}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {!rouletteSpinning && rouletteDecided.length === players.length && (
+            <div className="mt-5 text-sm text-emerald-300 font-semibold anim-pop">
+              順番が決まった！
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Placeholder for remaining phases ──
   return (
     <div className="page-shell flex items-center justify-center">
       <div className="card w-full max-w-md text-center p-6">
         <div className="text-4xl mb-3">🏗️</div>
         <div className="font-display text-2xl text-white mb-2">
-          {phase === 'roulette' && 'ルーレット中...'}
           {phase === 'answering' && `ラウンド ${round + 1} — 回答中`}
           {phase === 'attack' && '敵が襲来！'}
           {phase === 'round_result' && 'ラウンド結果'}
