@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
-import { normalizeQuestionRecord, QuestionShape, isChallengeSupportedQuestionType } from '@/lib/questionTypes'
+import { evaluateQuestionAnswer, getQuestionBlankPrompt, QuestionSubmission } from '@/lib/questionEval'
+import { getQuestionCorrectAnswerText, getQuestionTypeShortLabel, normalizeQuestionRecord, QuestionShape, isChallengeSupportedQuestionType } from '@/lib/questionTypes'
+import { playCorrect, playWrong, playPerfect } from '@/lib/sounds'
+import { getQuestionImageDisplaySize } from '@/lib/questionImages'
+import Choice4Question from '@/components/quiz/Choice4Question'
+import FillChoiceQuestion from '@/components/quiz/FillChoiceQuestion'
+import TrueFalseQuestion from '@/components/quiz/TrueFalseQuestion'
 import { getCachedColumnSupport, isMissingColumnError, markColumnMissing, markColumnSupported } from '@/lib/schemaCompat'
 import { shuffleArray } from '@/lib/questionPicker'
 import {
@@ -65,7 +71,9 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
   const [rouletteSpinning, setRouletteSpinning] = useState(false)
   const [rouletteHighlight, setRouletteHighlight] = useState(-1)
 
-  // Answer feedback
+  // Quiz answering
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null)
+  const [textInput, setTextInput] = useState('')
   const [answerFeedback, setAnswerFeedback] = useState<'correct' | 'wrong' | null>(null)
 
   // Attack phase
@@ -197,13 +205,163 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
     }, tick < totalTicks * 0.6 ? 80 : 150) // fast then slow
   }
 
-  // ─── Answering (placeholder) ───
+  // ─── Shared timer ───
 
-  // TODO: Step 4 で共有タイマー + クイズ回答を実装
+  useEffect(() => {
+    if (phase !== 'answering') {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+      return
+    }
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) {
+          // Time's up! Skip remaining players, go to attack
+          clearInterval(timerRef.current!)
+          timerRef.current = null
+          startAttack()
+          return 0
+        }
+        return t - 1
+      })
+    }, 1000)
+    return () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null } }
+  }, [phase])
 
-  // ─── Attack (placeholder) ───
+  // ─── Answering ───
 
-  // TODO: Step 5 で敵襲来演出を実装
+  const advanceQuestion = () => {
+    setQuestionIndex(prev => {
+      const next = prev + 1
+      if (next < questions.length) return next
+      setQuestions(shuffleArray(questions))
+      return 0
+    })
+  }
+
+  const currentQuestion = questions[questionIndex] ?? null
+  const currentQuestionImage = currentQuestion?.image_url
+    ? getQuestionImageDisplaySize(currentQuestion)
+    : null
+  const currentPlayerId = answerOrder[currentPlayerIdx]
+  const currentPlayer = players.find(p => p.id === currentPlayerId) ?? null
+
+  const handleAnswer = (submission: QuestionSubmission) => {
+    if (phase !== 'answering' || !currentQuestion || answerFeedback) return
+
+    const evaluated = evaluateQuestionAnswer(currentQuestion, submission)
+    const correct = evaluated.result === 'exact'
+
+    setAnswerFeedback(correct ? 'correct' : 'wrong')
+
+    if (correct) {
+      playCorrect()
+      setRoundCorrectCount(c => c + 1)
+      setPlayers(prev => prev.map(p =>
+        p.id === currentPlayerId ? { ...p, correctCount: p.correctCount + 1 } : p
+      ))
+      // Add blocks to tower
+      const newBlocks: TowerBlock[] = Array.from({ length: BLOCKS_PER_CORRECT }, () => ({
+        playerId: currentPlayerId,
+        color: currentPlayer?.color ?? PLAYER_COLORS[0],
+        hp: 1,
+        cracked: false,
+      }))
+      setTowerBlocks(prev => [...prev, ...newBlocks])
+    } else {
+      playWrong()
+      setPlayers(prev => prev.map(p =>
+        p.id === currentPlayerId ? { ...p, wrongCount: p.wrongCount + 1 } : p
+      ))
+    }
+
+    // Move to next player or attack after delay
+    setTimeout(() => {
+      setAnswerFeedback(null)
+      advanceQuestion()
+
+      if (currentPlayerIdx + 1 >= answerOrder.length) {
+        // All players answered -> attack phase
+        startAttack()
+      } else {
+        setCurrentPlayerIdx(i => i + 1)
+        setSelectedChoice(null)
+        setTextInput('')
+      }
+    }, correct ? 800 : 1200)
+  }
+
+  const handleChoice = (choice: string) => {
+    if (answerFeedback) return
+    setSelectedChoice(choice)
+    handleAnswer({ kind: 'single', value: choice })
+  }
+
+  const handleTextSubmit = () => {
+    if (!currentQuestion || currentQuestion.type !== 'text' || answerFeedback) return
+    const answer = textInput.trim()
+    if (!answer) return
+    handleAnswer({ kind: 'text', value: answer })
+  }
+
+  // ─── Attack ───
+
+  const startAttack = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    const enemy = getEnemyWave(round)
+    setCurrentEnemy(enemy)
+    setPhase('attack')
+
+    // Shield = number of correct answers this round
+    const shield = roundCorrectCount
+    const result = calculateDamage(towerBlocks, enemy.power, shield)
+    setAttackResult({ blocksDestroyed: result.blocksDestroyed, shielded: result.shielded })
+    setTowerBlocks(result.survivingBlocks)
+
+    // After showing attack, go to round_result or finished
+    setTimeout(() => {
+      if (isTowerDestroyed(result.survivingBlocks)) {
+        setGameResult('lose')
+        setPhase('finished')
+      } else if (round + 1 >= LEVEL_1_ROUNDS) {
+        setGameResult(isTowerComplete(result.survivingBlocks) ? 'win' : 'lose')
+        setPhase('finished')
+        if (isTowerComplete(result.survivingBlocks)) playPerfect()
+      } else {
+        setPhase('round_result')
+      }
+    }, 3000)
+  }
+
+  // ─── Next round ───
+
+  const nextRound = () => {
+    beginRoulette(players, round + 1)
+  }
+
+  // ─── Tower render helper ───
+
+  const renderTower = (maxDisplay: number = 20, compact: boolean = false) => {
+    const displayBlocks = towerBlocks.slice(-maxDisplay)
+    const size = compact ? 'w-5 h-3' : 'w-7 h-4'
+    return (
+      <div className="flex flex-col-reverse items-center gap-0.5">
+        {displayBlocks.map((block, i) => (
+          <div
+            key={i}
+            className={`${size} rounded-sm transition-all duration-300`}
+            style={{
+              background: PLAYER_GRADIENTS[block.playerId % PLAYER_GRADIENTS.length],
+              opacity: block.cracked ? 0.4 : 1,
+              boxShadow: i === displayBlocks.length - 1 ? `0 0 8px ${block.color}60` : 'none',
+            }}
+          />
+        ))}
+        {towerBlocks.length === 0 && (
+          <div className={`${size} rounded-sm border border-dashed border-slate-600`} />
+        )}
+      </div>
+    )
+  }
 
   // ─── Render ───
 
@@ -383,19 +541,207 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
     )
   }
 
-  // ── Placeholder for remaining phases ──
+  // ── Answering screen ──
+  if (phase === 'answering' && currentQuestion && currentPlayer) {
+    const timerPercent = (timeLeft / ROUND_TIME_SECONDS) * 100
+    const timerColor = timeLeft <= 5 ? '#ef4444' : timeLeft <= 10 ? '#f59e0b' : '#22c55e'
+    const timerUrgent = timeLeft <= 5
+
+    return (
+      <div className="page-shell">
+        {/* Header: timer + round + tower */}
+        <div className="card mb-3 sm:mb-4 anim-fade-up">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="text-xs font-semibold tracking-[0.15em] text-slate-400">
+              ROUND {round + 1} / {LEVEL_1_ROUNDS}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">タワー</span>
+              <span className="font-display text-sm" style={{ color: '#22c55e' }}>{towerBlocks.length}</span>
+              <span className="text-xs text-slate-600">/ {LEVEL_1_TARGET_HEIGHT}</span>
+            </div>
+          </div>
+
+          {/* Shared timer bar */}
+          <div className="relative mb-3">
+            <div className="soft-track" style={{ height: 10 }}>
+              <div
+                style={{
+                  width: `${timerPercent}%`,
+                  height: '100%',
+                  background: timerColor,
+                  borderRadius: 999,
+                  transition: 'width 1s linear, background 0.3s',
+                }}
+              />
+            </div>
+            <div className={`mt-1 text-center font-display text-lg ${timerUrgent ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+              {timeLeft}秒
+            </div>
+          </div>
+
+          {/* Player order progress */}
+          <div className="flex items-center justify-center gap-2">
+            {answerOrder.map((pid, idx) => {
+              const p = players.find(pl => pl.id === pid)!
+              const isCurrent = idx === currentPlayerIdx
+              const isDone = idx < currentPlayerIdx
+              return (
+                <div
+                  key={pid}
+                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-all"
+                  style={{
+                    background: isDone ? `${p.color}30` : isCurrent ? `${p.color}25` : 'rgba(148,163,184,0.08)',
+                    color: isDone || isCurrent ? p.color : 'var(--text-muted)',
+                    opacity: isDone ? 0.5 : 1,
+                    boxShadow: isCurrent ? `0 0 0 2px ${p.color}` : 'none',
+                  }}
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ background: isDone || isCurrent ? PLAYER_GRADIENTS[pid % PLAYER_GRADIENTS.length] : 'rgba(148,163,184,0.2)' }} />
+                  {p.name}
+                  {isDone && <span className="text-[10px]">✓</span>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Current player banner */}
+        <div
+          className="card mb-3 sm:mb-4 anim-pop text-center"
+          style={{
+            borderColor: `${currentPlayer.color}40`,
+            background: `linear-gradient(135deg, ${currentPlayer.color}10, ${currentPlayer.color}05)`,
+          }}
+        >
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-8 h-8 rounded-full shadow-md" style={{ background: PLAYER_GRADIENTS[currentPlayerId % PLAYER_GRADIENTS.length] }} />
+            <span className="font-display text-xl text-white">{currentPlayer.name} のターン</span>
+          </div>
+        </div>
+
+        {/* Question card */}
+        <div className="card anim-fade-up mb-3 sm:mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'rgba(148,163,184,0.14)', color: 'var(--text-muted)' }}>
+              {currentQuestion.field} · {currentQuestion.unit}
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: 'rgba(148,163,184,0.08)', color: 'var(--text-muted)' }}>
+              {getQuestionTypeShortLabel(currentQuestion.type)}
+            </span>
+          </div>
+          <p className="text-base sm:text-lg font-bold leading-relaxed text-white">{currentQuestion.question}</p>
+          {currentQuestion.image_url && currentQuestionImage && (
+            <div className="mt-3 flex justify-center">
+              <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/50"
+                style={{ width: `min(100%, ${currentQuestionImage.width}px)`, aspectRatio: currentQuestionImage.aspectRatio }}>
+                <img src={currentQuestion.image_url} alt="" className="block h-full w-full object-fill" loading="lazy" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Answer area */}
+        {answerFeedback ? (
+          <div
+            className="card mb-3 anim-pop text-center"
+            style={{
+              background: answerFeedback === 'correct' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+              borderColor: answerFeedback === 'correct' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)',
+            }}
+          >
+            <div className="text-2xl mb-1">{answerFeedback === 'correct' ? '🎉' : '💥'}</div>
+            <div className="font-bold text-lg" style={{ color: answerFeedback === 'correct' ? '#86efac' : '#fca5a5' }}>
+              {answerFeedback === 'correct' ? `正解！ +${BLOCKS_PER_CORRECT}ブロック` : `不正解… 答え: ${getQuestionCorrectAnswerText(currentQuestion)}`}
+            </div>
+          </div>
+        ) : (
+          <div className="anim-fade-up">
+            {(currentQuestion.type === 'choice' || currentQuestion.type === 'choice4') && (
+              <Choice4Question
+                choices={currentQuestion.choices ?? []}
+                selectedChoice={selectedChoice}
+                answer={currentQuestion.answer}
+                answerResult={null}
+                disabled={false}
+                onSelect={handleChoice}
+              />
+            )}
+            {currentQuestion.type === 'true_false' && (
+              <TrueFalseQuestion
+                choices={currentQuestion.choices ?? ['○', '×']}
+                selectedChoice={selectedChoice}
+                answer={currentQuestion.answer}
+                answerResult={null}
+                disabled={false}
+                onSelect={handleChoice}
+              />
+            )}
+            {currentQuestion.type === 'fill_choice' && (
+              <FillChoiceQuestion
+                choices={currentQuestion.choices ?? []}
+                selectedChoice={selectedChoice}
+                answer={currentQuestion.answer}
+                answerResult={null}
+                disabled={false}
+                onSelect={handleChoice}
+              />
+            )}
+            {currentQuestion.type === 'text' && (
+              <div className="space-y-3">
+                {getQuestionBlankPrompt(currentQuestion) && (
+                  <div className="text-sm text-slate-400">{getQuestionBlankPrompt(currentQuestion)!.promptText}</div>
+                )}
+                <input
+                  type="text" value={textInput}
+                  onChange={e => setTextInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleTextSubmit()}
+                  placeholder="答えを入力..."
+                  className="w-full rounded-xl border border-slate-600 bg-slate-800/60 px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                  autoFocus
+                />
+                <button onClick={handleTextSubmit} className="btn-primary w-full" disabled={!textInput.trim()}>回答</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Mini tower display */}
+        <div className="fixed bottom-4 right-4 flex flex-col items-center gap-1 opacity-60">
+          {renderTower(8, true)}
+          <span className="text-[10px] text-slate-500">{towerBlocks.length}/{LEVEL_1_TARGET_HEIGHT}</span>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Placeholder for attack / round_result / finished ──
   return (
     <div className="page-shell flex items-center justify-center">
       <div className="card w-full max-w-md text-center p-6">
-        <div className="text-4xl mb-3">🏗️</div>
+        <div className="text-4xl mb-3">{phase === 'attack' ? currentEnemy?.emoji ?? '💥' : '🏗️'}</div>
         <div className="font-display text-2xl text-white mb-2">
-          {phase === 'answering' && `ラウンド ${round + 1} — 回答中`}
-          {phase === 'attack' && '敵が襲来！'}
-          {phase === 'round_result' && 'ラウンド結果'}
-          {phase === 'finished' && '結果'}
+          {phase === 'attack' && `${currentEnemy?.name ?? '敵'} が襲来！`}
+          {phase === 'round_result' && `ラウンド ${round + 1} 終了`}
+          {phase === 'finished' && (gameResult === 'win' ? 'タワー完成！' : 'タワー崩壊…')}
         </div>
-        <p className="text-slate-400 text-sm mb-4">（実装中）</p>
-        <button onClick={onBack} className="btn-primary">もどる</button>
+        {phase === 'attack' && attackResult && (
+          <div className="text-sm text-slate-300 mb-2">
+            シールド: {attackResult.shielded} / 被ダメージ: {attackResult.blocksDestroyed}ブロック
+          </div>
+        )}
+        {phase === 'round_result' && (
+          <button onClick={nextRound} className="btn-primary mt-4">次のラウンドへ</button>
+        )}
+        {phase === 'finished' && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <button onClick={() => { setPhase('setup') }} className="btn-primary">もう一度</button>
+            <button onClick={onBack} className="btn-secondary">ホームへ</button>
+          </div>
+        )}
+        {phase !== 'round_result' && phase !== 'finished' && (
+          <p className="text-slate-500 text-sm mt-2">処理中...</p>
+        )}
       </div>
     </div>
   )
