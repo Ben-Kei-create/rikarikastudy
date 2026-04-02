@@ -241,9 +241,11 @@ function getFieldModeGroups() {
 export default function OnlineLabPage({
   onBack,
   onOpenTerritory,
+  onOpenScienceTower,
 }: {
   onBack: () => void
   onOpenTerritory?: () => void
+  onOpenScienceTower?: () => void
 }) {
   const { studentId, nickname, logout } = useAuth()
   const isController = studentId === ADMIN_STUDENT_ID
@@ -968,10 +970,13 @@ export default function OnlineLabPage({
               {error}
             </div>
           )}
-          <div className={`mt-6 grid gap-3 ${onOpenTerritory ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button onClick={onBack} className="btn-primary">ホームへ</button>
             {onOpenTerritory && (
               <button onClick={onOpenTerritory} className="btn-secondary">陣取りへ</button>
+            )}
+            {onOpenScienceTower && (
+              <button onClick={onOpenScienceTower} className="btn-secondary">サイエンスタワー</button>
             )}
             <button onClick={() => logout()} className="btn-ghost">ログアウト</button>
           </div>
@@ -993,10 +998,13 @@ export default function OnlineLabPage({
                 先生が操作するラボを、そのまま全員に配信できます。右のホワイトボードも一緒に共有され、生徒側は閲覧専用で同じ画面を見られます。
               </p>
             </div>
-            <div className={`grid gap-3 ${onOpenTerritory ? 'sm:grid-cols-3 lg:w-[520px]' : 'sm:grid-cols-2 lg:w-[340px]'}`}>
+            <div className="grid gap-3 sm:grid-cols-2">
               <button onClick={onBack} className="btn-secondary w-full">ホームへ</button>
               {onOpenTerritory && (
                 <button onClick={onOpenTerritory} className="btn-primary w-full">陣取りへ</button>
+              )}
+              {onOpenScienceTower && (
+                <button onClick={onOpenScienceTower} className="btn-primary w-full">サイエンスタワー</button>
               )}
               <button onClick={() => logout()} className="btn-ghost w-full">ログアウト</button>
             </div>
@@ -1149,7 +1157,7 @@ export default function OnlineLabPage({
             </div>
           </div>
 
-          <div className={`grid gap-3 ${onOpenTerritory ? 'grid-cols-3 lg:min-w-[540px]' : 'grid-cols-2 lg:min-w-[360px]'}`}>
+          <div className="grid gap-3 grid-cols-2 lg:min-w-[360px]">
             <div className="subcard p-4">
               <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">進行</div>
               <div className="mt-2 font-display text-2xl text-white">
@@ -1170,6 +1178,9 @@ export default function OnlineLabPage({
             )}
             {onOpenTerritory && (
               <button onClick={onOpenTerritory} className="btn-primary w-full">陣取りへ</button>
+            )}
+            {onOpenScienceTower && (
+              <button onClick={onOpenScienceTower} className="btn-primary w-full">サイエンスタワー</button>
             )}
             <button onClick={() => logout()} className="btn-ghost w-full">ログアウト</button>
           </div>
