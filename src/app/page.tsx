@@ -90,9 +90,9 @@ function App() {
       case 'online-gate':
         return <OnlineGatePage onBack={goHome} onEnter={() => setScreen('online-territory')} />
       case 'online-territory':
-        return <OnlineTerritoryPage onBack={goHome} onOpenLab={() => setScreen('online-lab')} />
+        return <OnlineTerritoryPage onBack={goHome} onOpenLab={() => setScreen('online-lab')} onOpenScienceTower={() => setScreen('science-tower')} />
       case 'online-lab':
-        return <OnlineLabPage onBack={goHome} onOpenTerritory={() => setScreen('online-territory')} />
+        return <OnlineLabPage onBack={goHome} onOpenTerritory={() => setScreen('online-territory')} onOpenScienceTower={() => setScreen('science-tower')} />
       case 'unit': {
         const s = screen as Extract<Screen, { type: 'unit' }>
         return (
