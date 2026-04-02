@@ -100,11 +100,9 @@ function createInitialRoomState() {
 export default function OnlineTerritoryPage({
   onBack,
   onOpenLab,
-  onOpenScienceTower,
 }: {
   onBack: () => void
   onOpenLab: () => void
-  onOpenScienceTower?: () => void
 }) {
   const { studentId, nickname, logout } = useAuth()
   const [loadingRoom, setLoadingRoom] = useState(true)
@@ -736,9 +734,6 @@ export default function OnlineTerritoryPage({
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button onClick={onBack} className="btn-secondary">ホームへ</button>
             <button onClick={onOpenLab} className="btn-primary">実験ラボへ</button>
-            {onOpenScienceTower && (
-              <button onClick={onOpenScienceTower} className="btn-primary">サイエンスタワー</button>
-            )}
           </div>
         </div>
       </div>
@@ -777,15 +772,6 @@ export default function OnlineTerritoryPage({
             >
               実験ラボへ
             </button>
-            {onOpenScienceTower && (
-              <button
-                onClick={() => void handleLeaveSeat(onOpenScienceTower)}
-                className="btn-ghost w-full"
-                disabled={actionBusy}
-              >
-                サイエンスタワー
-              </button>
-            )}
             <button onClick={() => void handleLeaveSeat(() => logout())} className="btn-ghost w-full" disabled={actionBusy}>
               ログアウト
             </button>

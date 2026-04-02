@@ -241,11 +241,9 @@ function getFieldModeGroups() {
 export default function OnlineLabPage({
   onBack,
   onOpenTerritory,
-  onOpenScienceTower,
 }: {
   onBack: () => void
   onOpenTerritory?: () => void
-  onOpenScienceTower?: () => void
 }) {
   const { studentId, nickname, logout } = useAuth()
   const isController = studentId === ADMIN_STUDENT_ID
@@ -975,9 +973,6 @@ export default function OnlineLabPage({
             {onOpenTerritory && (
               <button onClick={onOpenTerritory} className="btn-secondary">陣取りへ</button>
             )}
-            {onOpenScienceTower && (
-              <button onClick={onOpenScienceTower} className="btn-secondary">サイエンスタワー</button>
-            )}
             <button onClick={() => logout()} className="btn-ghost">ログアウト</button>
           </div>
         </div>
@@ -1002,9 +997,6 @@ export default function OnlineLabPage({
               <button onClick={onBack} className="btn-secondary w-full">ホームへ</button>
               {onOpenTerritory && (
                 <button onClick={onOpenTerritory} className="btn-primary w-full">陣取りへ</button>
-              )}
-              {onOpenScienceTower && (
-                <button onClick={onOpenScienceTower} className="btn-primary w-full">サイエンスタワー</button>
               )}
               <button onClick={() => logout()} className="btn-ghost w-full">ログアウト</button>
             </div>
@@ -1178,9 +1170,6 @@ export default function OnlineLabPage({
             )}
             {onOpenTerritory && (
               <button onClick={onOpenTerritory} className="btn-primary w-full">陣取りへ</button>
-            )}
-            {onOpenScienceTower && (
-              <button onClick={onOpenScienceTower} className="btn-primary w-full">サイエンスタワー</button>
             )}
             <button onClick={() => logout()} className="btn-ghost w-full">ログアウト</button>
           </div>

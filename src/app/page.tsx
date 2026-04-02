@@ -16,6 +16,7 @@ import TimeAttackPage from '@/components/TimeAttackPage'
 import OnlineLabPage from '@/components/OnlineLabPage'
 import OnlineGatePage from '@/components/OnlineGatePage'
 import OnlineTerritoryPage from '@/components/OnlineTerritoryPage'
+import OnlinePlazaPage from '@/components/OnlinePlazaPage'
 import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
@@ -33,6 +34,7 @@ type Screen =
   | 'time-attack'
   | 'territory-quiz'
   | 'online-gate'
+  | 'online-plaza'
   | 'online-territory'
   | 'online-lab'
   | 'science-tower'
@@ -88,11 +90,19 @@ function App() {
       case 'science-tower':
         return <ScienceTowerPage onBack={goHome} />
       case 'online-gate':
-        return <OnlineGatePage onBack={goHome} onEnter={() => setScreen('online-territory')} />
+        return <OnlineGatePage onBack={goHome} onEnter={() => setScreen('online-plaza')} />
+      case 'online-plaza':
+        return (
+          <OnlinePlazaPage
+            onBack={goHome}
+            onOpenTerritory={() => setScreen('online-territory')}
+            onOpenLab={() => setScreen('online-lab')}
+          />
+        )
       case 'online-territory':
-        return <OnlineTerritoryPage onBack={goHome} onOpenLab={() => setScreen('online-lab')} onOpenScienceTower={() => setScreen('science-tower')} />
+        return <OnlineTerritoryPage onBack={() => setScreen('online-plaza')} onOpenLab={() => setScreen('online-lab')} />
       case 'online-lab':
-        return <OnlineLabPage onBack={goHome} onOpenTerritory={() => setScreen('online-territory')} onOpenScienceTower={() => setScreen('science-tower')} />
+        return <OnlineLabPage onBack={() => setScreen('online-plaza')} onOpenTerritory={() => setScreen('online-territory')} />
       case 'unit': {
         const s = screen as Extract<Screen, { type: 'unit' }>
         return (
@@ -159,7 +169,6 @@ function App() {
             onReview={() => setScreen({ type: 'quiz', field: 'all', unit: 'all', reviewMode: true })}
             onTimeAttack={() => setScreen('time-attack')}
             onTerritoryQuiz={() => setScreen('territory-quiz')}
-            onScienceTower={() => setScreen('science-tower')}
             onMyPage={() => setScreen('mypage')}
             onOnline={goOnline}
           />
