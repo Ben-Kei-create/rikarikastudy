@@ -17,6 +17,7 @@ import OnlineLabPage from '@/components/OnlineLabPage'
 import OnlineGatePage from '@/components/OnlineGatePage'
 import OnlineTerritoryPage from '@/components/OnlineTerritoryPage'
 import OnlinePlazaPage from '@/components/OnlinePlazaPage'
+import OnlineHayaoshiPage from '@/components/OnlineHayaoshiPage'
 import { BiologyPracticeMode } from '@/lib/biologyPractice'
 import { ChemistryPracticeMode } from '@/lib/chemistryPractice'
 import { EarthSciencePracticeMode } from '@/lib/earthSciencePractice'
@@ -37,6 +38,7 @@ type Screen =
   | 'online-plaza'
   | 'online-territory'
   | 'online-lab'
+  | 'online-hayaoshi'
   | 'science-tower'
   | { type: 'unit'; field: string }
   | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; reviewMode?: boolean; customOptions?: CustomQuizOptions; questionCount?: QuizQuestionCount }
@@ -96,9 +98,12 @@ function App() {
           <OnlinePlazaPage
             onBack={goHome}
             onOpenTerritory={() => setScreen('online-territory')}
+            onOpenHayaoshi={() => setScreen('online-hayaoshi')}
             onOpenLab={() => setScreen('online-lab')}
           />
         )
+      case 'online-hayaoshi':
+        return <OnlineHayaoshiPage onBack={() => setScreen('online-plaza')} />
       case 'online-territory':
         return <OnlineTerritoryPage onBack={() => setScreen('online-plaza')} onOpenLab={() => setScreen('online-lab')} />
       case 'online-lab':

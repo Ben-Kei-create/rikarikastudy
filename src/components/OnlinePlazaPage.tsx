@@ -15,15 +15,26 @@ interface PlazaGame {
 export default function OnlinePlazaPage({
   onBack,
   onOpenTerritory,
+  onOpenHayaoshi,
   onOpenLab,
   onOpenScienceTower,
 }: {
   onBack: () => void
   onOpenTerritory: () => void
+  onOpenHayaoshi?: () => void
   onOpenLab?: () => void
   onOpenScienceTower?: () => void
 }) {
   const games: PlazaGame[] = [
+    {
+      id: 'hayaoshi',
+      title: '早押しクイズ',
+      description: '問題文がヌルヌル流れてくる！誰よりも早くボタンを押してクイズに答えよう',
+      available: true,
+      accentColor: '#f59e0b',
+      label: 'Quick Press',
+      onPlay: onOpenHayaoshi,
+    },
     {
       id: 'territory',
       title: 'オンライン陣取り',
@@ -57,7 +68,7 @@ export default function OnlinePlazaPage({
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {games.map(game => (
               <div
                 key={game.id}

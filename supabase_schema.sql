@@ -566,3 +566,31 @@ ALTER TABLE daily_challenges DISABLE ROW LEVEL SECURITY;
 ALTER TABLE badges DISABLE ROW LEVEL SECURITY;
 ALTER TABLE student_badges DISABLE ROW LEVEL SECURITY;
 ALTER TABLE time_attack_records DISABLE ROW LEVEL SECURITY;
+
+-- ========================================
+-- Online 早押しクイズ テーブル
+-- ========================================
+
+CREATE TABLE IF NOT EXISTS online_hayaoshi_rooms (
+  room_key            TEXT         PRIMARY KEY,
+  phase               TEXT         NOT NULL DEFAULT 'lobby',
+  -- 'lobby' | 'revealing' | 'buzzed' | 'result' | 'finished'
+  players_json        JSONB        NOT NULL DEFAULT '[]',
+  -- [{ student_id, nickname, score, color }]
+  current_round       INTEGER      NOT NULL DEFAULT 0,
+  total_rounds        INTEGER      NOT NULL DEFAULT 10,
+  question_json       JSONB,
+  -- { id, question, choices[], answer, field, unit, type }
+  question_started_at TIMESTAMPTZ,
+  -- 問題表示を開始したUTC時刻（クライアント側でカラオケ進行計算）
+  chars_revealed      INTEGER      NOT NULL DEFAULT 0,
+  -- ボタンが押された時点で表示されていた文字数（全員に共有）
+  buzzed_student_id   INTEGER,
+  buzz_answer         TEXT,
+  buzz_correct        BOOLEAN,
+  used_ids_json       JSONB        NOT NULL DEFAULT '[]',
+  updated_at          TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  created_at          TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
+
+ALTER TABLE online_hayaoshi_rooms DISABLE ROW LEVEL SECURITY;
