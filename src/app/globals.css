@@ -1406,6 +1406,30 @@ body {
   animation: victory-tower-glow 1.5s ease-in-out infinite;
 }
 
+@keyframes fly-block {
+  0%   { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+  60%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--fly-dx)), calc(-50% + var(--fly-dy))) scale(0.5) rotate(var(--fly-rot)); opacity: 0; }
+}
+
+.fly-block {
+  animation: fly-block 0.5s cubic-bezier(0.4, 0, 0.6, 1) both;
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes tower-block-stamp {
+  0%   { transform: scaleX(1.2) scaleY(0.6); opacity: 0.7; }
+  50%  { transform: scaleX(0.92) scaleY(1.1); opacity: 1; }
+  75%  { transform: scaleX(1.04) scaleY(0.97); }
+  100% { transform: scaleX(1) scaleY(1); opacity: 1; }
+}
+
+.tower-block-stamp {
+  animation: tower-block-stamp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* スクロールバー */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

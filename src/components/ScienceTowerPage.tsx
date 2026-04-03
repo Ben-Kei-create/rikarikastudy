@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { CSSProperties, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 import { hasValidChoiceAnswer, normalizeQuestionChoices } from '@/lib/questionChoices'
@@ -33,6 +33,18 @@ import {
 
 type Phase = 'setup' | 'roulette' | 'answering' | 'attack' | 'inter_round' | 'finished'
 type Question = QuestionShape
+
+interface FlyingBlockData {
+  id: number
+  gradient: string
+  color: string
+  startX: number
+  startY: number
+  targetX: number
+  targetY: number
+  delay: number
+}
+
 
 export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
   const { studentId, logout } = useAuth()
@@ -77,6 +89,9 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
 
   // Tower animation
   const [newBlockIndices, setNewBlockIndices] = useState<number[]>([])
+  const [flyingBlocks, setFlyingBlocks] = useState<FlyingBlockData[]>([])
+  const towerContainerRef = useRef<HTMLDivElement>(null)
+  const answerAreaRef = useRef<HTMLDivElement>(null)
   const towerBlocksRef = useRef<TowerBlock[]>([])
   const roundCorrectCountRef = useRef(0)
   useEffect(() => { towerBlocksRef.current = towerBlocks }, [towerBlocks])
@@ -259,20 +274,52 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
       setPlayers(prev => prev.map(p =>
         p.id === currentPlayerId ? { ...p, correctCount: p.correctCount + 1 } : p
       ))
-      // Add blocks with animation indices
-      setTowerBlocks(prev => {
-        const newBlocks: TowerBlock[] = Array.from({ length: BLOCKS_PER_CORRECT }, () => ({
-          playerId: currentPlayerId,
-          color: currentPlayer?.color ?? PLAYER_COLORS[0],
-          hp: 1,
-          cracked: false,
+
+      // Launch flying blocks from answer area → tower top
+      const towerEl = towerContainerRef.current
+      const answerEl = answerAreaRef.current
+      if (towerEl && answerEl) {
+        const towerRect = towerEl.getBoundingClientRect()
+        const answerRect = answerEl.getBoundingClientRect()
+        const startX = answerRect.left + answerRect.width / 2
+        const startY = answerRect.top + answerRect.height / 2
+        const targetX = towerRect.left + towerRect.width / 2
+        const targetY = towerRect.top + 20
+        const color = currentPlayer?.color ?? PLAYER_COLORS[0]
+        const gradient = PLAYER_GRADIENTS[currentPlayerId % PLAYER_GRADIENTS.length]
+        const newFlying: FlyingBlockData[] = Array.from({ length: BLOCKS_PER_CORRECT }, (_, i) => ({
+          id: Date.now() + i,
+          gradient,
+          color,
+          startX: startX + (i - 0.5) * 18,
+          startY,
+          targetX: targetX + (i - 0.5) * 10,
+          targetY,
+          delay: i * 80,
         }))
-        const nextBlocks = [...prev, ...newBlocks]
-        const newIdxs = Array.from({ length: BLOCKS_PER_CORRECT }, (_, i) => prev.length + i)
-        setNewBlockIndices(newIdxs)
-        setTimeout(() => setNewBlockIndices([]), 600)
-        return nextBlocks
-      })
+        setFlyingBlocks(prev => [...prev, ...newFlying])
+        // Remove flying blocks after animation finishes
+        setTimeout(() => {
+          setFlyingBlocks(prev => prev.filter(b => !newFlying.some(n => n.id === b.id)))
+        }, 700)
+      }
+
+      // Add tower blocks slightly delayed so they "stamp in" as flying blocks arrive
+      setTimeout(() => {
+        setTowerBlocks(prev => {
+          const newBlocks: TowerBlock[] = Array.from({ length: BLOCKS_PER_CORRECT }, () => ({
+            playerId: currentPlayerId,
+            color: currentPlayer?.color ?? PLAYER_COLORS[0],
+            hp: 1,
+            cracked: false,
+          }))
+          const nextBlocks = [...prev, ...newBlocks]
+          const newIdxs = Array.from({ length: BLOCKS_PER_CORRECT }, (_, i) => prev.length + i)
+          setNewBlockIndices(newIdxs)
+          setTimeout(() => setNewBlockIndices([]), 500)
+          return nextBlocks
+        })
+      }, 380)
     } else {
       playWrong()
       setPlayers(prev => prev.map(p =>
@@ -456,6 +503,7 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
 
           {/* The tower blocks */}
           <div
+            ref={towerContainerRef}
             className={towerShaking ? 'tower-shaking' : ''}
             style={{
               display: 'flex',
@@ -483,7 +531,7 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
               return (
                 <div
                   key={i}
-                  className={isNew ? 'tower-block-enter' : ''}
+                  className={isNew ? 'tower-block-stamp' : ''}
                   style={{
                     width: 72,
                     height: 18,
@@ -901,7 +949,7 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
 
           {/* Answer area */}
           {answerFeedback ? (
-            <div className="anim-pop" style={{
+            <div ref={answerAreaRef} className="anim-pop" style={{
               padding: '16px',
               borderRadius: 18,
               textAlign: 'center',
@@ -915,7 +963,7 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
                 color: answerFeedback === 'correct' ? '#86efac' : '#fca5a5',
               }}>
                 {answerFeedback === 'correct'
-                  ? `正解！ +${BLOCKS_PER_CORRECT}ブロック`
+                  ? `正解！ +${BLOCKS_PER_CORRECT}ブロック →`
                   : `不正解… 答え: ${getQuestionCorrectAnswerText(currentQuestion)}`}
               </div>
             </div>
@@ -1358,6 +1406,33 @@ export default function ScienceTowerPage({ onBack }: { onBack: () => void }) {
           {renderGameContent()}
         </div>
       </div>
+
+      {/* Flying blocks — rendered at root level so they cross panel boundaries */}
+      {flyingBlocks.map((block: FlyingBlockData) => {
+        const dx = block.targetX - block.startX
+        const dy = block.targetY - block.startY
+        const rot = `${Math.sign(dx) * (8 + Math.abs(dx) * 0.03)}deg`
+        return (
+          <div
+            key={block.id}
+            className="fly-block"
+            style={{
+              left: block.startX,
+              top: block.startY,
+              width: 52,
+              height: 15,
+              borderRadius: 4,
+              background: block.gradient,
+              boxShadow: `0 0 18px ${block.color}90, 0 0 6px rgba(255,255,255,0.25)`,
+              animationDelay: `${block.delay}ms`,
+              animationDuration: '0.48s',
+              '--fly-dx': `${dx}px`,
+              '--fly-dy': `${dy}px`,
+              '--fly-rot': rot,
+            } as CSSProperties}
+          />
+        )
+      })}
 
       <style>{`
         @media (max-width: 640px) {
