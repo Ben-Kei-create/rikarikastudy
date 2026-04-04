@@ -78,7 +78,7 @@ const CHALLENGE_MODE_META: Record<ChallengeMode, {
     badge: '30秒',
     emoji: '⏱️',
     accent: '#38bdf8',
-    description: '30秒 / 正解で +0.5秒',
+    description: '30秒 / 正解で +0.5秒 / 不正解で -3秒',
     startLabel: 'タイムアタック開始',
   },
   test_mode: {
@@ -527,9 +527,14 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
       result: evaluated.result,
     }])
 
-    if (correct && selectedMode === 'time_attack') {
-      deadlineRef.current += 500
-      setRemainingMs(current => current + 500)
+    if (selectedMode === 'time_attack') {
+      if (correct) {
+        deadlineRef.current += 500
+        setRemainingMs(current => current + 500)
+      } else {
+        deadlineRef.current -= 3000
+        setRemainingMs(current => Math.max(0, current - 3000))
+      }
     }
 
     if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current)
@@ -904,7 +909,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
                 <>
                   <div className="text-xs font-semibold tracking-[0.18em] text-slate-400">ルール</div>
                   <div className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
-                    <div>正解すると 0.5 秒延長されます。</div>
+                    <div>正解すると 0.5 秒延長、不正解で 3 秒減少されます。</div>
                     <div>○×・4択・穴埋め・マッチなど、記述なしの問題がテンポよく出ます。</div>
                     <div>自己ベストと他ユーザのトップ記録を見比べられます。</div>
                   </div>
@@ -1568,7 +1573,7 @@ export default function TimeAttackPage({ onBack }: { onBack: () => void }) {
         )}
 
         <div className="mt-5 flex items-center justify-between gap-3 text-xs text-slate-400">
-          <span>{selectedMode === 'streak_mode' ? '正解すると次の問題も10秒で開始' : '正解すると +0.5 秒'}</span>
+          <span>{selectedMode === 'streak_mode' ? '正解すると次の問題も10秒で開始' : '正解 +0.5秒 / 不正解 -3秒'}</span>
           <span>
             {selectedMode === 'streak_mode'
               ? `ベスト ${streakSummary.personalBest}問`
