@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { format, subDays } from 'date-fns'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { fetchStudents, LOGIN_STUDENTS, type StudentRecord, useAuth } from '@/lib/auth'
-import { LoginUpdateRow, isLoginUpdatesTableMissing } from '@/lib/loginUpdates'
 import { supabase } from '@/lib/supabase'
 import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { GUEST_STUDENT_ID } from '@/lib/guestStudy'
@@ -35,6 +34,48 @@ function getStudentModeMeta(studentId: number) {
   }
 }
 
+// ── Kana index ──────────────────────────────────────────────────────────────
+
+const KANA_ROWS: { label: string; from: number; to: number }[] = [
+  { label: 'あ', from: 0x3042, to: 0x304a },
+  { label: 'か', from: 0x304b, to: 0x3054 },
+  { label: 'さ', from: 0x3055, to: 0x305e },
+  { label: 'た', from: 0x305f, to: 0x3069 },
+  { label: 'な', from: 0x306a, to: 0x306e },
+  { label: 'は', from: 0x306f, to: 0x307d },
+  { label: 'ま', from: 0x307e, to: 0x3082 },
+  { label: 'や', from: 0x3084, to: 0x3088 },
+  { label: 'ら', from: 0x3089, to: 0x308d },
+  { label: 'わ', from: 0x308f, to: 0x3093 },
+]
+
+const KANA_LABELS = new Set(KANA_ROWS.map(r => r.label))
+
+const GROUP_ORDER = [
+  'あ', 'か', 'さ', 'た', 'な', 'は', 'ま', 'や', 'ら', 'わ',
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  '他',
+]
+
+function getKanaGroup(nickname: string): string {
+  const first = nickname[0]
+  if (!first) return '他'
+  let code = first.charCodeAt(0)
+  // Katakana → Hiragana
+  if (code >= 0x30a1 && code <= 0x30f6) code -= 0x60
+  for (const row of KANA_ROWS) {
+    if (code >= row.from && code <= row.to) return row.label
+  }
+  // Latin
+  if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) {
+    return first.toUpperCase()
+  }
+  return '他'
+}
+
+// ── Interfaces ───────────────────────────────────────────────────────────────
+
 interface WeeklyLeaderboardEntry {
   studentId: number
   nickname: string
@@ -43,6 +84,8 @@ interface WeeklyLeaderboardEntry {
   title: string
   rank: number
 }
+
+// ── StudentPicker ─────────────────────────────────────────────────────────────
 
 function StudentPicker({
   title,
@@ -63,13 +106,91 @@ function StudentPicker({
   onSearchChange: (value: string) => void
   compact?: boolean
 }) {
+  const isSearching = searchValue.trim().length > 0
+
   const filteredStudents = useMemo(
     () => filterStudents(students, searchValue),
     [students, searchValue],
   )
-  const selectedStudent = students.find(student => student.id === selectedId) ?? students[0] ?? null
+
+  const groupedStudents = useMemo(() => {
+    if (isSearching) return null
+    const map = new Map<string, StudentRecord[]>()
+    for (const student of students) {
+      const g = getKanaGroup(student.nickname)
+      if (!map.has(g)) map.set(g, [])
+      map.get(g)!.push(student)
+    }
+    return GROUP_ORDER.filter(g => map.has(g)).map(g => ({ group: g, students: map.get(g)! }))
+  }, [students, isSearching])
+
+  const groupHeaderRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+
+  const scrollToGroup = (group: string) => {
+    groupHeaderRefs.current.get(group)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+
+  const selectedStudent = students.find(s => s.id === selectedId) ?? students[0] ?? null
   const selectedAvatar = selectedStudent ? getStudentAvatarMeta(selectedStudent.id) : null
   const selectedMeta = selectedStudent ? getStudentModeMeta(selectedStudent.id) : null
+
+  const renderStudentItem = (student: StudentRecord) => {
+    const checked = selectedId === student.id
+    const avatar = getStudentAvatarMeta(student.id)
+    const meta = getStudentModeMeta(student.id)
+
+    return (
+      <label
+        key={student.id}
+        className="flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3 py-2 transition-colors sm:px-3.5"
+        style={{
+          borderColor: checked ? 'rgba(86, 168, 255, 0.28)' : 'var(--surface-elevated-border)',
+          background: checked
+            ? 'linear-gradient(180deg, rgba(10, 132, 255, 0.12), rgba(10, 132, 255, 0.06))'
+            : 'var(--surface-elevated)',
+        }}
+      >
+        <input
+          type="radio"
+          name={compact ? 'onlineStudentId' : 'studentId'}
+          value={student.id}
+          checked={checked}
+          onChange={() => onSelect(student.id)}
+          className="sr-only"
+        />
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg"
+          style={{
+            background: avatar.background,
+            border: `1px solid ${checked ? 'rgba(191, 219, 254, 0.4)' : avatar.borderColor}`,
+            boxShadow: checked ? '0 8px 18px rgba(59, 130, 246, 0.12)' : avatar.glow,
+          }}
+          aria-hidden="true"
+        >
+          {avatar.emoji}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <div className="truncate font-semibold text-white">{student.nickname}</div>
+            {student.id === GUEST_STUDENT_ID && (
+              <span className="text-[10px] font-semibold text-sky-200/60">ゲスト</span>
+            )}
+          </div>
+          <div className="mt-0.5 text-[11px] text-slate-400">
+            ID {student.id} ・ {meta.detail}
+          </div>
+        </div>
+        <div
+          className="shrink-0 text-[10px] font-semibold"
+          style={{ color: checked ? '#7dd3fc' : '#64748b' }}
+        >
+          {checked ? '選択中' : ''}
+        </div>
+      </label>
+    )
+  }
+
+  const showIndex = !isSearching && groupedStudents !== null && groupedStudents.length > 1
 
   return (
     <div className="rounded-[26px] border border-white/8 bg-slate-950/28 p-4 sm:p-5">
@@ -78,9 +199,7 @@ function StudentPicker({
           <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-200">{title}</div>
           <div className="mt-1 text-base font-semibold text-white sm:text-lg">{subtitle}</div>
         </div>
-        <div className="text-[11px] text-slate-500">
-          {students.length}人
-        </div>
+        <div className="text-[11px] text-slate-500">{students.length}人</div>
       </div>
 
       {selectedStudent && selectedAvatar && selectedMeta && (
@@ -99,15 +218,11 @@ function StudentPicker({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <div className="truncate text-sm font-semibold text-white sm:text-base">{selectedStudent.nickname}</div>
-              <span className="text-[10px] font-semibold text-sky-100/60">
-                ID {selectedStudent.id}
-              </span>
+              <span className="text-[10px] font-semibold text-sky-100/60">ID {selectedStudent.id}</span>
             </div>
             <div className="mt-0.5 text-xs leading-5 text-slate-300">{selectedMeta.detail}</div>
           </div>
-          <div className="hidden text-[11px] font-semibold text-sky-200 sm:block">
-            {selectedMeta.badge}
-          </div>
+          <div className="hidden text-[11px] font-semibold text-sky-200 sm:block">{selectedMeta.badge}</div>
         </div>
       )}
 
@@ -121,80 +236,64 @@ function StudentPicker({
         />
       </div>
 
-      <div className={`mt-3 overflow-y-auto pr-1 ${compact ? 'max-h-56' : 'max-h-72'}`}>
-        {filteredStudents.length > 0 ? (
-          <div className="grid gap-2">
-            {filteredStudents.map(student => {
-              const checked = selectedId === student.id
-              const avatar = getStudentAvatarMeta(student.id)
-              const meta = getStudentModeMeta(student.id)
-
-              return (
-                <label
-                  key={student.id}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3 py-2 transition-colors sm:px-3.5"
-                  style={{
-                    borderColor: checked ? 'rgba(86, 168, 255, 0.28)' : 'var(--surface-elevated-border)',
-                    background: checked
-                      ? 'linear-gradient(180deg, rgba(10, 132, 255, 0.12), rgba(10, 132, 255, 0.06))'
-                      : 'var(--surface-elevated)',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name={compact ? 'onlineStudentId' : 'studentId'}
-                    value={student.id}
-                    checked={checked}
-                    onChange={() => onSelect(student.id)}
-                    className="sr-only"
-                  />
+      <div className={`mt-3 flex gap-1 overflow-hidden ${compact ? 'max-h-56' : 'max-h-72'}`}>
+        <div className="flex-1 overflow-y-auto pr-1">
+          {isSearching ? (
+            filteredStudents.length > 0 ? (
+              <div className="grid gap-2">{filteredStudents.map(renderStudentItem)}</div>
+            ) : (
+              <div className="rounded-[22px] border border-dashed border-slate-700 px-3 py-5 text-center text-sm text-slate-500">
+                一致する生徒が見つかりません。
+              </div>
+            )
+          ) : groupedStudents && groupedStudents.length > 0 ? (
+            <div className="grid gap-3">
+              {groupedStudents.map(({ group, students: groupStudents }) => (
+                <div key={group}>
                   <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg"
-                    style={{
-                      background: avatar.background,
-                      border: `1px solid ${checked ? 'rgba(191, 219, 254, 0.4)' : avatar.borderColor}`,
-                      boxShadow: checked ? '0 8px 18px rgba(59, 130, 246, 0.12)' : avatar.glow,
+                    ref={el => {
+                      if (el) groupHeaderRefs.current.set(group, el)
+                      else groupHeaderRefs.current.delete(group)
                     }}
-                    aria-hidden="true"
+                    className="mb-1.5 px-1 text-[10px] font-semibold tracking-[0.14em] text-slate-500"
                   >
-                    {avatar.emoji}
+                    {KANA_LABELS.has(group) ? `${group}行` : group}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <div className="truncate font-semibold text-white">{student.nickname}</div>
-                      {student.id === GUEST_STUDENT_ID && (
-                        <span className="text-[10px] font-semibold text-sky-200/60">
-                          ゲスト
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-slate-400">
-                      ID {student.id} ・ {meta.detail}
-                    </div>
-                  </div>
-                  <div
-                    className="shrink-0 text-[10px] font-semibold"
-                    style={{ color: checked ? '#7dd3fc' : '#64748b' }}
-                  >
-                    {checked ? '選択中' : ''}
-                  </div>
-                </label>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="rounded-[22px] border border-dashed border-slate-700 px-3 py-5 text-center text-sm text-slate-500">
-            一致する生徒が見つかりません。
+                  <div className="grid gap-2">{groupStudents.map(renderStudentItem)}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[22px] border border-dashed border-slate-700 px-3 py-5 text-center text-sm text-slate-500">
+              生徒が見つかりません。
+            </div>
+          )}
+        </div>
+
+        {showIndex && (
+          <div className="flex flex-col items-center gap-px py-1">
+            {groupedStudents!.map(({ group }) => (
+              <button
+                key={group}
+                type="button"
+                onClick={() => scrollToGroup(group)}
+                className="flex h-5 w-5 items-center justify-center rounded text-[10px] font-semibold text-slate-500 transition-colors hover:text-sky-300"
+              >
+                {group}
+              </button>
+            ))}
           </div>
         )}
       </div>
 
       <div className="mt-3 text-[11px] text-slate-500">
-        表示 {filteredStudents.length} / {students.length}
+        {isSearching ? `表示 ${filteredStudents.length} / ${students.length}` : `${students.length}人`}
       </div>
     </div>
   )
 }
+
+// ── LoginPage ─────────────────────────────────────────────────────────────────
 
 export default function LoginPage({
   onDone,
@@ -217,12 +316,8 @@ export default function LoginPage({
   const [regError, setRegError] = useState('')
   const [regSuccess, setRegSuccess] = useState('')
   const [regSubmitting, setRegSubmitting] = useState(false)
-  const [loginUpdates, setLoginUpdates] = useState<LoginUpdateRow[]>([])
-  const [loginUpdatesLoading, setLoginUpdatesLoading] = useState(true)
-  const [showLoginUpdates, setShowLoginUpdates] = useState(true)
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<WeeklyLeaderboardEntry[]>([])
   const [weeklyLeaderboardLoading, setWeeklyLeaderboardLoading] = useState(true)
-  const [showSchoolFeed, setShowSchoolFeed] = useState(false)
   const currentWeekRange = useMemo(() => getJstWeekRange(), [])
   const weekRangeLabel = useMemo(() => {
     const endDate = new Date(currentWeekRange.endDate.getTime() - 1)
@@ -234,55 +329,15 @@ export default function LoginPage({
     fetchStudents().then(data => {
       if (active) setStudents([LOGIN_STUDENTS[0], ...data])
     })
-    return () => {
-      active = false
-    }
+    return () => { active = false }
   }, [])
 
   useEffect(() => {
     if (students.length === 0) return
-
     if (!students.some(student => student.id === studentId)) {
       setStudentId(students[0]?.id ?? 1)
     }
-
   }, [studentId, students])
-
-  useEffect(() => {
-    let active = true
-
-    const loadLoginUpdates = async () => {
-      const { data, error } = await supabase
-        .from('login_updates')
-        .select('*')
-        .gte('created_at', subDays(new Date(), 3).toISOString())
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      if (!active) return
-
-      if (error) {
-        if (!isLoginUpdatesTableMissing(error)) {
-          setShowLoginUpdates(true)
-        } else {
-          setShowLoginUpdates(false)
-        }
-        setLoginUpdates([])
-        setLoginUpdatesLoading(false)
-        return
-      }
-
-      setLoginUpdates((data || []) as LoginUpdateRow[])
-      setLoginUpdatesLoading(false)
-      setShowLoginUpdates(true)
-    }
-
-    void loadLoginUpdates()
-
-    return () => {
-      active = false
-    }
-  }, [])
 
   useEffect(() => {
     let active = true
@@ -341,10 +396,7 @@ export default function LoginPage({
           return right.total - left.total
         })
         .slice(0, 7)
-        .map(({ total: _total, ...entry }, index) => ({
-          ...entry,
-          rank: index + 1,
-        }))
+        .map(({ total: _total, ...entry }, index) => ({ ...entry, rank: index + 1 }))
 
       setWeeklyLeaderboard(ranked)
       setWeeklyLeaderboardLoading(false)
@@ -352,13 +404,10 @@ export default function LoginPage({
 
     void loadWeeklyLeaderboard()
 
-    return () => {
-      active = false
-    }
+    return () => { active = false }
   }, [currentWeekRange.startDate])
 
   const isGuest = studentId === GUEST_STUDENT_ID
-  const hasSchoolFeed = showLoginUpdates || weeklyLeaderboardLoading || weeklyLeaderboard.length > 0
 
   const handleLogin = async () => {
     setSubmitting(true)
@@ -373,9 +422,7 @@ export default function LoginPage({
 
     setError(result.message)
     setShakeKey(current => current + 1)
-    if (!isGuest) {
-      setPw('')
-    }
+    if (!isGuest) setPw('')
   }
 
   const handleRegister = async () => {
@@ -389,7 +436,6 @@ export default function LoginPage({
       setRegSuccess(result.message)
       setRegNickname('')
       setRegPassword('')
-      // 登録後にリストを再取得
       fetchStudents().then(data => {
         setStudents([LOGIN_STUDENTS[0], ...data])
       })
@@ -398,7 +444,6 @@ export default function LoginPage({
     }
   }
 
-
   return (
     <div className="page-shell page-shell-dashboard flex min-h-screen items-start justify-center py-4 sm:py-6 lg:items-center">
       <div className="w-full max-w-6xl">
@@ -406,6 +451,7 @@ export default function LoginPage({
           <ScienceBackdrop />
 
           <div className="grid gap-4 sm:gap-5 lg:gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+            {/* ── Left column ── */}
             <div className="order-2 lg:order-1">
               <div className="text-center lg:text-left">
                 <div
@@ -432,132 +478,62 @@ export default function LoginPage({
                   Login
                 </h2>
                 <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-300 lg:mx-0">
-                  生徒を選んで、そのままパスワード入力。ID が増えても検索とスクロールで迷わず使えるログイン画面にしています。
+                  生徒を選んで、パスワードを入力するだけでログインできます。
                 </p>
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-400">
-                <span>検索つきの生徒一覧</span>
-                <span>ゲスト体験もすぐ開始</span>
-                <span>オンライン導線も同じ操作感</span>
-              </div>
-
-              {hasSchoolFeed && (
+              {/* Weekly Ranking */}
+              {(weeklyLeaderboardLoading || weeklyLeaderboard.length > 0) && (
                 <div className="mt-5 rounded-[24px] border border-white/8 bg-slate-950/28 px-4 py-3 sm:px-5 sm:py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">School Feed</div>
-                      <div className="mt-1 text-sm font-semibold text-white">学校の動き</div>
-                      <div className="mt-1 text-xs text-slate-400">アップデートや今週のランキングは必要なときだけ開けます。</div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Weekly Ranking</div>
+                      <div className="mt-1 text-sm font-semibold text-white">今週のランキング</div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowSchoolFeed(current => !current)}
-                      className="text-sm font-semibold text-slate-200 transition-colors hover:text-white"
-                    >
-                      {showSchoolFeed ? '閉じる' : '開く'}
-                    </button>
+                    <div className="text-[11px] text-slate-500">{weekRangeLabel}</div>
                   </div>
 
-                  {showSchoolFeed && (
-                    <div className={`mt-4 grid gap-4 ${showLoginUpdates ? 'lg:grid-cols-[0.95fr_1.05fr]' : ''}`}>
-                      {showLoginUpdates && (
-                        <div className="border-t border-white/8 pt-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Update Board</div>
-                              <div className="mt-1 text-sm font-semibold text-white">直近3日のアップデート</div>
-                            </div>
-                            <div className="text-[11px] text-slate-500">{loginUpdates.length}件</div>
-                          </div>
-
-                          <div className="mt-3 max-h-40 overflow-y-auto pr-1 md:max-h-56">
-                            {loginUpdatesLoading ? (
-                              <div className="px-1 py-3 text-xs text-slate-500">
-                                掲示板を読み込み中...
-                              </div>
-                            ) : loginUpdates.length > 0 ? (
-                              <div className="space-y-3">
-                                {loginUpdates.map(update => (
-                                  <div key={update.id} className="border-b border-white/8 pb-3 last:border-b-0 last:pb-0">
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div className="min-w-0">
-                                        <div className="text-sm font-semibold text-white">{update.title}</div>
-                                        <div className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-300">{update.body}</div>
-                                      </div>
-                                      <div className="shrink-0 text-[10px] text-slate-500">
-                                        {format(new Date(update.created_at), 'M/d HH:mm', { locale: ja })}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="px-1 py-3 text-xs text-slate-500">
-                                直近のアップデートはまだありません。
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="border-t border-white/8 pt-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Weekly Ranking</div>
-                            <div className="mt-1 text-sm font-semibold text-white">今週のランキング</div>
-                          </div>
-                          <div className="text-[11px] text-slate-500">{weekRangeLabel}</div>
-                        </div>
-
-                        <div className="mt-3 max-h-48 overflow-y-auto pr-1 md:max-h-60">
-                          {weeklyLeaderboardLoading ? (
-                            <div className="px-1 py-3 text-xs text-slate-500">
-                              ランキングを読み込み中...
-                            </div>
-                          ) : weeklyLeaderboard.length > 0 ? (
-                            <div className="space-y-2">
-                              {weeklyLeaderboard.map(entry => (
-                                <div key={`${entry.studentId}-${entry.rank}`} className="flex items-center justify-between gap-3 border-b border-white/8 pb-2 last:border-b-0 last:pb-0">
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <div className="text-sm font-semibold text-sky-100">
-                                        {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`}
-                                      </div>
-                                      <div className="truncate text-sm font-semibold text-white">{entry.nickname}</div>
-                                      <div className="text-[10px] text-slate-500">Lv.{entry.level}</div>
-                                    </div>
-                                    <div className="mt-0.5 text-[11px] text-slate-500">{entry.title}</div>
-                                  </div>
-                                  <div className="shrink-0 text-right">
-                                    <div className="font-display text-xl text-sky-300">{entry.weeklyXp}</div>
-                                    <div className="text-[10px] text-slate-500">XP</div>
-                                  </div>
+                  <div className="mt-3 max-h-48 overflow-y-auto pr-1 md:max-h-60">
+                    {weeklyLeaderboardLoading ? (
+                      <div className="px-1 py-3 text-xs text-slate-500">読み込み中...</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {weeklyLeaderboard.map(entry => (
+                          <div
+                            key={`${entry.studentId}-${entry.rank}`}
+                            className="flex items-center justify-between gap-3 border-b border-white/8 pb-2 last:border-b-0 last:pb-0"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-semibold text-sky-100">
+                                  {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`}
                                 </div>
-                              ))}
+                                <div className="truncate text-sm font-semibold text-white">{entry.nickname}</div>
+                                <div className="text-[10px] text-slate-500">Lv.{entry.level}</div>
+                              </div>
+                              <div className="mt-0.5 text-[11px] text-slate-500">{entry.title}</div>
                             </div>
-                          ) : (
-                            <div className="px-1 py-3 text-xs text-slate-500">
-                              まだ今週の記録はありません。
+                            <div className="shrink-0 text-right">
+                              <div className="font-display text-xl text-sky-300">{entry.weeklyXp}</div>
+                              <div className="text-[10px] text-slate-500">XP</div>
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
+            {/* ── Right column ── */}
             <div className="order-1 lg:order-2 rounded-[32px] border border-white/8 bg-slate-950/40 p-4 sm:p-5 lg:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sky-200">Student Login</div>
                   <div className="mt-1 font-display text-2xl text-white sm:text-[2rem]">生徒を選んでログイン</div>
                 </div>
-                <div className="text-[11px] text-slate-500">
-                  {students.length} IDs
-                </div>
+                <div className="text-[11px] text-slate-500">{students.length} IDs</div>
               </div>
 
               {notice && (
@@ -601,15 +577,11 @@ export default function LoginPage({
                       value={pw}
                       onChange={event => setPw(event.target.value)}
                       onKeyDown={event => {
-                        if (event.key === 'Enter') {
-                          void handleLogin()
-                        }
+                        if (event.key === 'Enter') void handleLogin()
                       }}
                       placeholder="Password"
                       className="input-surface text-center text-xl tracking-[0.22em]"
-                      style={{
-                        borderColor: error ? 'var(--color-danger)' : undefined,
-                      }}
+                      style={{ borderColor: error ? 'var(--color-danger)' : undefined }}
                     />
                     {error && <p className="mt-3 text-center text-sm text-red-400">{error}</p>}
                   </div>
