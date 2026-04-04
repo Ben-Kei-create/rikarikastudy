@@ -77,10 +77,19 @@ export default function OnlineHayaoshiPage({
   const [buzzing, setBuzzing] = useState(false)
   const [buzzFailed, setBuzzFailed] = useState(false) // lost the race
 
+  // Dramatic buzz-in overlay
+  const [buzzFlashVisible, setBuzzFlashVisible] = useState(false)
+  // Floating +1 score particles: keyed by unique id
+  const [floatingScores, setFloatingScores] = useState<{ id: number; studentId: number; color: string }[]>([])
+  // Next-round countdown (seconds)
+  const [nextRoundSec, setNextRoundSec] = useState<number | null>(null)
+
   // Ref to avoid stale closure in timers
   const roomRef = useRef<HayaoshiRoom | null>(null)
   const charsToShowRef = useRef(0)
   const allQuestionsRef = useRef<HayaoshiQuestionData[]>([])
+  const prevScoresRef = useRef<Record<number, number>>({})
+  const nextRoundTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => { roomRef.current = room }, [room])
   useEffect(() => { charsToShowRef.current = charsToShow }, [charsToShow])
   useEffect(() => { allQuestionsRef.current = allQuestions }, [allQuestions])
@@ -232,6 +241,52 @@ export default function OnlineHayaoshiPage({
       setSelectedChoice(null)
     }
   }, [room?.phase, room?.question_json?.id])
+
+  // ─── Buzz flash overlay (show for ~1.3s when phase → buzzed) ───
+
+  useEffect(() => {
+    if (room?.phase !== 'buzzed') return
+    setBuzzFlashVisible(true)
+    const t = setTimeout(() => setBuzzFlashVisible(false), 1300)
+    return () => clearTimeout(t)
+  }, [room?.phase, room?.buzzed_student_id])
+
+  // ─── Floating +1 score particles ───
+
+  useEffect(() => {
+    if (!room || room.phase !== 'result') return
+    const prev = prevScoresRef.current
+    const newFloats: typeof floatingScores = []
+    room.players_json.forEach(p => {
+      const prevScore = prev[p.student_id] ?? 0
+      if (p.score > prevScore) {
+        newFloats.push({ id: Date.now() + p.student_id, studentId: p.student_id, color: p.color })
+      }
+    })
+    if (newFloats.length > 0) {
+      setFloatingScores(f => [...f, ...newFloats])
+      setTimeout(() => setFloatingScores([]), 1100)
+    }
+    const updated: Record<number, number> = {}
+    room.players_json.forEach(p => { updated[p.student_id] = p.score })
+    prevScoresRef.current = updated
+  }, [room?.phase, room?.current_round])
+
+  // ─── Next-round countdown ───
+
+  useEffect(() => {
+    if (nextRoundTimerRef.current) { clearInterval(nextRoundTimerRef.current); nextRoundTimerRef.current = null }
+    if (!room || room.phase !== 'result') { setNextRoundSec(null); return }
+    const startSec = Math.ceil(HAYAOSHI_RESULT_SECONDS / 1000)
+    setNextRoundSec(startSec)
+    nextRoundTimerRef.current = setInterval(() => {
+      setNextRoundSec(s => {
+        if (s === null || s <= 1) { clearInterval(nextRoundTimerRef.current!); nextRoundTimerRef.current = null; return null }
+        return s - 1
+      })
+    }, 1000)
+    return () => { if (nextRoundTimerRef.current) { clearInterval(nextRoundTimerRef.current); nextRoundTimerRef.current = null } }
+  }, [room?.phase, room?.current_round])
 
   // ─── Actions ───
 
@@ -402,6 +457,19 @@ export default function OnlineHayaoshiPage({
           boxShadow: isBuzzed ? `0 0 20px ${player.color}40` : 'none',
         }}
       >
+        {/* Floating +1 score particle */}
+        {floatingScores.some(f => f.studentId === player.student_id) && (
+          <div style={{
+            position: 'absolute', top: -8, right: 4,
+            fontFamily: 'var(--font-display)',
+            fontSize: 20, fontWeight: 900,
+            color: player.color,
+            textShadow: `0 0 12px ${player.color}, 0 0 24px ${player.color}80`,
+            animation: 'score-float 1.05s ease forwards',
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}>+1</div>
+        )}
         {/* Avatar */}
         <div style={{
           width: 36,
@@ -750,30 +818,45 @@ export default function OnlineHayaoshiPage({
               border: '2px solid rgba(251,191,36,0.6)',
               cursor: buzzing ? 'wait' : 'pointer',
               boxShadow: '0 0 40px rgba(251,191,36,0.35), 0 8px 32px rgba(0,0,0,0.4)',
-              transition: 'all 0.15s ease',
-              transform: buzzing ? 'scale(0.97)' : 'scale(1)',
+              transition: buzzing ? 'all 0.15s ease' : 'none',
+              transform: buzzing ? 'scale(0.97)' : undefined,
               fontFamily: 'var(--font-display)',
+              animation: buzzing ? 'none' : revealProgress > 0.25
+                ? `button-pulse-urgent ${Math.max(0.38, 1.1 - revealProgress * 0.75).toFixed(2)}s ease-in-out infinite`
+                : 'none',
             }}
             onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.95)' }}
             onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
           >
             ✋ 早押し！
           </button>
-          <div style={{ fontSize: 11, color: 'rgba(148,163,184,0.4)' }}>
-            {fullyRevealed ? '問題文が出そろいました' : `文字表示中 ${charsToShow} / ${totalChars}`}
+          <div style={{ fontSize: 11, color: revealProgress >= 1 ? 'rgba(251,191,36,0.6)' : 'rgba(148,163,184,0.4)', fontWeight: revealProgress >= 1 ? 700 : 400, transition: 'color 0.3s' }}>
+            {fullyRevealed ? '⚡ 全文表示！今すぐ押せ！' : `文字表示中 ${charsToShow} / ${totalChars}`}
           </div>
         </div>
       )}
 
       {/* Buzzed status for non-buzzed players */}
       {room.phase === 'buzzed' && !iAmBuzzed && buzzedPlayer && (
-        <div style={{ textAlign: 'center', padding: '16px', borderRadius: 20, background: `${buzzedPlayer.color}12`, border: `1px solid ${buzzedPlayer.color}30` }}>
-          <div style={{ fontSize: 32, marginBottom: 6 }}>✋</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'white', fontWeight: 700 }}>
-            {buzzedPlayer.nickname} が押した！
-          </div>
-          <div className="animate-pulse" style={{ fontSize: 13, color: 'rgba(203,213,225,0.5)', marginTop: 4 }}>
-            回答中... {answerTimeLeft > 0 && room.buzzed_student_id !== studentId ? '' : ''}
+        <div style={{ textAlign: 'center', padding: '16px 20px', borderRadius: 20, background: `${buzzedPlayer.color}14`, border: `1.5px solid ${buzzedPlayer.color}40`, boxShadow: `0 0 24px ${buzzedPlayer.color}20` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: '50%',
+              background: `linear-gradient(135deg, ${buzzedPlayer.color}, ${buzzedPlayer.color}80)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18, fontWeight: 900, color: 'white',
+              boxShadow: `0 0 16px ${buzzedPlayer.color}60`,
+            }}>
+              {buzzedPlayer.nickname.charAt(0)}
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'white', fontWeight: 700 }}>
+                <span style={{ color: buzzedPlayer.color }}>{buzzedPlayer.nickname}</span> が押した！
+              </div>
+              <div className="animate-pulse" style={{ fontSize: 12, color: 'rgba(203,213,225,0.5)', marginTop: 2 }}>
+                回答中...
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -795,6 +878,77 @@ export default function OnlineHayaoshiPage({
               {answerTimeLeft}
             </span>
             <span style={{ fontSize: 12, color: 'rgba(203,213,225,0.6)' }}>秒以内に選んでください</span>
+          </div>
+        </div>
+      )}
+
+      {/* Next-round countdown (result phase) */}
+      {room.phase === 'result' && nextRoundSec !== null && (
+        <div style={{ textAlign: 'center', marginTop: 6 }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontSize: 12, color: 'rgba(148,163,184,0.5)',
+            padding: '4px 14px', borderRadius: 999,
+            background: 'rgba(148,163,184,0.06)',
+          }}>
+            次の問題まで
+            <span key={nextRoundSec} style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, color: '#fbbf24', animation: 'countdown-tick 0.4s ease' }}>
+              {nextRoundSec}
+            </span>
+            秒
+          </span>
+        </div>
+      )}
+
+      {/* ── Buzz flash overlay ── */}
+      {buzzFlashVisible && buzzedPlayer && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          pointerEvents: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'buzz-flash 1.3s ease forwards',
+          background: `radial-gradient(ellipse 60% 50% at 50% 50%, ${buzzedPlayer.color}28 0%, transparent 75%)`,
+        }}>
+          {/* Ripple ring */}
+          <div style={{
+            position: 'absolute', left: '50%', top: '50%',
+            width: 120, height: 120, borderRadius: '50%',
+            border: `3px solid ${buzzedPlayer.color}60`,
+            animation: 'buzz-ripple 1.3s ease forwards',
+          }} />
+          {/* Player name reveal */}
+          <div style={{ textAlign: 'center', animation: 'buzz-player-reveal 1.3s ease forwards', position: 'relative', zIndex: 1 }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%',
+              background: `linear-gradient(135deg, ${buzzedPlayer.color}, ${buzzedPlayer.color}80)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 36, fontWeight: 900, color: 'white',
+              margin: '0 auto 10px',
+              boxShadow: `0 0 40px ${buzzedPlayer.color}80`,
+            }}>
+              {buzzedPlayer.nickname.charAt(0)}
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(24px, 5vw, 40px)',
+              fontWeight: 900,
+              color: buzzedPlayer.color,
+              textShadow: `0 0 30px ${buzzedPlayer.color}, 0 0 60px ${buzzedPlayer.color}60`,
+              letterSpacing: '0.04em',
+            }}>
+              {buzzedPlayer.nickname}
+            </div>
+            <div style={{
+              marginTop: 6,
+              fontSize: 'clamp(13px, 2vw, 18px)',
+              fontWeight: 800,
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'white',
+              textShadow: '0 0 14px rgba(255,255,255,0.4)',
+            }}>
+              BUZZ !!
+            </div>
           </div>
         </div>
       )}
