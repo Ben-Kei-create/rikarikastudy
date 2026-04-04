@@ -7,6 +7,7 @@ export const HAYAOSHI_REVEAL_CHARS_PER_SEC = 6   // chars revealed per second
 export const HAYAOSHI_TOTAL_ROUNDS = 10
 export const HAYAOSHI_ANSWER_SECONDS = 8          // buzzed player answer window
 export const HAYAOSHI_RESULT_SECONDS = 3500       // ms to show result before advancing
+export const HAYAOSHI_XP_PER_CORRECT = 15         // XP per correct answer in online play
 
 export const HAYAOSHI_PLAYER_COLORS = [
   '#3b82f6', // blue
@@ -90,6 +91,36 @@ export async function tryBuzz(studentId: number, charsRevealed: number): Promise
     .eq('phase', 'revealing')
     .select('room_key')
   return !error && (data?.length ?? 0) > 0
+}
+
+/**
+ * Award XP to a student for answering correctly in online hayaoshi.
+ * Fetches current XP, adds the earned amount, and writes it back.
+ * Returns { previousXp, newXp } so callers can detect level-ups.
+ */
+export async function awardHayaoshiXp(
+  studentId: number,
+  xpToAdd: number,
+): Promise<{ previousXp: number; newXp: number }> {
+  const { data } = await supabase
+    .from('students')
+    .select('student_xp, xp')
+    .eq('id', studentId)
+    .single()
+
+  const raw = data as { student_xp?: number; xp?: number } | null
+  const currentXp =
+    typeof raw?.student_xp === 'number' && raw.student_xp > 0
+      ? raw.student_xp
+      : (raw?.xp ?? 0)
+  const newXp = currentXp + xpToAdd
+
+  await supabase
+    .from('students')
+    .update({ student_xp: newXp, xp: newXp })
+    .eq('id', studentId)
+
+  return { previousXp: currentXp, newXp }
 }
 
 export function subscribeHayaoshiRoom(callback: (room: HayaoshiRoom) => void) {

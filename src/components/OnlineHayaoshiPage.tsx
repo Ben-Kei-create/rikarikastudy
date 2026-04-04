@@ -19,11 +19,14 @@ import {
   HAYAOSHI_REVEAL_CHARS_PER_SEC,
   HAYAOSHI_ROOM_KEY,
   HAYAOSHI_TOTAL_ROUNDS,
+  HAYAOSHI_XP_PER_CORRECT,
+  awardHayaoshiXp,
   fetchHayaoshiRoom,
   subscribeHayaoshiRoom,
   tryBuzz,
   upsertHayaoshiRoom,
 } from '@/lib/onlineHayaoshi'
+import { getLevel } from '@/lib/xp'
 
 const ADMIN_STUDENT_ID = 5
 
@@ -83,6 +86,10 @@ export default function OnlineHayaoshiPage({
   const [floatingScores, setFloatingScores] = useState<{ id: number; studentId: number; color: string }[]>([])
   // Next-round countdown (seconds)
   const [nextRoundSec, setNextRoundSec] = useState<number | null>(null)
+  // XP toast: shown after correct answer
+  const [xpToast, setXpToast] = useState<{ xp: number; levelUp: boolean; newLevel: number } | null>(null)
+  // Total XP earned this session (for finished screen)
+  const [sessionXpEarned, setSessionXpEarned] = useState(0)
 
   // Ref to avoid stale closure in timers
   const roomRef = useRef<HayaoshiRoom | null>(null)
@@ -361,6 +368,18 @@ export default function OnlineHayaoshiPage({
       buzz_correct: correct,
       players_json: updatedPlayers,
     })
+
+    // Award XP for correct answers (fire-and-forget; non-blocking)
+    if (correct && studentId != null) {
+      awardHayaoshiXp(studentId, HAYAOSHI_XP_PER_CORRECT).then(({ previousXp, newXp }) => {
+        const levelBefore = getLevel(previousXp)
+        const levelAfter = getLevel(newXp)
+        setXpToast({ xp: HAYAOSHI_XP_PER_CORRECT, levelUp: levelAfter > levelBefore, newLevel: levelAfter })
+        setSessionXpEarned(prev => prev + HAYAOSHI_XP_PER_CORRECT)
+        setTimeout(() => setXpToast(null), 2800)
+      }).catch(() => { /* XP update failure is non-fatal */ })
+    }
+
     setSubmitting(false)
     setSelectedChoice(null)
   }
@@ -616,6 +635,19 @@ export default function OnlineHayaoshiPage({
           <div className="text-xs font-semibold tracking-[0.18em] text-amber-200 uppercase mb-2">Game Over</div>
           <h2 className="font-display text-4xl text-white">早押し終了！</h2>
           <p className="mt-2 text-slate-300">全{room.total_rounds}問完了</p>
+          {sessionXpEarned > 0 && (
+            <div className="anim-pop" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              marginTop: 10, padding: '6px 16px', borderRadius: 999,
+              background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.35)',
+            }}>
+              <span style={{ fontSize: 16 }}>⭐</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, color: '#86efac' }}>
+                +{sessionXpEarned} XP
+              </span>
+              <span style={{ fontSize: 12, color: 'rgba(134,239,172,0.7)' }}>今回の対戦で獲得！</span>
+            </div>
+          )}
 
           <div className="mt-6 space-y-3">
             {sorted.map((p, i) => (
@@ -897,6 +929,49 @@ export default function OnlineHayaoshiPage({
             </span>
             秒
           </span>
+        </div>
+      )}
+
+      {/* ── XP toast ── */}
+      {xpToast && (
+        <div style={{
+          position: 'fixed', bottom: 80, right: 20, zIndex: 300,
+          pointerEvents: 'none',
+        }}>
+          {xpToast.levelUp ? (
+            // Level-up: bigger celebration
+            <div className="anim-pop" style={{
+              padding: '14px 20px',
+              borderRadius: 20,
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.25), rgba(245,158,11,0.15))',
+              border: '1.5px solid rgba(251,191,36,0.6)',
+              boxShadow: '0 0 30px rgba(251,191,36,0.4)',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 28, lineHeight: 1 }}>⬆️</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 900, color: '#fbbf24', marginTop: 4 }}>
+                LEVEL UP!
+              </div>
+              <div style={{ fontSize: 13, color: '#fbbf24', fontWeight: 700 }}>Lv. {xpToast.newLevel}</div>
+              <div style={{ fontSize: 12, color: 'rgba(203,213,225,0.7)', marginTop: 2 }}>+{xpToast.xp} XP</div>
+            </div>
+          ) : (
+            // Normal XP gain
+            <div className="anim-fade-up" style={{
+              padding: '10px 18px',
+              borderRadius: 16,
+              background: 'rgba(34,197,94,0.18)',
+              border: '1px solid rgba(34,197,94,0.4)',
+              boxShadow: '0 0 18px rgba(34,197,94,0.25)',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ fontSize: 18 }}>⭐</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900, color: '#86efac' }}>
+                +{xpToast.xp} XP
+              </span>
+              <span style={{ fontSize: 11, color: 'rgba(134,239,172,0.7)', fontWeight: 600 }}>獲得！</span>
+            </div>
+          )}
         </div>
       )}
 
