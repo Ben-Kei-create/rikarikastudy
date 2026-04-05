@@ -9,6 +9,8 @@ import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { GUEST_STUDENT_ID } from '@/lib/guestStudy'
 import { getStudentAvatarMeta } from '@/lib/studentAvatar'
 import { calculateQuizXp, getJstWeekRange, getLevelInfo } from '@/lib/engagement'
+import MyPageGlossaryTab from '@/components/MyPageGlossaryTab'
+import { SCIENCE_GLOSSARY, type ScienceGlossaryEntry, type ScienceGlossaryField } from '@/lib/scienceGlossary'
 
 function filterStudents(students: StudentRecord[], query: string) {
   const normalized = query.trim().toLowerCase()
@@ -325,6 +327,10 @@ export default function LoginPage({
   const [regSubmitting, setRegSubmitting] = useState(false)
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<WeeklyLeaderboardEntry[]>([])
   const [weeklyLeaderboardLoading, setWeeklyLeaderboardLoading] = useState(true)
+  const [rankingOpen, setRankingOpen] = useState(false)
+  const [glossaryOpen, setGlossaryOpen] = useState(false)
+  const [glossaryLoaded, setGlossaryLoaded] = useState(false)
+  const [customGlossaryEntries, setCustomGlossaryEntries] = useState<ScienceGlossaryEntry[]>([])
   const currentWeekRange = useMemo(() => getJstWeekRange(), [])
   const weekRangeLabel = useMemo(() => {
     const endDate = new Date(currentWeekRange.endDate.getTime() - 1)
@@ -414,6 +420,32 @@ export default function LoginPage({
     return () => { active = false }
   }, [currentWeekRange.startDate])
 
+  // 理科事典のカスタムエントリーを初回表示時に取得
+  useEffect(() => {
+    if (!glossaryOpen || glossaryLoaded) return
+    setGlossaryLoaded(true)
+    supabase
+      .from('science_glossary_entries')
+      .select('*')
+      .order('reading', { ascending: true })
+      .then(({ data }) => {
+        if (data) {
+          setCustomGlossaryEntries(
+            data.map(row => ({
+              id: row.id,
+              term: row.term,
+              reading: row.reading,
+              field: row.field as ScienceGlossaryField,
+              shortDescription: row.short_description,
+              description: row.description,
+              related: Array.isArray(row.related) ? (row.related as string[]).filter(Boolean) : [],
+              tags: Array.isArray(row.tags) ? (row.tags as string[]).filter(Boolean) : [],
+            }))
+          )
+        }
+      })
+  }, [glossaryOpen, glossaryLoaded])
+
   const isGuest = studentId === GUEST_STUDENT_ID
   const selectedStudentRecord = students.find(s => s.id === studentId) ?? null
   const isLocked = selectedStudentRecord?.lock_enabled !== false
@@ -471,67 +503,73 @@ export default function LoginPage({
                   Science Study
                 </div>
                 <div
-                  className="font-display mt-3 text-[3rem] leading-none sm:text-[4rem]"
+                  className="font-display mt-2 text-[2.4rem] leading-none sm:text-[3rem]"
                   style={{
                     background: 'var(--hero-text-gradient)',
                     WebkitBackgroundClip: 'text',
                     color: 'transparent',
-                    filter: 'drop-shadow(0 18px 34px var(--hero-text-shadow))',
+                    filter: 'drop-shadow(0 14px 26px var(--hero-text-shadow))',
                   }}
                 >
                   RikaQuiz
                 </div>
                 <h2
-                  className="font-display mt-4 text-[1.9rem] tracking-[0.18em] text-white sm:text-[2.2rem]"
-                  style={{ textShadow: '0 14px 28px var(--hero-text-shadow)' }}
+                  className="font-display mt-2 text-[1.4rem] tracking-[0.18em] text-white sm:text-[1.7rem]"
+                  style={{ textShadow: '0 10px 20px var(--hero-text-shadow)' }}
                 >
                   Login
                 </h2>
-                <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-300 lg:mx-0">
-                  生徒を選んで、パスワードを入力するだけでログインできます。
-                </p>
               </div>
 
-              {/* Weekly Ranking */}
+              {/* Weekly Ranking - 折りたたみ */}
               {(weeklyLeaderboardLoading || weeklyLeaderboard.length > 0) && (
-                <div className="mt-5 rounded-[24px] border border-white/8 bg-slate-950/28 px-4 py-3 sm:px-5 sm:py-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
+                <div className="mt-4 rounded-[24px] border border-white/8 bg-slate-950/28 px-4 py-3 sm:px-5">
+                  <button
+                    type="button"
+                    onClick={() => setRankingOpen(v => !v)}
+                    className="flex w-full items-center justify-between gap-3"
+                  >
+                    <div className="text-left">
                       <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-200">Weekly Ranking</div>
-                      <div className="mt-1 text-sm font-semibold text-white">今週のランキング</div>
+                      <div className="mt-0.5 text-sm font-semibold text-white">今週のランキング</div>
                     </div>
-                    <div className="text-[11px] text-slate-500">{weekRangeLabel}</div>
-                  </div>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                      <span>{weekRangeLabel}</span>
+                      <span className="text-slate-600">{rankingOpen ? '▲' : '▼'}</span>
+                    </div>
+                  </button>
 
-                  <div className="mt-3 max-h-48 overflow-y-auto pr-1 md:max-h-60">
-                    {weeklyLeaderboardLoading ? (
-                      <div className="px-1 py-3 text-xs text-slate-500">読み込み中...</div>
-                    ) : (
-                      <div className="space-y-2">
-                        {weeklyLeaderboard.map(entry => (
-                          <div
-                            key={`${entry.studentId}-${entry.rank}`}
-                            className="flex items-center justify-between gap-3 border-b border-white/8 pb-2 last:border-b-0 last:pb-0"
-                          >
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <div className="text-sm font-semibold text-sky-100">
-                                  {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`}
+                  {rankingOpen && (
+                    <div className="mt-3 max-h-48 overflow-y-auto pr-1">
+                      {weeklyLeaderboardLoading ? (
+                        <div className="px-1 py-3 text-xs text-slate-500">読み込み中...</div>
+                      ) : (
+                        <div className="space-y-2">
+                          {weeklyLeaderboard.map(entry => (
+                            <div
+                              key={`${entry.studentId}-${entry.rank}`}
+                              className="flex items-center justify-between gap-3 border-b border-white/8 pb-2 last:border-b-0 last:pb-0"
+                            >
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm font-semibold text-sky-100">
+                                    {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `${entry.rank}.`}
+                                  </div>
+                                  <div className="truncate text-sm font-semibold text-white">{entry.nickname}</div>
+                                  <div className="text-[10px] text-slate-500">Lv.{entry.level}</div>
                                 </div>
-                                <div className="truncate text-sm font-semibold text-white">{entry.nickname}</div>
-                                <div className="text-[10px] text-slate-500">Lv.{entry.level}</div>
+                                <div className="mt-0.5 text-[11px] text-slate-500">{entry.title}</div>
                               </div>
-                              <div className="mt-0.5 text-[11px] text-slate-500">{entry.title}</div>
+                              <div className="shrink-0 text-right">
+                                <div className="font-display text-xl text-sky-300">{entry.weeklyXp}</div>
+                                <div className="text-[10px] text-slate-500">XP</div>
+                              </div>
                             </div>
-                            <div className="shrink-0 text-right">
-                              <div className="font-display text-xl text-sky-300">{entry.weeklyXp}</div>
-                              <div className="text-[10px] text-slate-500">XP</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -702,6 +740,29 @@ export default function LoginPage({
               )}
             </div>
           </div>
+        </div>
+
+        {/* ── 理科事典 ── */}
+        <div className="mt-4 w-full">
+          <button
+            type="button"
+            onClick={() => setGlossaryOpen(v => !v)}
+            className="flex w-full items-center justify-between gap-3 rounded-[24px] border border-white/8 bg-slate-950/28 px-5 py-3 text-left transition-colors hover:bg-slate-900/30"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-white">理科事典</span>
+              <span className="rounded-full bg-sky-300/10 px-2.5 py-0.5 text-[11px] font-semibold text-sky-200">
+                {SCIENCE_GLOSSARY.length + customGlossaryEntries.length}語
+              </span>
+            </div>
+            <span className="text-xs text-slate-500">{glossaryOpen ? '閉じる ▲' : '開く ▼'}</span>
+          </button>
+
+          {glossaryOpen && (
+            <div className="mt-3">
+              <MyPageGlossaryTab customGlossaryEntries={customGlossaryEntries} />
+            </div>
+          )}
         </div>
       </div>
     </div>
