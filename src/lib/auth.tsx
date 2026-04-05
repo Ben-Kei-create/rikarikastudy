@@ -23,14 +23,15 @@ export interface StudentRecord {
   student_xp: number
   is_approved: boolean
   gemini_enabled: boolean
+  lock_enabled: boolean
 }
 
 export const DEFAULT_STUDENTS: StudentRecord[] = [
-  { id: 1, nickname: 'S', password: 'rikalove1', student_xp: 0, is_approved: true, gemini_enabled: true },
-  { id: 2, nickname: 'M', password: 'rikalove2', student_xp: 0, is_approved: true, gemini_enabled: true },
-  { id: 3, nickname: 'T', password: 'rikalove3', student_xp: 0, is_approved: true, gemini_enabled: true },
-  { id: 4, nickname: 'K', password: 'rikalove4', student_xp: 0, is_approved: true, gemini_enabled: true },
-  { id: 5, nickname: '先生', password: 'rikaadmin2026', student_xp: 0, is_approved: true, gemini_enabled: true },
+  { id: 1, nickname: 'S', password: 'rikalove1', student_xp: 0, is_approved: true, gemini_enabled: true, lock_enabled: true },
+  { id: 2, nickname: 'M', password: 'rikalove2', student_xp: 0, is_approved: true, gemini_enabled: true, lock_enabled: true },
+  { id: 3, nickname: 'T', password: 'rikalove3', student_xp: 0, is_approved: true, gemini_enabled: true, lock_enabled: true },
+  { id: 4, nickname: 'K', password: 'rikalove4', student_xp: 0, is_approved: true, gemini_enabled: true, lock_enabled: true },
+  { id: 5, nickname: '先生', password: 'rikaadmin2026', student_xp: 0, is_approved: true, gemini_enabled: true, lock_enabled: true },
 ]
 
 export const LOGIN_STUDENTS: StudentRecord[] = [GUEST_STUDENTS_ENTRY(), ...DEFAULT_STUDENTS]
@@ -43,6 +44,7 @@ function GUEST_STUDENTS_ENTRY(): StudentRecord {
     student_xp: 0,
     is_approved: false,
     gemini_enabled: false,
+    lock_enabled: false,
   }
 }
 
@@ -57,6 +59,7 @@ function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number
       student_xp: typeof current?.student_xp === 'number' ? current.student_xp : defaultStudent.student_xp,
       is_approved: typeof current?.is_approved === 'boolean' ? current.is_approved : defaultStudent.is_approved,
       gemini_enabled: typeof current?.gemini_enabled === 'boolean' ? current.gemini_enabled : defaultStudent.gemini_enabled,
+      lock_enabled: typeof current?.lock_enabled === 'boolean' ? current.lock_enabled : true,
     }
   })
 
@@ -70,6 +73,7 @@ function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number
       student_xp: typeof student.student_xp === 'number' ? student.student_xp : 0,
       is_approved: typeof student.is_approved === 'boolean' ? student.is_approved : false,
       gemini_enabled: typeof student.gemini_enabled === 'boolean' ? student.gemini_enabled : false,
+      lock_enabled: typeof student.lock_enabled === 'boolean' ? student.lock_enabled : true,
     })
   }
 
@@ -79,10 +83,18 @@ function mergeWithDefaults(students: Array<Partial<StudentRecord> & { id: number
 async function queryStudents(): Promise<StudentRecord[] | null> {
   const { data, error } = await supabase
     .from('students')
-    .select('id, nickname, password, student_xp, is_approved, gemini_enabled')
+    .select('id, nickname, password, student_xp, is_approved, gemini_enabled, lock_enabled')
     .order('id', { ascending: true })
 
   if (!error && data) return mergeWithDefaults(data)
+
+  // lock_enabled 列がない旧スキーマにフォールバック
+  const { data: noLockData, error: noLockError } = await supabase
+    .from('students')
+    .select('id, nickname, password, student_xp, is_approved, gemini_enabled')
+    .order('id', { ascending: true })
+
+  if (!noLockError && noLockData) return mergeWithDefaults(noLockData)
 
   // gemini_enabled or is_approved 列がない旧スキーマにフォールバック
   const { data: fallbackData, error: fallbackError } = await supabase
@@ -151,6 +163,7 @@ interface AuthContextType extends AuthState {
   register: (input: RegisterInput) => Promise<UpdateProfileResult & { studentId?: number }>
   refreshProfile: () => Promise<void>
   updateProfile: (updates: UpdateProfileInput) => Promise<UpdateProfileResult>
+  updateLockSetting: (currentPassword: string, lockEnabled: boolean) => Promise<UpdateProfileResult>
   dismissLoginCardReward: () => void
 }
 
@@ -260,7 +273,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isGuest = isGuestStudentId(studentId)
     const student = await fetchStudentById(studentId)
 
-    if (!student || (!isGuest && student.password !== password.trim())) {
+    // ロックOFFのユーザーはパスワード不要
+    const requiresPassword = !isGuest && student?.lock_enabled !== false
+    if (!student || (requiresPassword && student.password !== password.trim())) {
       return {
         ok: false,
         message: 'ID またはパスワードが違います',
@@ -409,6 +424,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const updateLockSetting = async (currentPassword: string, lockEnabled: boolean): Promise<UpdateProfileResult> => {
+    if (state.studentId === null) {
+      return { ok: false, message: 'ログインしてから変更してください。' }
+    }
+
+    if (isGuestStudentId(state.studentId)) {
+      return { ok: false, message: 'ゲストモードでは変更できません。' }
+    }
+
+    // 現在のパスワードで本人確認
+    const student = await fetchStudentById(state.studentId)
+    if (!student) return { ok: false, message: 'ユーザー情報の取得に失敗しました。' }
+    if (student.password !== currentPassword.trim()) {
+      return { ok: false, message: 'パスワードが違います。' }
+    }
+
+    const { error } = await supabase
+      .from('students')
+      .update({ lock_enabled: lockEnabled })
+      .eq('id', state.studentId)
+
+    if (error) {
+      if (error.message.includes('lock_enabled')) {
+        return { ok: false, message: 'lock_enabled 列がまだ追加されていません。supabase_schema.sql を SQL Editor で実行してください。' }
+      }
+      return { ok: false, message: `保存に失敗しました: ${error.message}` }
+    }
+
+    return {
+      ok: true,
+      message: lockEnabled
+        ? 'ロックをONにしました。次回のログインからパスワードが必要です。'
+        : 'ロックをOFFにしました。次回のログインからパスワードなしで入れます。',
+    }
+  }
+
   useEffect(() => {
     const studentId = state.studentId
     if (studentId === null || isGuestStudentId(studentId)) return
@@ -468,7 +519,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [state.studentId])
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, register, refreshProfile, updateProfile, dismissLoginCardReward: () => setState(prev => ({ ...prev, pendingLoginCardReward: null })) }}>
+    <AuthContext.Provider value={{ ...state, login, logout, register, refreshProfile, updateProfile, updateLockSetting, dismissLoginCardReward: () => setState(prev => ({ ...prev, pendingLoginCardReward: null })) }}>
       {children}
     </AuthContext.Provider>
   )

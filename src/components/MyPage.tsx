@@ -271,7 +271,7 @@ export default function MyPage({
   onStartDrill: (field: string, unit: string) => void
   onOnline: () => void
 }) {
-  const { studentId, nickname, updateProfile, logout } = useAuth()
+  const { studentId, nickname, updateProfile, updateLockSetting, logout } = useAuth()
   const { theme, setTheme, ready: themeReady } = useTheme()
   const [soundOn, setSoundOn] = useState(false)
   useEffect(() => { setSoundOn(isSoundEnabled()) }, [])
@@ -292,6 +292,11 @@ export default function MyPage({
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [accountMsg, setAccountMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [saving, setSaving] = useState<'nickname' | 'password' | null>(null)
+  const [lockEnabled, setLockEnabled] = useState<boolean | null>(null)
+  const [lockPending, setLockPending] = useState<boolean | null>(null)
+  const [lockPwInput, setLockPwInput] = useState('')
+  const [lockSaving, setLockSaving] = useState(false)
+  const [lockMsg, setLockMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [questionForm, setQuestionForm] = useState<CustomQuestionForm>(INITIAL_CUSTOM_QUESTION_FORM)
   const [questionComposerMode, setQuestionComposerMode] = useState<QuestionComposerMode>('simple')
   const [showQuestionExtras, setShowQuestionExtras] = useState(false)
@@ -591,6 +596,45 @@ export default function MyPage({
         ['questions', '✍️ 問題作成'],
         ['account', '⚙️ 設定'],
       ] as const)
+
+  // ロック設定を取得
+  useEffect(() => {
+    if (studentId === null || isGuest) return
+    supabase
+      .from('students')
+      .select('lock_enabled')
+      .eq('id', studentId)
+      .single()
+      .then(({ data }) => {
+        setLockEnabled(data?.lock_enabled ?? true)
+      })
+  }, [studentId, isGuest])
+
+  const handleToggleLock = () => {
+    if (lockEnabled === null) return
+    setLockPending(!lockEnabled)
+    setLockPwInput('')
+    setLockMsg(null)
+  }
+
+  const handleCancelLock = () => {
+    setLockPending(null)
+    setLockPwInput('')
+    setLockMsg(null)
+  }
+
+  const handleConfirmLock = async () => {
+    if (lockPending === null) return
+    setLockSaving(true)
+    const result = await updateLockSetting(lockPwInput, lockPending)
+    setLockSaving(false)
+    setLockMsg({ type: result.ok ? 'success' : 'error', text: result.message })
+    if (result.ok) {
+      setLockEnabled(lockPending)
+      setLockPending(null)
+      setLockPwInput('')
+    }
+  }
 
   const handleSaveNickname = async () => {
     setSaving('nickname')
@@ -2153,6 +2197,79 @@ export default function MyPage({
                   </button>
                 </div>
               </div>
+
+              {!isGuest && (
+                <div className="card">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-slate-300 font-bold">ログインロック</h3>
+                      <p className="text-slate-500 text-xs mt-1">
+                        OFFにするとパスワードなしでどの端末からでもログインできます
+                      </p>
+                    </div>
+                    <button
+                      onClick={lockPending !== null ? handleCancelLock : handleToggleLock}
+                      disabled={lockEnabled === null}
+                      className="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors"
+                      style={{ background: (lockPending ?? lockEnabled ?? true) ? 'var(--color-info)' : 'var(--border-strong)' }}
+                      role="switch"
+                      aria-checked={lockPending ?? lockEnabled ?? true}
+                      aria-label="ログインロックの切り替え"
+                    >
+                      <span
+                        className="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+                        style={{ transform: (lockPending ?? lockEnabled ?? true) ? 'translateX(22px)' : 'translateX(4px)' }}
+                      />
+                    </button>
+                  </div>
+
+                  {lockPending !== null && (
+                    <div className="mt-3 space-y-3">
+                      <p className="text-xs text-slate-400">
+                        本人確認のため、現在のパスワードを入力してください。
+                      </p>
+                      <input
+                        type="password"
+                        value={lockPwInput}
+                        onChange={e => setLockPwInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') void handleConfirmLock() }}
+                        placeholder="現在のパスワード"
+                        className="input-surface"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => void handleConfirmLock()}
+                          disabled={lockSaving || !lockPwInput.trim()}
+                          className="btn-primary flex-1"
+                          style={{ opacity: lockSaving || !lockPwInput.trim() ? 0.7 : 1 }}
+                        >
+                          {lockSaving ? '変更中...' : '確認して変更'}
+                        </button>
+                        <button
+                          onClick={handleCancelLock}
+                          className="px-4 py-2 text-sm text-slate-400 transition-colors hover:text-slate-200"
+                        >
+                          キャンセル
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {lockMsg && (
+                    <div
+                      className="mt-3 rounded-xl px-3 py-2 text-sm"
+                      style={{
+                        background: lockMsg.type === 'success' ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)',
+                        border: `1px solid ${lockMsg.type === 'success' ? 'var(--color-success-soft-border)' : 'var(--color-danger-soft-border)'}`,
+                        color: lockMsg.type === 'success' ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
+                      }}
+                    >
+                      {lockMsg.text}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {!isGuest && (

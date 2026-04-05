@@ -20,11 +20,18 @@ function filterStudents(students: StudentRecord[], query: string) {
   })
 }
 
-function getStudentModeMeta(studentId: number) {
+function getStudentModeMeta(studentId: number, lockEnabled = true) {
   if (studentId === GUEST_STUDENT_ID) {
     return {
       badge: 'ゲスト',
       detail: 'PWなし / 記録は当日分のみ',
+    }
+  }
+
+  if (!lockEnabled) {
+    return {
+      badge: 'ロック解除',
+      detail: 'PW なしで直接ログイン',
     }
   }
 
@@ -132,12 +139,12 @@ function StudentPicker({
 
   const selectedStudent = students.find(s => s.id === selectedId) ?? students[0] ?? null
   const selectedAvatar = selectedStudent ? getStudentAvatarMeta(selectedStudent.id) : null
-  const selectedMeta = selectedStudent ? getStudentModeMeta(selectedStudent.id) : null
+  const selectedMeta = selectedStudent ? getStudentModeMeta(selectedStudent.id, selectedStudent.lock_enabled) : null
 
   const renderStudentItem = (student: StudentRecord) => {
     const checked = selectedId === student.id
     const avatar = getStudentAvatarMeta(student.id)
-    const meta = getStudentModeMeta(student.id)
+    const meta = getStudentModeMeta(student.id, student.lock_enabled)
 
     return (
       <label
@@ -408,10 +415,13 @@ export default function LoginPage({
   }, [currentWeekRange.startDate])
 
   const isGuest = studentId === GUEST_STUDENT_ID
+  const selectedStudentRecord = students.find(s => s.id === studentId) ?? null
+  const isLocked = selectedStudentRecord?.lock_enabled !== false
+  const needsPassword = !isGuest && isLocked
 
   const handleLogin = async () => {
     setSubmitting(true)
-    const result = await login(studentId, isGuest ? '' : pw)
+    const result = await login(studentId, needsPassword ? pw : '')
     setSubmitting(false)
 
     if (result.ok) {
@@ -562,12 +572,14 @@ export default function LoginPage({
               </div>
 
               <div className="mt-4">
-                {isGuest ? (
+                {!needsPassword ? (
                   <div
                     className="info-banner text-sm"
                     style={{ background: 'var(--color-accent-soft-bg)', borderColor: 'var(--color-accent-soft-border)', color: '#bae6fd' }}
                   >
-                    ゲストは PW なしでそのまま開始できます。記録は毎日リセットされます。
+                    {isGuest
+                      ? 'ゲストは PW なしでそのまま開始できます。記録は毎日リセットされます。'
+                      : 'ロック解除中です。PW なしでそのままログインできます。'}
                   </div>
                 ) : (
                   <div key={shakeKey} className={error ? 'anim-shake' : ''}>
@@ -588,7 +600,7 @@ export default function LoginPage({
                 )}
               </div>
 
-              {isGuest && error && <p className="mt-3 text-center text-sm text-red-400">{error}</p>}
+              {!needsPassword && error && <p className="mt-3 text-center text-sm text-red-400">{error}</p>}
 
               <button
                 onClick={() => void handleLogin()}

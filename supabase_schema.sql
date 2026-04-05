@@ -594,3 +594,8 @@ CREATE TABLE IF NOT EXISTS online_hayaoshi_rooms (
 );
 
 ALTER TABLE online_hayaoshi_rooms DISABLE ROW LEVEL SECURITY;
+
+-- ロック設定（2026-04）
+-- ログインパスワードの有無をユーザーが制御できるカラム
+-- TRUE（デフォルト）= パスワード必要 / FALSE = パスワードなしでログイン可
+ALTER TABLE students ADD COLUMN IF NOT EXISTS lock_enabled BOOLEAN NOT NULL DEFAULT TRUE;
