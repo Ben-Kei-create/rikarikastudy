@@ -25,6 +25,7 @@ import { ScienceWorkbenchMode, SCIENCE_WORKBENCH_MODE_META } from '@/lib/science
 import ScienceChatPage from '@/components/ScienceChatPage'
 import TerritoryQuizPage from '@/components/TerritoryQuizPage'
 import ScienceTowerPage from '@/components/ScienceTowerPage'
+import GlossaryFab from '@/components/GlossaryFab'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { CustomQuizOptions } from '@/lib/customQuiz'
 import { QuizQuestionCount } from '@/lib/questionPicker'
@@ -74,6 +75,14 @@ function App() {
 
   const ADMIN_STUDENT_ID = 5
   const screenType = typeof screen === 'object' ? screen.type : screen
+
+  const GLOSSARY_HIDDEN_SCREENS = new Set([
+    'quiz', 'time-attack', 'territory-quiz', 'science-tower',
+    'biology-practice', 'chemistry-practice', 'earth-practice',
+    'online-territory', 'online-hayaoshi', 'online-lab',
+  ])
+  const glossaryVisible = !GLOSSARY_HIDDEN_SCREENS.has(screenType)
+
   const goHome = () => setScreen('home')
   const goOnline = () => setScreen('online-gate')
 
@@ -186,6 +195,7 @@ function App() {
   return (
     <>
       {content}
+      <GlossaryFab visible={glossaryVisible && !adminOpen} />
       {adminOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--bg)', overflowY: 'auto' }}>
           <AdminPage onBack={() => setAdminOpen(false)} />

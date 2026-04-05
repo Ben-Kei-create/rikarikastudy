@@ -9,8 +9,6 @@ import ScienceBackdrop from '@/components/ScienceBackdrop'
 import { GUEST_STUDENT_ID } from '@/lib/guestStudy'
 import { getStudentAvatarMeta } from '@/lib/studentAvatar'
 import { calculateQuizXp, getJstWeekRange, getLevelInfo } from '@/lib/engagement'
-import MyPageGlossaryTab from '@/components/MyPageGlossaryTab'
-import { SCIENCE_GLOSSARY, type ScienceGlossaryEntry, type ScienceGlossaryField } from '@/lib/scienceGlossary'
 
 function filterStudents(students: StudentRecord[], query: string) {
   const normalized = query.trim().toLowerCase()
@@ -328,9 +326,6 @@ export default function LoginPage({
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<WeeklyLeaderboardEntry[]>([])
   const [weeklyLeaderboardLoading, setWeeklyLeaderboardLoading] = useState(true)
   const [rankingOpen, setRankingOpen] = useState(false)
-  const [glossaryOpen, setGlossaryOpen] = useState(false)
-  const [glossaryLoaded, setGlossaryLoaded] = useState(false)
-  const [customGlossaryEntries, setCustomGlossaryEntries] = useState<ScienceGlossaryEntry[]>([])
   const currentWeekRange = useMemo(() => getJstWeekRange(), [])
   const weekRangeLabel = useMemo(() => {
     const endDate = new Date(currentWeekRange.endDate.getTime() - 1)
@@ -419,32 +414,6 @@ export default function LoginPage({
 
     return () => { active = false }
   }, [currentWeekRange.startDate])
-
-  // 理科事典のカスタムエントリーを初回表示時に取得
-  useEffect(() => {
-    if (!glossaryOpen || glossaryLoaded) return
-    setGlossaryLoaded(true)
-    supabase
-      .from('science_glossary_entries')
-      .select('*')
-      .order('reading', { ascending: true })
-      .then(({ data }) => {
-        if (data) {
-          setCustomGlossaryEntries(
-            data.map(row => ({
-              id: row.id,
-              term: row.term,
-              reading: row.reading,
-              field: row.field as ScienceGlossaryField,
-              shortDescription: row.short_description,
-              description: row.description,
-              related: Array.isArray(row.related) ? (row.related as string[]).filter(Boolean) : [],
-              tags: Array.isArray(row.tags) ? (row.tags as string[]).filter(Boolean) : [],
-            }))
-          )
-        }
-      })
-  }, [glossaryOpen, glossaryLoaded])
 
   const isGuest = studentId === GUEST_STUDENT_ID
   const selectedStudentRecord = students.find(s => s.id === studentId) ?? null
@@ -742,28 +711,6 @@ export default function LoginPage({
           </div>
         </div>
 
-        {/* ── 理科事典 ── */}
-        <div className="mt-4 w-full">
-          <button
-            type="button"
-            onClick={() => setGlossaryOpen(v => !v)}
-            className="flex w-full items-center justify-between gap-3 rounded-[24px] border border-white/8 bg-slate-950/28 px-5 py-3 text-left transition-colors hover:bg-slate-900/30"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-white">理科事典</span>
-              <span className="rounded-full bg-sky-300/10 px-2.5 py-0.5 text-[11px] font-semibold text-sky-200">
-                {SCIENCE_GLOSSARY.length + customGlossaryEntries.length}語
-              </span>
-            </div>
-            <span className="text-xs text-slate-500">{glossaryOpen ? '閉じる ▲' : '開く ▼'}</span>
-          </button>
-
-          {glossaryOpen && (
-            <div className="mt-3">
-              <MyPageGlossaryTab customGlossaryEntries={customGlossaryEntries} />
-            </div>
-          )}
-        </div>
       </div>
     </div>
   )
