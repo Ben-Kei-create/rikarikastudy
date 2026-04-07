@@ -18,13 +18,15 @@ import {
   HAYAOSHI_PLAYER_COLORS,
   HAYAOSHI_RESULT_SECONDS,
   HAYAOSHI_REVEAL_CHARS_PER_SEC,
-  HAYAOSHI_ROOM_KEY,
   HAYAOSHI_TOTAL_ROUNDS,
   HAYAOSHI_XP_PER_CORRECT,
   awardHayaoshiXp,
   createHayaoshiLiveChannel,
+  createHayaoshiRoom,
   fetchHayaoshiRoom,
+  generateRoomCode,
   leaveHayaoshiLobby,
+  listOpenHayaoshiRooms,
   subscribeHayaoshiRoom,
   tryBuzz,
   upsertHayaoshiRoom,
@@ -64,13 +66,22 @@ export default function OnlineHayaoshiPage({
   const { studentId, nickname, logout } = useAuth()
   const isAdmin = studentId === ADMIN_STUDENT_ID
 
+  // ── Room selection (shown before lobby) ──
+  const [roomKey, setRoomKey] = useState<string | null>(null)        // null = not in any room yet
+  const [selectMode, setSelectMode] = useState<'menu' | 'join'>('menu')
+  const [joinCodeInput, setJoinCodeInput] = useState('')
+  const [joinError, setJoinError] = useState('')
+  const [joining, setJoining] = useState(false)
+  const [openRooms, setOpenRooms] = useState<HayaoshiRoom[]>([])
+  const [loadingRooms, setLoadingRooms] = useState(false)
+
   // Question pool (loaded once)
   const [allQuestions, setAllQuestions] = useState<HayaoshiQuestionData[]>([])
   const [loadingQ, setLoadingQ] = useState(true)
 
   // Room state (from Supabase)
   const [room, setRoom] = useState<HayaoshiRoom | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)          // only loads once roomKey is set
   const [error, setError] = useState<string | null>(null)
 
   // Local reveal progress (calculated from question_started_at)
@@ -147,25 +158,27 @@ export default function OnlineHayaoshiPage({
     return () => { active = false }
   }, [studentId])
 
-  // ─── Load room + subscribe ───
+  // ─── Load room + subscribe (only once roomKey is chosen) ───
 
   useEffect(() => {
+    if (!roomKey) return
     let active = true
     const load = async () => {
       setLoading(true)
+      setError(null)
       try {
-        const r = await fetchHayaoshiRoom()
+        const r = await fetchHayaoshiRoom(roomKey)
         if (!active) return
         setRoom(r)
-      } catch (e) {
+      } catch {
         if (active) setError('接続エラーが発生しました')
       }
       setLoading(false)
     }
     void load()
-    const sub = subscribeHayaoshiRoom(r => { if (active) setRoom(r) })
+    const sub = subscribeHayaoshiRoom(roomKey, r => { if (active) setRoom(r) })
     return () => { active = false; void sub.unsubscribe() }
-  }, [])
+  }, [roomKey])
 
   // ─── Join room when lobby ───
 
@@ -182,7 +195,7 @@ export default function OnlineHayaoshiPage({
       score: 0,
       color: HAYAOSHI_PLAYER_COLORS[room.players_json.length % HAYAOSHI_PLAYER_COLORS.length],
     }
-    void upsertHayaoshiRoom({ players_json: [...room.players_json, newPlayer] })
+    void upsertHayaoshiRoom(roomKey!, { players_json: [...room.players_json, newPlayer] })
   }, [room?.phase, studentId, nickname])
 
   // ─── Karaoke reveal interval ───
@@ -290,7 +303,7 @@ export default function OnlineHayaoshiPage({
   // ─── Live broadcast channel for hover indicators ───
 
   useEffect(() => {
-    const live = createHayaoshiLiveChannel(event => {
+    const live = createHayaoshiLiveChannel(roomKey ?? 'default', event => {
       setLiveHovers(prev => ({
         ...prev,
         [event.studentId]: {
@@ -329,7 +342,7 @@ export default function OnlineHayaoshiPage({
     return () => {
       const r = roomRef.current
       if (r && r.phase === 'lobby' && studentId != null) {
-        void leaveHayaoshiLobby(studentId)
+        void leaveHayaoshiLobby(r.room_key, studentId)
       }
     }
   }, [studentId])
@@ -352,32 +365,61 @@ export default function OnlineHayaoshiPage({
 
   // ─── Actions ───
 
-  const createRoom = async () => {
+  // ── Room selection actions ──
+
+  const handleCreateRoom = async () => {
     if (!studentId || !nickname) return
-    await upsertHayaoshiRoom({
-      phase: 'lobby',
-      players_json: [{
-        student_id: studentId,
-        nickname,
-        score: 0,
-        color: HAYAOSHI_PLAYER_COLORS[0],
-      }],
-      current_round: 0,
-      total_rounds: HAYAOSHI_TOTAL_ROUNDS,
-      question_json: null,
-      question_started_at: null,
-      chars_revealed: 0,
-      buzzed_student_id: null,
-      buzz_answer: null,
-      buzz_correct: null,
-      used_ids_json: [],
-    })
+    setJoining(true)
+    setJoinError('')
+    const code = generateRoomCode()
+    const hostPlayer: HayaoshiPlayer = {
+      student_id: studentId,
+      nickname,
+      score: 0,
+      color: HAYAOSHI_PLAYER_COLORS[0],
+    }
+    try {
+      await createHayaoshiRoom(code, hostPlayer)
+      setRoomKey(code)
+      setSessionXpEarned(0)
+    } catch {
+      setJoinError('ルーム作成に失敗しました。もう一度お試しください。')
+    }
+    setJoining(false)
+  }
+
+  const handleJoinByCode = async (code: string) => {
+    const key = code.toUpperCase().trim()
+    if (key.length !== 4) { setJoinError('4文字のコードを入力してください'); return }
+    setJoining(true)
+    setJoinError('')
+    try {
+      const existing = await fetchHayaoshiRoom(key)
+      if (!existing) { setJoinError(`ルーム「${key}」が見つかりません`); setJoining(false); return }
+      if (existing.phase !== 'lobby') { setJoinError('そのルームはすでにゲーム中です'); setJoining(false); return }
+      if (existing.players_json.length >= 5) { setJoinError('そのルームは満員です'); setJoining(false); return }
+      setRoomKey(key)
+      setSessionXpEarned(0)
+    } catch {
+      setJoinError('接続エラーが発生しました')
+    }
+    setJoining(false)
+  }
+
+  const handleShowJoin = async () => {
+    setSelectMode('join')
+    setJoinError('')
+    setJoinCodeInput('')
+    setLoadingRooms(true)
+    const rooms = await listOpenHayaoshiRooms()
+    setOpenRooms(rooms)
+    setLoadingRooms(false)
   }
 
   const startGame = async () => {
     if (!room || allQuestions.length === 0) return
     const q = allQuestions[0]
-    await upsertHayaoshiRoom({
+    await upsertHayaoshiRoom(roomKey!, {
       phase: 'revealing',
       current_round: 1,
       question_json: q,
@@ -400,7 +442,7 @@ export default function OnlineHayaoshiPage({
         studentId, nickname: me.nickname, color: me.color, kind: 'buzz_attempt',
       })
     }
-    const won = await tryBuzz(studentId!, charsToShowRef.current)
+    const won = await tryBuzz(roomKey!, studentId!, charsToShowRef.current)
     if (!won) {
       setBuzzFailed(true)
       setTimeout(() => setBuzzFailed(false), 1500)
@@ -434,7 +476,7 @@ export default function OnlineHayaoshiPage({
       p.student_id === studentId ? { ...p, score: p.score + (correct ? 1 : 0) } : p
     )
 
-    await upsertHayaoshiRoom({
+    await upsertHayaoshiRoom(roomKey!, {
       phase: 'result',
       buzz_answer: choice,
       buzz_correct: correct,
@@ -462,17 +504,17 @@ export default function OnlineHayaoshiPage({
     const nextRound = currentRoom.current_round + 1
     if (nextRound > currentRoom.total_rounds) {
       playPerfect()
-      await upsertHayaoshiRoom({ phase: 'finished' })
+      await upsertHayaoshiRoom(roomKey!, { phase: 'finished' })
       return
     }
     const usedIds = currentRoom.used_ids_json ?? []
     const pool = allQuestionsRef.current
     const next = pool.find(q => !usedIds.includes(q.id)) ?? pool[0]
     if (!next) {
-      await upsertHayaoshiRoom({ phase: 'finished' })
+      await upsertHayaoshiRoom(roomKey!, { phase: 'finished' })
       return
     }
-    await upsertHayaoshiRoom({
+    await upsertHayaoshiRoom(roomKey!, {
       phase: 'revealing',
       current_round: nextRound,
       question_json: next,
@@ -487,7 +529,7 @@ export default function OnlineHayaoshiPage({
 
   const resetRoom = async () => {
     // Wipe all player state so stale entries (e.g. players who left without cleanup) are cleared
-    await upsertHayaoshiRoom({
+    await upsertHayaoshiRoom(roomKey!, {
       phase: 'lobby',
       players_json: [],
       current_round: 0,
@@ -610,6 +652,123 @@ export default function OnlineHayaoshiPage({
 
   // ─── Main render ───
 
+  // ── Room selection screen ──
+  if (!roomKey) {
+    return (
+      <div className="page-shell flex items-center justify-center" style={{ minHeight: '100vh' }}>
+        <div className="hero-card science-surface w-full max-w-md p-6 sm:p-8 anim-fade-up">
+          <ScienceBackdrop />
+          <div className="text-xs font-semibold tracking-[0.18em] uppercase text-amber-200 mb-1">Online Hayaoshi</div>
+          <h1 className="font-display mt-1 text-3xl text-white mb-1">早押しクイズ</h1>
+          <p className="text-sm text-slate-400 mb-6">ルームを作成するか、コードで参加してください</p>
+
+          {selectMode === 'menu' && (
+            <div className="grid gap-3">
+              <button
+                onClick={() => void handleCreateRoom()}
+                disabled={joining || loadingQ}
+                className="btn-primary"
+                style={{ fontSize: 16, padding: '14px 20px' }}
+              >
+                {joining ? '作成中...' : '🏠 ルームを作成する'}
+              </button>
+              <button
+                onClick={() => void handleShowJoin()}
+                className="btn-secondary"
+                style={{ fontSize: 16, padding: '14px 20px' }}
+              >
+                🔑 コードで参加する
+              </button>
+              {joinError && <p className="text-center text-sm text-red-400">{joinError}</p>}
+              <button onClick={onBack} className="btn-ghost text-sm mt-2">もどる</button>
+            </div>
+          )}
+
+          {selectMode === 'join' && (
+            <div>
+              {/* Code input */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, color: 'rgba(148,163,184,0.7)', marginBottom: 6, letterSpacing: '0.1em' }}>
+                  4文字のルームコードを入力
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    maxLength={4}
+                    value={joinCodeInput}
+                    onChange={e => setJoinCodeInput(e.target.value.toUpperCase())}
+                    onKeyDown={e => { if (e.key === 'Enter') void handleJoinByCode(joinCodeInput) }}
+                    placeholder="例: BX7K"
+                    className="input-surface"
+                    style={{ flex: 1, fontFamily: 'var(--font-display)', fontSize: 22, letterSpacing: '0.25em', textAlign: 'center', textTransform: 'uppercase' }}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => void handleJoinByCode(joinCodeInput)}
+                    disabled={joining || joinCodeInput.length < 4}
+                    className="btn-primary"
+                    style={{ flexShrink: 0, padding: '10px 16px' }}
+                  >
+                    {joining ? '...' : '参加'}
+                  </button>
+                </div>
+                {joinError && <p className="mt-2 text-sm text-red-400">{joinError}</p>}
+              </div>
+
+              {/* Open rooms list */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: 'rgba(148,163,184,0.5)', letterSpacing: '0.12em', marginBottom: 8 }}>
+                  {loadingRooms ? '募集中のルームを検索中...' : `募集中のルーム (${openRooms.length}件)`}
+                </div>
+                {openRooms.length === 0 && !loadingRooms && (
+                  <div style={{ fontSize: 13, color: 'rgba(148,163,184,0.4)', textAlign: 'center', padding: '12px 0' }}>
+                    募集中のルームはありません
+                  </div>
+                )}
+                {openRooms.map(r => (
+                  <button
+                    key={r.room_key}
+                    onClick={() => void handleJoinByCode(r.room_key)}
+                    disabled={joining}
+                    style={{
+                      width: '100%', marginBottom: 8,
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 14px', borderRadius: 14,
+                      background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+                      cursor: 'pointer', transition: 'all 0.2s',
+                    }}
+                  >
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900, color: '#60a5fa', letterSpacing: '0.15em' }}>
+                      {r.room_key}
+                    </span>
+                    <div style={{ flex: 1, textAlign: 'left' }}>
+                      <div style={{ fontSize: 12, color: 'white', fontWeight: 600 }}>
+                        {r.players_json.map(p => p.nickname).join(', ')}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'rgba(148,163,184,0.5)' }}>
+                        {r.players_json.length}/5人
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 11, color: '#60a5fa', fontWeight: 700 }}>参加 →</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => { setSelectMode('menu'); setJoinError('') }} className="btn-ghost text-sm">
+                  ← もどる
+                </button>
+                <button onClick={() => void handleShowJoin()} className="btn-secondary text-sm" disabled={loadingRooms}>
+                  {loadingRooms ? '検索中...' : '🔄 更新'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   if (loading || loadingQ) {
     return (
       <div className="page-shell flex items-center justify-center">
@@ -629,21 +788,16 @@ export default function OnlineHayaoshiPage({
     )
   }
 
-  // ── No room yet ──
+  // ── Room not found (bad code or deleted) ──
   if (!room) {
     return (
       <div className="page-shell flex items-center justify-center">
         <div className="hero-card science-surface w-full max-w-md p-6 sm:p-8 text-center">
           <ScienceBackdrop />
-          <div className="text-xs font-semibold tracking-[0.18em] uppercase text-amber-200">Online Hayaoshi</div>
-          <h1 className="font-display mt-2 text-3xl text-white">早押しクイズ</h1>
-          <p className="mt-3 text-sm leading-7 text-slate-300">まだルームが作成されていません。</p>
-          {isAdmin ? (
-            <button onClick={() => void createRoom()} className="btn-primary w-full mt-6">ルームを作成する</button>
-          ) : (
-            <p className="mt-4 text-sm text-slate-500">先生がルームを作成するまでお待ちください。</p>
-          )}
-          <button onClick={onBack} className="btn-secondary w-full mt-3">もどる</button>
+          <p className="mt-4 text-slate-300">ルーム「{roomKey}」が見つかりません</p>
+          <button onClick={() => { setRoomKey(null); setSelectMode('menu') }} className="btn-primary w-full mt-6">
+            ルーム選択にもどる
+          </button>
         </div>
       </div>
     )
@@ -664,6 +818,16 @@ export default function OnlineHayaoshiPage({
           <div className="text-xs font-semibold tracking-[0.18em] uppercase text-amber-200">Online Hayaoshi</div>
           <h1 className="font-display mt-2 text-3xl text-white">早押しクイズ</h1>
           <p className="mt-2 text-sm text-slate-400">全{room.total_rounds}問 — 問題文が流れてくる！いちばん早く押してクイズに答えよう</p>
+
+          {/* Room code badge — share with friends */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            marginTop: 14, padding: '8px 18px', borderRadius: 14,
+            background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.35)',
+          }}>
+            <span style={{ fontSize: 11, color: 'rgba(251,191,36,0.7)', fontWeight: 700, letterSpacing: '0.12em' }}>ROOM CODE</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 900, color: '#fbbf24', letterSpacing: '0.22em' }}>{roomKey}</span>
+          </div>
 
           <div className="mt-6 space-y-2">
             <div className="text-xs font-semibold tracking-[0.15em] text-slate-400 uppercase mb-3">参加中 ({room.players_json.length}/5)</div>

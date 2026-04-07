@@ -2,7 +2,6 @@
 
 import { supabase } from '@/lib/supabase'
 
-export const HAYAOSHI_ROOM_KEY = 'main'
 export const HAYAOSHI_REVEAL_CHARS_PER_SEC = 4   // chars revealed per second (slow ヌルヌル feel)
 export const HAYAOSHI_TOTAL_ROUNDS = 10
 export const HAYAOSHI_ANSWER_SECONDS = 8          // buzzed player answer window
@@ -50,23 +49,34 @@ export interface HayaoshiRoom {
   updated_at: string
 }
 
-// ─── Supabase operations ───
+// ─── Room code helpers ───
 
-export async function fetchHayaoshiRoom(): Promise<HayaoshiRoom | null> {
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no ambiguous 0/O/1/I
+
+export function generateRoomCode(): string {
+  return Array.from(
+    { length: 4 },
+    () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)],
+  ).join('')
+}
+
+// ─── Supabase operations (all take roomKey) ───
+
+export async function fetchHayaoshiRoom(roomKey: string): Promise<HayaoshiRoom | null> {
   const { data, error } = await supabase
     .from('online_hayaoshi_rooms')
     .select('*')
-    .eq('room_key', HAYAOSHI_ROOM_KEY)
+    .eq('room_key', roomKey)
     .maybeSingle()
   if (error) throw error
   return data as HayaoshiRoom | null
 }
 
-export async function upsertHayaoshiRoom(patch: Partial<HayaoshiRoom>) {
+export async function upsertHayaoshiRoom(roomKey: string, patch: Partial<HayaoshiRoom>) {
   const { error } = await supabase
     .from('online_hayaoshi_rooms')
     .upsert({
-      room_key: HAYAOSHI_ROOM_KEY,
+      room_key: roomKey,
       ...patch,
       updated_at: new Date().toISOString(),
     })
@@ -74,10 +84,52 @@ export async function upsertHayaoshiRoom(patch: Partial<HayaoshiRoom>) {
 }
 
 /**
+ * Create a brand-new room with the given code and host player.
+ * Throws if the code already exists.
+ */
+export async function createHayaoshiRoom(
+  roomKey: string,
+  hostPlayer: HayaoshiPlayer,
+): Promise<void> {
+  const { error } = await supabase.from('online_hayaoshi_rooms').insert({
+    room_key: roomKey,
+    phase: 'lobby',
+    players_json: [hostPlayer],
+    current_round: 0,
+    total_rounds: HAYAOSHI_TOTAL_ROUNDS,
+    question_json: null,
+    question_started_at: null,
+    chars_revealed: 0,
+    buzzed_student_id: null,
+    buzz_answer: null,
+    buzz_correct: null,
+    used_ids_json: [],
+    updated_at: new Date().toISOString(),
+  })
+  if (error) throw error
+}
+
+/** List rooms currently in lobby (joinable). */
+export async function listOpenHayaoshiRooms(): Promise<HayaoshiRoom[]> {
+  const { data, error } = await supabase
+    .from('online_hayaoshi_rooms')
+    .select('*')
+    .eq('phase', 'lobby')
+    .order('updated_at', { ascending: false })
+    .limit(20)
+  if (error) return []
+  return (data ?? []) as HayaoshiRoom[]
+}
+
+/**
  * Atomic buzz-in. Returns true if this player won the race.
  * Uses conditional update: only succeeds if no one has buzzed yet.
  */
-export async function tryBuzz(studentId: number, charsRevealed: number): Promise<boolean> {
+export async function tryBuzz(
+  roomKey: string,
+  studentId: number,
+  charsRevealed: number,
+): Promise<boolean> {
   const { data, error } = await supabase
     .from('online_hayaoshi_rooms')
     .update({
@@ -86,7 +138,7 @@ export async function tryBuzz(studentId: number, charsRevealed: number): Promise
       phase: 'buzzed',
       updated_at: new Date().toISOString(),
     })
-    .eq('room_key', HAYAOSHI_ROOM_KEY)
+    .eq('room_key', roomKey)
     .is('buzzed_student_id', null)
     .eq('phase', 'revealing')
     .select('room_key')
@@ -97,12 +149,12 @@ export async function tryBuzz(studentId: number, charsRevealed: number): Promise
  * Remove a player from the hayaoshi lobby (called on unmount or explicit leave).
  * Only removes during lobby phase to avoid corrupting an in-progress game.
  */
-export async function leaveHayaoshiLobby(studentId: number): Promise<void> {
-  const room = await fetchHayaoshiRoom()
+export async function leaveHayaoshiLobby(roomKey: string, studentId: number): Promise<void> {
+  const room = await fetchHayaoshiRoom(roomKey)
   if (!room || room.phase !== 'lobby') return
   const filtered = room.players_json.filter(p => p.student_id !== studentId)
   if (filtered.length === room.players_json.length) return
-  await upsertHayaoshiRoom({ players_json: filtered })
+  await upsertHayaoshiRoom(roomKey, { players_json: filtered })
 }
 
 /**
@@ -135,12 +187,12 @@ export async function awardHayaoshiXp(
   return { previousXp: currentXp, newXp }
 }
 
-export function subscribeHayaoshiRoom(callback: (room: HayaoshiRoom) => void) {
+export function subscribeHayaoshiRoom(roomKey: string, callback: (room: HayaoshiRoom) => void) {
   return supabase
-    .channel('hayaoshi:main')
+    .channel(`hayaoshi:room:${roomKey}`)
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'online_hayaoshi_rooms', filter: `room_key=eq.${HAYAOSHI_ROOM_KEY}` },
+      { event: '*', schema: 'public', table: 'online_hayaoshi_rooms', filter: `room_key=eq.${roomKey}` },
       payload => { if (payload.new) callback(payload.new as HayaoshiRoom) },
     )
     .subscribe()
@@ -162,9 +214,10 @@ export interface HayaoshiLiveEvent {
  * Uses Supabase Realtime broadcast — no database writes.
  */
 export function createHayaoshiLiveChannel(
+  roomKey: string,
   onEvent: (event: HayaoshiLiveEvent) => void,
 ) {
-  const channel = supabase.channel('hayaoshi:live', { config: { broadcast: { self: false } } })
+  const channel = supabase.channel(`hayaoshi:live:${roomKey}`, { config: { broadcast: { self: false } } })
   channel.on('broadcast', { event: 'live' }, payload => {
     const data = payload.payload as HayaoshiLiveEvent
     if (data) onEvent(data)
