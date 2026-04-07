@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth'
 import { isGuestStudentId } from '@/lib/guestStudy'
 
 const PASSWORD_LENGTH = 5
+const ADMIN_STUDENT_ID = 5
 
 export default function OnlineGatePage({
   onBack,
@@ -21,11 +22,19 @@ export default function OnlineGatePage({
   const [checking, setChecking] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
   const guestBlocked = studentId !== null && isGuestStudentId(studentId)
+  const isAdmin = studentId === ADMIN_STUDENT_ID
+
+  // Admin bypass: skip the password gate entirely
+  useEffect(() => {
+    if (isAdmin) {
+      onEnter()
+    }
+  }, [isAdmin, onEnter])
 
   useEffect(() => {
-    if (guestBlocked) return
+    if (guestBlocked || isAdmin) return
     inputRefs.current[0]?.focus()
-  }, [guestBlocked])
+  }, [guestBlocked, isAdmin])
 
   const handleChange = (index: number, value: string) => {
     const char = value.slice(-1).toUpperCase()

@@ -3,7 +3,7 @@
 import { supabase } from '@/lib/supabase'
 
 export const HAYAOSHI_ROOM_KEY = 'main'
-export const HAYAOSHI_REVEAL_CHARS_PER_SEC = 6   // chars revealed per second
+export const HAYAOSHI_REVEAL_CHARS_PER_SEC = 4   // chars revealed per second (slow ヌルヌル feel)
 export const HAYAOSHI_TOTAL_ROUNDS = 10
 export const HAYAOSHI_ANSWER_SECONDS = 8          // buzzed player answer window
 export const HAYAOSHI_RESULT_SECONDS = 3500       // ms to show result before advancing
@@ -94,6 +94,18 @@ export async function tryBuzz(studentId: number, charsRevealed: number): Promise
 }
 
 /**
+ * Remove a player from the hayaoshi lobby (called on unmount or explicit leave).
+ * Only removes during lobby phase to avoid corrupting an in-progress game.
+ */
+export async function leaveHayaoshiLobby(studentId: number): Promise<void> {
+  const room = await fetchHayaoshiRoom()
+  if (!room || room.phase !== 'lobby') return
+  const filtered = room.players_json.filter(p => p.student_id !== studentId)
+  if (filtered.length === room.players_json.length) return
+  await upsertHayaoshiRoom({ players_json: filtered })
+}
+
+/**
  * Award XP to a student for answering correctly in online hayaoshi.
  * Fetches current XP, adds the earned amount, and writes it back.
  * Returns { previousXp, newXp } so callers can detect level-ups.
@@ -132,4 +144,38 @@ export function subscribeHayaoshiRoom(callback: (room: HayaoshiRoom) => void) {
       payload => { if (payload.new) callback(payload.new as HayaoshiRoom) },
     )
     .subscribe()
+}
+
+// ─── Live ephemeral state via Supabase broadcast (no DB writes) ───
+
+export interface HayaoshiLiveEvent {
+  studentId: number
+  nickname: string
+  color: string
+  kind: 'hover' | 'buzz_attempt'
+  choice?: string | null
+  ts: number
+}
+
+/**
+ * Broadcast channel for ephemeral live state (hover indicators, buzz attempts).
+ * Uses Supabase Realtime broadcast — no database writes.
+ */
+export function createHayaoshiLiveChannel(
+  onEvent: (event: HayaoshiLiveEvent) => void,
+) {
+  const channel = supabase.channel('hayaoshi:live', { config: { broadcast: { self: false } } })
+  channel.on('broadcast', { event: 'live' }, payload => {
+    const data = payload.payload as HayaoshiLiveEvent
+    if (data) onEvent(data)
+  })
+  channel.subscribe()
+  return {
+    send(event: Omit<HayaoshiLiveEvent, 'ts'>) {
+      void channel.send({ type: 'broadcast', event: 'live', payload: { ...event, ts: Date.now() } })
+    },
+    unsubscribe() {
+      void channel.unsubscribe()
+    },
+  }
 }

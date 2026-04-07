@@ -10,6 +10,7 @@ import { getCachedColumnSupport, isMissingColumnError, markColumnMissing, markCo
 import { shuffleArray } from '@/lib/questionPicker'
 import { playCorrect, playPerfect, playWrong } from '@/lib/sounds'
 import {
+  HayaoshiLiveEvent,
   HayaoshiPlayer,
   HayaoshiQuestionData,
   HayaoshiRoom,
@@ -21,7 +22,9 @@ import {
   HAYAOSHI_TOTAL_ROUNDS,
   HAYAOSHI_XP_PER_CORRECT,
   awardHayaoshiXp,
+  createHayaoshiLiveChannel,
   fetchHayaoshiRoom,
+  leaveHayaoshiLobby,
   subscribeHayaoshiRoom,
   tryBuzz,
   upsertHayaoshiRoom,
@@ -29,6 +32,8 @@ import {
 import { getLevel } from '@/lib/xp'
 
 const ADMIN_STUDENT_ID = 5
+
+type LiveEntry = { kind: string; choice: string | null; color: string; nickname: string; expiresAt: number }
 
 // Questions that work well for early-press (choice-based only)
 function isSuitableForHayaoshi(q: QuestionShape) {
@@ -90,6 +95,9 @@ export default function OnlineHayaoshiPage({
   const [xpToast, setXpToast] = useState<{ xp: number; levelUp: boolean; newLevel: number } | null>(null)
   // Total XP earned this session (for finished screen)
   const [sessionXpEarned, setSessionXpEarned] = useState(0)
+  // Live state via broadcast: keyed by studentId
+  const [liveHovers, setLiveHovers] = useState<Record<number, LiveEntry>>({})
+  const liveChannelRef = useRef<ReturnType<typeof createHayaoshiLiveChannel> | null>(null)
 
   // Ref to avoid stale closure in timers
   const roomRef = useRef<HayaoshiRoom | null>(null)
@@ -279,6 +287,53 @@ export default function OnlineHayaoshiPage({
     prevScoresRef.current = updated
   }, [room?.phase, room?.current_round])
 
+  // ─── Live broadcast channel for hover indicators ───
+
+  useEffect(() => {
+    const live = createHayaoshiLiveChannel(event => {
+      setLiveHovers(prev => ({
+        ...prev,
+        [event.studentId]: {
+          kind: event.kind,
+          choice: event.choice ?? null,
+          color: event.color,
+          nickname: event.nickname,
+          expiresAt: Date.now() + (event.kind === 'buzz_attempt' ? 1800 : 2500),
+        },
+      }))
+    })
+    liveChannelRef.current = live
+    // Periodically prune expired hovers
+    const prune = setInterval(() => {
+      setLiveHovers(prev => {
+        const now = Date.now()
+        const next: typeof prev = {}
+        let changed = false
+        for (const [k, v] of Object.entries(prev) as [string, typeof prev[number]][]) {
+          if (v.expiresAt > now) next[Number(k)] = v
+          else changed = true
+        }
+        return changed ? next : prev
+      })
+    }, 500)
+    return () => {
+      clearInterval(prune)
+      live.unsubscribe()
+      liveChannelRef.current = null
+    }
+  }, [])
+
+  // ─── Cleanup: leave the lobby on unmount ───
+
+  useEffect(() => {
+    return () => {
+      const r = roomRef.current
+      if (r && r.phase === 'lobby' && studentId != null) {
+        void leaveHayaoshiLobby(studentId)
+      }
+    }
+  }, [studentId])
+
   // ─── Next-round countdown ───
 
   useEffect(() => {
@@ -338,12 +393,29 @@ export default function OnlineHayaoshiPage({
   const handleBuzz = async () => {
     if (buzzing || !room || room.phase !== 'revealing') return
     setBuzzing(true)
+    // Broadcast buzz attempt for spectators (so everyone sees the rush)
+    const me = room.players_json.find(p => p.student_id === studentId)
+    if (me && studentId != null) {
+      liveChannelRef.current?.send({
+        studentId, nickname: me.nickname, color: me.color, kind: 'buzz_attempt',
+      })
+    }
     const won = await tryBuzz(studentId!, charsToShowRef.current)
     if (!won) {
       setBuzzFailed(true)
       setTimeout(() => setBuzzFailed(false), 1500)
     }
     setBuzzing(false)
+  }
+
+  // Broadcast hover state to other players (for choice picker visibility)
+  const broadcastHover = (choice: string | null) => {
+    if (!room || studentId == null) return
+    const me = room.players_json.find(p => p.student_id === studentId)
+    if (!me) return
+    liveChannelRef.current?.send({
+      studentId, nickname: me.nickname, color: me.color, kind: 'hover', choice,
+    })
   }
 
   const handleAnswerSubmit = async (choice: string | null) => {
@@ -414,9 +486,10 @@ export default function OnlineHayaoshiPage({
   }
 
   const resetRoom = async () => {
+    // Wipe all player state so stale entries (e.g. players who left without cleanup) are cleared
     await upsertHayaoshiRoom({
       phase: 'lobby',
-      players_json: room?.players_json.map(p => ({ ...p, score: 0 })) ?? [],
+      players_json: [],
       current_round: 0,
       question_json: null,
       question_started_at: null,
@@ -432,22 +505,36 @@ export default function OnlineHayaoshiPage({
 
   const renderKaraokeText = (text: string) => {
     return (
-      <div style={{ fontSize: 'clamp(18px, 2.8vw, 26px)', fontWeight: 700, lineHeight: 1.8, letterSpacing: '0.02em', color: 'white', position: 'relative' }}>
+      <div style={{ fontSize: 'clamp(18px, 2.8vw, 26px)', fontWeight: 700, lineHeight: 1.85, letterSpacing: '0.03em', color: 'white', position: 'relative' }}>
         {text.split('').map((char, i) => {
           const revealed = i < charsToShow
-          const isCursor = i === charsToShow - 1
+          const distFromCursor = charsToShow - 1 - i  // 0 = current, 1 = just revealed, ...
+          const isCursor = distFromCursor === 0
+          const isRecent = distFromCursor >= 0 && distFromCursor < 3
           return (
             <span
               key={i}
               style={{
-                opacity: revealed ? 1 : 0.07,
-                color: isCursor ? '#fbbf24' : revealed ? 'white' : 'rgba(255,255,255,0.3)',
-                textShadow: isCursor ? '0 0 20px rgba(251,191,36,0.9), 0 0 40px rgba(251,191,36,0.4)' : 'none',
-                transition: revealed ? 'opacity 0.12s ease, color 0.4s ease, text-shadow 0.3s ease' : 'none',
-                display: 'inline',
+                // Always apply transition so the fade-in is visible
+                transition: 'opacity 0.28s ease-out, color 0.5s ease, text-shadow 0.35s ease, transform 0.35s ease',
+                display: 'inline-block',
+                opacity: revealed ? 1 : 0.06,
+                color: isCursor
+                  ? '#fde047'
+                  : isRecent
+                    ? '#fbbf24'
+                    : revealed
+                      ? 'white'
+                      : 'rgba(255,255,255,0.28)',
+                textShadow: isCursor
+                  ? '0 0 18px rgba(253,224,71,1), 0 0 36px rgba(251,191,36,0.7), 0 0 60px rgba(251,191,36,0.4)'
+                  : isRecent
+                    ? '0 0 12px rgba(251,191,36,0.5)'
+                    : 'none',
+                transform: isCursor ? 'translateY(-2px) scale(1.08)' : 'translateY(0) scale(1)',
               }}
             >
-              {char}
+              {char === ' ' ? '\u00A0' : char}
             </span>
           )
         })}
@@ -603,16 +690,17 @@ export default function OnlineHayaoshiPage({
 
           <div className="mt-6 grid gap-3">
             {isAdmin && (
-              <>
-                <button onClick={() => void startGame()} className="btn-primary" disabled={!canStart}>
-                  {canStart ? 'ゲーム開始！' : `あと${Math.max(0, 2 - room.players_json.length)}人待機中`}
-                </button>
-                <button onClick={() => void resetRoom()} className="btn-ghost text-xs">ルームをリセット</button>
-              </>
+              <button onClick={() => void startGame()} className="btn-primary" disabled={!canStart}>
+                {canStart ? 'ゲーム開始！' : `あと${Math.max(0, 2 - room.players_json.length)}人待機中`}
+              </button>
             )}
             {!isAdmin && (
               <p className="text-center text-sm text-slate-400 py-2">先生がゲームを開始するまでお待ちください...</p>
             )}
+            {/* Reset button is now available to ALL players to clean up stale state */}
+            <button onClick={() => void resetRoom()} className="btn-ghost text-xs">
+              🧹 ルームをリセット（全プレイヤー消去）
+            </button>
             <button onClick={onBack} className="btn-secondary">もどる</button>
           </div>
         </div>
@@ -778,16 +866,23 @@ export default function OnlineHayaoshiPage({
             else if (iAmBuzzed && !showResult && selectedChoice === choice) { bg = 'rgba(251,191,36,0.12)'; border = 'rgba(251,191,36,0.4)'; textColor = '#fbbf24' }
 
             const labels = ['A', 'B', 'C', 'D']
+            // Live hover indicators from other players (excluding self)
+            const hoveringOthers = (Object.entries(liveHovers) as [string, LiveEntry][])
+              .filter(([sid, h]) => Number(sid) !== studentId && h.kind === 'hover' && h.choice === choice)
+              .map(([, h]) => h)
             return (
               <button
                 key={i}
                 disabled={!iAmBuzzed || room.phase !== 'buzzed' || submitting}
+                onMouseEnter={() => { if (iAmBuzzed && room.phase === 'buzzed') broadcastHover(choice) }}
+                onMouseLeave={() => { if (iAmBuzzed && room.phase === 'buzzed') broadcastHover(null) }}
                 onClick={() => {
                   if (!iAmBuzzed || room.phase !== 'buzzed') return
                   setSelectedChoice(choice)
                   void handleAnswerSubmit(choice)
                 }}
                 style={{
+                  position: 'relative',
                   padding: '14px 16px',
                   borderRadius: 16,
                   border: `1.5px solid ${border}`,
@@ -808,6 +903,26 @@ export default function OnlineHayaoshiPage({
                 </span>
                 {choice}
                 {showResult && isCorrect && <span style={{ marginLeft: 'auto' }}>✓</span>}
+                {/* Live hover indicators from spectators */}
+                {hoveringOthers.length > 0 && (
+                  <div style={{
+                    position: 'absolute', top: -8, right: -6,
+                    display: 'flex', gap: 3,
+                  }}>
+                    {hoveringOthers.slice(0, 4).map((h, idx) => (
+                      <div key={idx} title={`${h.nickname} が見ている`} className="anim-pop" style={{
+                        width: 18, height: 18, borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${h.color}, ${h.color}99)`,
+                        border: '2px solid rgba(2,6,23,0.9)',
+                        fontSize: 9, fontWeight: 900, color: 'white',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: `0 0 10px ${h.color}80`,
+                      }}>
+                        {h.nickname.charAt(0)}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </button>
             )
           })}
@@ -823,6 +938,27 @@ export default function OnlineHayaoshiPage({
       }}>
         {room.players_json.map(p => renderPlayerCard(p, room.buzzed_student_id))}
       </div>
+
+      {/* Live activity feed: buzz attempts from other players */}
+      {room.phase === 'revealing' && (() => {
+        const buzzAttempts = (Object.entries(liveHovers) as [string, LiveEntry][])
+          .filter(([sid, h]) => Number(sid) !== studentId && h.kind === 'buzz_attempt')
+          .map(([sid, h]) => ({ sid: Number(sid), ...h }))
+        if (buzzAttempts.length === 0) return null
+        return (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8, minHeight: 20 }}>
+            {buzzAttempts.map(a => (
+              <div key={a.sid} className="anim-pop" style={{
+                fontSize: 11, fontWeight: 700, color: a.color,
+                padding: '3px 10px', borderRadius: 999,
+                background: `${a.color}15`, border: `1px solid ${a.color}35`,
+              }}>
+                ✋ {a.nickname} が押した！
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Buzz button / status */}
       {room.phase === 'revealing' && (
