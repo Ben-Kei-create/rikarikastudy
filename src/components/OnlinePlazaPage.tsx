@@ -48,7 +48,7 @@ export default function OnlinePlazaPage({
       id: 'science-tower',
       title: 'サイエンスタワー',
       description: '2〜5人で協力してタワーを建て、押し寄せる敵の波を防ごう',
-      available: false,
+      available: true,
       accentColor: '#10b981',
       label: 'Co-op Tower',
       onPlay: onOpenScienceTower,

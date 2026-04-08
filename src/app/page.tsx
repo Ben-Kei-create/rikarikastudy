@@ -99,7 +99,7 @@ function App() {
       case 'territory-quiz':
         return <TerritoryQuizPage onBack={goHome} />
       case 'science-tower':
-        return <ScienceTowerPage onBack={goHome} />
+        return <ScienceTowerPage onBack={() => setScreen('online-plaza')} />
       case 'online-gate':
         return <OnlineGatePage onBack={goHome} onEnter={() => setScreen('online-plaza')} />
       case 'online-plaza':
@@ -109,6 +109,7 @@ function App() {
             onOpenTerritory={() => setScreen('online-territory')}
             onOpenHayaoshi={() => setScreen('online-hayaoshi')}
             onOpenLab={() => setScreen('online-lab')}
+            onOpenScienceTower={() => setScreen('science-tower')}
           />
         )
       case 'online-hayaoshi':
