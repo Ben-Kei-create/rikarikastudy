@@ -229,7 +229,7 @@ export interface BulkGlossaryPayload {
   tags: string[]
 }
 
-export type AdminTab = 'overview' | 'users' | 'inquiries' | 'questions' | 'add' | 'bulk'
+export type AdminTab = 'overview' | 'users' | 'inquiries' | 'questions' | 'add' | 'bulk' | 'pinned'
 
 export interface RestoreSnapshot {
   format: string
