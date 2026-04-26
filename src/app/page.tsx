@@ -29,6 +29,7 @@ import GlossaryFab from '@/components/GlossaryFab'
 import { ScienceChatField } from '@/lib/scienceChat'
 import { CustomQuizOptions } from '@/lib/customQuiz'
 import { QuizQuestionCount } from '@/lib/questionPicker'
+import { getPinnedQuizQuestionCount, PinnedQuizRow } from '@/lib/pinnedQuiz'
 
 type Screen =
   | 'home'
@@ -42,7 +43,7 @@ type Screen =
   | 'online-hayaoshi'
   | 'science-tower'
   | { type: 'unit'; field: string }
-  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; reviewMode?: boolean; customOptions?: CustomQuizOptions; questionCount?: QuizQuestionCount }
+  | { type: 'quiz'; field: string; unit: string; isDrill?: boolean; quickStartAll?: boolean; quickStartDaily?: boolean; dailyChallenge?: boolean; reviewMode?: boolean; pinnedQuiz?: boolean; customOptions?: CustomQuizOptions; questionCount?: QuizQuestionCount }
   | { type: 'biology-practice'; mode: BiologyPracticeMode }
   | { type: 'chemistry-practice'; mode: ChemistryPracticeMode }
   | { type: 'earth-practice'; mode: EarthSciencePracticeMode }
@@ -169,7 +170,7 @@ function App() {
             questionCount={s.questionCount}
             onBack={() => setScreen(
               s.isDrill ? 'mypage'
-                : s.quickStartAll || s.quickStartDaily || s.dailyChallenge || s.reviewMode ? 'home'
+                : s.quickStartAll || s.quickStartDaily || s.dailyChallenge || s.reviewMode || s.pinnedQuiz ? 'home'
                   : { type: 'unit', field: s.field }
             )}
           />
@@ -186,6 +187,19 @@ function App() {
             onTerritoryQuiz={() => setScreen('territory-quiz')}
             onMyPage={() => setScreen('mypage')}
             onOnline={goOnline}
+            onPinnedQuiz={(quiz: PinnedQuizRow) => setScreen({
+              type: 'quiz',
+              field: quiz.field,
+              unit: 'all',
+              pinnedQuiz: true,
+              customOptions: {
+                unit: 'all',
+                grade: quiz.grade,
+                questionType: 'all',
+                historyFilter: 'all',
+              },
+              questionCount: getPinnedQuizQuestionCount(quiz),
+            })}
           />
         )
     }

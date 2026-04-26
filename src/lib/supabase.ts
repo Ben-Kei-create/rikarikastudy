@@ -698,6 +698,39 @@ export type Database = {
           earned_at?: string
         }
       }
+      pinned_quizzes: {
+        Row: {
+          id: string
+          field: '生物' | '化学' | '物理' | '地学'
+          grade: 'all' | '中1' | '中2' | '中3'
+          question_count_limit: number | null
+          label: string | null
+          is_active: boolean
+          created_by_student_id: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          field: '生物' | '化学' | '物理' | '地学'
+          grade?: 'all' | '中1' | '中2' | '中3'
+          question_count_limit?: number | null
+          label?: string | null
+          is_active?: boolean
+          created_by_student_id?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          field?: '生物' | '化学' | '物理' | '地学'
+          grade?: 'all' | '中1' | '中2' | '中3'
+          question_count_limit?: number | null
+          label?: string | null
+          is_active?: boolean
+          created_by_student_id?: number | null
+          updated_at?: string
+        }
+      }
       time_attack_records: {
         Row: {
           id: string | null

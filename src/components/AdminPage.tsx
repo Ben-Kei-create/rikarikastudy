@@ -33,6 +33,11 @@ import {
   isLoginUpdatesTableMissing,
   LoginUpdateRow,
 } from '@/lib/loginUpdates'
+import {
+  getPinnedQuizSchemaErrorMessage,
+  isPinnedQuizTableMissing,
+  PinnedQuizRow,
+} from '@/lib/pinnedQuiz'
 import { FIELDS } from '@/lib/constants'
 import {
   QuestionShape,
@@ -105,6 +110,22 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [loginUpdateMsg, setLoginUpdateMsg] = useState('')
   const [loginUpdateSaving, setLoginUpdateSaving] = useState(false)
   const [loginUpdateDeletingId, setLoginUpdateDeletingId] = useState<string | null>(null)
+  const [pinnedQuizzes, setPinnedQuizzes] = useState<PinnedQuizRow[]>([])
+  const [pinnedQuizzesLoadError, setPinnedQuizzesLoadError] = useState('')
+  const [pinnedQuizForm, setPinnedQuizForm] = useState<{
+    field: typeof FIELDS[number]
+    grade: 'all' | '中1' | '中2' | '中3'
+    questionCountLimit: 'all' | '5' | '10' | '15'
+    label: string
+  }>({
+    field: '生物',
+    grade: 'all',
+    questionCountLimit: 'all',
+    label: '',
+  })
+  const [pinnedQuizMsg, setPinnedQuizMsg] = useState('')
+  const [pinnedQuizSaving, setPinnedQuizSaving] = useState(false)
+  const [pinnedQuizActionId, setPinnedQuizActionId] = useState<string | null>(null)
   const [questionInquiryActionId, setQuestionInquiryActionId] = useState<string | null>(null)
   const [questionInquiryNoteDrafts, setQuestionInquiryNoteDrafts] = useState<Record<string, string>>({})
   const [questionInquiryReplyDrafts, setQuestionInquiryReplyDrafts] = useState<Record<string, string>>({})
@@ -393,6 +414,23 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
       } else {
         setQuestionAccuracyMap(buildQuestionAccuracyMap((answerLogsResponse.data || []) as QuestionAccuracyAnswerLogRow[]))
       }
+    } else if (tab === 'pinned') {
+      const { data, error } = await supabase
+        .from('pinned_quizzes')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        setPinnedQuizzes([])
+        if (isPinnedQuizTableMissing(error)) {
+          setPinnedQuizzesLoadError(getPinnedQuizSchemaErrorMessage(error.message))
+        } else {
+          setPinnedQuizzesLoadError(error.message)
+        }
+      } else {
+        setPinnedQuizzes((data || []) as PinnedQuizRow[])
+        setPinnedQuizzesLoadError('')
+      }
     }
 
     setLoading(false)
@@ -449,6 +487,75 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
 
     setLoginUpdateDeletingId(null)
     setLoginUpdateMsg('✅ 掲示板の項目を削除しました。')
+    await loadData()
+  }
+
+  const handleAddPinnedQuiz = async () => {
+    setPinnedQuizSaving(true)
+    setPinnedQuizMsg('')
+
+    const limitValue = pinnedQuizForm.questionCountLimit === 'all'
+      ? null
+      : Number(pinnedQuizForm.questionCountLimit)
+
+    const payload: Database['public']['Tables']['pinned_quizzes']['Insert'] = {
+      field: pinnedQuizForm.field,
+      grade: pinnedQuizForm.grade,
+      question_count_limit: limitValue,
+      label: pinnedQuizForm.label.trim() || null,
+      is_active: true,
+      created_by_student_id: 5,
+    }
+
+    const { error } = await supabase.from('pinned_quizzes').insert(payload)
+
+    if (error) {
+      setPinnedQuizSaving(false)
+      setPinnedQuizMsg(getPinnedQuizSchemaErrorMessage(error.message))
+      return
+    }
+
+    setPinnedQuizForm({
+      field: '生物',
+      grade: 'all',
+      questionCountLimit: 'all',
+      label: '',
+    })
+    setPinnedQuizMsg('✅ ピン留め問題を追加しました。')
+    setPinnedQuizSaving(false)
+    await loadData()
+  }
+
+  const handleTogglePinnedQuizActive = async (row: PinnedQuizRow) => {
+    setPinnedQuizActionId(row.id)
+    const { error } = await supabase
+      .from('pinned_quizzes')
+      .update({ is_active: !row.is_active, updated_at: new Date().toISOString() })
+      .eq('id', row.id)
+
+    if (error) {
+      setPinnedQuizActionId(null)
+      setPinnedQuizMsg(getPinnedQuizSchemaErrorMessage(error.message))
+      return
+    }
+
+    setPinnedQuizActionId(null)
+    await loadData()
+  }
+
+  const handleDeletePinnedQuiz = async (row: PinnedQuizRow) => {
+    if (!confirm('このピン留め問題を削除しますか？')) return
+    setPinnedQuizActionId(row.id)
+    const { error } = await supabase.from('pinned_quizzes').delete().eq('id', row.id)
+
+    if (error) {
+      setPinnedQuizActionId(null)
+      setPinnedQuizMsg(getPinnedQuizSchemaErrorMessage(error.message))
+      return
+    }
+
+    setPinnedQuizActionId(null)
+    setPinnedQuizMsg('✅ ピン留め問題を削除しました。')
     await loadData()
   }
 
@@ -1546,7 +1653,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="segment-bar" role="tablist" aria-label="管理画面">
-            {([['overview', '📊 生徒データ'], ['users', '👤 ユーザー管理'], ['inquiries', '📨 問い合わせ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録']] as const).map(([currentTab, label]) => (
+            {([['overview', '📊 生徒データ'], ['users', '👤 ユーザー管理'], ['inquiries', '📨 問い合わせ'], ['questions', '📝 問題一覧'], ['add', '➕ 問題追加'], ['bulk', '📥 一括登録'], ['pinned', '📌 ピン留め問題']] as const).map(([currentTab, label]) => (
               <button
                 key={currentTab}
                 role="tab"
@@ -3060,6 +3167,198 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
                   {glossaryBulkLoading ? '登録中...' : '辞書JSONを一括登録する'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'pinned' && (
+        <div className="space-y-4">
+          <div className="card">
+            <div className="text-white font-bold">ピン留め問題（HOMEに常設するボタン）</div>
+            <p className="text-slate-400 text-sm leading-6 mt-1">
+              全ユーザーのHOMEに、指定した分野・学年の問題だけを出題するボタンを追加できます。
+              授業の予習・復習用に、現在進めている範囲をすぐに学習できます。
+              問題数は「すべて」が基本ですが、5・10・15問に絞ることもできます。
+              複数登録すると、有効化したものすべてがHOMEに並びます。
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-2 mt-4">
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">分野</label>
+                <select
+                  value={pinnedQuizForm.field}
+                  onChange={event => setPinnedQuizForm(current => ({ ...current, field: event.target.value as typeof FIELDS[number] }))}
+                  className="input-surface"
+                >
+                  {FIELDS.map(field => (
+                    <option key={field} value={field}>{field}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">学年</label>
+                <select
+                  value={pinnedQuizForm.grade}
+                  onChange={event => setPinnedQuizForm(current => ({ ...current, grade: event.target.value as 'all' | '中1' | '中2' | '中3' }))}
+                  className="input-surface"
+                >
+                  <option value="all">学年すべて</option>
+                  <option value="中1">中1</option>
+                  <option value="中2">中2</option>
+                  <option value="中3">中3</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">問題数</label>
+                <select
+                  value={pinnedQuizForm.questionCountLimit}
+                  onChange={event => setPinnedQuizForm(current => ({ ...current, questionCountLimit: event.target.value as 'all' | '5' | '10' | '15' }))}
+                  className="input-surface"
+                >
+                  <option value="all">すべて</option>
+                  <option value="5">5問</option>
+                  <option value="10">10問</option>
+                  <option value="15">15問</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-400 text-xs mb-1 block">ボタンに表示する名前（任意）</label>
+                <input
+                  value={pinnedQuizForm.label}
+                  onChange={event => setPinnedQuizForm(current => ({ ...current, label: event.target.value }))}
+                  placeholder="例: 中3 細胞分裂の予習"
+                  className="input-surface"
+                  maxLength={40}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              <button
+                onClick={() => { void handleAddPinnedQuiz() }}
+                disabled={pinnedQuizSaving}
+                className="btn-primary"
+              >
+                {pinnedQuizSaving ? '追加中...' : 'ピン留めする'}
+              </button>
+              <button
+                onClick={() => {
+                  setPinnedQuizForm({ field: '生物', grade: 'all', questionCountLimit: 'all', label: '' })
+                  setPinnedQuizMsg('')
+                }}
+                className="btn-ghost"
+                disabled={pinnedQuizSaving}
+              >
+                クリア
+              </button>
+            </div>
+
+            {pinnedQuizMsg && (
+              <div
+                className="rounded-2xl px-4 py-3 text-sm mt-3"
+                style={{
+                  color: pinnedQuizMsg.startsWith('✅') ? 'var(--color-success-muted)' : 'var(--color-danger-muted)',
+                  background: pinnedQuizMsg.startsWith('✅') ? 'var(--color-success-soft-bg)' : 'var(--color-danger-soft-bg)',
+                  border: `1px solid ${pinnedQuizMsg.startsWith('✅') ? 'var(--color-success-soft-border)' : 'var(--color-danger-soft-border)'}`,
+                }}
+              >
+                {pinnedQuizMsg}
+              </div>
+            )}
+
+            {pinnedQuizzesLoadError && (
+              <div className="rounded-2xl border border-rose-500/18 bg-rose-500/6 px-4 py-3 text-sm text-rose-200 mt-3">
+                {pinnedQuizzesLoadError}
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-white font-semibold">登録済みのピン留め</div>
+              <div className="text-xs text-slate-500">{pinnedQuizzes.length}件 / 有効 {pinnedQuizzes.filter(quiz => quiz.is_active).length}件</div>
+            </div>
+
+            <div className="mt-3 space-y-3">
+              {pinnedQuizzes.length > 0 ? pinnedQuizzes.map(row => {
+                const limitLabel = row.question_count_limit ? `${row.question_count_limit}問` : 'すべて'
+                const gradeLabel = row.grade === 'all' ? '学年すべて' : row.grade
+                const fieldColor = getFieldColor(row.field)
+                const isBusy = pinnedQuizActionId === row.id
+
+                return (
+                  <div
+                    key={row.id}
+                    className="rounded-2xl border px-4 py-3"
+                    style={{
+                      borderColor: row.is_active ? 'rgba(56, 189, 248, 0.28)' : 'rgba(71, 85, 105, 0.4)',
+                      background: row.is_active ? 'rgba(56, 189, 248, 0.06)' : 'rgba(15, 23, 42, 0.35)',
+                    }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                          style={{ background: `${fieldColor}20`, color: fieldColor }}
+                        >
+                          {row.field}
+                        </span>
+                        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                          {gradeLabel}
+                        </span>
+                        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
+                          {limitLabel}
+                        </span>
+                        <span
+                          className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                          style={{
+                            background: row.is_active ? 'rgba(34, 197, 94, 0.16)' : 'rgba(148, 163, 184, 0.16)',
+                            color: row.is_active ? '#bbf7d0' : '#cbd5e1',
+                          }}
+                        >
+                          {row.is_active ? '有効' : '停止中'}
+                        </span>
+                      </div>
+                      <div className="text-slate-500 text-xs">
+                        {format(new Date(row.created_at), 'M/d HH:mm', { locale: ja })}
+                      </div>
+                    </div>
+
+                    {row.label && (
+                      <div className="mt-2 text-sm text-white">{row.label}</div>
+                    )}
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => { void handleTogglePinnedQuizActive(row) }}
+                        disabled={isBusy}
+                        className="rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors"
+                        style={{
+                          background: row.is_active ? 'rgba(148, 163, 184, 0.18)' : 'rgba(34, 197, 94, 0.18)',
+                          color: row.is_active ? '#cbd5e1' : '#bbf7d0',
+                        }}
+                      >
+                        {isBusy ? '更新中...' : row.is_active ? '停止する' : '有効化する'}
+                      </button>
+                      <button
+                        onClick={() => { void handleDeletePinnedQuiz(row) }}
+                        disabled={isBusy}
+                        className="rounded-xl bg-rose-500/15 px-3 py-1.5 text-xs font-semibold text-rose-200 transition-colors hover:bg-rose-500/25"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                )
+              }) : (
+                <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-5 text-sm text-slate-400">
+                  まだピン留め問題は登録されていません。
+                </div>
+              )}
             </div>
           </div>
         </div>

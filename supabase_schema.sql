@@ -427,6 +427,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_element_card_rewards_daily_login
   ON element_card_rewards(student_id, source, reward_date)
   WHERE source = 'login';
 
+-- 管理者が指定する「授業の予習・復習」ボタン用のピン留めクイズ
+CREATE TABLE IF NOT EXISTS pinned_quizzes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  field TEXT NOT NULL CHECK (field IN ('生物', '化学', '物理', '地学')),
+  grade TEXT NOT NULL DEFAULT 'all' CHECK (grade IN ('all', '中1', '中2', '中3')),
+  question_count_limit INTEGER,
+  label TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_by_student_id INTEGER REFERENCES students(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE pinned_quizzes ADD COLUMN IF NOT EXISTS question_count_limit INTEGER;
+ALTER TABLE pinned_quizzes ADD COLUMN IF NOT EXISTS label TEXT;
+ALTER TABLE pinned_quizzes ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE pinned_quizzes ADD COLUMN IF NOT EXISTS created_by_student_id INTEGER REFERENCES students(id);
+ALTER TABLE pinned_quizzes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE pinned_quizzes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_pinned_quizzes_active ON pinned_quizzes(is_active, created_at DESC);
+
 -- RLS（Row Level Security）を無効に（塾内利用のため簡略化）
 ALTER TABLE students DISABLE ROW LEVEL SECURITY;
 ALTER TABLE questions DISABLE ROW LEVEL SECURITY;
@@ -443,6 +465,7 @@ ALTER TABLE login_updates DISABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_messages DISABLE ROW LEVEL SECURITY;
 ALTER TABLE student_element_cards DISABLE ROW LEVEL SECURITY;
 ALTER TABLE element_card_rewards DISABLE ROW LEVEL SECURITY;
+ALTER TABLE pinned_quizzes DISABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN

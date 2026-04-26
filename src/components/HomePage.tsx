@@ -11,6 +11,7 @@ import { getLevelInfo, getNextLevelUnlock, getTotalXpFromSessions, getXpFloorFor
 import { DailyChallengeStatus, loadDailyChallengeStatus, loadTimeAttackBest } from '@/lib/studyRewards'
 import { isGuestStudentId, loadGuestStudyStore } from '@/lib/guestStudy'
 import { getDueCount } from '@/lib/srs'
+import { fetchActivePinnedQuizzes, getPinnedQuizDisplayLabel, PinnedQuizRow } from '@/lib/pinnedQuiz'
 
 interface FieldStats {
   [field: string]: { total: number; correct: number }
@@ -31,6 +32,7 @@ export default function HomePage({
   onTerritoryQuiz,
   onMyPage,
   onOnline,
+  onPinnedQuiz,
 }: {
   onSelectField: (field: string) => void
   onQuickStartAll: () => void
@@ -40,6 +42,7 @@ export default function HomePage({
   onTerritoryQuiz: () => void
   onMyPage: () => void
   onOnline: () => void
+  onPinnedQuiz: (quiz: PinnedQuizRow) => void
 }) {
   const { nickname, studentId, logout, pendingLoginCardReward, dismissLoginCardReward } = useAuth()
   const isGuest = isGuestStudentId(studentId)
@@ -49,6 +52,7 @@ export default function HomePage({
   const [dueCount, setDueCount] = useState(0)
   const [showSrsReminder, setShowSrsReminder] = useState(false)
   const [showExtraActions, setShowExtraActions] = useState(false)
+  const [pinnedQuizzes, setPinnedQuizzes] = useState<PinnedQuizRow[]>([])
   const [dailyStatus, setDailyStatus] = useState<DailyChallengeStatus>({ completed: false, completedAt: null })
   const [timeAttackSummary, setTimeAttackSummary] = useState<HomeTimeAttackSummary>({
     personalBest: 0,
@@ -210,6 +214,20 @@ export default function HomePage({
       active = false
     }
   }, [isGuest, studentId])
+
+  useEffect(() => {
+    let active = true
+
+    const loadPinned = async () => {
+      const rows = await fetchActivePinnedQuizzes()
+      if (active) setPinnedQuizzes(rows)
+    }
+
+    void loadPinned()
+    return () => {
+      active = false
+    }
+  }, [studentId])
 
   useEffect(() => {
     let active = true
@@ -404,6 +422,78 @@ export default function HomePage({
           </div>
         </div>
       </div>
+
+      {pinnedQuizzes.length > 0 && (
+        <div
+          className="card mb-4 sm:mb-5 anim-fade-up"
+          style={{
+            borderColor: 'rgba(34, 197, 94, 0.28)',
+            background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.10), rgba(56, 189, 248, 0.06), var(--card-gradient-base-mid))',
+            animationDelay: '0.18s',
+          }}
+        >
+          <div className="flex flex-col gap-1">
+            <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-emerald-200">
+              授業の予習・復習
+            </div>
+            <div className="font-display text-[1.2rem] text-white sm:text-[1.4rem]">
+              もぎ先生のおすすめ問題
+            </div>
+            <div className="text-xs text-slate-300">
+              いまの授業範囲だけをサクッと学習。
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {pinnedQuizzes.map(quiz => {
+              const fieldColor = FIELD_COLORS[quiz.field] ?? '#22c55e'
+              const fieldEmoji = FIELD_EMOJI[quiz.field] ?? '🔬'
+              const gradeLabel = quiz.grade === 'all' ? '学年すべて' : quiz.grade
+              const limitLabel = quiz.question_count_limit ? `${quiz.question_count_limit}問` : '全問'
+              const displayLabel = getPinnedQuizDisplayLabel(quiz)
+
+              return (
+                <button
+                  key={quiz.id}
+                  onClick={() => onPinnedQuiz(quiz)}
+                  className="rounded-2xl border text-left transition-colors"
+                  style={{
+                    borderColor: `${fieldColor}40`,
+                    background: `linear-gradient(180deg, ${fieldColor}14, rgba(2, 6, 23, 0.32))`,
+                    padding: '12px 14px',
+                  }}
+                  onMouseEnter={event => {
+                    const element = event.currentTarget
+                    element.style.borderColor = `${fieldColor}66`
+                  }}
+                  onMouseLeave={event => {
+                    const element = event.currentTarget
+                    element.style.borderColor = `${fieldColor}40`
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] text-base"
+                      style={{ background: `${fieldColor}20`, border: `1px solid ${fieldColor}28` }}
+                    >
+                      {fieldEmoji}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-white truncate">{displayLabel}</div>
+                      <div className="mt-0.5 text-[11px] text-slate-400">
+                        {quiz.field} / {gradeLabel} / {limitLabel}
+                      </div>
+                    </div>
+                    <span className="shrink-0 text-xs font-semibold text-emerald-200">
+                      はじめる →
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="card mb-4 sm:mb-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
