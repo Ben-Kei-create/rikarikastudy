@@ -12,6 +12,9 @@
     "questions:sql": "node scripts/generate_questions_sql.mjs"
   },
   "dependencies": {
+    "next": "14.2.35",
+    "react": "^18",
+    "react-dom": "^18",
     "@supabase/supabase-js": "^2.43.0",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.383.0",
